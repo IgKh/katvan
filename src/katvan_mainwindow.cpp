@@ -18,6 +18,7 @@
 #include "katvan_editor.h"
 #include "katvan_mainwindow.h"
 #include "katvan_typstdriver.h"
+#include "katvan_version.h"
 
 #include <QCloseEvent>
 #include <QApplication>
@@ -73,6 +74,7 @@ MainWindow::MainWindow()
 void MainWindow::setupUI()
 {
     setWindowTitle(tr("Katvan"));
+    setWindowIcon(QIcon(":/assets/katvan.svg"));
 
     d_editor = new Editor();
     connect(d_editor, &Editor::contentModified, d_driver, &TypstDriver::updatePreview);
@@ -198,7 +200,7 @@ void MainWindow::setupActions()
      */
     QMenu* viewMenu = menuBar()->addMenu(tr("&View"));
 
-    viewMenu->addAction(tr("Set Editor &Font..."), this, &MainWindow::changeEditorFont);
+    viewMenu->addAction(tr("Editor &Font..."), this, &MainWindow::changeEditorFont);
 
     viewMenu->addSeparator();
 
@@ -212,6 +214,11 @@ void MainWindow::setupActions()
 
     QAction* docsAction = helpMenu->addAction(tr("Typst &Documentation..."), this, &MainWindow::showTypstDocs);
     docsAction->setIcon(QIcon::fromTheme(QStringLiteral("help-contents")));
+
+    helpMenu->addSeparator();
+
+    QAction* aboutAction = helpMenu->addAction(tr("&About..."), this, &MainWindow::showAbout);
+    aboutAction->setIcon(QIcon::fromTheme(QStringLiteral("help-about")));
 }
 
 void MainWindow::setupStatusBar()
@@ -473,6 +480,27 @@ void MainWindow::changeEditorFont()
 void MainWindow::showTypstDocs()
 {
     QDesktopServices::openUrl(QUrl("https://typst.app/docs/"));
+}
+
+void MainWindow::showAbout()
+{
+    QString mainText = tr(
+        "<h3>Katvan</h3>"
+        "<p>A bare-bones editor for <i>typst</i> files, with bias for RTL</p>"
+        "<p>Version %1 (Qt %2)"
+    )
+    .arg(KATVAN_VERSION + "-" + KATVAN_GIT_SHA)
+    .arg(QLatin1String(qVersion()));
+
+    QString informativeText = tr(
+        "<p>Katvan is offered under the terms of the <a href=\"%1\">GNU General Public License Version 3</a></p>"
+    )
+    .arg(QStringLiteral("https://www.gnu.org/licenses/gpl-3.0.en.html"));
+
+    QMessageBox dlg(QMessageBox::NoIcon, tr("About Katvan"), mainText, QMessageBox::Ok, this);
+    dlg.setIconPixmap(windowIcon().pixmap(QSize(128, 128)));
+    dlg.setInformativeText(informativeText);
+    dlg.exec();
 }
 
 void MainWindow::cursorPositionChanged()

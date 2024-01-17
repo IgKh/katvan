@@ -15,30 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "katvan_mainwindow.h"
-#include "katvan_version.h"
+#pragma once
 
-#include <QApplication>
-#include <QCommandLineParser>
+#include <QLatin1StringView>
 
-int main(int argc, char** argv)
-{
-    QApplication app(argc, argv);
-    QCoreApplication::setOrganizationName("Katvan");
-    QCoreApplication::setApplicationName("Katvan");
-    QCoreApplication::setApplicationVersion(katvan::KATVAN_VERSION);
+namespace katvan {
 
-    QCommandLineParser parser;
-    parser.addPositionalArgument("file", "File to open");
-    parser.addHelpOption();
-    parser.process(app);
+constexpr QLatin1StringView KATVAN_VERSION("@KATVAN_VERSION@");
+constexpr QLatin1StringView KATVAN_GIT_SHA("@KATVAN_GIT_SHA@");
 
-    katvan::MainWindow wnd;
-    wnd.show();
-
-    if (!parser.positionalArguments().isEmpty()) {
-        wnd.loadFile(parser.positionalArguments().at(0));
-    }
-
-    return app.exec();
 }

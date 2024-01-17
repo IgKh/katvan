@@ -49,6 +49,7 @@ private slots:
     void exportPdf();
     void changeEditorFont();
     void showTypstDocs();
+    void showAbout();
 
     void cursorPositionChanged();
     void updatePreview(const QString& pdfFile);
