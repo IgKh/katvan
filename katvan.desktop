@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Name=Katvan
+Name[he]=כתבן
+Comment=A bare-bones editor for typst files, with bias for RTL
+Comment[he]=עורך ענייני לקבצי typst
+TryExec=katvan
+Exec=katvan %f
+Icon=katvan
+Terminal=false
+Type=Application
+MimeType=text/x-typst
+Categories=Qt;Office;Publishing
+Keywords=typst
