@@ -17,6 +17,9 @@
  */
 #include "katvan_editor.h"
 
+#include <QMenu>
+#include <QShortcut>
+#include <QTextBlock>
 #include <QTimer>
 
 namespace katvan {
@@ -24,10 +27,17 @@ namespace katvan {
 static constexpr QChar LRI_MARK = (ushort)0x2066;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
+static QKeySequence TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
+
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
 {
     setAcceptRichText(false);
+
+    QShortcut* toggleDirection = new QShortcut(this);
+    toggleDirection->setKey(TEXT_DIRECTION_TOGGLE);
+    toggleDirection->setContext(Qt::WidgetShortcut);
+    connect(toggleDirection, &QShortcut::activated, this, &Editor::toggleTextBlockDirection);
 
     d_debounceTimer = new QTimer(this);
     d_debounceTimer->setSingleShot(true);
@@ -47,6 +57,30 @@ void Editor::insertInlineMath()
     cursor.insertText(LRI_MARK + QStringLiteral("$$") + PDI_MARK);
     cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 2);
     setTextCursor(cursor);
+}
+
+void Editor::toggleTextBlockDirection()
+{
+    QTextCursor cursor = textCursor();
+    Qt::LayoutDirection currentDirection = cursor.block().textDirection();
+
+    QTextBlockFormat fmt;
+    if (currentDirection == Qt::LeftToRight) {
+        fmt.setLayoutDirection(Qt::RightToLeft);
+    }
+    else {
+        fmt.setLayoutDirection(Qt::LeftToRight);
+    }
+    cursor.mergeBlockFormat(fmt);
+}
+
+void Editor::contextMenuEvent(QContextMenuEvent* event)
+{
+    QMenu* menu = createStandardContextMenu(event->pos());
+    menu->addSeparator();
+    menu->addAction(tr("Toggle Text Direction"), TEXT_DIRECTION_TOGGLE, this, &Editor::toggleTextBlockDirection);
+    menu->exec(event->globalPos());
+    delete menu;
 }
 
 }

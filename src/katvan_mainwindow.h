@@ -24,6 +24,7 @@ class QLabel;
 class QPdfDocument;
 class QPdfView;
 class QPlainTextEdit;
+class QToolButton;
 QT_END_NAMESPACE
 
 namespace katvan
@@ -52,6 +53,7 @@ private slots:
     void showAbout();
 
     void cursorPositionChanged();
+    void toggleCursorMovementStyle();
     void updatePreview(const QString& pdfFile);
     void compilationFailed(const QString& output);
 
@@ -61,8 +63,6 @@ private:
     void setupStatusBar();
     void readSettings();
     void saveSettings();
-
-    void postMessage(const QString& msg);
 
     bool maybeSave();
     void setCurrentFile(const QString& fileName);
@@ -78,7 +78,9 @@ private:
     Editor* d_editor;
     QPdfView* d_pdfPreview;
     QPlainTextEdit* d_compilerOutput;
+
     QLabel* d_cursorPosLabel;
+    QToolButton* d_cursorStyleButton;
 
     QDockWidget* d_previewDock;
     QDockWidget* d_compilerOutputDock;

@@ -20,8 +20,8 @@
 #include "katvan_typstdriver.h"
 #include "katvan_version.h"
 
-#include <QCloseEvent>
 #include <QApplication>
+#include <QCloseEvent>
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QFileDialog>
@@ -35,8 +35,9 @@
 #include <QScrollBar>
 #include <QSettings>
 #include <QStatusBar>
-#include <QTimer>
 #include <QTextEdit>
+#include <QTimer>
+#include <QToolButton>
 
 namespace katvan {
 
@@ -225,6 +226,15 @@ void MainWindow::setupStatusBar()
 {
     d_cursorPosLabel = new QLabel();
     statusBar()->addPermanentWidget(d_cursorPosLabel);
+
+    d_cursorStyleButton = new QToolButton();
+    d_cursorStyleButton->setText(tr("Logical"));
+    d_cursorStyleButton->setToolTip(tr("Cursor movement style"));
+    d_cursorStyleButton->setAutoRaise(true);
+    d_cursorStyleButton->setMaximumHeight(18);
+    connect(d_cursorStyleButton, &QToolButton::clicked, this, &MainWindow::toggleCursorMovementStyle);
+
+    statusBar()->addPermanentWidget(d_cursorStyleButton);
 }
 
 void MainWindow::readSettings()
@@ -254,12 +264,6 @@ void MainWindow::saveSettings()
     settings.setValue(SETTING_MAIN_WINDOW_GEOMETRY, saveGeometry());
 }
 
-void MainWindow::postMessage(const QString& msg)
-{
-    QString timestamp = QTime::currentTime().toString("HH:mm");
-    statusBar()->showMessage("[" + timestamp + "] " + msg);
-}
-
 void MainWindow::loadFile(const QString& fileName)
 {
     QFile file(fileName);
@@ -277,7 +281,7 @@ void MainWindow::loadFile(const QString& fileName)
     d_previewDocument->close();
 
     setCurrentFile(fileName);
-    postMessage(tr("Loaded %1").arg(d_currentFileName));
+    statusBar()->showMessage(tr("Loaded %1").arg(d_currentFileName));
 }
 
 bool MainWindow::maybeSave()
@@ -396,7 +400,7 @@ bool MainWindow::saveFile()
     }
 
     d_editor->document()->setModified(false);
-    postMessage(tr("Saved %1").arg(d_currentFileName));
+    statusBar()->showMessage(tr("Saved %1").arg(d_currentFileName));
 
     return true;
 }
@@ -509,6 +513,18 @@ void MainWindow::cursorPositionChanged()
     d_cursorPosLabel->setText(tr("Line %1, Col %2")
         .arg(cursor.blockNumber() + 1)
         .arg(cursor.positionInBlock()));
+}
+
+void MainWindow::toggleCursorMovementStyle()
+{
+    if (d_editor->document()->defaultCursorMoveStyle() == Qt::LogicalMoveStyle) {
+        d_editor->document()->setDefaultCursorMoveStyle(Qt::VisualMoveStyle);
+        d_cursorStyleButton->setText(tr("Visual"));
+    }
+    else {
+        d_editor->document()->setDefaultCursorMoveStyle(Qt::LogicalMoveStyle);
+        d_cursorStyleButton->setText(tr("Logical"));
+    }
 }
 
 void MainWindow::updatePreview(const QString& pdfFile)

@@ -34,6 +34,10 @@ public:
 
 public slots:
     void insertInlineMath();
+    void toggleTextBlockDirection();
+
+protected:
+    void contextMenuEvent(QContextMenuEvent* event) override;
 
 signals:
     void contentModified(const QString& text);
