@@ -18,6 +18,7 @@
 #include "katvan_editor.h"
 #include "katvan_mainwindow.h"
 #include "katvan_recentfiles.h"
+#include "katvan_searchbar.h"
 #include "katvan_typstdriver.h"
 #include "katvan_version.h"
 
@@ -39,6 +40,7 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QToolButton>
+#include <QVBoxLayout>
 
 namespace katvan {
 
@@ -86,6 +88,17 @@ void MainWindow::setupUI()
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 
+    d_searchBar = new SearchBar(d_editor);
+    d_searchBar->setVisible(false);
+
+    QWidget* centralWidget = new QWidget();
+    QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
+    centralLayout->setContentsMargins(0, 0, 0, 0);
+    centralLayout->addWidget(d_editor, 1);
+    centralLayout->addWidget(d_searchBar, 0);
+
+    setCentralWidget(centralWidget);
+
     d_pdfPreview = new QPdfView();
     d_pdfPreview->setDocument(d_previewDocument);
     d_pdfPreview->setPageMode(QPdfView::PageMode::MultiPage);
@@ -98,8 +111,6 @@ void MainWindow::setupUI()
     d_compilerOutput = new QPlainTextEdit();
     d_compilerOutput->setReadOnly(true);
     d_compilerOutput->setFont(monospaceFont);
-
-    setCentralWidget(d_editor);
 
     setDockOptions(QMainWindow::AnimatedDocks);
 
@@ -202,6 +213,12 @@ void MainWindow::setupActions()
 
     QAction* insertInlineMathAction = insertMenu->addAction(tr("Inline &Math"), d_editor, &Editor::insertInlineMath);
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
+
+    editMenu->addSeparator();
+
+    QAction* findAction = editMenu->addAction(tr("&Find..."), d_searchBar, &SearchBar::ensureVisible);
+    findAction->setIcon(QIcon::fromTheme(QStringLiteral("edit-find")));
+    findAction->setShortcut(QKeySequence::Find);
 
     /*
      * View Menu
@@ -336,6 +353,7 @@ void MainWindow::setCurrentFile(const QString& fileName)
         .arg(d_currentFileShortName));
 
     d_driver->resetInputFile(fileName);
+    d_searchBar->hide();
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -427,6 +445,11 @@ bool MainWindow::saveFileAs()
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setNameFilter(tr("Typst files (*.typ)"));
     dialog.setDefaultSuffix("typ");
+
+    if (!d_currentFileName.isEmpty()) {
+        QFileInfo info(d_currentFileName);
+        dialog.setDirectory(info.dir());
+    }
 
     if (dialog.exec() != QDialog::Accepted) {
         return false;

@@ -33,6 +33,7 @@ namespace katvan
 class Editor;
 class TypstDriver;
 class RecentFiles;
+class SearchBar;
 
 class MainWindow : public QMainWindow
 {
@@ -79,6 +80,7 @@ private:
     QPdfDocument* d_previewDocument;
 
     Editor* d_editor;
+    SearchBar* d_searchBar;
     QPdfView* d_pdfPreview;
     QPlainTextEdit* d_compilerOutput;
 

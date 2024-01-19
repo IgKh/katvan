@@ -19,6 +19,7 @@ set(SOURCES
     katvan_editor.cpp
     katvan_mainwindow.cpp
     katvan_recentfiles.cpp
+    katvan_searchbar.cpp
     katvan_typstdriver.cpp
     main.cpp
 )
