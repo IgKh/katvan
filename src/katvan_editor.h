@@ -29,6 +29,8 @@ class Editor : public QTextEdit
 {
     Q_OBJECT
 
+    friend class LineNumberGutter;
+
 public:
     Editor(QWidget* parent = nullptr);
 
@@ -38,11 +40,25 @@ public slots:
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+
+private:
+    int lineNumberGutterWidth();
+    QTextBlock getFirstVisibleBlock();
+    void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
+
+private slots:
+    void updateLineNumberGutterWidth();
+    void updateLineNumberGutters();
 
 signals:
     void contentModified(const QString& text);
 
 private:
+    QWidget* d_leftLineNumberGutter;
+    QWidget* d_rightLineNumberGutter;
+
     QTimer* d_debounceTimer;
 };
 

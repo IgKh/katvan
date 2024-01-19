@@ -17,7 +17,10 @@
  */
 #include "katvan_editor.h"
 
+#include <QAbstractTextDocumentLayout>
 #include <QMenu>
+#include <QPainter>
+#include <QScrollBar>
 #include <QShortcut>
 #include <QTextBlock>
 #include <QTimer>
@@ -29,10 +32,40 @@ static constexpr QChar PDI_MARK = (ushort)0x2069;
 
 static QKeySequence TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 
+class LineNumberGutter : public QWidget
+{
+public:
+    LineNumberGutter(Editor *editor) : QWidget(editor), d_editor(editor) {}
+
+    QSize sizeHint() const override
+    {
+        return QSize(d_editor->lineNumberGutterWidth(), 0);
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        d_editor->lineNumberGutterPaintEvent(this, event);
+    }
+
+private:
+    Editor *d_editor;
+};
+
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
 {
     setAcceptRichText(false);
+
+    d_leftLineNumberGutter = new LineNumberGutter(this);
+    d_rightLineNumberGutter = new LineNumberGutter(this);
+
+    connect(document(), &QTextDocument::blockCountChanged, this, &Editor::updateLineNumberGutterWidth);
+    connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &Editor::updateLineNumberGutters);
+    connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
+    connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateLineNumberGutters);
+
+    updateLineNumberGutters();
 
     QShortcut* toggleDirection = new QShortcut(this);
     toggleDirection->setKey(TEXT_DIRECTION_TOGGLE);
@@ -81,6 +114,164 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
     menu->addAction(tr("Toggle Text Direction"), TEXT_DIRECTION_TOGGLE, this, &Editor::toggleTextBlockDirection);
     menu->exec(event->globalPos());
     delete menu;
+}
+
+void Editor::keyPressEvent(QKeyEvent* event)
+{
+    if (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Return) {
+        // For displayed line numbers to make sense, each QTextBlock must correspond
+        // to one plain text line - meaning no newlines allowed in the middle of a
+        // block. Since we only ever import and export plain text to the editor, the
+        // only way to create such a newline is by typing it with Shift+Return; disable
+        // this by sending the base implementation an event without the Shift modifier.
+        QKeyEvent overrideEvent(
+            QEvent::KeyPress,
+            event->key(),
+            Qt::NoModifier,
+            QLatin1String("\n"),
+            event->isAutoRepeat());
+
+        QTextEdit::keyPressEvent(&overrideEvent);
+        return;
+    }
+    QTextEdit::keyPressEvent(event);
+}
+
+void Editor::resizeEvent(QResizeEvent* event)
+{
+    QTextEdit::resizeEvent(event);
+
+    QRect cr = contentsRect();
+    int gutterWidth = lineNumberGutterWidth();
+    int verticalScrollBarWidth = verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 0;
+
+    if (layoutDirection() == Qt::LeftToRight) {
+        d_leftLineNumberGutter->setGeometry(QRect(cr.left(), cr.top(), gutterWidth, cr.height()));
+        d_rightLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth - verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
+    }
+    else {
+        d_rightLineNumberGutter->setGeometry(QRect(cr.left() + verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
+        d_leftLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth, cr.top(), gutterWidth, cr.height()));
+    }
+}
+
+int Editor::lineNumberGutterWidth()
+{
+    int digits = 1;
+    int max = qMax(1, document()->blockCount());
+    while (max >= 10) {
+        max /= 10;
+        digits++;
+    }
+
+    int space = 10 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+    return space;
+}
+
+void Editor::updateLineNumberGutterWidth()
+{
+    int gutterWidth = lineNumberGutterWidth();
+    setViewportMargins(gutterWidth, 0, gutterWidth, 0);
+}
+
+void Editor::updateLineNumberGutters()
+{
+    QRect cr = contentsRect();
+    d_leftLineNumberGutter->update(0, cr.y(), d_leftLineNumberGutter->width(), cr.height());
+    d_rightLineNumberGutter->update(0, cr.y(), d_rightLineNumberGutter->width(), cr.height());
+
+    updateLineNumberGutterWidth();
+
+    int dy = verticalScrollBar()->sliderPosition();
+    if (dy >= 0) {
+        d_leftLineNumberGutter->scroll(0, dy);
+        d_rightLineNumberGutter->scroll(0, dy);
+    }
+}
+
+QTextBlock Editor::getFirstVisibleBlock()
+{
+    QTextDocument* doc = document();
+    QRect viewportGeometry = viewport()->geometry();
+
+    for (QTextBlock it = doc->firstBlock(); it.isValid(); it = it.next()) {
+        QRectF blockRect = doc->documentLayout()->blockBoundingRect(it);
+
+        // blockRect is in document coordinates, translate it to be relative to
+        // the viewport. Then we want the first block that starts after the current
+        // scrollbar position.
+        blockRect.translate(viewportGeometry.topLeft());
+        if (blockRect.y() > verticalScrollBar()->sliderPosition()) {
+            return it;
+        }
+    }
+    return QTextBlock();
+}
+
+void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
+{
+    QColor bgColor(Qt::lightGray);
+    QColor fgColor(120, 120, 120);
+
+    QPainter painter(gutter);
+    painter.fillRect(event->rect(), bgColor);
+
+    QTextBlock block = getFirstVisibleBlock();
+    int blockNumberUnderCursor = textCursor().blockNumber();
+
+    QTextDocument* doc = document();
+    QRect viewportGeometry = viewport()->geometry();
+
+    qreal additionalMargin;
+    if (block.blockNumber() == 0) {
+        additionalMargin = doc->documentMargin() - 1 - verticalScrollBar()->sliderPosition();
+    }
+    else {
+        // Getting the height of the visible part of the previous "non entirely visible" block
+        QTextBlock prevBlock = block.previous();
+        QRectF prevBlockRect = doc->documentLayout()->blockBoundingRect(prevBlock);
+        prevBlockRect.translate(0, -verticalScrollBar()->sliderPosition());
+
+        additionalMargin = prevBlockRect.intersected(viewportGeometry).height();
+    }
+
+    qreal top = viewportGeometry.top() + additionalMargin;
+    qreal bottom = top + doc->documentLayout()->blockBoundingRect(block).height();
+
+    while (block.isValid() && top <= event->rect().bottom()) {
+        if (block.isVisible() && bottom >= event->rect().top()) {
+            QString number = QString::number(block.blockNumber() + 1);
+
+            painter.setPen(fgColor);
+
+            QFont f = gutter->font();
+            if (block.blockNumber() == blockNumberUnderCursor) {
+                f.setWeight(QFont::ExtraBold);
+            }
+            painter.setFont(f);
+
+            int textFlags;
+            int textOffset;
+            if (gutter == d_leftLineNumberGutter) {
+                textFlags = Qt::AlignRight;
+                textOffset = -5;
+            }
+            else {
+                textFlags = Qt::AlignLeft;
+                textOffset = 5;
+            }
+            if (layoutDirection() == Qt::RightToLeft) {
+                textOffset *= -1;
+            }
+
+            QRectF r(textOffset, top, gutter->width(), painter.fontMetrics().height());
+            painter.drawText(r, textFlags, number);
+        }
+
+        block = block.next();
+        top = bottom;
+        bottom = top + doc->documentLayout()->blockBoundingRect(block).height();
+    }
 }
 
 }
