@@ -32,6 +32,7 @@ namespace katvan
 
 class Editor;
 class TypstDriver;
+class RecentFiles;
 
 class MainWindow : public QMainWindow
 {
@@ -45,6 +46,7 @@ public:
 private slots:
     void newFile();
     void openFile();
+    void openNamedFile(const QString& fileName);
     bool saveFile();
     bool saveFileAs();
     void exportPdf();
@@ -72,6 +74,7 @@ private:
     QString d_currentFileName;
     QString d_currentFileShortName;
 
+    RecentFiles* d_recentFiles;
     TypstDriver* d_driver;
     QPdfDocument* d_previewDocument;
 

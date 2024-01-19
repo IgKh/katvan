@@ -18,6 +18,7 @@ configure_file(katvan_version.h.in katvan_version.h @ONLY)
 set(SOURCES
     katvan_editor.cpp
     katvan_mainwindow.cpp
+    katvan_recentfiles.cpp
     katvan_typstdriver.cpp
     main.cpp
 )

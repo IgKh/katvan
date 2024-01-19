@@ -17,6 +17,7 @@
  */
 #include "katvan_editor.h"
 #include "katvan_mainwindow.h"
+#include "katvan_recentfiles.h"
 #include "katvan_typstdriver.h"
 #include "katvan_version.h"
 
@@ -48,6 +49,9 @@ static constexpr QLatin1StringView SETTING_EDITOR_FONT = QLatin1StringView("edit
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
 {
+    d_recentFiles = new RecentFiles(this);
+    connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
+
     d_driver = new TypstDriver(this);
     connect(d_driver, &TypstDriver::previewReady, this, &MainWindow::updatePreview);
     connect(d_driver, &TypstDriver::compilationFailed, this, &MainWindow::compilationFailed);
@@ -67,7 +71,7 @@ MainWindow::MainWindow()
             QMessageBox::warning(
                 this,
                 QCoreApplication::applicationName(),
-                tr("The typst compiler was not found, and therefore previews will not work.\nPlease make sure it is installed and in your system path."));
+                tr("The typst compiler was not found, and therefore previews and export will not work.\nPlease make sure it is installed and in your system path."));
         });
     }
 }
@@ -130,6 +134,8 @@ void MainWindow::setupActions()
     openFileAction->setIcon(QIcon::fromTheme(QStringLiteral("document-open")));
     openFileAction->setShortcut(QKeySequence::Open);
 
+    d_recentFiles->setMenu(fileMenu->addMenu(tr("&Recent Files")));
+
     fileMenu->addSeparator();
 
     QAction* saveFileAction = fileMenu->addAction(tr("&Save"), this, &MainWindow::saveFile);
@@ -143,6 +149,7 @@ void MainWindow::setupActions()
 
     QAction* exportPdfAction = fileMenu->addAction(tr("&Export PDF..."), this, &MainWindow::exportPdf);
     exportPdfAction->setIcon(QIcon::fromTheme(QStringLiteral("document-send")));
+    exportPdfAction->setEnabled(d_driver->compilerFound());
 
     fileMenu->addSeparator();
 
@@ -255,6 +262,8 @@ void MainWindow::readSettings()
         QFont editorFont = settings.value(SETTING_EDITOR_FONT).value<QFont>();
         d_editor->setFont(editorFont);
     }
+
+    d_recentFiles->restoreRecents(settings);
 }
 
 void MainWindow::saveSettings()
@@ -315,6 +324,8 @@ void MainWindow::setCurrentFile(const QString& fileName)
         QFileInfo info(fileName);
         d_currentFileName = info.exists() ? info.canonicalFilePath() : fileName;
         d_currentFileShortName = info.fileName();
+
+        d_recentFiles->addRecent(d_currentFileName);
     }
 
     d_editor->document()->setModified(false);
@@ -356,6 +367,11 @@ void MainWindow::openFile()
         QString(),
         tr("Typst files (*.typ);;All files (*)"));
 
+    openNamedFile(fileName);
+}
+
+void MainWindow::openNamedFile(const QString& fileName)
+{
     if (fileName.isEmpty()) {
         return;
     }
