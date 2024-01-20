@@ -35,6 +35,7 @@ public:
     Editor(QWidget* parent = nullptr);
 
 public slots:
+    void insertLRM();
     void insertInlineMath();
     void toggleTextBlockDirection();
     void goToBlock(int blockNum);

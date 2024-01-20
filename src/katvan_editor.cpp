@@ -27,6 +27,7 @@
 
 namespace katvan {
 
+static constexpr QChar LRM_MARK = (ushort)0x200e;
 static constexpr QChar LRI_MARK = (ushort)0x2066;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
@@ -84,10 +85,15 @@ Editor::Editor(QWidget* parent)
     });
 }
 
+void Editor::insertLRM()
+{
+    textCursor().insertText(LRM_MARK);
+}
+
 void Editor::insertInlineMath()
 {
     QTextCursor cursor = textCursor();
-    cursor.insertText(LRI_MARK + QStringLiteral("$$") + PDI_MARK);
+    cursor.insertText(LRI_MARK + QStringLiteral("$") + cursor.selectedText() + QStringLiteral("$") + PDI_MARK);
     cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 2);
     setTextCursor(cursor);
 }

@@ -214,6 +214,8 @@ void MainWindow::setupActions()
     QAction* insertInlineMathAction = insertMenu->addAction(tr("Inline &Math"), d_editor, &Editor::insertInlineMath);
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
+    insertMenu->addAction(tr("Left-to-Right Mark"), d_editor, &Editor::insertLRM);
+
     editMenu->addSeparator();
 
     QAction* findAction = editMenu->addAction(tr("&Find..."), d_searchBar, &SearchBar::ensureVisible);
