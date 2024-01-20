@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS Widgets PdfWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets PdfWidgets LinguistTools)
 
 qt_standard_project_setup()
 
@@ -39,4 +39,8 @@ target_link_libraries(katvan PRIVATE
 set_target_properties(katvan PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
+)
+
+qt_add_translations(katvan TS_FILES
+    translations/katvan_he.ts
 )

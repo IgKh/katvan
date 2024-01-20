@@ -330,7 +330,7 @@ bool MainWindow::maybeSave()
     QMessageBox::StandardButton res = QMessageBox::warning(
         this,
         QCoreApplication::applicationName(),
-        tr("The file %1 has been modified.\nDo you want to save your changes").arg(d_currentFileShortName),
+        tr("The file %1 has been modified.\nDo you want to save your changes?").arg(d_currentFileShortName),
         QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
 
     if (res == QMessageBox::Save) {

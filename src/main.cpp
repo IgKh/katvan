@@ -20,6 +20,8 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QLibraryInfo>
+#include <QTranslator>
 
 int main(int argc, char** argv)
 {
@@ -28,11 +30,29 @@ int main(int argc, char** argv)
     QCoreApplication::setApplicationName("Katvan");
     QCoreApplication::setApplicationVersion(katvan::KATVAN_VERSION + "-" + katvan::KATVAN_GIT_SHA);
 
+    QCommandLineOption forceHebrewUI("heb", "Force Hebrew UI");
+
     QCommandLineParser parser;
     parser.addPositionalArgument("file", "File to open");
+    parser.addOption(forceHebrewUI);
     parser.addVersionOption();
     parser.addHelpOption();
     parser.process(app);
+
+    QLocale locale = QLocale::system();
+    if (parser.isSet(forceHebrewUI)) {
+        locale = QLocale(QLocale::Hebrew);
+    }
+
+    QTranslator translator;
+    if (translator.load(locale, "katvan", "_", ":/i18n")) {
+        QCoreApplication::installTranslator(&translator);
+    }
+
+    QTranslator qtTranslator;
+    if (qtTranslator.load(locale, "qtbase", "_", QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+        app.installTranslator(&qtTranslator);
+    }
 
     katvan::MainWindow wnd;
     wnd.show();
