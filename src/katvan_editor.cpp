@@ -107,6 +107,14 @@ void Editor::toggleTextBlockDirection()
     cursor.mergeBlockFormat(fmt);
 }
 
+void Editor::goToBlock(int blockNum)
+{
+    QTextBlock block = document()->findBlockByNumber(blockNum);
+    if (block.isValid()) {
+        setTextCursor(QTextCursor(block));
+    }
+}
+
 void Editor::contextMenuEvent(QContextMenuEvent* event)
 {
     QMenu* menu = createStandardContextMenu(event->pos());

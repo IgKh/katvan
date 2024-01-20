@@ -37,6 +37,7 @@ public:
 public slots:
     void insertInlineMath();
     void toggleTextBlockDirection();
+    void goToBlock(int blockNum);
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override;

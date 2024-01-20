@@ -28,7 +28,7 @@
 #include <QDockWidget>
 #include <QFileDialog>
 #include <QFontDialog>
-#include <QLabel>
+#include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPdfDocument>
@@ -220,6 +220,9 @@ void MainWindow::setupActions()
     findAction->setIcon(QIcon::fromTheme(QStringLiteral("edit-find")));
     findAction->setShortcut(QKeySequence::Find);
 
+    QAction* gotoLineAction = editMenu->addAction(tr("&Go to line..."), this, &MainWindow::goToLine);
+    gotoLineAction->setShortcut(Qt::CTRL | Qt::Key_G);
+
     /*
      * View Menu
      */
@@ -248,14 +251,21 @@ void MainWindow::setupActions()
 
 void MainWindow::setupStatusBar()
 {
-    d_cursorPosLabel = new QLabel();
-    statusBar()->addPermanentWidget(d_cursorPosLabel);
+    auto buildStatusBarButton = []() {
+        QToolButton* button = new QToolButton();
+        button->setAutoRaise(true);
+        button->setMaximumHeight(18);
+        return button;
+    };
 
-    d_cursorStyleButton = new QToolButton();
+    d_cursorPosButton = buildStatusBarButton();
+    connect(d_cursorPosButton, &QToolButton::clicked, this, &MainWindow::goToLine);
+
+    statusBar()->addPermanentWidget(d_cursorPosButton);
+
+    d_cursorStyleButton = buildStatusBarButton();
     d_cursorStyleButton->setText(tr("Logical"));
     d_cursorStyleButton->setToolTip(tr("Cursor movement style"));
-    d_cursorStyleButton->setAutoRaise(true);
-    d_cursorStyleButton->setMaximumHeight(18);
     connect(d_cursorStyleButton, &QToolButton::clicked, this, &MainWindow::toggleCursorMovementStyle);
 
     statusBar()->addPermanentWidget(d_cursorStyleButton);
@@ -505,6 +515,26 @@ void MainWindow::exportPdf()
     }
 }
 
+void MainWindow::goToLine()
+{
+    int blockCount = d_editor->document()->blockCount();
+
+    bool ok;
+    int line = QInputDialog::getInt(
+        this,
+        tr("Go to Line"),
+        tr("Enter a line number (max %1)").arg(blockCount),
+        d_editor->textCursor().blockNumber() + 1,
+        1,
+        blockCount,
+        1,
+        &ok);
+
+    if (ok) {
+        d_editor->goToBlock(line - 1);
+    }
+}
+
 void MainWindow::changeEditorFont()
 {
     bool ok = false;
@@ -549,7 +579,7 @@ void MainWindow::showAbout()
 void MainWindow::cursorPositionChanged()
 {
     QTextCursor cursor = d_editor->textCursor();
-    d_cursorPosLabel->setText(tr("Line %1, Col %2")
+    d_cursorPosButton->setText(tr("Line %1, Col %2")
         .arg(cursor.blockNumber() + 1)
         .arg(cursor.positionInBlock()));
 }

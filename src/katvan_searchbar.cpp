@@ -121,6 +121,11 @@ void SearchBar::findPrevious()
 
 void SearchBar::find(bool forward)
 {
+    QString searchTerm = d_searchTerm->text();
+    if (searchTerm.isEmpty()) {
+        return;
+    }
+
     QTextDocument::FindFlags flags;
     if (!forward) {
         flags |= QTextDocument::FindBackward;
@@ -129,7 +134,7 @@ void SearchBar::find(bool forward)
     QTextDocument* document = d_editor->document();
     QTextCursor cursor = d_editor->textCursor();
 
-    QTextCursor found = document->find(d_searchTerm->text(), cursor, flags);
+    QTextCursor found = document->find(searchTerm, cursor, flags);
     if (!found.isNull()) {
         d_editor->setTextCursor(found);
         return;
@@ -141,7 +146,7 @@ void SearchBar::find(bool forward)
         edgeCursor.movePosition(QTextCursor::End);
     }
 
-    found = document->find(d_searchTerm->text(), edgeCursor, flags);
+    found = document->find(searchTerm, edgeCursor, flags);
     if (!found.isNull()) {
         d_editor->setTextCursor(found);
         return;

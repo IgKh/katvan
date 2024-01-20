@@ -20,7 +20,6 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
-class QLabel;
 class QPdfDocument;
 class QPdfView;
 class QPlainTextEdit;
@@ -51,6 +50,7 @@ private slots:
     bool saveFile();
     bool saveFileAs();
     void exportPdf();
+    void goToLine();
     void changeEditorFont();
     void showTypstDocs();
     void showAbout();
@@ -84,7 +84,7 @@ private:
     QPdfView* d_pdfPreview;
     QPlainTextEdit* d_compilerOutput;
 
-    QLabel* d_cursorPosLabel;
+    QToolButton* d_cursorPosButton;
     QToolButton* d_cursorStyleButton;
 
     QDockWidget* d_previewDock;
