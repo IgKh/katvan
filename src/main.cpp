@@ -26,10 +26,11 @@ int main(int argc, char** argv)
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("Katvan");
     QCoreApplication::setApplicationName("Katvan");
-    QCoreApplication::setApplicationVersion(katvan::KATVAN_VERSION);
+    QCoreApplication::setApplicationVersion(katvan::KATVAN_VERSION + "-" + katvan::KATVAN_GIT_SHA);
 
     QCommandLineParser parser;
     parser.addPositionalArgument("file", "File to open");
+    parser.addVersionOption();
     parser.addHelpOption();
     parser.process(app);
 

@@ -20,7 +20,6 @@
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
 #include "katvan_typstdriver.h"
-#include "katvan_version.h"
 
 #include <QApplication>
 #include <QCloseEvent>
@@ -561,10 +560,12 @@ void MainWindow::showAbout()
 {
     QString mainText = tr(
         "<h3>Katvan</h3>"
-        "<p>A bare-bones editor for <i>typst</i> files, with bias for RTL</p>"
-        "<p>Version %1 (Qt %2)"
+        "<a href=\"%1\">%1</a>"
+        "<p>A bare-bones editor for <i>typst</i> files, with a bias for RTL</p>"
+        "<p>Version %2 (Qt %3)"
     )
-    .arg(KATVAN_VERSION + "-" + KATVAN_GIT_SHA)
+    .arg(QLatin1String("https://github.com/IgKh/katvan"))
+    .arg(QCoreApplication::applicationVersion())
     .arg(QLatin1String(qVersion()));
 
     QString informativeText = tr(
