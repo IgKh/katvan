@@ -28,7 +28,12 @@ int main(int argc, char** argv)
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("Katvan");
     QCoreApplication::setApplicationName("Katvan");
-    QCoreApplication::setApplicationVersion(katvan::KATVAN_VERSION + "-" + katvan::KATVAN_GIT_SHA);
+
+    QString version = katvan::KATVAN_VERSION;
+    if (!katvan::KATVAN_GIT_SHA.isEmpty()) {
+        version += "-" + katvan::KATVAN_GIT_SHA;
+    }
+    QCoreApplication::setApplicationVersion(version);
 
     QCommandLineOption forceHebrewUI("heb", "Force Hebrew UI");
 
@@ -51,7 +56,7 @@ int main(int argc, char** argv)
 
     QTranslator qtTranslator;
     if (qtTranslator.load(locale, "qtbase", "_", QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        app.installTranslator(&qtTranslator);
+        QCoreApplication::installTranslator(&qtTranslator);
     }
 
     katvan::MainWindow wnd;

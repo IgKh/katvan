@@ -17,7 +17,7 @@ jobs:
           cache: true
 
       - name: Configure
-        run: mkdir build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build
         run: cmake --build build -j $(nproc)

@@ -1,0 +1,91 @@
+name: Create release builds
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  create-source-tarball:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Determine version
+        run: echo "VERSION=$(grep KATVAN_VERSION CMakeLists.txt | cut -d"\"" -f2)" >> $GITHUB_ENV
+
+      - name: Collect tarball
+        run: |
+          mkdir dist
+          tar cfz dist/katvan-${VERSION}.tar.gz \
+            --transform "flags=r;s|^|katvan-${VERSION}/|" \
+            --exclude-vcs \
+            --exclude .github \
+            --exclude dist *
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarball
+          path: dist/katvan-${{ env.VERSION }}.tar.gz
+          if-no-files-found: error
+
+  build-linux-appimage:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.5.*
+          modules: 'qtpdf'
+          cache: true
+
+      - name: Install missing libraries
+        run: sudo apt install libxcb-cursor0
+
+      - name: Install AppImage tools
+        uses: miurahr/install-linuxdeploy-action@v1
+        with:
+          plugins: qt appimage
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: cmake --build build -j $(nproc)
+
+      - name: Initialize AppDir
+        run: cmake --build build --target install DESTDIR=AppDir
+
+      - name: Generate AppImage
+        run: linuxdeploy-x86_64.AppImage --appdir build/AppDir --plugin qt --output appimage
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppImage
+          path: Katvan-x86_64.AppImage
+          if-no-files-found: error
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [create-source-tarball, build-linux-appimage]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create draft release
+        run: gh release create --draft --verify-tag ${{ github.ref_name }} tarball/* AppImage/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
