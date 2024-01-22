@@ -26,7 +26,15 @@ Not a whole lot so far, but for now we have:
 
 ## Installation
 
-For now it is only possible to install Katvan by building it from source code. You'll need development files for Qt 6.5 (or a later 6.x release) and CMake 3.16 or above.
+Regardless of how Katvan is installed, it is required to install the `typst` CLI and make it available via the system path. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details.
+
+### Linux
+
+A pre-built AppImage for the `x86_64` architecture is available from the project releases page. If it isn't suitable, you'll need to compile from source.
+
+### From Source
+
+To compile and install Katvan from source code, you'll need development files for Qt 6.5 (or a later 6.x release) and CMake 3.16 or above.
 
 Do it the usual way:
 
@@ -38,8 +46,6 @@ Do it the usual way:
 ```
 
 This was tested only on Linux. Windows and macOS may or may not work.
-
-In addition, for previews and PDF export to work the `typst` CLI needs to be installed and available via the `PATH` in runtime.
 
 ## Contributing
 
