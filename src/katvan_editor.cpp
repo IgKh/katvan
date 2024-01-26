@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_editor.h"
+#include "katvan_highlighter.h"
 
 #include <QAbstractTextDocumentLayout>
 #include <QMenu>
@@ -57,6 +58,8 @@ Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
 {
     setAcceptRichText(false);
+
+    new Highlighter(document());
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);

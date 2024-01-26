@@ -17,7 +17,9 @@ configure_file(katvan_version.h.in katvan_version.h @ONLY)
 
 set(SOURCES
     katvan_editor.cpp
+    katvan_highlighter.cpp
     katvan_mainwindow.cpp
+    katvan_parsing.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
     katvan_typstdriver.cpp

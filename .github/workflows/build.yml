@@ -20,8 +20,14 @@ jobs:
           modules: 'qtpdf'
           cache: true
 
+      - name: Install GoogleTest
+        run: sudo apt install libgmock-dev
+
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build
         run: cmake --build build -j $(nproc)
+
+      - name: Run tests
+        run: ctest --output-on-failure --test-dir build
