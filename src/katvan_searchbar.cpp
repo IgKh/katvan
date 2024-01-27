@@ -28,17 +28,6 @@
 
 namespace katvan {
 
-static void setOptionalIcon(QPushButton* button, const QString& iconName, const QString& fallbackText)
-{
-    QIcon icon = QIcon::fromTheme(iconName);
-    if (!icon.isNull()) {
-        button->setIcon(icon);
-    }
-    else {
-        button->setText(fallbackText);
-    }
-}
-
 static QString processToolTip(const QString& toolTipTemplate, const QKeySequence& shortcut)
 {
     QString shortcutStr = shortcut.toString(QKeySequence::NativeText);
@@ -66,20 +55,20 @@ void SearchBar::setupUI()
     connect(d_searchTerm, &QLineEdit::returnPressed, this, &SearchBar::findNext);
 
     QPushButton* findNextButton = new QPushButton();
-    setOptionalIcon(findNextButton, QStringLiteral("go-down"), tr("Next"));
+    findNextButton->setIcon(QIcon::fromTheme("go-down", QIcon(":/icons/go-down.svg")));
     findNextButton->setShortcut(QKeySequence::FindNext);
     findNextButton->setToolTip(processToolTip(tr("Go to next match (%1)"), QKeySequence::FindNext));
     connect(findNextButton, &QPushButton::clicked, this, &SearchBar::findNext);
 
     QPushButton* findPrevButton = new QPushButton();
-    setOptionalIcon(findPrevButton, QStringLiteral("go-up"), tr("Prev"));
+    findPrevButton->setIcon(QIcon::fromTheme("go-up", QIcon(":/icons/go-up.svg")));
     findPrevButton->setShortcut(QKeySequence::FindPrevious);
     findPrevButton->setToolTip(processToolTip(tr("Go to previous match (%1)"), QKeySequence::FindPrevious));
     connect(findPrevButton, &QPushButton::clicked, this, &SearchBar::findPrevious);
 
     QPushButton* closeButton = new QPushButton();
-    setOptionalIcon(closeButton, QStringLiteral("window-close"), tr("Close"));
-    closeButton->setToolTip(tr("Close search bar"));
+    findPrevButton->setIcon(QIcon::fromTheme("window-close", QIcon(":/icons/window-close.svg")));
+    findPrevButton->setToolTip(tr("Close search bar"));
     connect(closeButton, &QPushButton::clicked, this, &QWidget::hide);
 
     QHBoxLayout* layout = new QHBoxLayout(this);

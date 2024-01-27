@@ -4,7 +4,7 @@
 <context>
     <name>katvan::Editor</name>
     <message>
-        <location filename="../katvan_editor.cpp" line="128"/>
+        <location filename="../katvan_editor.cpp" line="131"/>
         <source>Toggle Text Direction</source>
         <translation>הפוך את כיוון הטקסט</translation>
     </message>
@@ -155,7 +155,7 @@ Please make sure it is installed and in your system path.</source>
     </message>
     <message>
         <location filename="../katvan_mainwindow.cpp" line="268"/>
-        <location filename="../katvan_mainwindow.cpp" line="598"/>
+        <location filename="../katvan_mainwindow.cpp" line="602"/>
         <source>Logical</source>
         <translation>לוגי</translation>
     </message>
@@ -179,6 +179,11 @@ Please make sure it is installed and in your system path.</source>
         <source>The file %1 has been modified.
 Do you want to save your changes?</source>
         <translation>בקובץ %1 בוצעו שינויים. האם ברצונך לשמור אותם?</translation>
+    </message>
+    <message>
+        <location filename="../katvan_mainwindow.cpp" line="572"/>
+        <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Contains icons taken from the &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt; icon theme.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל צלמיות שנלקחו מן סט הצלמיות &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The file %1 has been modified.
@@ -259,30 +264,29 @@ To export the document, please correct them.</source>
     <message>
         <location filename="../katvan_mainwindow.cpp" line="561"/>
         <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3)</source>
-        <translation>&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3)</translation>
+        <translation type="unfinished">&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3)</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="571"/>
         <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="576"/>
+        <location filename="../katvan_mainwindow.cpp" line="580"/>
         <source>About Katvan</source>
         <translation>אודות כתבן</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="585"/>
+        <location filename="../katvan_mainwindow.cpp" line="589"/>
         <source>Line %1, Col %2</source>
         <translation>שורה %1, עמודה %2</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="594"/>
+        <location filename="../katvan_mainwindow.cpp" line="598"/>
         <source>Visual</source>
         <translation>ויזואלי</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="612"/>
+        <location filename="../katvan_mainwindow.cpp" line="616"/>
         <source>Failed loading preview: %1</source>
         <translation>טעינת תצוגה מקדימה נכשלה: %1</translation>
     </message>
@@ -298,42 +302,39 @@ To export the document, please correct them.</source>
 <context>
     <name>katvan::SearchBar</name>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="69"/>
         <source>Next</source>
-        <translation>הבא</translation>
+        <translation type="vanished">הבא</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="71"/>
+        <location filename="../katvan_searchbar.cpp" line="60"/>
         <source>Go to next match (%1)</source>
         <translation>עבור להתאמה הבאה (%1)</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="75"/>
         <source>Prev</source>
-        <translation>הקודם</translation>
+        <translation type="vanished">הקודם</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="77"/>
+        <location filename="../katvan_searchbar.cpp" line="66"/>
         <source>Go to previous match (%1)</source>
         <translation>עבור להתאמה הקודמת (%1)</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="81"/>
         <source>Close</source>
-        <translation>סגור</translation>
+        <translation type="vanished">סגור</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="82"/>
+        <location filename="../katvan_searchbar.cpp" line="71"/>
         <source>Close search bar</source>
         <translation>סגור את איזור החיפוש</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="92"/>
+        <location filename="../katvan_searchbar.cpp" line="81"/>
         <source>Find:</source>
         <translation>חפש:</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="156"/>
+        <location filename="../katvan_searchbar.cpp" line="145"/>
         <source>No matches found</source>
         <translation>לא נמצאו התאמות</translation>
     </message>

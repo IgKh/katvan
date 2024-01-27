@@ -2,4 +2,24 @@
     <qresource prefix="/assets/">
         <file>katvan.svg</file>
     </qresource>
+
+    <qresource prefix="/">
+        <file>icons/application-exit.svg</file>
+        <file>icons/document-new.svg</file>
+        <file>icons/document-open.svg</file>
+        <file>icons/document-save-as.svg</file>
+        <file>icons/document-save.svg</file>
+        <file>icons/document-send.svg</file>
+        <file>icons/edit-copy.svg</file>
+        <file>icons/edit-cut.svg</file>
+        <file>icons/edit-find.svg</file>
+        <file>icons/edit-paste.svg</file>
+        <file>icons/edit-redo.svg</file>
+        <file>icons/edit-undo.svg</file>
+        <file>icons/go-down.svg</file>
+        <file>icons/go-up.svg</file>
+        <file>icons/help-about.svg</file>
+        <file>icons/help-contents.svg</file>
+        <file>icons/window-close.svg</file>
+    </qresource>
 </RCC>
