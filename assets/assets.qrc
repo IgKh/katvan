@@ -20,6 +20,7 @@
         <file>icons/go-up.svg</file>
         <file>icons/help-about.svg</file>
         <file>icons/help-contents.svg</file>
+        <file>icons/settings-configure.svg</file>
         <file>icons/window-close.svg</file>
     </qresource>
 </RCC>

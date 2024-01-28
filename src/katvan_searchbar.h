@@ -37,6 +37,7 @@ public slots:
     void ensureVisible();
 
 private slots:
+    void checkTermIsValid();
     void findNext();
     void findPrevious();
 
@@ -51,6 +52,11 @@ private:
     QTextEdit* d_editor;
 
     QLineEdit* d_searchTerm;
+
+    QAction* d_normalMatchType;
+    QAction* d_regexMatchType;
+    QAction* d_wholeWordsMatchType;
+    QAction* d_matchCase;
 };
 
 }

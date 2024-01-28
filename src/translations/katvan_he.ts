@@ -264,7 +264,7 @@ To export the document, please correct them.</source>
     <message>
         <location filename="../katvan_mainwindow.cpp" line="561"/>
         <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3)</source>
-        <translation type="unfinished">&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3)</translation>
+        <translation>&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;&lt;/p&gt;</source>
@@ -306,7 +306,7 @@ To export the document, please correct them.</source>
         <translation type="vanished">הבא</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="60"/>
+        <location filename="../katvan_searchbar.cpp" line="116"/>
         <source>Go to next match (%1)</source>
         <translation>עבור להתאמה הבאה (%1)</translation>
     </message>
@@ -315,7 +315,7 @@ To export the document, please correct them.</source>
         <translation type="vanished">הקודם</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="66"/>
+        <location filename="../katvan_searchbar.cpp" line="122"/>
         <source>Go to previous match (%1)</source>
         <translation>עבור להתאמה הקודמת (%1)</translation>
     </message>
@@ -324,17 +324,52 @@ To export the document, please correct them.</source>
         <translation type="vanished">סגור</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="71"/>
+        <location filename="../katvan_searchbar.cpp" line="85"/>
+        <source>Find Type</source>
+        <translation>סוג החיפוש</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="90"/>
+        <source>Normal</source>
+        <translation>רגיל</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="95"/>
+        <source>Regular Expression</source>
+        <translation>ביטוי רגולרי</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="99"/>
+        <source>Whole Words</source>
+        <translation>מילים שלמות</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="105"/>
+        <source>Match Case</source>
+        <translation>התאם רישיות</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="129"/>
+        <source>Find settings</source>
+        <translation>הגדרות חיפוש</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="133"/>
         <source>Close search bar</source>
         <translation>סגור את איזור החיפוש</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="81"/>
+        <location filename="../katvan_searchbar.cpp" line="143"/>
         <source>Find:</source>
         <translation>חפש:</translation>
     </message>
     <message>
-        <location filename="../katvan_searchbar.cpp" line="145"/>
+        <location filename="../katvan_searchbar.cpp" line="168"/>
+        <source>Invalid regular expression entered</source>
+        <translation>הביטוי שהוזן אינו ביטוי רגולרי תקין</translation>
+    </message>
+    <message>
+        <location filename="../katvan_searchbar.cpp" line="235"/>
         <source>No matches found</source>
         <translation>לא נמצאו התאמות</translation>
     </message>
