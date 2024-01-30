@@ -20,15 +20,18 @@
 #include <QList>
 #include <QStringView>
 
+#include <concepts>
+
 namespace katvan::parsing {
 
 enum class TokenType
 {
     INVALID,
+    BEGIN,
     WORD,
     CODE_NUMBER,
     SYMBOL,
-    WHITESAPCE,
+    WHITESPACE,
     LINE_END,
     TEXT_END
 };
@@ -44,7 +47,7 @@ struct Token
 class Tokenizer
 {
 public:
-    Tokenizer(QStringView text): d_text(text), d_pos(0) {}
+    Tokenizer(QStringView text): d_text(text), d_pos(-1) {}
 
     bool atEnd() const { return d_pos >= d_text.size(); }
     Token nextToken();
@@ -60,12 +63,33 @@ private:
     Token readLineEnd();
 
     QStringView d_text;
-    size_t d_pos;
+    ssize_t d_pos;
+};
+
+class TokenStream
+{
+public:
+    TokenStream(QStringView text): d_tokenizer(text) {}
+
+    bool atEnd();
+    Token fetchToken();
+    void returnToken(const Token& token);
+    void returnTokens(QList<Token>& tokens);
+
+private:
+    Tokenizer d_tokenizer;
+    QList<Token> d_tokenQueue;
+};
+
+template <typename M>
+concept Matcher = requires(const M m, TokenStream& stream, QList<Token>& usedTokens) {
+    { m.tryMatch(stream, usedTokens) } -> std::same_as<bool>;
 };
 
 struct HiglightingMarker
 {
     enum class Kind {
+        HEADING,
         COMMENT,
         STRING_LITERAL
     };
@@ -82,6 +106,7 @@ struct ParserState
     enum class Kind {
         INVALID,
         CONTENT,
+        CONTENT_HEADING,
         MATH,
         COMMENT_LINE,
         COMMENT_BLOCK,
@@ -106,24 +131,28 @@ public:
 private:
     bool handleCommentStart();
 
-    bool atEnd();
-    Token fetchToken();
-    void returnToken(const Token& token);
-    void returnTokens(QList<Token>& tokens);
-    void setMarkers(const Token& start, const Token& end);
+    template <Matcher M>
+    bool match(const M& matcher)
+    {
+        QList<Token> usedTokens;
+        if (!matcher.tryMatch(d_tokenStream, usedTokens)) {
+            d_tokenStream.returnTokens(usedTokens);
+            return false;
+        }
 
-    bool matchSymbol(QChar symbol);
-    bool matchSymbolSequence(QStringView symbols);
-    bool matchTokenType(TokenType type);
+        Q_ASSERT(!usedTokens.isEmpty());
+        d_startMarker = usedTokens.first().startPos;
+        d_endMarker = usedTokens.last().startPos + usedTokens.last().length - 1;
+        return true;
+    }
 
     void pushState(ParserState::Kind stateKind);
     void popState(QList<HiglightingMarker>& markers);
     void finalizeState(const ParserState& state, QList<HiglightingMarker>& markers);
 
     QStringView d_text;
-    Tokenizer d_tokenizer;
+    TokenStream d_tokenStream;
     ParserStateStack d_stateStack;
-    QList<Token> d_tokenQueue;
 
     size_t d_startMarker;
     size_t d_endMarker;

@@ -48,6 +48,11 @@ void Highlighter::setupFormats()
     QTextCharFormat stringLiteralFormat;
     stringLiteralFormat.setForeground(QColor(0x29, 0x8e, 0x0d));
     d_formats.insert(parsing::HiglightingMarker::Kind::STRING_LITERAL, stringLiteralFormat);
+
+    QTextCharFormat headingFormat;
+    headingFormat.setFontWeight(QFont::DemiBold);
+    headingFormat.setFontUnderline(true);
+    d_formats.insert(parsing::HiglightingMarker::Kind::HEADING, headingFormat);
 }
 
 void Highlighter::highlightBlock(const QString& text)

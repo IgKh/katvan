@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_parsing_matchers.h"
 #include "katvan_parsing.h"
 
 namespace katvan::parsing {
@@ -51,6 +52,11 @@ static bool isLineEnd(QChar ch)
 
 Token Tokenizer::nextToken()
 {
+    if (d_pos < 0) {
+        d_pos = 0;
+        return { TokenType::BEGIN };
+    }
+
     if (atEnd()) {
         return { TokenType::TEXT_END };
     }
@@ -224,7 +230,7 @@ Token Tokenizer::readWhitespace()
         len++;
     }
 
-    return buildToken(TokenType::WHITESAPCE, start, len);
+    return buildToken(TokenType::WHITESPACE, start, len);
 }
 
 Token Tokenizer::readLineEnd()
@@ -239,9 +245,34 @@ Token Tokenizer::readLineEnd()
     return buildToken(TokenType::LINE_END, start, len);
 }
 
+bool TokenStream::atEnd()
+{
+    return d_tokenizer.atEnd() && d_tokenQueue.isEmpty();
+}
+
+Token TokenStream::fetchToken()
+{
+    if (!d_tokenQueue.isEmpty()) {
+        return d_tokenQueue.takeFirst();
+    }
+    return d_tokenizer.nextToken();
+}
+
+void TokenStream::returnToken(const Token& token)
+{
+    d_tokenQueue.prepend(token);
+}
+
+void TokenStream::returnTokens(QList<Token>& tokens)
+{
+    while (!tokens.isEmpty()) {
+        d_tokenQueue.prepend(tokens.takeLast());
+    }
+}
+
 Parser::Parser(QStringView text, const ParserStateStack* initialState)
     : d_text(text)
-    , d_tokenizer(text)
+    , d_tokenStream(text)
     , d_stateStack(initialState != nullptr ? *initialState : ParserStateStack())
     , d_startMarker(0)
     , d_endMarker(0)
@@ -258,22 +289,40 @@ Parser::Parser(QStringView text, const ParserStateStack* initialState)
 
 static bool isBlockScopedState(const ParserState& state)
 {
-    return state.kind == ParserState::Kind::COMMENT_LINE;
+    return state.kind == ParserState::Kind::COMMENT_LINE
+        || state.kind == ParserState::Kind::CONTENT_HEADING;
 }
 
 QList<HiglightingMarker> Parser::getHighlightingMarkers()
 {
+    namespace m = matchers;
+
     QList<HiglightingMarker> result;
 
-    while (!atEnd()) {
+    while (!d_tokenStream.atEnd()) {
         ParserState state = d_stateStack.last();
 
         if (state.kind == ParserState::Kind::CONTENT) {
             if (handleCommentStart()) {
                 continue;
             }
-            else if (matchSymbol(QLatin1Char('$'))) {
+            else if (match(m::Symbol(QLatin1Char('$')))) {
                 pushState(ParserState::Kind::MATH);
+                continue;
+            }
+            else if (match(m::All(
+                m::Any(m::TokenType(TokenType::BEGIN), m::TokenType(TokenType::LINE_END)),
+                m::Optionally(m::OneOrMore(m::TokenType(TokenType::WHITESPACE))),
+                m::OneOrMore(m::Symbol(QLatin1Char('='))),
+                m::TokenType(TokenType::WHITESPACE)
+            ))) {
+                pushState(ParserState::Kind::CONTENT_HEADING);
+                continue;
+            }
+        }
+        else if (state.kind == ParserState::Kind::CONTENT_HEADING) {
+            if (match(m::TokenType(TokenType::LINE_END))) {
+                popState(result);
                 continue;
             }
         }
@@ -281,40 +330,40 @@ QList<HiglightingMarker> Parser::getHighlightingMarkers()
             if (handleCommentStart()) {
                 continue;
             }
-            if (matchSymbol(QLatin1Char('$'))) {
+            if (match(m::Symbol(QLatin1Char('$')))) {
                 popState(result);
                 continue;
             }
-            else if (matchSymbol(QLatin1Char('"'))) {
+            else if (match(m::Symbol(QLatin1Char('"')))) {
                 pushState(ParserState::Kind::STRING_LITERAL);
                 continue;
             }
         }
         else if (state.kind == ParserState::Kind::COMMENT_LINE) {
-            if (matchTokenType(TokenType::LINE_END)) {
+            if (match(m::TokenType(TokenType::LINE_END))) {
                 popState(result);
                 continue;
             }
         }
         else if (state.kind == ParserState::Kind::COMMENT_BLOCK) {
-            if (matchSymbolSequence(QStringLiteral("*/"))) {
+            if (match(m::SymbolSequence(QStringLiteral("*/")))) {
                 popState(result);
                 continue;
             }
-            else if (matchSymbolSequence(QStringLiteral("//"))) {
+            else if (match(m::SymbolSequence(QStringLiteral("//")))) {
                 pushState(ParserState::Kind::COMMENT_LINE);
                 continue;
             }
         }
         else if (state.kind == ParserState::Kind::STRING_LITERAL) {
-            if (matchSymbol(QLatin1Char('"'))) {
+            if (match(m::Symbol(QLatin1Char('"')))) {
                 popState(result);
                 continue;
             }
         }
 
         // In any other case - just burn a token and continue
-        fetchToken();
+        d_tokenStream.fetchToken();
     }
 
     d_endMarker = d_text.size() - 1;
@@ -333,86 +382,16 @@ QList<HiglightingMarker> Parser::getHighlightingMarkers()
 
 bool Parser::handleCommentStart()
 {
-    if (matchSymbolSequence(QStringLiteral("//"))) {
+    namespace m = matchers;
+
+    if (match(m::SymbolSequence(QStringLiteral("//")))) {
         pushState(ParserState::Kind::COMMENT_LINE);
         return true;
     }
-    if (matchSymbolSequence(QStringLiteral("/*"))) {
+    if (match(m::SymbolSequence(QStringLiteral("/*")))) {
         pushState(ParserState::Kind::COMMENT_BLOCK);
         return true;
     }
-    return false;
-}
-
-bool Parser::atEnd()
-{
-    return d_tokenizer.atEnd() && d_tokenQueue.isEmpty();
-}
-
-Token Parser::fetchToken()
-{
-    if (!d_tokenQueue.isEmpty()) {
-        return d_tokenQueue.takeFirst();
-    }
-    return d_tokenizer.nextToken();
-}
-
-void Parser::returnToken(const Token& token)
-{
-    d_tokenQueue.prepend(token);
-}
-
-void Parser::returnTokens(QList<Token>& tokens)
-{
-    while (!tokens.isEmpty()) {
-        d_tokenQueue.prepend(tokens.takeLast());
-    }
-}
-
-void Parser::setMarkers(const Token& start, const Token& end)
-{
-    d_startMarker = start.startPos;
-    d_endMarker = end.startPos + end.length - 1;
-}
-
-bool Parser::matchSymbol(QChar symbol)
-{
-    Token t = fetchToken();
-    if (t.type == TokenType::SYMBOL && t.text == symbol) {
-        setMarkers(t, t);
-        return true;
-    }
-
-    returnToken(t);
-    return false;
-}
-
-bool Parser::matchSymbolSequence(QStringView symbols)
-{
-    QList<Token> tokens;
-    for (QChar ch : symbols) {
-        Token t = fetchToken();
-        tokens.append(t);
-
-        if (t.type != TokenType::SYMBOL || t.text != ch) {
-            returnTokens(tokens);
-            return false;
-        }
-    }
-
-    setMarkers(tokens.first(), tokens.last());
-    return true;
-}
-
-bool Parser::matchTokenType(TokenType type)
-{
-    Token t = fetchToken();
-    if (t.type == type) {
-        setMarkers(t, t);
-        return true;
-    }
-
-    returnToken(t);
     return false;
 }
 
@@ -428,11 +407,17 @@ void Parser::popState(QList<HiglightingMarker>& markers)
 
 void Parser::finalizeState(const ParserState& state, QList<HiglightingMarker>& markers)
 {
+    size_t start = state.startPos;
+    size_t end = d_endMarker - state.startPos + 1;
+
     if (state.kind == ParserState::Kind::COMMENT_LINE || state.kind == ParserState::Kind::COMMENT_BLOCK) {
-        markers.append(HiglightingMarker{ HiglightingMarker::Kind::COMMENT, state.startPos, d_endMarker - state.startPos + 1 });
+        markers.append(HiglightingMarker{ HiglightingMarker::Kind::COMMENT, start, end });
     }
     else if (state.kind == ParserState::Kind::STRING_LITERAL) {
-        markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, state.startPos, d_endMarker - state.startPos + 1 });
+        markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, start, end });
+    }
+    else if (state.kind == ParserState::Kind::CONTENT_HEADING) {
+        markers.append(HiglightingMarker{ HiglightingMarker::Kind::HEADING, start, end });
     }
 }
 

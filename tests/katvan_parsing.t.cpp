@@ -50,6 +50,8 @@ static std::vector<Token> tokenizeString(const QString& str)
 TEST(TokenizerTests, TestEmpty) {
     Tokenizer tok(QStringLiteral(""));
 
+    ASSERT_FALSE(tok.atEnd());
+    ASSERT_EQ(tok.nextToken(), (TokenMatcher{ TokenType::BEGIN }));
     ASSERT_TRUE(tok.atEnd());
     ASSERT_EQ(tok.nextToken(), (TokenMatcher{ TokenType::TEXT_END }));
     ASSERT_TRUE(tok.atEnd());
@@ -58,26 +60,27 @@ TEST(TokenizerTests, TestEmpty) {
 TEST(TokenizerTests, BasicSanity) {
     auto tokens = tokenizeString(QStringLiteral("a very basic test, with 10 words (or so!)"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("a") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("very") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("b") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("asic") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("test") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral(",") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("with") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("10") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("words") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("(") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("o") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("r") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("so") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("!") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral(")") }
@@ -87,18 +90,19 @@ TEST(TokenizerTests, BasicSanity) {
 TEST(TokenizerTests, WhiteSpace) {
     auto tokens = tokenizeString(QStringLiteral(" A   B\tC  \t \nD\r\nE F"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::BEGIN },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("A") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral("   ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral("   ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("B") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral("\t") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral("\t") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("C") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral("  \t ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral("  \t ") },
         TokenMatcher{ TokenType::LINE_END,     QStringLiteral("\n") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("D") },
         TokenMatcher{ TokenType::LINE_END,     QStringLiteral("\r\n") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("E") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("F") }
     }));
 }
@@ -108,10 +112,11 @@ TEST(TokenizerTests, Escapes) {
 
     tokens = tokenizeString(QStringLiteral(R"(A \$ $\"'\'abc)"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("A") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("\\$") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("$") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\"") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("'") },
@@ -121,6 +126,7 @@ TEST(TokenizerTests, Escapes) {
 
     tokens = tokenizeString(QStringLiteral(R"(\\\\\\\\\)"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
@@ -132,10 +138,11 @@ TEST(TokenizerTests, Escapes) {
 TEST(TokenizerTests, Niqqud) {
     auto tokens = tokenizeString(QStringLiteral("שָׁלוֹם עוֹלָם 12"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("שָׁלוֹם") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("עוֹלָם") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("12") }
     }));
 }
@@ -143,13 +150,14 @@ TEST(TokenizerTests, Niqqud) {
 TEST(TokenizerTests, Identifier) {
     auto tokens = tokenizeString(QStringLiteral("#let a_b3z = [$a$]"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("#") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("let") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("a_b3z") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("=") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("[") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("$") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("a") },
@@ -161,12 +169,13 @@ TEST(TokenizerTests, Identifier) {
 TEST(TokenizerTests, MirroredSymbols) {
     auto tokens = tokenizeString(QStringLiteral("לפני [באמצע] אחרי"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("לפני") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("[") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("באמצע") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("]") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("אחרי") }
     }));
 }
@@ -174,13 +183,14 @@ TEST(TokenizerTests, MirroredSymbols) {
 TEST(TokenizerTests, FullCodeNumber) {
     auto tokens = tokenizeString(QStringLiteral("A -12.4e-15em + 4e2B"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("A") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("-12.4e-15") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("em") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("+") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("4e2") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("B") }
     }));
@@ -189,10 +199,11 @@ TEST(TokenizerTests, FullCodeNumber) {
 TEST(TokenizerTests, HexCodeNumber) {
     auto tokens = tokenizeString(QStringLiteral("x10CAFE.b DEADBEEF xavier"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("x10CAFE.b") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("DEADBEEF") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("xa") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("vier") }
     }));
@@ -201,9 +212,10 @@ TEST(TokenizerTests, HexCodeNumber) {
 TEST(TokenizerTests, CodeNumberBacktracking) {
     auto tokens = tokenizeString(QStringLiteral("-b 12e-"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("-") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("b") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("12") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("e") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("-") }
@@ -213,10 +225,11 @@ TEST(TokenizerTests, CodeNumberBacktracking) {
 TEST(TokenizerTests, NonLatinNumerals) {
     auto tokens = tokenizeString(QStringLiteral("هناك ١٢ قطط"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("هناك") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("١٢") },
-        TokenMatcher{ TokenType::WHITESAPCE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("قطط") }
     }));
 }
@@ -260,4 +273,19 @@ TEST(HiglightingParserTests, StringLiteral) {
     EXPECT_THAT(markers, ::testing::ElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 2, 9 }
     ));
+}
+
+TEST(HiglightingParserTests, Heading) {
+    QList<HiglightingMarker> markers;
+
+    Parser p1(QStringLiteral("=== this is a heading\nthis is not.\n \t= but this is"));
+    markers = p1.getHighlightingMarkers();
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 0, 22 },
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 34, 16 }
+    ));
+
+    Parser p2(QStringLiteral("a == not header\n=not header too"));
+    markers = p2.getHighlightingMarkers();
+    EXPECT_THAT(markers, ::testing::IsEmpty());
 }
