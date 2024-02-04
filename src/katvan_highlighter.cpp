@@ -19,6 +19,8 @@
 
 #include <QTextDocument>
 
+#include <vector>
+
 namespace katvan {
 
 class HighlighterStateBlockData : public QTextBlockUserData
@@ -53,6 +55,18 @@ void Highlighter::setupFormats()
     headingFormat.setFontWeight(QFont::DemiBold);
     headingFormat.setFontUnderline(true);
     d_formats.insert(parsing::HiglightingMarker::Kind::HEADING, headingFormat);
+
+    QTextCharFormat emphasisFormat;
+    emphasisFormat.setFontItalic(true);
+    d_formats.insert(parsing::HiglightingMarker::Kind::EMPHASIS, emphasisFormat);
+
+    QTextCharFormat strongEmphasisFormat;
+    strongEmphasisFormat.setFontWeight(QFont::Bold);
+    d_formats.insert(parsing::HiglightingMarker::Kind::STRONG_EMPHASIS, strongEmphasisFormat);
+
+    QTextCharFormat rawFormat;
+    rawFormat.setForeground(QColor(0x81, 0x81, 0x81));
+    d_formats.insert(parsing::HiglightingMarker::Kind::RAW, rawFormat);
 }
 
 void Highlighter::highlightBlock(const QString& text)
@@ -65,8 +79,17 @@ void Highlighter::highlightBlock(const QString& text)
 
     parsing::Parser parser(text, initialState);
     auto markers = parser.getHighlightingMarkers();
+
+    std::vector<QTextCharFormat> charFormats;
+    charFormats.resize(text.size());
     for (const auto& m : markers) {
-        setFormat(m.startPos, m.length, d_formats.value(m.kind));
+        for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
+            charFormats[i].merge(d_formats.value(m.kind));
+        }
+    }
+
+    for (size_t i = 0; i < text.size(); i++) {
+        setFormat(i, 1, charFormats[i]);
     }
 
     setCurrentBlockUserData(new HighlighterStateBlockData(parser.stateStack()));

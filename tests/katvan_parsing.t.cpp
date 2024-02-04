@@ -147,6 +147,21 @@ TEST(TokenizerTests, Niqqud) {
     }));
 }
 
+TEST(TokenizerTests, NotIdentifier) {
+    auto tokens = tokenizeString(QStringLiteral("a _small_ thing"));
+    EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
+        TokenMatcher{ TokenType::WORD,         QStringLiteral("a") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("_") },
+        TokenMatcher{ TokenType::WORD,         QStringLiteral("small") },
+        TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("_") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::WORD,         QStringLiteral("thing") }
+    }));
+}
+
+
 TEST(TokenizerTests, Identifier) {
     auto tokens = tokenizeString(QStringLiteral("#let a_b3z = [$a$]"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
@@ -288,4 +303,43 @@ TEST(HiglightingParserTests, Heading) {
     Parser p2(QStringLiteral("a == not header\n=not header too"));
     markers = p2.getHighlightingMarkers();
     EXPECT_THAT(markers, ::testing::IsEmpty());
+}
+
+TEST(HiglightingParserTests, Emphasis) {
+    QList<HiglightingMarker> markers;
+
+    Parser p1(QStringLiteral("a *bold* _underline_ and _*nested*_"));
+    markers = p1.getHighlightingMarkers();
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 2, 6 },
+        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 9, 11 },
+        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 25, 10 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 26, 8 }
+    ));
+
+    Parser p2(QStringLiteral("== for some reason, _emphasis\nextends_ headers"));
+    markers = p2.getHighlightingMarkers();
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 0, 46 },
+        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 20, 18 }
+    ));
+}
+
+TEST(HiglightingParserTests, RawContent) {
+    QList<HiglightingMarker> markers;
+
+    Parser p1(QStringLiteral("`` `some $raw$ with _emph_` `raw with\nnewline`"));
+    markers = p1.getHighlightingMarkers();
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::RAW, 0, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::RAW, 3, 24 },
+        HiglightingMarker{ HiglightingMarker::Kind::RAW, 28, 18 }
+    ));
+
+    Parser p2(QStringLiteral("```some $raw$ with _emph_` ``` ```raw block with\nnewline```"));
+    markers = p2.getHighlightingMarkers();
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::RAW, 0, 30 },
+        HiglightingMarker{ HiglightingMarker::Kind::RAW, 31, 28 }
+    ));
 }

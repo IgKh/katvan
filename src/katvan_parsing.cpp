@@ -99,6 +99,12 @@ Token Tokenizer::readWord()
         len++;
     }
 
+    // No trailing underscores, though
+    while (len > 0 && d_text[start + len - 1] == QLatin1Char('_')) {
+        d_pos--;
+        len--;
+    }
+
     return buildToken(TokenType::WORD, start, len);
 }
 
@@ -302,12 +308,38 @@ QList<HiglightingMarker> Parser::getHighlightingMarkers()
     while (!d_tokenStream.atEnd()) {
         ParserState state = d_stateStack.last();
 
-        if (state.kind == ParserState::Kind::CONTENT) {
+        if (isBlockScopedState(state) && match(m::TokenType(TokenType::LINE_END))) {
+            popState(result);
+            continue;
+        }
+
+        if (state.kind == ParserState::Kind::CONTENT
+            || state.kind == ParserState::Kind::CONTENT_HEADING
+            || state.kind == ParserState::Kind::CONTENT_EMPHASIS
+            || state.kind == ParserState::Kind::CONTENT_STRONG_EMPHASIS) {
             if (handleCommentStart()) {
                 continue;
             }
             else if (match(m::Symbol(QLatin1Char('$')))) {
                 pushState(ParserState::Kind::MATH);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('_')))) {
+                if (state.kind == ParserState::Kind::CONTENT_EMPHASIS) {
+                    popState(result);
+                }
+                else {
+                    pushState(ParserState::Kind::CONTENT_EMPHASIS);
+                }
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('*')))) {
+                if (state.kind == ParserState::Kind::CONTENT_STRONG_EMPHASIS) {
+                    popState(result);
+                }
+                else {
+                    pushState(ParserState::Kind::CONTENT_STRONG_EMPHASIS);
+                }
                 continue;
             }
             else if (match(m::All(
@@ -319,9 +351,23 @@ QList<HiglightingMarker> Parser::getHighlightingMarkers()
                 pushState(ParserState::Kind::CONTENT_HEADING);
                 continue;
             }
+            else if (match(m::SymbolSequence(QStringLiteral("```")))) {
+                pushState(ParserState::Kind::CONTENT_RAW_BLOCK);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('`')))) {
+                pushState(ParserState::Kind::CONTENT_RAW);
+                continue;
+            }
         }
-        else if (state.kind == ParserState::Kind::CONTENT_HEADING) {
-            if (match(m::TokenType(TokenType::LINE_END))) {
+        else if (state.kind == ParserState::Kind::CONTENT_RAW_BLOCK) {
+            if (match(m::SymbolSequence(QStringLiteral("```")))) {
+                popState(result);
+                continue;
+            }
+        }
+        else if (state.kind == ParserState::Kind::CONTENT_RAW) {
+            if (match(m::Symbol(QLatin1Char('`')))) {
                 popState(result);
                 continue;
             }
@@ -336,12 +382,6 @@ QList<HiglightingMarker> Parser::getHighlightingMarkers()
             }
             else if (match(m::Symbol(QLatin1Char('"')))) {
                 pushState(ParserState::Kind::STRING_LITERAL);
-                continue;
-            }
-        }
-        else if (state.kind == ParserState::Kind::COMMENT_LINE) {
-            if (match(m::TokenType(TokenType::LINE_END))) {
-                popState(result);
                 continue;
             }
         }
@@ -371,10 +411,12 @@ QList<HiglightingMarker> Parser::getHighlightingMarkers()
         finalizeState(state, result);
     }
 
-    // Pop all states starting from the first block scoped one
-    auto it = std::find_if(d_stateStack.begin(), d_stateStack.end(), isBlockScopedState);
-    if (it != d_stateStack.end()) {
-        d_stateStack.erase(it, d_stateStack.end());
+    // Pop all trailing block scoped states
+    while (!d_stateStack.isEmpty()) {
+        if (!isBlockScopedState(d_stateStack.last())) {
+            break;
+        }
+        d_stateStack.removeLast();
     }
 
     return result;
@@ -418,6 +460,15 @@ void Parser::finalizeState(const ParserState& state, QList<HiglightingMarker>& m
     }
     else if (state.kind == ParserState::Kind::CONTENT_HEADING) {
         markers.append(HiglightingMarker{ HiglightingMarker::Kind::HEADING, start, end });
+    }
+    else if (state.kind == ParserState::Kind::CONTENT_EMPHASIS) {
+        markers.append(HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, start, end });
+    }
+    else if (state.kind == ParserState::Kind::CONTENT_STRONG_EMPHASIS) {
+        markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, start, end });
+    }
+    else if (state.kind == ParserState::Kind::CONTENT_RAW_BLOCK || state.kind == ParserState::Kind::CONTENT_RAW) {
+        markers.append(HiglightingMarker{ HiglightingMarker::Kind::RAW, start, end });
     }
 }
 

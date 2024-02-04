@@ -90,6 +90,9 @@ struct HiglightingMarker
 {
     enum class Kind {
         HEADING,
+        EMPHASIS,
+        STRONG_EMPHASIS,
+        RAW,
         COMMENT,
         STRING_LITERAL
     };
@@ -107,6 +110,10 @@ struct ParserState
         INVALID,
         CONTENT,
         CONTENT_HEADING,
+        CONTENT_EMPHASIS,
+        CONTENT_STRONG_EMPHASIS,
+        CONTENT_RAW,
+        CONTENT_RAW_BLOCK,
         MATH,
         COMMENT_LINE,
         COMMENT_BLOCK,
