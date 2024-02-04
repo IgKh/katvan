@@ -88,7 +88,7 @@ TEST(TokenizerTests, BasicSanity) {
 }
 
 TEST(TokenizerTests, WhiteSpace) {
-    auto tokens = tokenizeString(QStringLiteral(" A   B\tC  \t \nD\r\nE F"));
+    auto tokens = tokenizeString(QStringLiteral(" A   B\tC  \t \nD\r\n\nE F"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
         TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
@@ -101,6 +101,7 @@ TEST(TokenizerTests, WhiteSpace) {
         TokenMatcher{ TokenType::LINE_END,     QStringLiteral("\n") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("D") },
         TokenMatcher{ TokenType::LINE_END,     QStringLiteral("\r\n") },
+        TokenMatcher{ TokenType::LINE_END,     QStringLiteral("\n") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("E") },
         TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("F") }
@@ -115,23 +116,37 @@ TEST(TokenizerTests, Escapes) {
         TokenMatcher{ TokenType::BEGIN },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("A") },
         TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\$") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\$") },
         TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("$") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\"") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\\"") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("'") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\'") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\'") },
         TokenMatcher{ TokenType::WORD,         QStringLiteral("abc") }
     }));
 
     tokens = tokenizeString(QStringLiteral(R"(\\\\\\\\\)"));
     EXPECT_THAT(tokens, ::testing::ElementsAreArray({
         TokenMatcher{ TokenType::BEGIN },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("\\\\") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\\\") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\\\") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\\\") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\\\") },
         TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("\\") }
+    }));
+
+    tokens = tokenizeString(QStringLiteral(R"(\u{12e} \u{1f600} \\u{123})"));
+    EXPECT_THAT(tokens, ::testing::ElementsAreArray({
+        TokenMatcher{ TokenType::BEGIN },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\u{12e}") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\u{1f600}") },
+        TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
+        TokenMatcher{ TokenType::ESCAPE,       QStringLiteral("\\\\") },
+        TokenMatcher{ TokenType::WORD,         QStringLiteral("u") },
+        TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("{") },
+        TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("123") },
+        TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("}") }
     }));
 }
 
@@ -249,9 +264,16 @@ TEST(TokenizerTests, NonLatinNumerals) {
     }));
 }
 
+static QList<HiglightingMarker> highlightText(QStringView text)
+{
+    HighlightingListener listener;
+    Parser parser(text, listener);
+    parser.parse();
+    return listener.markers();
+}
+
 TEST(HiglightingParserTests, LineComment) {
-    Parser parser(QStringLiteral("a // comment line\nb"));
-    auto markers = parser.getHighlightingMarkers();
+    auto markers = highlightText(QStringLiteral("a // comment line\nb"));
     EXPECT_THAT(markers, ::testing::ElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 2, 16 }
     ));
@@ -260,14 +282,12 @@ TEST(HiglightingParserTests, LineComment) {
 TEST(HiglightingParserTests, BlockComment) {
     QList<HiglightingMarker> markers;
 
-    Parser p1(QStringLiteral("a /* comment\ncomment\ncomment*/ b"));
-    markers = p1.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("a /* comment\ncomment\ncomment*/ b"));
     EXPECT_THAT(markers, ::testing::ElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 2, 28 }
     ));
 
-    Parser p2(QStringLiteral("/* aaa\naaa // aaaaaaa */\naaa*/ aaaa"));
-    markers = p2.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("/* aaa\naaa // aaaaaaa */\naaa*/ aaaa"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 11, 14 },
         HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 0, 30 }
@@ -277,39 +297,60 @@ TEST(HiglightingParserTests, BlockComment) {
 TEST(HiglightingParserTests, StringLiteral) {
     QList<HiglightingMarker> markers;
 
-    Parser p1(QStringLiteral("\"not a literal\" $ \"yesliteral\" + 1$"));
-    markers = p1.getHighlightingMarkers();
-    EXPECT_THAT(markers, ::testing::ElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 18, 12 }
+    markers = highlightText(QStringLiteral("\"not a literal\" $ \"yesliteral\" + 1$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 16,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 18, 12 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 34,  1 }
+
     ));
 
-    Parser p2(QStringLiteral("$ \"A /* $ \" */ $"));
-    markers = p2.getHighlightingMarkers();
-    EXPECT_THAT(markers, ::testing::ElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 2, 9 }
+    markers = highlightText(QStringLiteral("$ \"A /* $ \" */ $"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 2,  9 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 15, 1 }
+    ));
+}
+
+TEST(HiglightingParserTests, Escapes) {
+    QList<HiglightingMarker> markers;
+
+    markers = highlightText(QStringLiteral("_\\$ \\_ foo _ \\ More: \"\\u{1f600}\""));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS,  0, 12 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,    1,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,    4,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,   22,  9 }
+    ));
+
+    markers = highlightText(QStringLiteral("$ \\u{12} + \"a\\nb\" $"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  0, 1 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,          2, 6 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 11, 6 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,         13, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 18, 1 }
     ));
 }
 
 TEST(HiglightingParserTests, Heading) {
     QList<HiglightingMarker> markers;
 
-    Parser p1(QStringLiteral("=== this is a heading\nthis is not.\n \t= but this is"));
-    markers = p1.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("=== this is a heading\nthis is not.\n \t= but this is"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::HEADING, 0, 22 },
         HiglightingMarker{ HiglightingMarker::Kind::HEADING, 34, 16 }
     ));
 
-    Parser p2(QStringLiteral("a == not header\n=not header too"));
-    markers = p2.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("a == not header\n=not header too"));
     EXPECT_THAT(markers, ::testing::IsEmpty());
 }
 
 TEST(HiglightingParserTests, Emphasis) {
     QList<HiglightingMarker> markers;
 
-    Parser p1(QStringLiteral("a *bold* _underline_ and _*nested*_"));
-    markers = p1.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("a *bold* _underline_ and _*nested*_"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 2, 6 },
         HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 9, 11 },
@@ -317,29 +358,80 @@ TEST(HiglightingParserTests, Emphasis) {
         HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 26, 8 }
     ));
 
-    Parser p2(QStringLiteral("== for some reason, _emphasis\nextends_ headers"));
-    markers = p2.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("== for some reason, _emphasis\nextends_ headers"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::HEADING, 0, 46 },
         HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 20, 18 }
+    ));
+
+    markers = highlightText(QStringLiteral("*bold broken by paragraph break\n  \n*"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS,  0, 35 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 35,  1 }
     ));
 }
 
 TEST(HiglightingParserTests, RawContent) {
     QList<HiglightingMarker> markers;
 
-    Parser p1(QStringLiteral("`` `some $raw$ with _emph_` `raw with\nnewline`"));
-    markers = p1.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("`` `some $raw$ with _emph_` `raw with\nnewline`"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::RAW, 0, 2 },
         HiglightingMarker{ HiglightingMarker::Kind::RAW, 3, 24 },
         HiglightingMarker{ HiglightingMarker::Kind::RAW, 28, 18 }
     ));
 
-    Parser p2(QStringLiteral("```some $raw$ with _emph_` ``` ```raw block with\nnewline```"));
-    markers = p2.getHighlightingMarkers();
+    markers = highlightText(QStringLiteral("```some $raw$ with _emph_` ``` ```raw block with\nnewline```"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::RAW, 0, 30 },
         HiglightingMarker{ HiglightingMarker::Kind::RAW, 31, 28 }
+    ));
+}
+
+TEST(HiglightingParserTests, ReferenceAndLabel) {
+    QList<HiglightingMarker> markers;
+
+    markers = highlightText(QStringLiteral("@ref123 foo <a_label> <not a label> //<also_not_label"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 0,   7 },
+        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     12,  9 },
+        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,   36, 17 }
+    ));
+
+    markers = highlightText(QStringLiteral("<label_with_trailing_>\n@a_reference_with_trailing__"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     0,  22 },
+        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 23, 28 }
+    ));
+
+    markers = highlightText(QStringLiteral("== The nature of @label\n_this is the <label>_"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING,   0 , 24 },
+        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 17,  6 },
+        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS,  24, 21 },
+        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     37,  7 }
+    ));
+}
+
+TEST(HiglightingParserTests, Lists) {
+    QList<HiglightingMarker> markers;
+
+    markers = highlightText(QStringLiteral("- - this\n- this\n\t- that"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  0, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  8, 3 },
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 15, 4 }
+    ));
+
+    markers = highlightText(QStringLiteral("+ - this\n+this\n\t+ that"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  0, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 14, 4 }
+    ));
+
+    markers = highlightText(QStringLiteral("/ This: That\n/Not This: Not that\n/Neither This"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 0, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::TERM,       2, 4 }
     ));
 }

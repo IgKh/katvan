@@ -51,6 +51,14 @@ void Highlighter::setupFormats()
     stringLiteralFormat.setForeground(QColor(0x29, 0x8e, 0x0d));
     d_formats.insert(parsing::HiglightingMarker::Kind::STRING_LITERAL, stringLiteralFormat);
 
+    QTextCharFormat escapeFormat;
+    escapeFormat.setForeground(QColor(0x29, 0x8e, 0x0d));
+    d_formats.insert(parsing::HiglightingMarker::Kind::ESCAPE, escapeFormat);
+
+    QTextCharFormat mathDelimiterFormat;
+    mathDelimiterFormat.setForeground(QColor(0x1d, 0x6c, 0x76));
+    d_formats.insert(parsing::HiglightingMarker::Kind::MATH_DELIMITER, mathDelimiterFormat);
+
     QTextCharFormat headingFormat;
     headingFormat.setFontWeight(QFont::DemiBold);
     headingFormat.setFontUnderline(true);
@@ -67,6 +75,19 @@ void Highlighter::setupFormats()
     QTextCharFormat rawFormat;
     rawFormat.setForeground(QColor(0x81, 0x81, 0x81));
     d_formats.insert(parsing::HiglightingMarker::Kind::RAW, rawFormat);
+
+    QTextCharFormat labelAndReferenceFormat;
+    labelAndReferenceFormat.setForeground(QColor(0x1d, 0x6c, 0x76));
+    d_formats.insert(parsing::HiglightingMarker::Kind::LABEL, labelAndReferenceFormat);
+    d_formats.insert(parsing::HiglightingMarker::Kind::REFERENCE, labelAndReferenceFormat);
+
+    QTextCharFormat listEntryFormat;
+    listEntryFormat.setForeground(QColor(0x8b, 0x41, 0xb1));
+    d_formats.insert(parsing::HiglightingMarker::Kind::LIST_ENTRY, listEntryFormat);
+
+    QTextCharFormat termFormat;
+    termFormat.setFontWeight(QFont::ExtraBold);
+    d_formats.insert(parsing::HiglightingMarker::Kind::TERM, termFormat);
 }
 
 void Highlighter::highlightBlock(const QString& text)
@@ -77,8 +98,11 @@ void Highlighter::highlightBlock(const QString& text)
         initialState = prevBlockData->stateStack();
     }
 
-    parsing::Parser parser(text, initialState);
-    auto markers = parser.getHighlightingMarkers();
+    parsing::HighlightingListener listener;
+    parsing::Parser parser(text, listener, initialState);
+
+    parser.parse();
+    auto markers = listener.markers();
 
     std::vector<QTextCharFormat> charFormats;
     charFormats.resize(text.size());

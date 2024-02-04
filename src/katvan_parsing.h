@@ -30,6 +30,7 @@ enum class TokenType
     BEGIN,
     WORD,
     CODE_NUMBER,
+    ESCAPE,
     SYMBOL,
     WHITESPACE,
     LINE_END,
@@ -62,6 +63,8 @@ private:
     Token readWhitespace();
     Token readLineEnd();
 
+    bool tryUnicodeEscape();
+
     QStringView d_text;
     ssize_t d_pos;
 };
@@ -86,24 +89,6 @@ concept Matcher = requires(const M m, TokenStream& stream, QList<Token>& usedTok
     { m.tryMatch(stream, usedTokens) } -> std::same_as<bool>;
 };
 
-struct HiglightingMarker
-{
-    enum class Kind {
-        HEADING,
-        EMPHASIS,
-        STRONG_EMPHASIS,
-        RAW,
-        COMMENT,
-        STRING_LITERAL
-    };
-
-    Kind kind;
-    size_t startPos = 0;
-    size_t length = 0;
-
-    bool operator==(const HiglightingMarker&) const = default;
-};
-
 struct ParserState
 {
     enum class Kind {
@@ -114,6 +99,10 @@ struct ParserState
         CONTENT_STRONG_EMPHASIS,
         CONTENT_RAW,
         CONTENT_RAW_BLOCK,
+        CONTENT_LABEL,
+        CONTENT_REFERENCE,
+        CONTENT_LIST_ENTRY,
+        CONTENT_TERM,
         MATH,
         COMMENT_LINE,
         COMMENT_BLOCK,
@@ -126,14 +115,24 @@ struct ParserState
 
 using ParserStateStack = QList<ParserState>;
 
+class ParsingListener
+{
+public:
+    virtual ~ParsingListener() = default;
+
+    virtual void initializeState(const ParserState& state) {}
+    virtual void finalizeState(const ParserState& state, size_t endMarker) {}
+    virtual void handleLooseToken(const Token& t, const ParserState& state) {}
+};
+
 class Parser
 {
 public:
-    Parser(QStringView text, const ParserStateStack* initialState = nullptr);
+    Parser(QStringView text, ParsingListener& listener, const ParserStateStack* initialState = nullptr);
 
     ParserStateStack stateStack() const { return d_stateStack; }
 
-    QList<HiglightingMarker> getHighlightingMarkers();
+    void parse();
 
 private:
     bool handleCommentStart();
@@ -150,19 +149,58 @@ private:
         Q_ASSERT(!usedTokens.isEmpty());
         d_startMarker = usedTokens.first().startPos;
         d_endMarker = usedTokens.last().startPos + usedTokens.last().length - 1;
+        Q_ASSERT(d_startMarker <= d_endMarker);
         return true;
     }
 
+    void instantState(ParserState::Kind stateKind);
     void pushState(ParserState::Kind stateKind);
-    void popState(QList<HiglightingMarker>& markers);
-    void finalizeState(const ParserState& state, QList<HiglightingMarker>& markers);
+    void popState();
 
     QStringView d_text;
     TokenStream d_tokenStream;
+    ParsingListener& d_listener;
     ParserStateStack d_stateStack;
 
     size_t d_startMarker;
     size_t d_endMarker;
+};
+
+struct HiglightingMarker
+{
+    enum class Kind {
+        HEADING,
+        EMPHASIS,
+        STRONG_EMPHASIS,
+        RAW,
+        LABEL,
+        REFERENCE,
+        LIST_ENTRY,
+        TERM,
+        MATH_DELIMITER,
+        ESCAPE,
+        COMMENT,
+        STRING_LITERAL
+    };
+
+    Kind kind;
+    size_t startPos = 0;
+    size_t length = 0;
+
+    bool operator==(const HiglightingMarker&) const = default;
+};
+
+class HighlightingListener : public ParsingListener
+{
+public:
+    QList<HiglightingMarker> markers() const { return d_markers; }
+
+    void initializeState(const ParserState& state) override;
+    void finalizeState(const ParserState& state, size_t endMarker) override;
+    virtual void handleLooseToken(const Token& t, const ParserState& state) override;
+
+private:
+    QList<HiglightingMarker> d_markers;
 };
 
 }

@@ -127,6 +127,29 @@ public:
     }
 };
 
+template <Matcher M>
+auto ZeroOrMore(const M& matcher)
+{
+    return Optionally(OneOrMore(matcher));
+}
+
+template <Matcher M>
+class Peek
+{
+    M d_matcher;
+
+public:
+    Peek(const M& matcher): d_matcher(matcher) {}
+
+    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    {
+        QList<Token> nested;
+        bool matched = d_matcher.tryMatch(stream, nested);
+        stream.returnTokens(nested);
+        return matched;
+    }
+};
+
 class TokenType
 {
     parsing::TokenType d_type;
