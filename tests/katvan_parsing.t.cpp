@@ -301,14 +301,17 @@ TEST(HiglightingParserTests, StringLiteral) {
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 16,  1 },
         HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 18, 12 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,  31,  1 },
         HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 34,  1 }
 
     ));
 
     markers = highlightText(QStringLiteral("$ \"A /* $ \" */ $"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 2,  9 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  0, 1 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  2, 9 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,  12, 1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,  13, 1 },
         HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 15, 1 }
     ));
 
@@ -334,6 +337,7 @@ TEST(HiglightingParserTests, Escapes) {
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  0, 1 },
         HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,          2, 6 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   9, 1 },
         HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 11, 6 },
         HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,         13, 2 },
         HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 18, 1 }
@@ -439,5 +443,204 @@ TEST(HiglightingParserTests, Lists) {
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 0, 2 },
         HiglightingMarker{ HiglightingMarker::Kind::TERM,       2, 4 }
+    ));
+}
+
+/*
+ * Test cases taken from Typst documentation
+ */
+
+TEST(HiglightingParserTests, MathExpressions) {
+    QList<HiglightingMarker> markers;
+
+    markers = highlightText(QStringLiteral("$x^2$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    2,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   4,  1 }
+    ));
+
+    markers = highlightText(QStringLiteral("$x &= 2 \\ &= 3$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    3,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    4,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    8,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   10,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   11,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  14,  1 }
+    ));
+
+    markers = highlightText(QStringLiteral("$#x$, $pi$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    1,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   3,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   6,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    7,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   9,  1 }
+    ));
+
+    markers = highlightText(QStringLiteral("$arrow.r.long$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    1,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    7,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    9,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  13,  1 }
+    ));
+
+    markers = highlightText(QStringLiteral("$floor(x)$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    1,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   9,  1 }
+    ));
+
+    markers = highlightText(QStringLiteral("$#rect(width: 1cm) + 1$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    1,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  14,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   19,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  22,  1 }
+    ));
+
+    markers = highlightText(QStringLiteral("$/* comment */$"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,          1, 13 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  14,  1 }
+    ));
+}
+
+TEST(HiglightingParserTests, SetRules) {
+    QList<HiglightingMarker> markers;
+
+    markers = highlightText(QStringLiteral(
+        "#set heading(numbering: \"I.\")\n"
+        "#set text(\n"
+        "  font: \"New Computer Modern\"\n"
+        ")\n\n"
+        "= Introduction"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    5,  7 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  24,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         30,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   35,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  49, 21 },
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING,         73, 15 }
+    ));
+
+    markers = highlightText(QStringLiteral(
+        "#let task(body, critical: false) = {\n"
+        "  set text(red) if critical\n"
+        "  [- #body]\n"
+        "}\n\n"
+        "#task(critical: true)[Food today?]\n"
+        "#task(critical: false)[Work deadline]"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0, 4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    5, 4 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         26, 5 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         39, 3 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   43, 4 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         53, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   70, 5 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   80, 5 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         96, 4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  115, 5 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,        131, 5 }
+    ));
+}
+
+TEST(HiglightingParserTests, ShowRules) {
+    auto markers = highlightText(QStringLiteral(
+        "#show heading: it => [\n"
+        "  #set align(center)\n"
+        "  #set text(font: \"Inria Serif\")\n"
+        "  \\~ #emph(it.body)\n"
+        "      #counter(heading).display() \\~\n"
+        "]"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         25,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   30,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         46,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   51,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  62, 13 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,          79,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   82,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  103,  8 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  121,  7 },
+        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,         131,  2 }
+    ));
+}
+
+TEST(HiglightingParserTests, CodeExpressions) {
+    auto markers = highlightText(QStringLiteral(
+        "#emph[Hello] \\\n"
+        "#emoji.face \\\n"
+        "#\"hello\".len().a\n"
+        "#(40em.abs.inches(), 12%)\n"
+        "#40em.abs.inches()"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   15,  6 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   22,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  29,  8 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   38,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   44,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  48,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   57,  6 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  67,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  72,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   78,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   82,  6 }
+    ));
+}
+
+TEST(HiglightingParserTests, Blocks) {
+    auto markers = highlightText(QStringLiteral(
+        "#{\n"
+        "let a = [from]\n"
+        "let b = [*world*]\n"
+        "[hello ]\n"
+        "a + [ the ] + b\n"
+        "}"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          3,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         18,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 27,  7 }
+    ));
+}
+
+TEST(HiglightingParserTests, Loops) {
+    auto markers = highlightText(QStringLiteral(
+        "#for c in \"ABC\" [\n"
+        "  #c is a letter.\n"
+        "]\n\n"
+        "#let n = 2\n"
+        "#while n < 10 {\n"
+        "  n = (n * 2) - 1\n"
+        "}"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          7,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  10,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   20,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         39,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  48,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         50,  6 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  61,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  77,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  82,  1 }
     ));
 }

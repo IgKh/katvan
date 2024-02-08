@@ -70,6 +70,7 @@ void Highlighter::setupFormats()
     QTextCharFormat escapeFormat;
     escapeFormat.setForeground(QColor(0x1d, 0x6c, 0x76));
     d_formats.insert(parsing::HiglightingMarker::Kind::ESCAPE, escapeFormat);
+    d_formats.insert(parsing::HiglightingMarker::Kind::MATH_OPERATOR, escapeFormat);
 
     QTextCharFormat mathDelimiterFormat;
     mathDelimiterFormat.setForeground(QColor(0x29, 0x8e, 0x0d));

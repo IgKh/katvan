@@ -18,8 +18,7 @@
 
 /*
     Known gaps in syntax highlighting:
-    - Headings at start of content block
-    - Direct function invocation in math mode
+    - Headings and list items at start of content block
     - Special highlighting on show expression selectors
 */
 
@@ -51,6 +50,8 @@ static const QStringList CODE_KEYWORDS = {
     QStringLiteral("true"),
     QStringLiteral("while")
 };
+
+static const QString MATH_NON_OPERATORS = QStringLiteral("()[]{},;");
 
 static bool isAsciiDigit(QChar ch)
 {
@@ -542,6 +543,39 @@ void Parser::parse()
                 pushState(ParserState::Kind::STRING_LITERAL);
                 continue;
             }
+            else if (match(m::All(m::FullWord, m::Peek(m::Symbol(QLatin1Char('(')))))) {
+                if (d_endMarker > d_startMarker) {
+                    instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+                }
+                continue;
+            }
+            else if (match(m::FullWord)) {
+                if (d_endMarker > d_startMarker) {
+                    instantState(ParserState::Kind::CODE_VARIABLE_NAME);
+                    if (match(m::Symbol(QLatin1Char('.')))) {
+                        pushState(ParserState::Kind::MATH_EXPRESSION_CHAIN);
+                    }
+                }
+                continue;
+            }
+        }
+        else if (state.kind == ParserState::Kind::MATH_EXPRESSION_CHAIN) {
+            if (match(m::All(m::FullWord, m::Peek(m::Symbol(QLatin1Char('(')))))) {
+                instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+                popState();
+                continue;
+            }
+            else if (match(m::FullWord)) {
+                instantState(ParserState::Kind::CODE_VARIABLE_NAME);
+                if (!match(m::Symbol(QLatin1Char('.')))) {
+                    popState();
+                }
+                continue;
+            }
+
+            // Everything else breaks the chain!
+            popState();
+            continue;
         }
         else if (isCodeHolderState(state)) {
             if (handleCommentStart()) {
@@ -631,6 +665,7 @@ void Parser::parse()
 
             // Everything else breaks the chain!
             popState();
+            continue;
         }
         else if (state.kind == ParserState::Kind::COMMENT_BLOCK) {
             if (match(m::SymbolSequence(QStringLiteral("*/")))) {
@@ -850,6 +885,11 @@ void HighlightingListener::handleLooseToken(const Token& t, const ParserState& s
             || state.kind == ParserState::Kind::MATH
             || state.kind == ParserState::Kind::STRING_LITERAL)) {
         d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::ESCAPE, t.startPos, t.length });
+    }
+    else if (t.type == TokenType::SYMBOL && state.kind == ParserState::Kind::MATH) {
+        if (!MATH_NON_OPERATORS.contains(t.text)) {
+            d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR, t.startPos, t.length });
+        }
     }
 }
 

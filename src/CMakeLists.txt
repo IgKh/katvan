@@ -23,26 +23,34 @@ set(SOURCES
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
     katvan_typstdriver.cpp
-    main.cpp
 )
 
-qt_add_resources(SOURCES ${PROJECT_SOURCE_DIR}/assets/assets.qrc)
+set(MAIN_SOURCES
+    main.cpp
+)
+qt_add_resources(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/assets/assets.qrc)
 
-add_executable(katvan ${SOURCES})
+add_library(libkatvan STATIC ${SOURCES})
 
-target_include_directories(katvan PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_compile_definitions(katvan PRIVATE QT_RESTRICTED_CAST_FROM_ASCII)
+target_include_directories(libkatvan PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_compile_definitions(libkatvan PUBLIC QT_RESTRICTED_CAST_FROM_ASCII)
 
-target_link_libraries(katvan PRIVATE
+target_link_libraries(libkatvan PUBLIC
     Qt6::Widgets
     Qt6::PdfWidgets
 )
+
+add_executable(katvan ${MAIN_SOURCES})
+target_link_libraries(katvan PRIVATE libkatvan)
 
 set_target_properties(katvan PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
 
-qt_add_translations(katvan TS_FILES
-    translations/katvan_he.ts
+qt_add_translations(katvan
+    TS_FILES
+        translations/katvan_he.ts
+    SOURCES
+        ${SOURCES} ${MAIN_SOURCES}
 )
