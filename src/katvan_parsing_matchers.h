@@ -19,6 +19,8 @@
 
 #include "katvan_parsing.h"
 
+#include <algorithm>
+
 //
 // Parser Combinator library for the Katvan Typst parser
 //
@@ -198,6 +200,42 @@ public:
             }
         }
         return true;
+    }
+};
+
+// Because of our tokenizer design (which doesn't backtrack by itself) number
+// base prefixes can cause an otherwise continues word to be broken into
+// multiple word tokens (e.g "break" -> "b" + "reak"). This covers up for it.
+static const auto FullWord = OneOrMore(TokenType(parsing::TokenType::WORD));
+
+// A number literal in code, with possible trailing units
+static const auto FullCodeNumber = All(
+    TokenType(parsing::TokenType::CODE_NUMBER),
+    Optionally(Any(TokenType(parsing::TokenType::WORD), Symbol(QLatin1Char('%'))))
+);
+
+class Keyword
+{
+    const QStringList& d_keywords;
+
+public:
+    Keyword(const QStringList& keywords): d_keywords(keywords) {}
+
+    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    {
+        QList<Token> nested;
+        bool ok = FullWord.tryMatch(stream, nested);
+
+        usedTokens.append(nested);
+        if (!ok) {
+            return false;
+        }
+
+        QString word;
+        for (const Token& t : nested) {
+            word.append(t.text);
+        }
+        return std::binary_search(d_keywords.begin(), d_keywords.end(), word);
     }
 };
 

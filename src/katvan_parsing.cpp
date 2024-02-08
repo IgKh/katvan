@@ -15,10 +15,42 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+/*
+    Known gaps in syntax highlighting:
+    - Headings at start of content block
+    - Direct function invocation in math mode
+    - Special highlighting on show expression selectors
+*/
+
 #include "katvan_parsing_matchers.h"
 #include "katvan_parsing.h"
 
 namespace katvan::parsing {
+
+// NOTE - Must be in sorted order
+static const QStringList CODE_KEYWORDS = {
+    QStringLiteral("and"),
+    QStringLiteral("as"),
+    QStringLiteral("auto"),
+    QStringLiteral("break"),
+    QStringLiteral("else"),
+    QStringLiteral("false"),
+    QStringLiteral("for"),
+    QStringLiteral("if"),
+    QStringLiteral("import"),
+    QStringLiteral("in"),
+    QStringLiteral("include"),
+    QStringLiteral("let"),
+    QStringLiteral("none"),
+    QStringLiteral("not"),
+    QStringLiteral("or"),
+    QStringLiteral("return"),
+    QStringLiteral("set"),
+    QStringLiteral("show"),
+    QStringLiteral("true"),
+    QStringLiteral("while")
+};
 
 static bool isAsciiDigit(QChar ch)
 {
@@ -334,16 +366,25 @@ Parser::Parser(QStringView text, ParsingListener& listener, const ParserStateSta
 static bool isBlockScopedState(const ParserState& state)
 {
     return state.kind == ParserState::Kind::COMMENT_LINE
-        || state.kind == ParserState::Kind::CONTENT_HEADING;
+        || state.kind == ParserState::Kind::CONTENT_HEADING
+        || state.kind == ParserState::Kind::CODE_LINE;
 }
 
 static bool isContentHolderState(const ParserState& state)
 {
     // States that can have nested content states in them
     return state.kind == ParserState::Kind::CONTENT
+        || state.kind == ParserState::Kind::CONTENT_BLOCK
         || state.kind == ParserState::Kind::CONTENT_HEADING
         || state.kind == ParserState::Kind::CONTENT_EMPHASIS
         || state.kind == ParserState::Kind::CONTENT_STRONG_EMPHASIS;
+}
+
+static bool isCodeHolderState(const ParserState& state)
+{
+    return state.kind == ParserState::Kind::CODE_BLOCK
+        || state.kind == ParserState::Kind::CODE_LINE
+        || state.kind == ParserState::Kind::CODE_ARGUMENTS;
 }
 
 void Parser::parse()
@@ -362,11 +403,17 @@ void Parser::parse()
             if (handleCommentStart()) {
                 continue;
             }
-            else if (state.kind != ParserState::Kind::CONTENT && match(m::All(
-                m::Any(m::TokenType(TokenType::BEGIN), m::TokenType(TokenType::LINE_END)),
-                m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE)),
-                m::Any(m::TokenType(TokenType::TEXT_END), m::TokenType(TokenType::LINE_END))
-            ))) {
+            else if (handleCodeStart()) {
+                continue;
+            }
+            else if (state.kind != ParserState::Kind::CONTENT
+                && state.kind != ParserState::Kind::CONTENT_BLOCK
+                && match(m::All(
+                    m::Any(m::TokenType(TokenType::BEGIN), m::TokenType(TokenType::LINE_END)),
+                    m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE)),
+                    m::Any(m::TokenType(TokenType::TEXT_END), m::TokenType(TokenType::LINE_END))
+                ))
+            ) {
                 // A content holder state is being broken by a paragraph break,
                 // without seeing the end symbol for it.
                 // XXX this is in principal an error condition, and we might
@@ -374,7 +421,22 @@ void Parser::parse()
                 popState();
                 continue;
             }
+            else if (state.kind == ParserState::Kind::CONTENT_BLOCK && match(m::Symbol(QLatin1Char(']')))) {
+                popState();
+
+                if (match(m::Symbol(QLatin1Char('[')))) {
+                    // Another content block can immediately start
+                    pushState(ParserState::Kind::CONTENT_BLOCK);
+                }
+                else if (!isCodeHolderState(d_stateStack.last()) && match(m::Symbol(QLatin1Char('.')))) {
+                    // Resume expression chain on the return value of function
+                    // the code block was an argument for
+                    pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
+                }
+                continue;
+            }
             else if (match(m::Symbol(QLatin1Char('$')))) {
+                instantState(ParserState::Kind::MATH_DELIMITER);
                 pushState(ParserState::Kind::MATH);
                 continue;
             }
@@ -415,7 +477,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('<')),
-                m::TokenType(TokenType::WORD),
+                m::FullWord,
                 m::ZeroOrMore(m::Symbol(QLatin1Char('_'))),
                 m::Symbol(QLatin1Char('>'))
             ))) {
@@ -424,7 +486,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('@')),
-                m::TokenType(TokenType::WORD),
+                m::FullWord,
                 m::ZeroOrMore(m::Symbol(QLatin1Char('_')))
             ))) {
                 instantState(ParserState::Kind::CONTENT_REFERENCE);
@@ -468,7 +530,11 @@ void Parser::parse()
             if (handleCommentStart()) {
                 continue;
             }
-            if (match(m::Symbol(QLatin1Char('$')))) {
+            else if (handleCodeStart()) {
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('$')))) {
+                instantState(ParserState::Kind::MATH_DELIMITER);
                 popState();
                 continue;
             }
@@ -476,6 +542,95 @@ void Parser::parse()
                 pushState(ParserState::Kind::STRING_LITERAL);
                 continue;
             }
+        }
+        else if (isCodeHolderState(state)) {
+            if (handleCommentStart()) {
+                continue;
+            }
+            else if (state.kind == ParserState::Kind::CODE_BLOCK && match(m::Symbol(QLatin1Char('}')))) {
+                popState();
+                continue;
+            }
+            else if (state.kind == ParserState::Kind::CODE_ARGUMENTS && match(m::Symbol(QLatin1Char(')')))) {
+                popState();
+
+                if (match(m::Symbol(QLatin1Char('[')))) {
+                    // A content block argument may start _immediately_ after the
+                    // normal argument list of a function call expression.
+                    pushState(ParserState::Kind::CONTENT_BLOCK);
+                }
+                else if (!isCodeHolderState(d_stateStack.last()) && match(m::Symbol(QLatin1Char('.')))) {
+                    // Resume expression chain, now on the return value
+                    pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
+                }
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('{')))) {
+                pushState(ParserState::Kind::CODE_BLOCK);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('(')))) {
+                pushState(ParserState::Kind::CODE_ARGUMENTS);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('[')))) {
+                pushState(ParserState::Kind::CONTENT_BLOCK);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('"')))) {
+                pushState(ParserState::Kind::STRING_LITERAL);
+                continue;
+            }
+            else if (match(m::Keyword(CODE_KEYWORDS))) {
+                instantState(ParserState::Kind::CODE_KEYWORD);
+                continue;
+            }
+            else if (match(m::All(
+                m::FullWord,
+                m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
+            ))) {
+                instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+                continue;
+            }
+            else if (match(m::FullCodeNumber)) {
+                instantState(ParserState::Kind::CODE_NUMERIC_LITERAL);
+                continue;
+            }
+            else if (match(m::All(
+                m::Symbol(QLatin1Char('<')),
+                m::FullWord,
+                m::ZeroOrMore(m::Symbol(QLatin1Char('_'))),
+                m::Symbol(QLatin1Char('>'))
+            ))) {
+                instantState(ParserState::Kind::CONTENT_LABEL);
+                continue;
+            }
+        }
+        else if (state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN) {
+            if (match(m::All(
+                m::FullWord,
+                m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
+            ))) {
+                instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+                popState();
+                if (match(m::Symbol(QLatin1Char('(')))) {
+                    pushState(ParserState::Kind::CODE_ARGUMENTS);
+                }
+                else if (match(m::Symbol(QLatin1Char('[')))) {
+                    pushState(ParserState::Kind::CONTENT_BLOCK);
+                }
+                continue;
+            }
+            else if (match(m::FullWord)) {
+                instantState(ParserState::Kind::CODE_VARIABLE_NAME);
+                if (!match(m::Symbol(QLatin1Char('.')))) {
+                    popState();
+                }
+                continue;
+            }
+
+            // Everything else breaks the chain!
+            popState();
         }
         else if (state.kind == ParserState::Kind::COMMENT_BLOCK) {
             if (match(m::SymbolSequence(QStringLiteral("*/")))) {
@@ -487,9 +642,18 @@ void Parser::parse()
                 continue;
             }
         }
-        else if (state.kind == ParserState::Kind::STRING_LITERAL) {
+        else if (state.kind == ParserState::Kind::STRING_LITERAL
+                || state.kind == ParserState::Kind::CODE_STRING_EXPRESSION) {
             if (match(m::Symbol(QLatin1Char('"')))) {
                 popState();
+
+                if (state.kind == ParserState::Kind::CODE_STRING_EXPRESSION
+                    && match(m::Symbol(QLatin1Char('.'))))
+                {
+                    // A method/field on a string literal in code mode - continue
+                    // with a chain
+                    pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
+                }
                 continue;
             }
         }
@@ -528,6 +692,72 @@ bool Parser::handleCommentStart()
     return false;
 }
 
+bool Parser::handleCodeStart()
+{
+    namespace m = matchers;
+
+    if (match(m::All(
+        m::Symbol(QLatin1Char('#')),
+        m::Keyword(CODE_KEYWORDS)
+    ))) {
+        pushState(ParserState::Kind::CODE_LINE);
+        return true;
+    }
+    if (match(m::All(
+        m::Symbol(QLatin1Char('#')),
+        m::FullWord,
+        m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
+    ))) {
+        // Function call expression - followed by either a normal argument list
+        // or a content block argument.
+        instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+        if (match(m::Symbol(QLatin1Char('(')))) {
+            pushState(ParserState::Kind::CODE_ARGUMENTS);
+        }
+        else if (match(m::Symbol(QLatin1Char('[')))) {
+            pushState(ParserState::Kind::CONTENT_BLOCK);
+        }
+        return true;
+    }
+    if (match(m::All(
+        m::Symbol(QLatin1Char('#')),
+        m::FullCodeNumber
+    ))) {
+        instantState(ParserState::Kind::CODE_NUMERIC_LITERAL);
+        if (match(m::Symbol(QLatin1Char('.')))) {
+            pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
+        }
+        return true;
+    }
+    if (match(m::SymbolSequence(QStringLiteral("#\"")))) {
+        pushState(ParserState::Kind::CODE_STRING_EXPRESSION);
+        return true;
+    }
+    if (match(m::All(
+        m::Symbol(QLatin1Char('#')),
+        m::FullWord
+    ))) {
+        instantState(ParserState::Kind::CODE_VARIABLE_NAME);
+        if (match(m::Symbol(QLatin1Char('.')))) {
+            pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
+        }
+        return true;
+    }
+    if (match(m::SymbolSequence(QStringLiteral("#{")))) {
+        pushState(ParserState::Kind::CODE_BLOCK);
+        return true;
+    }
+    if (match(m::SymbolSequence(QStringLiteral("#[")))) {
+        pushState(ParserState::Kind::CONTENT_BLOCK);
+        return true;
+    }
+    if (match(m::SymbolSequence(QStringLiteral("#(")))) {
+        pushState(ParserState::Kind::CODE_ARGUMENTS);
+        return true;
+    }
+    return false;
+}
+
 void Parser::instantState(ParserState::Kind stateKind)
 {
     ParserState state { stateKind, d_startMarker };
@@ -537,7 +767,7 @@ void Parser::instantState(ParserState::Kind stateKind)
 void Parser::pushState(ParserState::Kind stateKind)
 {
     d_stateStack.append(ParserState{ stateKind, d_startMarker });
-    d_listener.initializeState(d_stateStack.last());
+    d_listener.initializeState(d_stateStack.last(), d_endMarker);
 }
 
 void Parser::popState()
@@ -545,10 +775,15 @@ void Parser::popState()
     d_listener.finalizeState(d_stateStack.takeLast(), d_endMarker);
 }
 
-void HighlightingListener::initializeState(const ParserState& state)
+void HighlightingListener::initializeState(const ParserState& state, size_t endMarker)
 {
-    if (state.kind == ParserState::Kind::MATH) {
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, state.startPos, 1 });
+    size_t start = state.startPos;
+    size_t length = endMarker - state.startPos + 1;
+
+    switch (state.kind) {
+    case ParserState::Kind::CODE_LINE:
+        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::KEYWORD, start, length });
+        break;
     }
 }
 
@@ -563,9 +798,10 @@ void HighlightingListener::finalizeState(const ParserState& state, size_t endMar
         d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::COMMENT, start, length });
         break;
     case ParserState::Kind::STRING_LITERAL:
+    case ParserState::Kind::CODE_STRING_EXPRESSION:
         d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, start, length });
         break;
-    case ParserState::Kind::MATH:
+    case ParserState::Kind::MATH_DELIMITER:
         d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, endMarker, 1 });
         break;
     case ParserState::Kind::CONTENT_HEADING:
@@ -592,6 +828,18 @@ void HighlightingListener::finalizeState(const ParserState& state, size_t endMar
         break;
     case ParserState::Kind::CONTENT_TERM:
         d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::TERM, start, length });
+        break;
+    case ParserState::Kind::CODE_VARIABLE_NAME:
+        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME, start, length });
+        break;
+    case ParserState::Kind::CODE_FUNCTION_NAME:
+        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME, start, length });
+        break;
+    case ParserState::Kind::CODE_KEYWORD:
+        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::KEYWORD, start, length });
+        break;
+    case ParserState::Kind::CODE_NUMERIC_LITERAL:
+        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL, start, length });
         break;
     }
 }

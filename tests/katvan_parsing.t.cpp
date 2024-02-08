@@ -311,6 +311,12 @@ TEST(HiglightingParserTests, StringLiteral) {
         HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 2,  9 },
         HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 15, 1 }
     ));
+
+    markers = highlightText(QStringLiteral("\"not a literal\" #foo(\"yesliteral\")"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  16,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 21, 12 }
+    ));
 }
 
 TEST(HiglightingParserTests, Escapes) {

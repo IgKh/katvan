@@ -94,6 +94,7 @@ struct ParserState
     enum class Kind {
         INVALID,
         CONTENT,
+        CONTENT_BLOCK,
         CONTENT_HEADING,
         CONTENT_EMPHASIS,
         CONTENT_STRONG_EMPHASIS,
@@ -104,6 +105,16 @@ struct ParserState
         CONTENT_LIST_ENTRY,
         CONTENT_TERM,
         MATH,
+        MATH_DELIMITER,
+        CODE_VARIABLE_NAME,
+        CODE_FUNCTION_NAME,
+        CODE_NUMERIC_LITERAL,
+        CODE_KEYWORD,
+        CODE_LINE,
+        CODE_BLOCK,
+        CODE_ARGUMENTS,
+        CODE_EXPRESSION_CHAIN,
+        CODE_STRING_EXPRESSION,
         COMMENT_LINE,
         COMMENT_BLOCK,
         STRING_LITERAL,
@@ -120,7 +131,7 @@ class ParsingListener
 public:
     virtual ~ParsingListener() = default;
 
-    virtual void initializeState(const ParserState& state) {}
+    virtual void initializeState(const ParserState& state, size_t endMarker) {}
     virtual void finalizeState(const ParserState& state, size_t endMarker) {}
     virtual void handleLooseToken(const Token& t, const ParserState& state) {}
 };
@@ -136,6 +147,7 @@ public:
 
 private:
     bool handleCommentStart();
+    bool handleCodeStart();
 
     template <Matcher M>
     bool match(const M& matcher)
@@ -178,8 +190,12 @@ struct HiglightingMarker
         LIST_ENTRY,
         TERM,
         MATH_DELIMITER,
+        VARIABLE_NAME,
+        FUNCTION_NAME,
+        KEYWORD,
         ESCAPE,
         COMMENT,
+        NUMBER_LITERAL,
         STRING_LITERAL
     };
 
@@ -195,7 +211,7 @@ class HighlightingListener : public ParsingListener
 public:
     QList<HiglightingMarker> markers() const { return d_markers; }
 
-    void initializeState(const ParserState& state) override;
+    void initializeState(const ParserState& state, size_t endMarker) override;
     void finalizeState(const ParserState& state, size_t endMarker) override;
     virtual void handleLooseToken(const Token& t, const ParserState& state) override;
 
