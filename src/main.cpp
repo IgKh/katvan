@@ -49,9 +49,11 @@ int main(int argc, char** argv)
         locale = QLocale(QLocale::Hebrew);
     }
 
-    QTranslator translator;
-    if (translator.load(locale, "katvan", "_", ":/i18n")) {
-        QCoreApplication::installTranslator(&translator);
+    if (locale.language() != QLocale::English) {
+        QTranslator translator;
+        if (translator.load(locale, "katvan", "_", ":/i18n")) {
+            QCoreApplication::installTranslator(&translator);
+        }
     }
 
     QTranslator qtTranslator;

@@ -2,8 +2,8 @@
 Version=1.0
 Name=Katvan
 Name[he]=כתבן
-Comment=A bare-bones editor for typst files, with bias for RTL
-Comment[he]=עורך ענייני לקבצי typst
+Comment=A bare-bones editor for Typst files, with bias for RTL
+Comment[he]=עורך ענייני לקבצי Typst
 TryExec=katvan
 Exec=katvan %f
 Icon=katvan

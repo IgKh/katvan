@@ -66,7 +66,7 @@ private:
     bool tryUnicodeEscape();
 
     QStringView d_text;
-    ssize_t d_pos;
+    qsizetype d_pos;
 };
 
 class TokenStream

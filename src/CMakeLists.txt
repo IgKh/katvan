@@ -28,7 +28,11 @@ set(SOURCES
 set(MAIN_SOURCES
     main.cpp
 )
+
 qt_add_resources(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/assets/assets.qrc)
+if(WIN32)
+    list(APPEND MAIN_SOURCES ${PROJECT_SOURCE_DIR}/assets/katvan.rc)
+endif()
 
 add_library(libkatvan STATIC ${SOURCES})
 

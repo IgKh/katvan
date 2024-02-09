@@ -102,7 +102,6 @@ void MainWindow::setupUI()
     d_pdfPreview->setDocument(d_previewDocument);
     d_pdfPreview->setPageMode(QPdfView::PageMode::MultiPage);
     d_pdfPreview->setZoomMode(QPdfView::ZoomMode::FitToWidth);
-    d_pdfPreview->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     QFont monospaceFont { "Monospace" };
     monospaceFont.setStyleHint(QFont::Monospace);
@@ -561,7 +560,7 @@ void MainWindow::showAbout()
     QString mainText = tr(
         "<h3>Katvan</h3>"
         "<a href=\"%1\">%1</a>"
-        "<p>A bare-bones editor for <i>typst</i> files, with a bias for RTL</p>"
+        "<p>A bare-bones editor for <i>Typst</i> files, with a bias for RTL</p>"
         "<p>Version %2 (Qt %3)"
     )
     .arg(
