@@ -17,6 +17,7 @@
  */
 #include "katvan_typstdriver.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QProcess>
 #include <QStandardPaths>
@@ -30,7 +31,7 @@ TypstDriver::TypstDriver(QObject* parent)
     , d_status(Status::INITIALIZED)
     , d_inputFile(nullptr)
 {
-    d_compilerPath = QStandardPaths::findExecutable("typst");
+    d_compilerPath = findTypstCompiler();
     qDebug() << "Found typst at" << d_compilerPath;
 
     d_outputFile = new QTemporaryFile(QDir::tempPath() + "/katvan_XXXXXX.pdf", this);
@@ -41,6 +42,16 @@ TypstDriver::TypstDriver(QObject* parent)
     connect(d_process, &QProcess::errorOccurred, this, &TypstDriver::processErrorOccurred);
     connect(d_process, &QProcess::finished, this, &TypstDriver::compilerFinished);
     connect(d_process, &QProcess::readyRead, this, &TypstDriver::compilerOutputReady);
+}
+
+QString TypstDriver::findTypstCompiler() const
+{
+    QString localPath = QStandardPaths::findExecutable("typst", { QCoreApplication::applicationDirPath() });
+    if (!localPath.isEmpty()) {
+        return localPath;
+    }
+
+    return QStandardPaths::findExecutable("typst");
 }
 
 void TypstDriver::resetInputFile(const QString& sourceFileName)

@@ -47,6 +47,10 @@ target_link_libraries(libkatvan PUBLIC
 add_executable(katvan ${MAIN_SOURCES})
 target_link_libraries(katvan PRIVATE libkatvan)
 
+if(KATVAN_PORTABLE_BUILD)
+    target_compile_definitions(katvan PRIVATE KATVAN_PORTABLE_BUILD)
+endif()
+
 set_target_properties(katvan PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON

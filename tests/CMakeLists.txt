@@ -1,3 +1,5 @@
+enable_testing()
+
 find_package(GTest)
 if(NOT GTest_FOUND)
     message(WARNING "Googletest not found, skipping tests")

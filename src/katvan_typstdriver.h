@@ -60,6 +60,8 @@ private slots:
     void compilerOutputReady();
 
 private:
+    QString findTypstCompiler() const;
+
     Status d_status;
     QString d_compilerPath;
     QString d_compilerOutput;

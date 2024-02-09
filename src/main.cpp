@@ -21,7 +21,17 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QLibraryInfo>
+#include <QSettings>
 #include <QTranslator>
+
+void setupPortableMode()
+{
+    QString settingsPath = QCoreApplication::applicationDirPath();
+    qDebug() << "Running in portable mode, settings stored at" << settingsPath;
+
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsPath);
+}
 
 int main(int argc, char** argv)
 {
@@ -35,22 +45,33 @@ int main(int argc, char** argv)
     }
     QCoreApplication::setApplicationVersion(version);
 
-    QCommandLineOption forceHebrewUI("heb", "Force Hebrew UI");
-
     QCommandLineParser parser;
     parser.addPositionalArgument("file", "File to open");
-    parser.addOption(forceHebrewUI);
+    parser.addOptions({
+        QCommandLineOption{ "heb", "Force Hebrew UI" },
+        QCommandLineOption{ "portable", "Use portable mode" },
+        QCommandLineOption{ "no-portable", "Don't use portable mode, even if this is a portable build" }
+    });
     parser.addVersionOption();
     parser.addHelpOption();
     parser.process(app);
 
+#ifdef KATVAN_PORTABLE_BUILD
+    bool enablePortableMode = !parser.isSet("no-portable");
+#else
+    bool enablePortableMode = parser.isSet("portable") && !parser.isSet("no-portable");
+#endif
+    if (enablePortableMode) {
+        setupPortableMode();
+    }
+
     QLocale locale = QLocale::system();
-    if (parser.isSet(forceHebrewUI)) {
+    if (parser.isSet("heb")) {
         locale = QLocale(QLocale::Hebrew);
     }
 
+    QTranslator translator;
     if (locale.language() != QLocale::English) {
-        QTranslator translator;
         if (translator.load(locale, "katvan", "_", ":/i18n")) {
             QCoreApplication::installTranslator(&translator);
         }
