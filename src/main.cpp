@@ -43,6 +43,9 @@ int main(int argc, char** argv)
     if (!katvan::KATVAN_GIT_SHA.isEmpty()) {
         version += "-" + katvan::KATVAN_GIT_SHA;
     }
+#ifdef KATVAN_PORTABLE_BUILD
+    version += "-portable";
+#endif
     QCoreApplication::setApplicationVersion(version);
 
     QCommandLineParser parser;

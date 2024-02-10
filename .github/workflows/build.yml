@@ -37,7 +37,7 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
-        run: cmake --build build -j $(nproc)
+        run: cmake --build build -j
 
       - name: Run tests
         run: ctest --output-on-failure --test-dir build
