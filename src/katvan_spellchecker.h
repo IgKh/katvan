@@ -17,35 +17,37 @@
  */
 #pragma once
 
-#include "katvan_parsing.h"
+#include <QList>
+#include <QMap>
+#include <QObject>
+#include <QString>
 
-#include <QHash>
-#include <QSyntaxHighlighter>
+#include <map>
+#include <memory>
+
+class Hunspell;
 
 namespace katvan {
 
-class SpellChecker;
-
-class Highlighter : public QSyntaxHighlighter
+class SpellChecker : public QObject
 {
     Q_OBJECT
 
 public:
-    Highlighter(QTextDocument* document, SpellChecker* spellChecker);
+    SpellChecker(QObject* parent = nullptr);
+    ~SpellChecker();
 
-protected:
-    void highlightBlock(const QString& text) override;
+    static QMap<QString, QString> findDictionaries();
+    static QString dictionaryDisplayName(const QString& dictName);
+
+    QString currentDictionaryName() const { return d_currentDictName; }
+    void setCurrentDictionary(const QString& dictName, const QString& dictAffFile);
+
+    QList<std::pair<size_t, size_t>> checkSpelling(const QString& text);
 
 private:
-    void setupFormats();
-
-    void doSyntaxHighlighting(const QString& text, parsing::HighlightingListener& listener);
-    void doSpellChecking(const QString& text);
-
-    SpellChecker* d_spellChecker;
-
-    QHash<parsing::HiglightingMarker::Kind, QTextCharFormat> d_formats;
-    QTextCharFormat d_misspelledWordFormat;
+    QString d_currentDictName;
+    std::map<QString, std::unique_ptr<Hunspell>> d_spellers;
 };
 
 }

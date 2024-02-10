@@ -25,6 +25,9 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
+class Highlighter;
+class SpellChecker;
+
 class Editor : public QTextEdit
 {
     Q_OBJECT
@@ -34,11 +37,14 @@ class Editor : public QTextEdit
 public:
     Editor(QWidget* parent = nullptr);
 
+    SpellChecker* spellChecker() const { return d_spellChecker; }
+
 public slots:
     void insertLRM();
     void insertInlineMath();
     void toggleTextBlockDirection();
     void goToBlock(int blockNum);
+    void forceRehighlighting();
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
@@ -62,6 +68,8 @@ private:
     QWidget* d_rightLineNumberGutter;
 
     QTimer* d_debounceTimer;
+    Highlighter* d_highlighter;
+    SpellChecker* d_spellChecker;
 };
 
 }

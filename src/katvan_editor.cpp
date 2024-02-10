@@ -17,6 +17,7 @@
  */
 #include "katvan_editor.h"
 #include "katvan_highlighter.h"
+#include "katvan_spellchecker.h"
 
 #include <QAbstractTextDocumentLayout>
 #include <QMenu>
@@ -59,7 +60,8 @@ Editor::Editor(QWidget* parent)
 {
     setAcceptRichText(false);
 
-    new Highlighter(document());
+    d_spellChecker = new SpellChecker();
+    d_highlighter = new Highlighter(document(), d_spellChecker);
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);
@@ -122,6 +124,11 @@ void Editor::goToBlock(int blockNum)
     if (block.isValid()) {
         setTextCursor(QTextCursor(block));
     }
+}
+
+void Editor::forceRehighlighting()
+{
+    d_highlighter->rehighlight();
 }
 
 void Editor::contextMenuEvent(QContextMenuEvent* event)

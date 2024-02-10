@@ -15,6 +15,11 @@ else()
 endif()
 configure_file(katvan_version.h.in katvan_version.h @ONLY)
 
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+    pkg_check_modules(hunspell IMPORTED_TARGET hunspell)
+endif()
+
 set(SOURCES
     katvan_editor.cpp
     katvan_highlighter.cpp
@@ -22,6 +27,7 @@ set(SOURCES
     katvan_parsing.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
+    katvan_spellchecker.cpp
     katvan_typstdriver.cpp
 )
 
@@ -42,6 +48,7 @@ target_compile_definitions(libkatvan PUBLIC QT_RESTRICTED_CAST_FROM_ASCII)
 target_link_libraries(libkatvan PUBLIC
     Qt6::Widgets
     Qt6::PdfWidgets
+    PkgConfig::hunspell
 )
 
 add_executable(katvan ${MAIN_SOURCES})

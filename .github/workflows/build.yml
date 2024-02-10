@@ -30,8 +30,8 @@ jobs:
         with:
           vcpkgGitCommitId: '53bef8994c541b6561884a8395ea35715ece75db'
 
-      - name: Install GoogleTest
-        run: vcpkg install gtest
+      - name: Install Dependencies
+        run: vcpkg install gtest hunspell
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"

@@ -56,6 +56,7 @@ private slots:
     void showAbout();
 
     void cursorPositionChanged();
+    void changeSpellCheckingDictionary();
     void toggleCursorMovementStyle();
     void updatePreview(const QString& pdfFile);
     void compilationFailed(const QString& output);
@@ -85,6 +86,7 @@ private:
     QPlainTextEdit* d_compilerOutput;
 
     QToolButton* d_cursorPosButton;
+    QToolButton* d_spellingButton;
     QToolButton* d_cursorStyleButton;
 
     QDockWidget* d_previewDock;

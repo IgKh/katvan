@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_highlighter.h"
+#include "katvan_spellchecker.h"
 
 #include <QHash>
 #include <QTextDocument>
@@ -47,8 +48,9 @@ private:
     parsing::ParserStateStack d_stateStack;
 };
 
-Highlighter::Highlighter(QTextDocument* document)
+Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
     : QSyntaxHighlighter(document)
+    , d_spellChecker(spellChecker)
 {
     setupFormats();
 }
@@ -117,6 +119,10 @@ void Highlighter::setupFormats()
     QTextCharFormat keywordFormat;
     keywordFormat.setForeground(QColor(0xd7, 0x3a, 0x49));
     d_formats.insert(parsing::HiglightingMarker::Kind::KEYWORD, keywordFormat);
+
+    d_misspelledWordFormat.setFontUnderline(true);
+    d_misspelledWordFormat.setUnderlineColor(Qt::red);
+    d_misspelledWordFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
 }
 
 void Highlighter::highlightBlock(const QString& text)
@@ -131,6 +137,21 @@ void Highlighter::highlightBlock(const QString& text)
     parsing::Parser parser(text, listener, initialState);
 
     parser.parse();
+
+    doSyntaxHighlighting(text, listener);
+    doSpellChecking(text);
+
+    // In addition to storing the parser state stack at the end of the block as
+    // the block's user data, set a hash of that as the block state. This is to
+    // force re-highlighting of the next block if something changed - QSyntaxHighlighter
+    // only tracks changes to the block state number.
+    auto* blockData = new HighlighterStateBlockData(parser.stateStack());
+    setCurrentBlockState(blockData->getHash());
+    setCurrentBlockUserData(blockData);
+}
+
+void Highlighter::doSyntaxHighlighting(const QString& text, parsing::HighlightingListener& listener)
+{
     auto markers = listener.markers();
 
     std::vector<QTextCharFormat> charFormats;
@@ -144,14 +165,14 @@ void Highlighter::highlightBlock(const QString& text)
     for (size_t i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
     }
+}
 
-    // In addition to storing the parser state stack at the end of the block as
-    // the block's user data, set a hash of that as the block state. This is to
-    // force re-highlighting of the next block if something changed - QSyntaxHighlighter
-    // only tracks changes to the block state number.
-    auto* blockData = new HighlighterStateBlockData(parser.stateStack());
-    setCurrentBlockState(blockData->getHash());
-    setCurrentBlockUserData(blockData);
+void Highlighter::doSpellChecking(const QString& text)
+{
+    auto misspelledWords = d_spellChecker->checkSpelling(text);
+    for (const auto& [wordPos, len] : misspelledWords) {
+        setFormat(wordPos, len, d_misspelledWordFormat);
+    }
 }
 
 }
