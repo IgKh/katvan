@@ -23,6 +23,7 @@ QT_BEGIN_NAMESPACE
 class QPdfDocument;
 class QPdfView;
 class QPlainTextEdit;
+class QSettings;
 class QToolButton;
 QT_END_NAMESPACE
 
@@ -67,6 +68,8 @@ private:
     void setupStatusBar();
     void readSettings();
     void saveSettings();
+
+    void restoreSpellingDictionary(const QSettings& settings);
 
     bool maybeSave();
     void setCurrentFile(const QString& fileName);

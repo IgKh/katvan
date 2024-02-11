@@ -46,6 +46,7 @@ namespace katvan {
 
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_STATE = QLatin1StringView("MainWindow/state");
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_GEOMETRY = QLatin1StringView("MainWindow/geometry");
+static constexpr QLatin1StringView SETTING_SPELLING_DICT = QLatin1StringView("spelling/dict");
 static constexpr QLatin1StringView SETTING_EDITOR_FONT = QLatin1StringView("editor/font");
 
 MainWindow::MainWindow()
@@ -265,7 +266,6 @@ void MainWindow::setupStatusBar()
     statusBar()->addPermanentWidget(d_cursorPosButton);
 
     d_spellingButton = buildStatusBarButton();
-    d_spellingButton->setText(tr("None"));
     d_spellingButton->setIcon(QIcon::fromTheme("tools-check-spelling", QIcon(":/icons/tools-check-spelling.svg")));
     d_spellingButton->setIconSize(QSize(12, 12));
     d_spellingButton->setToolTip(tr("Spell checking dictionary"));
@@ -302,6 +302,7 @@ void MainWindow::readSettings()
     }
 
     d_recentFiles->restoreRecents(settings);
+    restoreSpellingDictionary(settings);
 }
 
 void MainWindow::saveSettings()
@@ -593,6 +594,25 @@ void MainWindow::showAbout()
     dlg.exec();
 }
 
+void MainWindow::restoreSpellingDictionary(const QSettings& settings)
+{
+    QString dictName = settings.value(SETTING_SPELLING_DICT, QString()).toString();
+    QString dictPath;
+
+    if (!dictName.isEmpty()) {
+        QMap<QString, QString> allDicts = SpellChecker::findDictionaries();
+        if (!allDicts.contains(dictName)) {
+            dictName.clear();
+        }
+        else {
+            dictPath = allDicts[dictName];
+        }
+    }
+
+    d_editor->spellChecker()->setCurrentDictionary(dictName, dictPath);
+    d_spellingButton->setText(dictName.isEmpty() ? tr("None") : dictName);
+}
+
 void MainWindow::changeSpellCheckingDictionary()
 {
     QMap<QString, QString> dicts = SpellChecker::findDictionaries();
@@ -627,12 +647,15 @@ void MainWindow::changeSpellCheckingDictionary()
     }
 
     QString selectedDictName = dictNames[dictLabels.indexOf(result)];
-    d_editor->spellChecker()->setCurrentDictionary(selectedDictName, dicts[selectedDictName]);
+    d_editor->spellChecker()->setCurrentDictionary(selectedDictName, dicts.value(selectedDictName));
 
     d_spellingButton->setText(selectedDictName.isEmpty() ? result : selectedDictName);
     if (selectedDictName != currentDict) {
         d_editor->forceRehighlighting();
     }
+
+    QSettings settings;
+    settings.setValue(SETTING_SPELLING_DICT, selectedDictName);
 }
 
 void MainWindow::cursorPositionChanged()
