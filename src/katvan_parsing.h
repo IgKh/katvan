@@ -21,6 +21,7 @@
 #include <QStringView>
 
 #include <concepts>
+#include <functional>
 
 namespace katvan::parsing {
 
@@ -140,9 +141,10 @@ public:
 class Parser
 {
 public:
-    Parser(QStringView text, ParsingListener& listener, const ParserStateStack* initialState = nullptr);
+    Parser(QStringView text, const ParserStateStack* initialState = nullptr);
 
     ParserStateStack stateStack() const { return d_stateStack; }
+    void addListener(ParsingListener& listener);
 
     void parse();
 
@@ -172,7 +174,7 @@ private:
 
     QStringView d_text;
     TokenStream d_tokenStream;
-    ParsingListener& d_listener;
+    QList<std::reference_wrapper<ParsingListener>> d_listeners;
     ParserStateStack d_stateStack;
 
     size_t d_startMarker;
@@ -208,6 +210,9 @@ struct HiglightingMarker
     bool operator==(const HiglightingMarker&) const = default;
 };
 
+/**
+ * Listener that transforms parser events into syntax highlighting markers
+ */
 class HighlightingListener : public ParsingListener
 {
 public:
@@ -215,10 +220,33 @@ public:
 
     void initializeState(const ParserState& state, size_t endMarker) override;
     void finalizeState(const ParserState& state, size_t endMarker) override;
-    virtual void handleLooseToken(const Token& t, const ParserState& state) override;
+    void handleLooseToken(const Token& t, const ParserState& state) override;
 
 private:
     QList<HiglightingMarker> d_markers;
+};
+
+struct ContentSegment
+{
+    size_t startPos = 0;
+    size_t length = 0;
+
+    bool operator==(const ContentSegment&) const = default;
+};
+
+/**
+ * Listener for extracting natural text from a Typst document
+ */
+class ContentWordsListener : public ParsingListener
+{
+public:
+    QList<ContentSegment> segments() const { return d_segments; }
+
+    void handleLooseToken(const Token& t, const ParserState& state) override;
+
+private:
+    QList<ContentSegment> d_segments;
+    Token d_prevToken;
 };
 
 }

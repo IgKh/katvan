@@ -21,8 +21,6 @@
 #include <QHash>
 #include <QTextDocument>
 
-#include <vector>
-
 namespace katvan {
 
 namespace parsing {
@@ -133,13 +131,23 @@ void Highlighter::highlightBlock(const QString& text)
         initialState = prevBlockData->stateStack();
     }
 
-    parsing::HighlightingListener listener;
-    parsing::Parser parser(text, listener, initialState);
+    parsing::HighlightingListener highlightingListener;
+    parsing::ContentWordsListener contentListenger;
 
+    parsing::Parser parser(text, initialState);
+    parser.addListener(highlightingListener);
+    parser.addListener(contentListenger);
     parser.parse();
 
-    doSyntaxHighlighting(text, listener);
-    doSpellChecking(text);
+    QList<QTextCharFormat> charFormats;
+    charFormats.resize(text.size());
+
+    doSyntaxHighlighting(highlightingListener, charFormats);
+    doSpellChecking(text, contentListenger, charFormats);
+
+    for (size_t i = 0; i < text.size(); i++) {
+        setFormat(i, 1, charFormats[i]);
+    }
 
     // In addition to storing the parser state stack at the end of the block as
     // the block's user data, set a hash of that as the block state. This is to
@@ -150,28 +158,29 @@ void Highlighter::highlightBlock(const QString& text)
     setCurrentBlockUserData(blockData);
 }
 
-void Highlighter::doSyntaxHighlighting(const QString& text, parsing::HighlightingListener& listener)
+void Highlighter::doSyntaxHighlighting(parsing::HighlightingListener& listener, QList<QTextCharFormat>& charFormats)
 {
     auto markers = listener.markers();
 
-    std::vector<QTextCharFormat> charFormats;
-    charFormats.resize(text.size());
     for (const auto& m : markers) {
         for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
             charFormats[i].merge(d_formats.value(m.kind));
         }
     }
-
-    for (size_t i = 0; i < text.size(); i++) {
-        setFormat(i, 1, charFormats[i]);
-    }
 }
 
-void Highlighter::doSpellChecking(const QString& text)
+void Highlighter::doSpellChecking(const QString& text, parsing::ContentWordsListener& listener, QList<QTextCharFormat>& charFormats)
 {
-    auto misspelledWords = d_spellChecker->checkSpelling(text);
-    for (const auto& [wordPos, len] : misspelledWords) {
-        setFormat(wordPos, len, d_misspelledWordFormat);
+    auto segments = listener.segments();
+
+    for (const auto& segment : segments) {
+        auto misspelledWords = d_spellChecker->checkSpelling(text.sliced(segment.startPos, segment.length));
+        for (const auto& [wordPos, len] : misspelledWords) {
+            size_t start = segment.startPos + wordPos;
+            for (size_t i = 0; i < len; i++) {
+                charFormats[start + i].merge(d_misspelledWordFormat);
+            }
+        }
     }
 }
 

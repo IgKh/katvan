@@ -1,3 +1,20 @@
+/*
+ * This file is part of Katvan
+ * Copyright (c) 2024 Igor Khanin
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "katvan_parsing.h"
 
 #include <gmock/gmock.h>
@@ -19,6 +36,10 @@ namespace katvan::parsing {
     void PrintTo(const HiglightingMarker& marker, std::ostream* os) {
         *os << "HiglightingMarker(" << static_cast<int>(marker.kind)
             << ", " << marker.startPos << ", " << marker.length << ")";
+    }
+
+    void PrintTo(const ContentSegment& segment, std::ostream* os) {
+        *os << "ContentSegment(" << segment.startPos << ", " << segment.length << ")";
     }
 }
 
@@ -47,7 +68,7 @@ static std::vector<Token> tokenizeString(const QString& str)
     return result;
 }
 
-TEST(TokenizerTests, TestEmpty) {
+TEST(TokenizerTests, Empty) {
     Tokenizer tok(QStringLiteral(""));
 
     ASSERT_FALSE(tok.atEnd());
@@ -267,7 +288,8 @@ TEST(TokenizerTests, NonLatinNumerals) {
 static QList<HiglightingMarker> highlightText(QStringView text)
 {
     HighlightingListener listener;
-    Parser parser(text, listener);
+    Parser parser(text);
+    parser.addListener(listener);
     parser.parse();
     return listener.markers();
 }
@@ -642,5 +664,42 @@ TEST(HiglightingParserTests, Loops) {
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  61,  2 },
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  77,  1 },
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  82,  1 }
+    ));
+}
+
+static QList<ContentSegment> extractContent(QStringView text)
+{
+    ContentWordsListener listener;
+    Parser parser(text);
+    parser.addListener(listener);
+    parser.parse();
+    return listener.segments();
+}
+
+TEST(ContentParserTests, Empty)
+{
+    auto segments = extractContent(QStringLiteral(""));
+    EXPECT_THAT(segments, ::testing::IsEmpty());
+}
+
+TEST(ContentParserTests, Sanity)
+{
+    auto segments = extractContent(QStringLiteral(
+        "#for c in \"ABC\" [\n"
+        "  #c is a letter.\n"
+        "]\n\n"
+        "// A comment\n"
+        "= Some\theading \\#!\n"
+        "_*Body* text_ 12 with some $\"math\" + 1$ in it."));
+
+    EXPECT_THAT(segments, ::testing::ElementsAre(
+        ContentSegment{  17,  3 }, // "\n  "
+        ContentSegment{  22, 14 }, // " is a letter.\n"
+        ContentSegment{  38,  1 }, // "\n"
+        ContentSegment{  52, 19 }, //  "= Some\theading \#!\n"
+        ContentSegment{  73,  4 }, // "Body"
+        ContentSegment{  78,  5 }, // " text"
+        ContentSegment{  84, 14 }, // " 12 with some "
+        ContentSegment{ 110,  7 }  // " in it."
     ));
 }

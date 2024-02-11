@@ -39,8 +39,8 @@ protected:
 private:
     void setupFormats();
 
-    void doSyntaxHighlighting(const QString& text, parsing::HighlightingListener& listener);
-    void doSpellChecking(const QString& text);
+    void doSyntaxHighlighting(parsing::HighlightingListener& listener, QList<QTextCharFormat>& charFormats);
+    void doSpellChecking(const QString& text, parsing::ContentWordsListener& listener, QList<QTextCharFormat>& charFormats);
 
     SpellChecker* d_spellChecker;
 

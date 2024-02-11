@@ -346,10 +346,9 @@ void TokenStream::returnTokens(QList<Token>& tokens)
     }
 }
 
-Parser::Parser(QStringView text, ParsingListener& listener, const ParserStateStack* initialState)
+Parser::Parser(QStringView text, const ParserStateStack* initialState)
     : d_text(text)
     , d_tokenStream(text)
-    , d_listener(listener)
     , d_stateStack(initialState != nullptr ? *initialState : ParserStateStack())
     , d_startMarker(0)
     , d_endMarker(0)
@@ -362,6 +361,11 @@ Parser::Parser(QStringView text, ParsingListener& listener, const ParserStateSta
             state.startPos = 0;
         }
     }
+}
+
+void Parser::addListener(ParsingListener& listener)
+{
+    d_listeners.append(std::ref(listener));
 }
 
 static bool isBlockScopedState(const ParserState& state)
@@ -695,12 +699,16 @@ void Parser::parse()
 
         // In any other case - just burn a token and continue
         Token t = d_tokenStream.fetchToken();
-        d_listener.handleLooseToken(t, state);
+        for (auto& listener : d_listeners) {
+            listener.get().handleLooseToken(t, state);
+        }
     }
 
     d_endMarker = d_text.size() - 1;
     for (const ParserState& state : d_stateStack) {
-        d_listener.finalizeState(state, d_endMarker);
+        for (auto& listener : d_listeners) {
+            listener.get().finalizeState(state, d_endMarker);
+        }
     }
 
     // Pop all trailing block scoped states
@@ -796,18 +804,25 @@ bool Parser::handleCodeStart()
 void Parser::instantState(ParserState::Kind stateKind)
 {
     ParserState state { stateKind, d_startMarker };
-    d_listener.finalizeState(state, d_endMarker);
+    for (auto& listener : d_listeners) {
+        listener.get().finalizeState(state, d_endMarker);
+    }
 }
 
 void Parser::pushState(ParserState::Kind stateKind)
 {
     d_stateStack.append(ParserState{ stateKind, d_startMarker });
-    d_listener.initializeState(d_stateStack.last(), d_endMarker);
+    for (auto& listener : d_listeners) {
+        listener.get().initializeState(d_stateStack.last(), d_endMarker);
+    }
 }
 
 void Parser::popState()
 {
-    d_listener.finalizeState(d_stateStack.takeLast(), d_endMarker);
+    ParserState state = d_stateStack.takeLast();
+    for (auto& listener : d_listeners) {
+        listener.get().finalizeState(state, d_endMarker);
+    }
 }
 
 void HighlightingListener::initializeState(const ParserState& state, size_t endMarker)
@@ -891,6 +906,27 @@ void HighlightingListener::handleLooseToken(const Token& t, const ParserState& s
             d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR, t.startPos, t.length });
         }
     }
+}
+
+void ContentWordsListener::handleLooseToken(const Token& t, const ParserState& state)
+{
+    if (!isContentHolderState(state)
+        || t.type == TokenType::BEGIN
+        || t.type == TokenType::TEXT_END) {
+        return;
+    }
+
+    // Try to create the segments as long as possible, and include all real token
+    // types (not just words, but also symbols, whitespace, etc). This is to provide
+    // the word boundry detection algorithm that will run on natural text segments
+    // later as much context to work with as possible.
+    if (d_prevToken.type != TokenType::INVALID && t.startPos == d_prevToken.startPos + d_prevToken.length) {
+        d_segments.last().length += t.length;
+    }
+    else {
+        d_segments.append(ContentSegment{ t.startPos, t.length });
+    }
+    d_prevToken = t;
 }
 
 }
