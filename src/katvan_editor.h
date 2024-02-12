@@ -17,9 +17,11 @@
  */
 #pragma once
 
+#include <QPointer>
 #include <QTextEdit>
 
 QT_BEGIN_NAMESPACE
+class QMenu;
 class QTimer;
 QT_END_NAMESPACE
 
@@ -52,11 +54,16 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
 
 private:
+    QString misspelledWordAtCursor(QTextCursor cursor);
+    void changeWordAtPosition(int position, const QString& into);
+
     int lineNumberGutterWidth();
     QTextBlock getFirstVisibleBlock();
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
 private slots:
+    void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
+
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
 
@@ -70,6 +77,10 @@ private:
     QTimer* d_debounceTimer;
     Highlighter* d_highlighter;
     SpellChecker* d_spellChecker;
+
+    QPointer<QMenu> d_contextMenu;
+    QString d_pendingSuggestionsWord;
+    int d_pendingSUggestionsPosition;
 };
 
 }

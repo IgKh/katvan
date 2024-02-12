@@ -22,18 +22,29 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QLocale>
+#include <QMetaObject>
 #include <QStandardPaths>
-#include <QTextBlock>
 #include <QTextBoundaryFinder>
+#include <QThread>
 
 namespace katvan {
 
-SpellChecker::SpellChecker(QObject* parent) : QObject(parent)
+static constexpr size_t SUGGESTIONS_CACHE_SIZE = 25;
+
+SpellChecker::SpellChecker(QObject* parent)
+    : QObject(parent)
+    , d_suggestionsCache(SUGGESTIONS_CACHE_SIZE)
 {
+    d_suggestionThread = new QThread(this);
+    d_suggestionThread->setObjectName("SuggestionThread");
 }
 
 SpellChecker::~SpellChecker()
 {
+    if (d_suggestionThread->isRunning()) {
+        d_suggestionThread->quit();
+        d_suggestionThread->wait();
+    }
 }
 
 /**
@@ -87,15 +98,26 @@ QString SpellChecker::dictionaryDisplayName(const QString& dictName)
 
 void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictAffFile)
 {
-    if (!dictName.isEmpty() && !d_spellers.contains(dictName)) {
+    if (!dictName.isEmpty() && !d_checkSpellers.contains(dictName)) {
         QString dicFile = QFileInfo(dictAffFile).path() + "/" + dictName + ".dic";
 
-        d_spellers.emplace(dictName, std::make_unique<Hunspell>(
-            dictAffFile.toLocal8Bit().data(),
-            dicFile.toLocal8Bit().data()));
+        QByteArray affPath = dictAffFile.toLocal8Bit();
+        QByteArray dicPath = dicFile.toLocal8Bit();
+
+        // Different speller instances for checking spelling and for generating
+        // suggestions... Because suggestion generation happens on a worker thread
+        // and Hunspell is not thread safe.
+        d_checkSpellers.emplace(dictName, std::make_unique<Hunspell>(affPath.data(), dicPath.data()));
+        d_suggestSpellers.emplace(dictName, std::make_unique<Hunspell>(affPath.data(), dicPath.data()));
     }
 
     d_currentDictName = dictName;
+    d_suggestionsCache.clear();
+
+    if (!dictName.isEmpty() && !d_suggestionThread->isRunning()) {
+        qDebug() << "Starting suggestion generation thread";
+        d_suggestionThread->start();
+    }
 }
 
 QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text)
@@ -105,7 +127,7 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         return result;
     }
 
-    Hunspell* speller = d_spellers[d_currentDictName].get();
+    Hunspell* speller = d_checkSpellers[d_currentDictName].get();
 
     QTextBoundaryFinder boundryFinder(QTextBoundaryFinder::Word, text);
 
@@ -123,6 +145,48 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
     }
 
     return result;
+}
+
+void SpellChecker::requestSuggestions(const QString& word, int position)
+{
+    if (d_currentDictName.isEmpty()) {
+        qWarning() << "Asked for suggestions, but no dictionary is active!";
+        return;
+    }
+
+    if (d_suggestionsCache.contains(word)) {
+        emit suggestionsReady(word, position, *d_suggestionsCache.object(word));
+        return;
+    }
+
+    Hunspell* speller = d_suggestSpellers[d_currentDictName].get();
+
+    SpellingSuggestionsWorker* worker = new SpellingSuggestionsWorker(speller, word, position);
+    worker->moveToThread(d_suggestionThread);
+
+    connect(worker, &SpellingSuggestionsWorker::suggestionsReady, this, &SpellChecker::suggestionsWorkerDone);
+    QMetaObject::invokeMethod(worker, &SpellingSuggestionsWorker::process, Qt::QueuedConnection);
+}
+
+void SpellChecker::suggestionsWorkerDone(QString word, int position, QStringList suggestions)
+{
+    d_suggestionsCache.insert(word, new QStringList(suggestions));
+
+    emit suggestionsReady(word, position, suggestions);
+}
+
+void SpellingSuggestionsWorker::process()
+{
+    QStringList result;
+
+    std::vector<std::string> suggestions = d_speller->suggest(d_word.toStdString());
+    for (const auto& s : suggestions) {
+        result.append(QString::fromStdString(s));
+    }
+
+    emit suggestionsReady(d_word, d_pos, result);
+
+    deleteLater();
 }
 
 }

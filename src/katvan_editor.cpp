@@ -57,10 +57,13 @@ private:
 
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
+    , d_pendingSUggestionsPosition(-1)
 {
     setAcceptRichText(false);
 
-    d_spellChecker = new SpellChecker();
+    d_spellChecker = new SpellChecker(this);
+    connect(d_spellChecker, &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
+
     d_highlighter = new Highlighter(document(), d_spellChecker);
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
@@ -133,11 +136,34 @@ void Editor::forceRehighlighting()
 
 void Editor::contextMenuEvent(QContextMenuEvent* event)
 {
-    QMenu* menu = createStandardContextMenu(event->pos());
-    menu->addSeparator();
-    menu->addAction(tr("Toggle Text Direction"), TEXT_DIRECTION_TOGGLE, this, &Editor::toggleTextBlockDirection);
-    menu->exec(event->globalPos());
-    delete menu;
+    QTextCursor cursor = cursorForPosition(event->pos());
+    QString misspelledWord = misspelledWordAtCursor(cursor);
+
+    d_contextMenu = createStandardContextMenu(event->pos());
+    d_contextMenu->setAttribute(Qt::WA_DeleteOnClose);
+
+    if (!misspelledWord.isEmpty()) {
+        QAction* origFirstAction = d_contextMenu->actions().first();
+
+        QAction* placeholderAction = new QAction(tr("Calculating Suggestions..."));
+        placeholderAction->setEnabled(false);
+
+        d_contextMenu->insertAction(origFirstAction, placeholderAction);
+        d_contextMenu->insertSeparator(origFirstAction);
+    }
+
+    d_contextMenu->addSeparator();
+    d_contextMenu->addAction(tr("Toggle Text Direction"), TEXT_DIRECTION_TOGGLE, this, &Editor::toggleTextBlockDirection);
+
+    if (!misspelledWord.isEmpty()) {
+        // Request the suggestions after menu was created, but before it is
+        // shown. If suggestions are already in cache, the suggestionsReady
+        // signal will be instantly invoked as a direct connection.
+        d_pendingSuggestionsWord = misspelledWord;
+        d_pendingSUggestionsPosition = cursor.position();
+        d_spellChecker->requestSuggestions(misspelledWord, cursor.position());
+    }
+    d_contextMenu->popup(event->globalPos());
 }
 
 void Editor::keyPressEvent(QKeyEvent* event)
@@ -176,6 +202,69 @@ void Editor::resizeEvent(QResizeEvent* event)
     else {
         d_rightLineNumberGutter->setGeometry(QRect(cr.left() + verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
         d_leftLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth, cr.top(), gutterWidth, cr.height()));
+    }
+}
+
+QString Editor::misspelledWordAtCursor(QTextCursor cursor)
+{
+    if (cursor.isNull()) {
+        return QString();
+    }
+    int pos = cursor.positionInBlock();
+
+    HighlighterStateBlockData* data = dynamic_cast<HighlighterStateBlockData*>(cursor.block().userData());
+    if (!data) {
+        return QString();
+    }
+
+    const auto& words = data->misspelledWords();
+    for (const auto& w : words) {
+        if (pos >= w.startPos && pos <= w.startPos + w.length) {
+            return cursor.block().text().sliced(w.startPos, w.length);
+        }
+    }
+    return QString();
+}
+
+void Editor::changeWordAtPosition(int position, const QString& into)
+{
+    QTextBlock block = document()->findBlock(position);
+    if (!block.isValid()) {
+        return;
+    }
+
+    QTextCursor cursor{ block };
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, position - block.position());
+    cursor.select(QTextCursor::WordUnderCursor);
+    cursor.insertText(into);
+}
+
+void Editor::spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions)
+{
+    if (!d_contextMenu) {
+        return;
+    }
+
+    if (d_pendingSuggestionsWord != word || d_pendingSUggestionsPosition != position) {
+        return;
+    }
+    d_pendingSuggestionsWord.clear();
+    d_pendingSUggestionsPosition = -1;
+
+    QAction* suggestionsPlaceholder = d_contextMenu->actions().first();
+    if (suggestions.isEmpty()) {
+        suggestionsPlaceholder->setText(tr("No Suggestions Available"));
+    }
+    else {
+        QMenu* suggestionsMenu = new QMenu(tr("%n Suggestion(s)", "", suggestions.size()));
+        for (const QString& suggestion : suggestions) {
+            suggestionsMenu->addAction(QString(suggestion), [this, position, suggestion]() {
+                changeWordAtPosition(position, suggestion);
+            });
+        }
+
+        d_contextMenu->insertMenu(suggestionsPlaceholder, suggestionsMenu);
+        d_contextMenu->removeAction(suggestionsPlaceholder);
     }
 }
 

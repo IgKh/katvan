@@ -26,6 +26,25 @@ namespace katvan {
 
 class SpellChecker;
 
+class HighlighterStateBlockData : public QTextBlockUserData
+{
+public:
+    HighlighterStateBlockData(
+        parsing::ParserStateStack&& stateStack,
+        parsing::SegmentList&& misspelledWords)
+        : d_stateStack(std::move(stateStack))
+        , d_misspelledWords(std::move(misspelledWords)) {}
+
+    const parsing::ParserStateStack* stateStack() const { return &d_stateStack; }
+    const parsing::SegmentList& misspelledWords() const { return d_misspelledWords; }
+
+    int fingerprint() const;
+
+private:
+    parsing::ParserStateStack d_stateStack;
+    parsing::SegmentList d_misspelledWords;
+};
+
 class Highlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
@@ -39,8 +58,14 @@ protected:
 private:
     void setupFormats();
 
-    void doSyntaxHighlighting(parsing::HighlightingListener& listener, QList<QTextCharFormat>& charFormats);
-    void doSpellChecking(const QString& text, parsing::ContentWordsListener& listener, QList<QTextCharFormat>& charFormats);
+    void doSyntaxHighlighting(
+        parsing::HighlightingListener& listener,
+        QList<QTextCharFormat>& charFormats);
+
+    parsing::SegmentList doSpellChecking(
+        const QString& text,
+        parsing::ContentWordsListener& listener,
+        QList<QTextCharFormat>& charFormats);
 
     SpellChecker* d_spellChecker;
 

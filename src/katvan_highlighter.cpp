@@ -32,19 +32,10 @@ constexpr inline size_t qHash(const ParserState& state, size_t seed = 0) noexcep
 
 }
 
-class HighlighterStateBlockData : public QTextBlockUserData
+int HighlighterStateBlockData::fingerprint() const
 {
-public:
-    HighlighterStateBlockData(parsing::ParserStateStack&& stateStack)
-        : d_stateStack(std::move(stateStack)) {}
-
-    const parsing::ParserStateStack* stateStack() const { return &d_stateStack; }
-
-    int getHash() const { return qHashRange(d_stateStack.begin(), d_stateStack.end()); }
-
-private:
-    parsing::ParserStateStack d_stateStack;
-};
+    return qHashRange(d_stateStack.begin(), d_stateStack.end());
+}
 
 Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
     : QSyntaxHighlighter(document)
@@ -143,7 +134,9 @@ void Highlighter::highlightBlock(const QString& text)
     charFormats.resize(text.size());
 
     doSyntaxHighlighting(highlightingListener, charFormats);
-    doSpellChecking(text, contentListenger, charFormats);
+
+    parsing::SegmentList misspelledWords;
+    misspelledWords = doSpellChecking(text, contentListenger, charFormats);
 
     for (size_t i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
@@ -153,8 +146,8 @@ void Highlighter::highlightBlock(const QString& text)
     // the block's user data, set a hash of that as the block state. This is to
     // force re-highlighting of the next block if something changed - QSyntaxHighlighter
     // only tracks changes to the block state number.
-    auto* blockData = new HighlighterStateBlockData(parser.stateStack());
-    setCurrentBlockState(blockData->getHash());
+    auto* blockData = new HighlighterStateBlockData(parser.stateStack(), std::move(misspelledWords));
+    setCurrentBlockState(blockData->fingerprint());
     setCurrentBlockUserData(blockData);
 }
 
@@ -169,9 +162,14 @@ void Highlighter::doSyntaxHighlighting(parsing::HighlightingListener& listener, 
     }
 }
 
-void Highlighter::doSpellChecking(const QString& text, parsing::ContentWordsListener& listener, QList<QTextCharFormat>& charFormats)
+parsing::SegmentList Highlighter::doSpellChecking(
+    const QString& text,
+    parsing::ContentWordsListener& listener,
+    QList<QTextCharFormat>& charFormats)
 {
     auto segments = listener.segments();
+
+    parsing::SegmentList result;
 
     for (const auto& segment : segments) {
         auto misspelledWords = d_spellChecker->checkSpelling(text.sliced(segment.startPos, segment.length));
@@ -180,8 +178,11 @@ void Highlighter::doSpellChecking(const QString& text, parsing::ContentWordsList
             for (size_t i = 0; i < len; i++) {
                 charFormats[start + i].merge(d_misspelledWordFormat);
             }
+
+            result.append(parsing::ContentSegment{ start, len });
         }
     }
+    return result;
 }
 
 }

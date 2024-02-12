@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QCache>
 #include <QList>
 #include <QMap>
 #include <QObject>
@@ -24,6 +25,10 @@
 
 #include <map>
 #include <memory>
+
+QT_BEGIN_NAMESPACE
+class QThread;
+QT_END_NAMESPACE
 
 class Hunspell;
 
@@ -45,9 +50,44 @@ public:
 
     QList<std::pair<size_t, size_t>> checkSpelling(const QString& text);
 
+    void requestSuggestions(const QString& word, int position);
+
+signals:
+    void suggestionsReady(const QString& word, int position, const QStringList& suggestions);
+
+private slots:
+    void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
+
 private:
     QString d_currentDictName;
-    std::map<QString, std::unique_ptr<Hunspell>> d_spellers;
+    QCache<QString, QStringList> d_suggestionsCache;
+
+    QThread* d_suggestionThread;
+
+    std::map<QString, std::unique_ptr<Hunspell>> d_checkSpellers;
+    std::map<QString, std::unique_ptr<Hunspell>> d_suggestSpellers;
+};
+
+class SpellingSuggestionsWorker : public QObject
+{
+    Q_OBJECT
+
+public:
+    SpellingSuggestionsWorker(Hunspell* speller, const QString& word, int position)
+        : d_speller(speller)
+        , d_word(word)
+        , d_pos(position) {}
+
+public slots:
+    void process();
+
+signals:
+    void suggestionsReady(QString word, int position, QStringList suggestions);
+
+private:
+    Hunspell* d_speller;
+    QString d_word;
+    int d_pos;
 };
 
 }

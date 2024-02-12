@@ -234,18 +234,20 @@ struct ContentSegment
     bool operator==(const ContentSegment&) const = default;
 };
 
+using SegmentList = QList<ContentSegment>;
+
 /**
  * Listener for extracting natural text from a Typst document
  */
 class ContentWordsListener : public ParsingListener
 {
 public:
-    QList<ContentSegment> segments() const { return d_segments; }
+    SegmentList segments() const { return d_segments; }
 
     void handleLooseToken(const Token& t, const ParserState& state) override;
 
 private:
-    QList<ContentSegment> d_segments;
+    SegmentList d_segments;
     Token d_prevToken;
 };
 
