@@ -15,10 +15,8 @@ else()
 endif()
 configure_file(katvan_version.h.in katvan_version.h @ONLY)
 
-find_package(PkgConfig)
-if(PkgConfig_FOUND)
-    pkg_check_modules(hunspell IMPORTED_TARGET hunspell)
-endif()
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(hunspell REQUIRED IMPORTED_TARGET hunspell)
 
 set(SOURCES
     katvan_editor.cpp
@@ -44,6 +42,12 @@ add_library(libkatvan STATIC ${SOURCES})
 
 target_include_directories(libkatvan PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(libkatvan PUBLIC QT_RESTRICTED_CAST_FROM_ASCII)
+
+if(MSVC)
+    target_compile_options(libkatvan PUBLIC /W4)
+else()
+    target_compile_options(libkatvan PUBLIC -Wall -Wextra -pedantic -Wno-switch)
+endif()
 
 target_link_libraries(libkatvan PUBLIC
     Qt6::Widgets

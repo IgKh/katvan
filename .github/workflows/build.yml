@@ -30,7 +30,7 @@ jobs:
         with:
           vcpkgGitCommitId: '53bef8994c541b6561884a8395ea35715ece75db'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: vcpkg install gtest hunspell
 
       - name: Configure
@@ -41,3 +41,27 @@ jobs:
 
       - name: Run tests
         run: ctest --output-on-failure --test-dir build
+
+  analyse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.5.*
+          modules: 'qtpdf'
+          cache: true
+
+      - name: Install additional dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y hunspell libgmock-dev libhunspell-dev clazy
+
+      - name: Run Clazy analysis
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clazy
+          cmake --build build -j
