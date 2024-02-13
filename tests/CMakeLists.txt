@@ -20,7 +20,10 @@ target_link_libraries(katvan_tests PRIVATE
     libkatvan
 )
 
-file(COPY hunspell DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_target(test_dicts ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/hunspell $<TARGET_FILE_DIR:katvan_tests>/hunspell
+    COMMENT "Copying mock dictionaries"
+)
 
 include(GoogleTest)
 gtest_discover_tests(katvan_tests)

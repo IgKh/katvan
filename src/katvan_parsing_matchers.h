@@ -39,6 +39,8 @@ namespace detail {
             return tupleForEach<I + 1>(t, std::forward<Callback>(cb));
         }
         else {
+            Q_UNUSED(t);
+            Q_UNUSED(cb);
             return true;
         }
     }

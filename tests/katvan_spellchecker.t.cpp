@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <QCoreApplication>
 #include <QTemporaryDir>
 
 using namespace katvan;
@@ -28,17 +29,25 @@ void PrintTo(const QString& str, std::ostream* os) {
     *os << str.toStdString();
 }
 
+static QString getDictionaryPath(const char* name)
+{
+    return QCoreApplication::applicationDirPath() + "/hunspell/" + QLatin1String(name) + ".aff";
+}
+
 TEST(SpellCheckerTests, DetectDictionaries) {
     QMap<QString, QString> result = SpellChecker::findDictionaries();
     EXPECT_THAT(result.keys(), ::testing::IsSupersetOf({
         QStringLiteral("en_IL"),
         QStringLiteral("he_XX"),
     }));
+
+    EXPECT_THAT(result.value("en_IL"), ::testing::Eq(getDictionaryPath("en_IL")));
+    EXPECT_THAT(result.value("he_XX"), ::testing::Eq(getDictionaryPath("he_XX")));
 }
 
 TEST(SpellCheckerTests, BasicEnglish) {
     SpellChecker checker;
-    checker.setCurrentDictionary("en_IL", "hunspell/en_IL.aff");
+    checker.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
 
     auto result1 = checker.checkSpelling("A good bad 12 word עברית");
     EXPECT_THAT(result1, ::testing::ElementsAre(
@@ -55,7 +64,7 @@ TEST(SpellCheckerTests, BasicEnglish) {
 
 TEST(SpellCheckerTests, BasicHebrew) {
     SpellChecker checker;
-    checker.setCurrentDictionary("he_XX", "hunspell/he_XX.aff");
+    checker.setCurrentDictionary("he_XX", getDictionaryPath("he_XX"));
 
     auto result = checker.checkSpelling("מילה בעברית טובה שהיא חלק ת'רד נתב\"ג 3 ד ה' ת\"א English");
     EXPECT_THAT(result, ::testing::ElementsAre(
@@ -74,7 +83,7 @@ TEST(SpellCheckerTests, PersonalDict) {
     SpellChecker::setPersonalDictionaryLocation(dir.path());
 
     SpellChecker checker1;
-    checker1.setCurrentDictionary("en_IL", "hunspell/en_IL.aff");
+    checker1.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
 
     auto result1 = checker1.checkSpelling("good bar bad");
     EXPECT_THAT(result1, ::testing::ElementsAre(
@@ -90,7 +99,7 @@ TEST(SpellCheckerTests, PersonalDict) {
     ));
 
     SpellChecker checker2;
-    checker2.setCurrentDictionary("en_IL", "hunspell/en_IL.aff");
+    checker2.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
 
     auto result3 = checker2.checkSpelling("good bar bad");
     EXPECT_THAT(result3, ::testing::ElementsAre(
