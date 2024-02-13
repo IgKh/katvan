@@ -43,7 +43,7 @@ struct Token
     TokenType type = TokenType::INVALID;
     size_t startPos = 0;
     size_t length = 0;
-    QStringView text;
+    QStringView text = QStringView();
 };
 
 class Tokenizer
@@ -133,9 +133,9 @@ class ParsingListener
 public:
     virtual ~ParsingListener() = default;
 
-    virtual void initializeState(const ParserState& state, size_t endMarker) {}
-    virtual void finalizeState(const ParserState& state, size_t endMarker) {}
-    virtual void handleLooseToken(const Token& t, const ParserState& state) {}
+    virtual void initializeState(const ParserState& state, size_t endMarker) { Q_UNUSED(state); Q_UNUSED(endMarker); }
+    virtual void finalizeState(const ParserState& state, size_t endMarker) { Q_UNUSED(state); Q_UNUSED(endMarker); }
+    virtual void handleLooseToken(const Token& t, const ParserState& state) { Q_UNUSED(t); Q_UNUSED(state); }
 };
 
 class Parser

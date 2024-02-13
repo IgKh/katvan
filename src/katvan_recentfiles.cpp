@@ -22,7 +22,7 @@
 
 namespace katvan {
 
-constexpr size_t MAX_RECENT_FILES = 10;
+constexpr qsizetype MAX_RECENT_FILES = 10;
 
 static constexpr QLatin1StringView SETTING_RECENT_FILES("recentFiles");
 
@@ -78,7 +78,7 @@ void RecentFiles::rebuildMenu()
 
     for (QString& filePath : d_fileList) {
         d_menu->addAction(filePath, [this, filePath]() {
-            emit fileSelected(filePath);
+            Q_EMIT fileSelected(filePath);
         });
     }
 
@@ -87,7 +87,7 @@ void RecentFiles::rebuildMenu()
     }
 
     QAction* clearAction = d_menu->addAction(tr("Clear"), this, &RecentFiles::clear);
-    clearAction->setIcon(QIcon::fromTheme(QStringLiteral("edit-clear")));
+    clearAction->setIcon(QIcon::fromTheme("edit-clear-history", QIcon(":/icons/edit-clear-history.svg")));
     clearAction->setEnabled(!d_fileList.isEmpty());
 }
 

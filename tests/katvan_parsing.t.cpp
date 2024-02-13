@@ -28,9 +28,11 @@ using namespace katvan::parsing;
 
 namespace katvan::parsing {
     void PrintTo(const Token& token, std::ostream* os) {
+        QByteArray tokenText = token.text.toUtf8();
+
         *os << "Token(" << static_cast<int>(token.type)
             << ", " << token.startPos << ", " << token.length
-            << ", \"" << token.text.toUtf8().data() << "\")";
+            << ", \"" << tokenText.data() << "\")";
     }
 
     void PrintTo(const HiglightingMarker& marker, std::ostream* os) {
@@ -45,7 +47,7 @@ namespace katvan::parsing {
 
 struct TokenMatcher {
     TokenType type;
-    QString text;
+    QString text = QString();
 };
 
 bool operator==(const Token& t, const TokenMatcher& m) {

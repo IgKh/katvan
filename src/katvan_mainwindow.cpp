@@ -70,7 +70,7 @@ MainWindow::MainWindow()
     cursorPositionChanged();
 
     if (!d_driver->compilerFound()) {
-        QTimer::singleShot(0, [this]() {
+        QTimer::singleShot(0, this, [this]() {
             QMessageBox::warning(
                 this,
                 QCoreApplication::applicationName(),
@@ -203,7 +203,7 @@ void MainWindow::setupActions()
     pasteAction->setIcon(QIcon::fromTheme("edit-paste", QIcon(":/icons/edit-paste.svg")));
     pasteAction->setShortcut(QKeySequence::Paste);
     pasteAction->setEnabled(d_editor->canPaste());
-    connect(QApplication::clipboard(), &QClipboard::dataChanged, [this, pasteAction]() {
+    connect(QApplication::clipboard(), &QClipboard::dataChanged, this, [this, pasteAction]() {
         pasteAction->setEnabled(d_editor->canPaste());
     });
 
@@ -319,7 +319,7 @@ void MainWindow::loadFile(const QString& fileName)
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Loading file %1 failed: %2").arg(fileName).arg(file.errorString()));
+            tr("Loading file %1 failed: %2").arg(fileName, file.errorString()));
 
         return;
     }
@@ -370,9 +370,9 @@ void MainWindow::setCurrentFile(const QString& fileName)
     d_editor->document()->setModified(false);
     setWindowModified(false);
 
-    setWindowTitle(QString("%1[*] - %2")
-        .arg(QCoreApplication::applicationName())
-        .arg(d_currentFileShortName));
+    setWindowTitle(QString("%1[*] - %2").arg(
+        QCoreApplication::applicationName(),
+        d_currentFileShortName));
 
     d_driver->resetInputFile(fileName);
     d_searchBar->hide();
@@ -437,7 +437,7 @@ bool MainWindow::saveFile()
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Opening file %1 for saving failed: %2").arg(d_currentFileName).arg(file.errorString()));
+            tr("Opening file %1 for saving failed: %2").arg(d_currentFileName, file.errorString()));
 
         return false;
     }
@@ -450,7 +450,7 @@ bool MainWindow::saveFile()
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Saving file %1 failed: %2").arg(d_currentFileName).arg(file.errorString()));
+            tr("Saving file %1 failed: %2").arg(d_currentFileName, file.errorString()));
 
         return false;
     }
@@ -523,7 +523,7 @@ void MainWindow::exportPdf()
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Failing writing file %1: %2").arg(targetFileName).arg(sourceFile.errorString()));
+            tr("Failing writing file %1: %2").arg(targetFileName, sourceFile.errorString()));
     }
 }
 
@@ -620,11 +620,11 @@ void MainWindow::changeSpellCheckingDictionary()
     QStringList dictNames = { "" };
     QStringList dictLabels = { tr("None") };
 
-    for (const QString& dictName : dicts.keys()) {
-        dictNames.append(dictName);
+    for (auto kit = dicts.keyBegin(); kit != dicts.keyEnd(); ++kit) {
+        dictNames.append(*kit);
         dictLabels.append(QString("%1 - %2").arg(
-            dictName,
-            SpellChecker::dictionaryDisplayName(dictName)));
+            *kit,
+            SpellChecker::dictionaryDisplayName(*kit)));
     }
 
     QString currentDict = d_editor->spellChecker()->currentDictionaryName();

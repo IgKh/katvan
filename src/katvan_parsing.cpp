@@ -28,7 +28,7 @@
 namespace katvan::parsing {
 
 // NOTE - Must be in sorted order
-static const QStringList CODE_KEYWORDS = {
+Q_GLOBAL_STATIC(QStringList, CODE_KEYWORDS, {
     QStringLiteral("and"),
     QStringLiteral("as"),
     QStringLiteral("auto"),
@@ -49,9 +49,9 @@ static const QStringList CODE_KEYWORDS = {
     QStringLiteral("show"),
     QStringLiteral("true"),
     QStringLiteral("while")
-};
+})
 
-static const QString MATH_NON_OPERATORS = QStringLiteral("()[]{},;");
+static constexpr QLatin1StringView MATH_NON_OPERATORS = QLatin1StringView("()[]{},;");
 
 static bool isAsciiDigit(QChar ch)
 {
@@ -482,7 +482,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('<')),
-                m::FullWord,
+                m::FullWord(),
                 m::ZeroOrMore(m::Symbol(QLatin1Char('_'))),
                 m::Symbol(QLatin1Char('>'))
             ))) {
@@ -491,7 +491,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('@')),
-                m::FullWord,
+                m::FullWord(),
                 m::ZeroOrMore(m::Symbol(QLatin1Char('_')))
             ))) {
                 instantState(ParserState::Kind::CONTENT_REFERENCE);
@@ -547,13 +547,13 @@ void Parser::parse()
                 pushState(ParserState::Kind::STRING_LITERAL);
                 continue;
             }
-            else if (match(m::All(m::FullWord, m::Peek(m::Symbol(QLatin1Char('(')))))) {
+            else if (match(m::All(m::FullWord(), m::Peek(m::Symbol(QLatin1Char('(')))))) {
                 if (d_endMarker > d_startMarker) {
                     instantState(ParserState::Kind::CODE_FUNCTION_NAME);
                 }
                 continue;
             }
-            else if (match(m::FullWord)) {
+            else if (match(m::FullWord())) {
                 if (d_endMarker > d_startMarker) {
                     instantState(ParserState::Kind::CODE_VARIABLE_NAME);
                     if (match(m::Symbol(QLatin1Char('.')))) {
@@ -564,12 +564,12 @@ void Parser::parse()
             }
         }
         else if (state.kind == ParserState::Kind::MATH_EXPRESSION_CHAIN) {
-            if (match(m::All(m::FullWord, m::Peek(m::Symbol(QLatin1Char('(')))))) {
+            if (match(m::All(m::FullWord(), m::Peek(m::Symbol(QLatin1Char('(')))))) {
                 instantState(ParserState::Kind::CODE_FUNCTION_NAME);
                 popState();
                 continue;
             }
-            else if (match(m::FullWord)) {
+            else if (match(m::FullWord())) {
                 instantState(ParserState::Kind::CODE_VARIABLE_NAME);
                 if (!match(m::Symbol(QLatin1Char('.')))) {
                     popState();
@@ -619,24 +619,24 @@ void Parser::parse()
                 pushState(ParserState::Kind::STRING_LITERAL);
                 continue;
             }
-            else if (match(m::Keyword(CODE_KEYWORDS))) {
+            else if (match(m::Keyword(*CODE_KEYWORDS))) {
                 instantState(ParserState::Kind::CODE_KEYWORD);
                 continue;
             }
             else if (match(m::All(
-                m::FullWord,
+                m::FullWord(),
                 m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
             ))) {
                 instantState(ParserState::Kind::CODE_FUNCTION_NAME);
                 continue;
             }
-            else if (match(m::FullCodeNumber)) {
+            else if (match(m::FullCodeNumber())) {
                 instantState(ParserState::Kind::CODE_NUMERIC_LITERAL);
                 continue;
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('<')),
-                m::FullWord,
+                m::FullWord(),
                 m::ZeroOrMore(m::Symbol(QLatin1Char('_'))),
                 m::Symbol(QLatin1Char('>'))
             ))) {
@@ -646,7 +646,7 @@ void Parser::parse()
         }
         else if (state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN) {
             if (match(m::All(
-                m::FullWord,
+                m::FullWord(),
                 m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
             ))) {
                 instantState(ParserState::Kind::CODE_FUNCTION_NAME);
@@ -659,7 +659,7 @@ void Parser::parse()
                 }
                 continue;
             }
-            else if (match(m::FullWord)) {
+            else if (match(m::FullWord())) {
                 instantState(ParserState::Kind::CODE_VARIABLE_NAME);
                 if (!match(m::Symbol(QLatin1Char('.')))) {
                     popState();
@@ -741,14 +741,14 @@ bool Parser::handleCodeStart()
 
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
-        m::Keyword(CODE_KEYWORDS)
+        m::Keyword(*CODE_KEYWORDS)
     ))) {
         pushState(ParserState::Kind::CODE_LINE);
         return true;
     }
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
-        m::FullWord,
+        m::FullWord(),
         m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
     ))) {
         // Function call expression - followed by either a normal argument list
@@ -764,7 +764,7 @@ bool Parser::handleCodeStart()
     }
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
-        m::FullCodeNumber
+        m::FullCodeNumber()
     ))) {
         instantState(ParserState::Kind::CODE_NUMERIC_LITERAL);
         if (match(m::Symbol(QLatin1Char('.')))) {
@@ -778,7 +778,7 @@ bool Parser::handleCodeStart()
     }
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
-        m::FullWord
+        m::FullWord()
     ))) {
         instantState(ParserState::Kind::CODE_VARIABLE_NAME);
         if (match(m::Symbol(QLatin1Char('.')))) {

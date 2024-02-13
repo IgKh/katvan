@@ -93,9 +93,9 @@ void TypstDriver::updatePreview(const QString& source)
     stream.flush();
 
     if (stream.status() != QTextStream::Ok) {
-        d_compilerOutput = QStringLiteral("Error preparing preview input %1: %2")
-            .arg(d_inputFile->fileName())
-            .arg(d_inputFile->errorString());
+        d_compilerOutput = QStringLiteral("Error preparing preview input %1: %2").arg(
+            d_inputFile->fileName(),
+            d_inputFile->errorString());
 
         compilerFinished(-1);
         return;
@@ -115,9 +115,9 @@ void TypstDriver::updatePreview(const QString& source)
 
 void TypstDriver::processErrorOccurred()
 {
-    d_compilerOutput += QStringLiteral("Error starting typst compiler at %1: %2")
-        .arg(d_compilerPath)
-        .arg(d_process->errorString());
+    d_compilerOutput += QStringLiteral("Error starting typst compiler at %1: %2").arg(
+        d_compilerPath,
+        d_process->errorString());
 
     compilerFinished(-2);
 }
@@ -126,11 +126,11 @@ void TypstDriver::compilerFinished(int exitCode)
 {
     if (exitCode == 0) {
         d_status = Status::SUCCESS;
-        emit previewReady(d_outputFile->fileName());
+        Q_EMIT previewReady(d_outputFile->fileName());
     }
     else {
         d_status = Status::FAILED;
-        emit compilationFailed(d_compilerOutput);
+        Q_EMIT compilationFailed(d_compilerOutput);
     }
 }
 

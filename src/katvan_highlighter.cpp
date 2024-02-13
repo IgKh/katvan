@@ -34,7 +34,7 @@ constexpr inline size_t qHash(const ParserState& state, size_t seed = 0) noexcep
 
 int HighlighterStateBlockData::fingerprint() const
 {
-    return qHashRange(d_stateStack.begin(), d_stateStack.end());
+    return static_cast<int>(qHashRange(d_stateStack.begin(), d_stateStack.end()));
 }
 
 Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
@@ -138,7 +138,7 @@ void Highlighter::highlightBlock(const QString& text)
     parsing::SegmentList misspelledWords;
     misspelledWords = doSpellChecking(text, contentListenger, charFormats);
 
-    for (size_t i = 0; i < text.size(); i++) {
+    for (qsizetype i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
     }
 

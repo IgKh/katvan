@@ -204,7 +204,7 @@ void SpellChecker::flushPersonalDictionary()
     }
 
     QTextStream stream(&file);
-    for (const QString& word : d_personalDictionary) {
+    for (const QString& word : std::as_const(d_personalDictionary)) {
         stream << word << "\n";
     }
     file.commit();
@@ -256,7 +256,7 @@ void SpellChecker::requestSuggestions(const QString& word, int position)
     }
 
     if (d_suggestionsCache.contains(word)) {
-        emit suggestionsReady(word, position, *d_suggestionsCache.object(word));
+        Q_EMIT suggestionsReady(word, position, *d_suggestionsCache.object(word));
         return;
     }
 
@@ -273,7 +273,7 @@ void SpellChecker::suggestionsWorkerDone(QString word, int position, QStringList
 {
     d_suggestionsCache.insert(word, new QStringList(suggestions));
 
-    emit suggestionsReady(word, position, suggestions);
+    Q_EMIT suggestionsReady(word, position, suggestions);
 }
 
 void SpellingSuggestionsWorker::process()
@@ -285,7 +285,7 @@ void SpellingSuggestionsWorker::process()
         result.append(QString::fromStdString(s));
     }
 
-    emit suggestionsReady(d_word, d_pos, result);
+    Q_EMIT suggestionsReady(d_word, d_pos, result);
 
     deleteLater();
 }

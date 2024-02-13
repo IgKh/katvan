@@ -33,7 +33,7 @@ static constexpr QChar LRM_MARK = (ushort)0x200e;
 static constexpr QChar LRI_MARK = (ushort)0x2066;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
-static QKeySequence TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
+static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 
 class LineNumberGutter : public QWidget
 {
@@ -85,7 +85,7 @@ Editor::Editor(QWidget* parent)
     d_debounceTimer->setSingleShot(true);
     d_debounceTimer->setInterval(500);
     d_debounceTimer->callOnTimeout(this, [this]() {
-        emit contentModified(toPlainText());
+        Q_EMIT contentModified(toPlainText());
     });
 
     connect(this, &QTextEdit::textChanged, [this]() {
@@ -217,14 +217,14 @@ QString Editor::misspelledWordAtCursor(QTextCursor cursor)
     if (cursor.isNull()) {
         return QString();
     }
-    int pos = cursor.positionInBlock();
+    size_t pos = cursor.positionInBlock();
 
-    HighlighterStateBlockData* data = dynamic_cast<HighlighterStateBlockData*>(cursor.block().userData());
-    if (!data) {
+    HighlighterStateBlockData* blockData = dynamic_cast<HighlighterStateBlockData*>(cursor.block().userData());
+    if (!blockData) {
         return QString();
     }
 
-    const auto& words = data->misspelledWords();
+    const auto& words = blockData->misspelledWords();
     for (const auto& w : words) {
         if (pos >= w.startPos && pos <= w.startPos + w.length) {
             return cursor.block().text().sliced(w.startPos, w.length);

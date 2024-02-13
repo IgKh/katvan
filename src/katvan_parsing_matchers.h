@@ -38,7 +38,9 @@ namespace detail {
             }
             return tupleForEach<I + 1>(t, std::forward<Callback>(cb));
         }
-        return true;
+        else {
+            return true;
+        }
     }
 }
 
@@ -143,7 +145,7 @@ class Peek
 public:
     Peek(const M& matcher): d_matcher(matcher) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream, QList<Token>&) const
     {
         QList<Token> nested;
         bool matched = d_matcher.tryMatch(stream, nested);
@@ -206,13 +208,17 @@ public:
 // Because of our tokenizer design (which doesn't backtrack by itself) number
 // base prefixes can cause an otherwise continues word to be broken into
 // multiple word tokens (e.g "break" -> "b" + "reak"). This covers up for it.
-static const auto FullWord = OneOrMore(TokenType(parsing::TokenType::WORD));
+auto FullWord() {
+    return OneOrMore(TokenType(parsing::TokenType::WORD));
+}
 
 // A number literal in code, with possible trailing units
-static const auto FullCodeNumber = All(
-    TokenType(parsing::TokenType::CODE_NUMBER),
-    Optionally(Any(TokenType(parsing::TokenType::WORD), Symbol(QLatin1Char('%'))))
-);
+auto FullCodeNumber() {
+    return All(
+        TokenType(parsing::TokenType::CODE_NUMBER),
+        Optionally(Any(TokenType(parsing::TokenType::WORD), Symbol(QLatin1Char('%'))))
+    );
+}
 
 class Keyword
 {
@@ -224,7 +230,7 @@ public:
     bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
     {
         QList<Token> nested;
-        bool ok = FullWord.tryMatch(stream, nested);
+        bool ok = FullWord().tryMatch(stream, nested);
 
         usedTokens.append(nested);
         if (!ok) {

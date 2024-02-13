@@ -41,7 +41,7 @@ endif()
 add_library(libkatvan STATIC ${SOURCES})
 
 target_include_directories(libkatvan PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_compile_definitions(libkatvan PUBLIC QT_RESTRICTED_CAST_FROM_ASCII)
+target_compile_definitions(libkatvan PUBLIC QT_RESTRICTED_CAST_FROM_ASCII QT_NO_EMIT)
 
 if(MSVC)
     target_compile_options(libkatvan PUBLIC /W4)
