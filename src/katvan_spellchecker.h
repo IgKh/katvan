@@ -36,6 +36,8 @@ class Hunspell;
 
 namespace katvan {
 
+struct LoadedSpeller;
+
 class SpellChecker : public QObject
 {
     Q_OBJECT
@@ -65,7 +67,7 @@ private slots:
     void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
 
 private:
-    bool checkWord(Hunspell* speller, const QString& word);
+    bool checkWord(Hunspell& speller, const QString& word);
     void flushPersonalDictionary();
     void loadPersonalDictionary();
 
@@ -80,8 +82,7 @@ private:
     QFileSystemWatcher* d_watcher;
     QThread* d_suggestionThread;
 
-    std::map<QString, std::unique_ptr<Hunspell>> d_checkSpellers;
-    std::map<QString, std::unique_ptr<Hunspell>> d_suggestSpellers;
+    std::map<QString, std::unique_ptr<LoadedSpeller>> d_spellers;
 };
 
 class SpellingSuggestionsWorker : public QObject
@@ -89,7 +90,7 @@ class SpellingSuggestionsWorker : public QObject
     Q_OBJECT
 
 public:
-    SpellingSuggestionsWorker(Hunspell* speller, const QString& word, int position)
+    SpellingSuggestionsWorker(LoadedSpeller* speller, const QString& word, int position)
         : d_speller(speller)
         , d_word(word)
         , d_pos(position) {}
@@ -101,7 +102,7 @@ signals:
     void suggestionsReady(QString word, int position, QStringList suggestions);
 
 private:
-    Hunspell* d_speller;
+    LoadedSpeller* d_speller;
     QString d_word;
     int d_pos;
 };

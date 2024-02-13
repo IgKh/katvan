@@ -25,6 +25,7 @@
 #include <QLocale>
 #include <QMessageBox>
 #include <QMetaObject>
+#include <QMutex>
 #include <QSaveFile>
 #include <QStandardPaths>
 #include <QTextBoundaryFinder>
@@ -36,6 +37,15 @@ namespace katvan {
 static constexpr size_t SUGGESTIONS_CACHE_SIZE = 25;
 
 QString SpellChecker::s_personalDictionaryLocation;
+
+struct LoadedSpeller
+{
+    LoadedSpeller(const char* affPath, const char* dicPath)
+        : speller(affPath, dicPath) {}
+
+    Hunspell speller;
+    QMutex mutex;
+};
 
 SpellChecker::SpellChecker(QObject* parent)
     : QObject(parent)
@@ -67,7 +77,7 @@ SpellChecker::~SpellChecker()
 
 /**
  * Scan system and executable-local locations for Hunspell dictionaries,
- * which are a pair of *.aff and *.dic files with the same base name. 
+ * which are a pair of *.aff and *.dic files with the same base name.
  */
 QMap<QString, QString> SpellChecker::findDictionaries()
 {
@@ -121,36 +131,26 @@ void SpellChecker::setPersonalDictionaryLocation(const QString& dirPath)
 
 void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictAffFile)
 {
-    if (!dictName.isEmpty() && !d_checkSpellers.contains(dictName)) {
+    if (!dictName.isEmpty() && !d_spellers.contains(dictName)) {
         QString dicFile = QFileInfo(dictAffFile).path() + "/" + dictName + ".dic";
 
         QByteArray affPath = dictAffFile.toLocal8Bit();
         QByteArray dicPath = dicFile.toLocal8Bit();
-
-        // Different speller instances for checking spelling and for generating
-        // suggestions... Because suggestion generation happens on a worker thread
-        // and Hunspell is not thread safe.
-        d_checkSpellers.emplace(dictName, std::make_unique<Hunspell>(affPath.data(), dicPath.data()));
-        d_suggestSpellers.emplace(dictName, std::make_unique<Hunspell>(affPath.data(), dicPath.data()));
+        d_spellers.emplace(dictName, std::make_unique<LoadedSpeller>(affPath.data(), dicPath.data()));
     }
 
     d_currentDictName = dictName;
     d_suggestionsCache.clear();
-
-    if (!dictName.isEmpty() && !d_suggestionThread->isRunning()) {
-        qDebug() << "Starting suggestion generation thread";
-        d_suggestionThread->start();
-    }
 }
 
-bool SpellChecker::checkWord(Hunspell* speller, const QString& word)
+bool SpellChecker::checkWord(Hunspell& speller, const QString& word)
 {
     QString normalizedWord = word.normalized(QString::NormalizationForm_D);
     if (d_personalDictionary.contains(normalizedWord)) {
         return true;
     }
 
-    return speller->spell(word.toStdString());
+    return speller.spell(word.toStdString());
 }
 
 QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text)
@@ -160,7 +160,13 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         return result;
     }
 
-    Hunspell* speller = d_checkSpellers[d_currentDictName].get();
+    LoadedSpeller* speller = d_spellers[d_currentDictName].get();
+    if (!speller->mutex.tryLock()) {
+        // Do not block the UI event loop! If we can't take the speller
+        // lock (because suggestions are being generated at the moment),
+        // just pretend there are no spelling mistakes here.
+        return result;
+    }
 
     QTextBoundaryFinder boundryFinder(QTextBoundaryFinder::Word, text);
 
@@ -169,7 +175,7 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         qsizetype pos = boundryFinder.position();
         if (boundryFinder.boundaryReasons() & QTextBoundaryFinder::EndOfItem) {
             QString word = text.sliced(prevPos, pos - prevPos);
-            bool ok = checkWord(speller, word);
+            bool ok = checkWord(speller->speller, word);
             if (!ok) {
                 result.append(std::make_pair<size_t, size_t>(prevPos, pos - prevPos));
             }
@@ -177,6 +183,7 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         prevPos = pos;
     }
 
+    speller->mutex.unlock();
     return result;
 }
 
@@ -260,7 +267,12 @@ void SpellChecker::requestSuggestions(const QString& word, int position)
         return;
     }
 
-    Hunspell* speller = d_suggestSpellers[d_currentDictName].get();
+    if (!d_suggestionThread->isRunning()) {
+        qDebug() << "Starting suggestion generation thread";
+        d_suggestionThread->start();
+    }
+
+    LoadedSpeller* speller = d_spellers[d_currentDictName].get();
 
     SpellingSuggestionsWorker* worker = new SpellingSuggestionsWorker(speller, word, position);
     worker->moveToThread(d_suggestionThread);
@@ -278,9 +290,14 @@ void SpellChecker::suggestionsWorkerDone(QString word, int position, QStringList
 
 void SpellingSuggestionsWorker::process()
 {
-    QStringList result;
+    std::vector<std::string> suggestions;
+    {
+        QMutexLocker locker{ &d_speller->mutex };
+        suggestions = d_speller->speller.suggest(d_word.toStdString());
+    }
 
-    std::vector<std::string> suggestions = d_speller->suggest(d_word.toStdString());
+    QStringList result;
+    result.reserve(suggestions.size());
     for (const auto& s : suggestions) {
         result.append(QString::fromStdString(s));
     }
