@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_mainwindow.h"
+#include "katvan_spellchecker.h"
 #include "katvan_version.h"
 
 #include <QApplication>
@@ -31,6 +32,8 @@ void setupPortableMode()
 
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsPath);
+
+    katvan::SpellChecker::setPersonalDictionaryLocation(settingsPath + "/Katvan");
 }
 
 int main(int argc, char** argv)

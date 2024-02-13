@@ -21,12 +21,14 @@
 #include <QList>
 #include <QMap>
 #include <QObject>
+#include <QSet>
 #include <QString>
 
 #include <map>
 #include <memory>
 
 QT_BEGIN_NAMESPACE
+class QFileSystemWatcher;
 class QThread;
 QT_END_NAMESPACE
 
@@ -44,11 +46,14 @@ public:
 
     static QMap<QString, QString> findDictionaries();
     static QString dictionaryDisplayName(const QString& dictName);
+    static void setPersonalDictionaryLocation(const QString& dirPath);
 
     QString currentDictionaryName() const { return d_currentDictName; }
     void setCurrentDictionary(const QString& dictName, const QString& dictAffFile);
 
     QList<std::pair<size_t, size_t>> checkSpelling(const QString& text);
+
+    void addToPersonalDictionary(const QString& word);
 
     void requestSuggestions(const QString& word, int position);
 
@@ -56,12 +61,23 @@ signals:
     void suggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
 private slots:
+    void personalDictionaryFileChanged();
     void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
 
 private:
+    bool checkWord(Hunspell* speller, const QString& word);
+    void flushPersonalDictionary();
+    void loadPersonalDictionary();
+
+    static QString s_personalDictionaryLocation;
+
     QString d_currentDictName;
     QCache<QString, QStringList> d_suggestionsCache;
 
+    QString d_personalDictionaryPath;
+    QSet<QString> d_personalDictionary;
+
+    QFileSystemWatcher* d_watcher;
     QThread* d_suggestionThread;
 
     std::map<QString, std::unique_ptr<Hunspell>> d_checkSpellers;

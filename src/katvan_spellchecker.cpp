@@ -19,17 +19,23 @@
 
 #include <hunspell.hxx>
 
-#include <QCoreApplication>
+#include <QApplication>
 #include <QDir>
+#include <QFileSystemWatcher>
 #include <QLocale>
+#include <QMessageBox>
 #include <QMetaObject>
+#include <QSaveFile>
 #include <QStandardPaths>
 #include <QTextBoundaryFinder>
+#include <QTextStream>
 #include <QThread>
 
 namespace katvan {
 
 static constexpr size_t SUGGESTIONS_CACHE_SIZE = 25;
+
+QString SpellChecker::s_personalDictionaryLocation;
 
 SpellChecker::SpellChecker(QObject* parent)
     : QObject(parent)
@@ -37,6 +43,18 @@ SpellChecker::SpellChecker(QObject* parent)
 {
     d_suggestionThread = new QThread(this);
     d_suggestionThread->setObjectName("SuggestionThread");
+
+    QString loc = s_personalDictionaryLocation;
+    if (loc.isEmpty()) {
+        loc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    }
+
+    d_personalDictionaryPath = loc + QDir::separator() + "/personal.dic";
+    loadPersonalDictionary();
+
+    d_watcher = new QFileSystemWatcher(this);
+    d_watcher->addPath(d_personalDictionaryPath);
+    connect(d_watcher, &QFileSystemWatcher::fileChanged, this, &SpellChecker::personalDictionaryFileChanged);
 }
 
 SpellChecker::~SpellChecker()
@@ -96,6 +114,11 @@ QString SpellChecker::dictionaryDisplayName(const QString& dictName)
     );
 }
 
+void SpellChecker::setPersonalDictionaryLocation(const QString& dirPath)
+{
+    s_personalDictionaryLocation = dirPath;
+}
+
 void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictAffFile)
 {
     if (!dictName.isEmpty() && !d_checkSpellers.contains(dictName)) {
@@ -120,6 +143,16 @@ void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& 
     }
 }
 
+bool SpellChecker::checkWord(Hunspell* speller, const QString& word)
+{
+    QString normalizedWord = word.normalized(QString::NormalizationForm_D);
+    if (d_personalDictionary.contains(normalizedWord)) {
+        return true;
+    }
+
+    return speller->spell(word.toStdString());
+}
+
 QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text)
 {
     QList<std::pair<size_t, size_t>> result;
@@ -136,7 +169,7 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         qsizetype pos = boundryFinder.position();
         if (boundryFinder.boundaryReasons() & QTextBoundaryFinder::EndOfItem) {
             QString word = text.sliced(prevPos, pos - prevPos);
-            bool ok = speller->spell(word.toStdString());
+            bool ok = checkWord(speller, word);
             if (!ok) {
                 result.append(std::make_pair<size_t, size_t>(prevPos, pos - prevPos));
             }
@@ -145,6 +178,74 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
     }
 
     return result;
+}
+
+void SpellChecker::addToPersonalDictionary(const QString& word)
+{
+    d_personalDictionary.insert(word.normalized(QString::NormalizationForm_D));
+    flushPersonalDictionary();
+}
+
+void SpellChecker::flushPersonalDictionary()
+{
+    QDir dictDir = QFileInfo(d_personalDictionaryPath).dir();
+    if (!dictDir.exists()) {
+        dictDir.mkpath(".");
+    }
+
+    QSaveFile file(d_personalDictionaryPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(
+            QApplication::activeWindow(),
+            QCoreApplication::applicationName(),
+            tr("Saving personal dictionary to %1 failed: %2").arg(d_personalDictionaryPath, file.errorString()));
+
+        return;
+    }
+
+    QTextStream stream(&file);
+    for (const QString& word : d_personalDictionary) {
+        stream << word << "\n";
+    }
+    file.commit();
+}
+
+void SpellChecker::loadPersonalDictionary()
+{
+    if (!QFileInfo::exists(d_personalDictionaryPath)) {
+        return;
+    }
+
+    QFile file(d_personalDictionaryPath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(
+            QApplication::activeWindow(),
+            QCoreApplication::applicationName(),
+            tr("Loading personal dictionary from %1 failed: %2").arg(d_personalDictionaryPath, file.errorString()));
+
+        return;
+    }
+
+    d_personalDictionary.clear();
+
+    QString line;
+    QTextStream stream(&file);
+    while (stream.readLineInto(&line)) {
+        if (line.isEmpty()) {
+            continue;
+        }
+        d_personalDictionary.insert(line.normalized(QString::NormalizationForm_D));
+    }
+}
+
+void SpellChecker::personalDictionaryFileChanged()
+{
+    qDebug() << "Personal dictionary file changed on disk";
+    loadPersonalDictionary();
+
+    if (!d_watcher->files().contains(d_personalDictionaryPath)) {
+        d_watcher->addPath(d_personalDictionaryPath);
+    }
 }
 
 void SpellChecker::requestSuggestions(const QString& word, int position)

@@ -148,7 +148,14 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         QAction* placeholderAction = new QAction(tr("Calculating Suggestions..."));
         placeholderAction->setEnabled(false);
 
+        QAction* addToPersonalAction = new QAction(tr("Add to Personal Dictionary"));
+        connect(addToPersonalAction, &QAction::triggered, this, [this, misspelledWord, cursor]() {
+            d_spellChecker->addToPersonalDictionary(misspelledWord);
+            d_highlighter->rehighlightBlock(cursor.block());
+        });
+
         d_contextMenu->insertAction(origFirstAction, placeholderAction);
+        d_contextMenu->insertAction(origFirstAction, addToPersonalAction);
         d_contextMenu->insertSeparator(origFirstAction);
     }
 
