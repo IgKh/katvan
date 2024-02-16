@@ -77,10 +77,8 @@ int main(int argc, char** argv)
     }
 
     QTranslator translator;
-    if (locale.language() != QLocale::English) {
-        if (translator.load(locale, "katvan", "_", ":/i18n")) {
-            QCoreApplication::installTranslator(&translator);
-        }
+    if (translator.load(locale, "katvan", "_", ":/i18n")) {
+        QCoreApplication::installTranslator(&translator);
     }
 
     QTranslator qtTranslator;

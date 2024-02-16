@@ -1,6 +1,6 @@
 find_package(Qt6 REQUIRED COMPONENTS Widgets PdfWidgets LinguistTools)
 
-qt_standard_project_setup()
+qt_standard_project_setup(REQUIRES 6.5)
 
 find_package(Git)
 if(Git_FOUND)
@@ -67,9 +67,11 @@ set_target_properties(katvan PROPERTIES
     MACOSX_BUNDLE ON
 )
 
-qt_add_translations(katvan
-    TS_FILES
-        translations/katvan_he.ts
-    SOURCES
-        ${SOURCES} ${MAIN_SOURCES}
+qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly)
+qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_he.ts)
+
+qt_add_resources(katvan "translations"
+    PREFIX "/i18n"
+    BASE "${CMAKE_CURRENT_BINARY_DIR}"
+    FILES "${QM_FILES}"
 )

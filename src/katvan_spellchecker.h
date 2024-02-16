@@ -67,7 +67,7 @@ private slots:
     void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
 
 private:
-    bool checkWord(Hunspell& speller, const QString& word);
+    bool checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word);
     void flushPersonalDictionary();
     void loadPersonalDictionary();
 

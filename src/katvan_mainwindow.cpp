@@ -238,6 +238,14 @@ void MainWindow::setupActions()
     viewMenu->addAction(d_compilerOutputDock->toggleViewAction());
 
     /*
+     * Tools Menu
+     */
+    QMenu* toolsMenu = menuBar()->addMenu(tr("&Tools"));
+
+    QAction* spellingAction = toolsMenu->addAction(tr("&Spell Checking..."), this, &MainWindow::changeSpellCheckingDictionary);
+    spellingAction->setIcon(QIcon::fromTheme("tools-check-spelling", QIcon(":/icons/tools-check-spelling.svg")));
+
+    /*
      * Help Menu
      */
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
@@ -266,8 +274,6 @@ void MainWindow::setupStatusBar()
     statusBar()->addPermanentWidget(d_cursorPosButton);
 
     d_spellingButton = buildStatusBarButton();
-    d_spellingButton->setIcon(QIcon::fromTheme("tools-check-spelling", QIcon(":/icons/tools-check-spelling.svg")));
-    d_spellingButton->setIconSize(QSize(12, 12));
     d_spellingButton->setToolTip(tr("Spell checking dictionary"));
     d_spellingButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     connect(d_spellingButton, &QToolButton::clicked, this, &MainWindow::changeSpellCheckingDictionary);

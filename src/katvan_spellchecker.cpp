@@ -143,10 +143,78 @@ void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& 
     d_suggestionsCache.clear();
 }
 
-bool SpellChecker::checkWord(Hunspell& speller, const QString& word)
+static bool isSingleGrapheme(const QString& word)
+{
+    QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, word);
+    qsizetype pos = finder.toNextBoundary();
+    return (pos >= 0 && finder.toNextBoundary() < 0);
+}
+
+static bool isHebrewOrdinal(const QString& normalizedWord)
+{
+    if (normalizedWord.size() != 2) {
+        return false;
+    }
+
+    QChar a = normalizedWord[0];
+    QChar b = normalizedWord[1];
+
+    return a.category() == QChar::Letter_Other
+        && a.script() == QChar::Script_Hebrew
+        && (b == QLatin1Char('\'') || b == QChar(0x05F3));
+}
+
+static QChar::Script dominantScriptForWord(const QString& word)
+{
+    for (const QChar& ch : word) {
+        if (ch.script() > QChar::Script_Common) {
+            return ch.script();
+        }
+    }
+    return QChar::Script_Unknown;
+}
+
+static bool isAppropriateScriptForDictionary(QChar::Script dictionaryScript, const QString& word)
+{
+    if (dictionaryScript == QChar::Script_Unknown) {
+        return true;
+    }
+
+    QChar::Script wordScript = dominantScriptForWord(word);
+    return wordScript == QChar::Script_Unknown || wordScript == dictionaryScript;
+}
+
+static QChar::Script getDictionaryScript(const QString& dictName)
+{
+    QLocale locale(dictName);
+    if (locale.language() == QLocale::C) {
+        return QChar::Script_Unknown;
+    }
+
+    switch (locale.script()) {
+    case QLocale::ArabicScript:     return QChar::Script_Arabic;
+    case QLocale::CyrillicScript:   return QChar::Script_Cyrillic;
+    case QLocale::HebrewScript:     return QChar::Script_Hebrew;
+    case QLocale::LatinScript:      return QChar::Script_Latin;
+    default:                        return QChar::Script_Unknown;
+    }
+}
+
+bool SpellChecker::checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word)
 {
     QString normalizedWord = word.normalized(QString::NormalizationForm_D);
     if (d_personalDictionary.contains(normalizedWord)) {
+        return true;
+    }
+
+    // Hunspell seems to emit a lot of false positives, so reduce them with
+    // some heuristics:
+    // - Ignore single Unicode grapheme words (single character, emoji, etc)
+    // - Ignore Hebrew ordinals (single Hebrew letter followed by a Geresh)
+    // - Ignore words written in script that doesn't fit the dictionary's locale.
+    if (isSingleGrapheme(word)
+        || isHebrewOrdinal(normalizedWord)
+        || !isAppropriateScriptForDictionary(dictionaryScript, word)) {
         return true;
     }
 
@@ -168,6 +236,8 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         return result;
     }
 
+    QChar::Script dictScript = getDictionaryScript(d_currentDictName);
+
     QTextBoundaryFinder boundryFinder(QTextBoundaryFinder::Word, text);
 
     qsizetype prevPos = 0;
@@ -175,7 +245,7 @@ QList<std::pair<size_t, size_t>> SpellChecker::checkSpelling(const QString& text
         qsizetype pos = boundryFinder.position();
         if (boundryFinder.boundaryReasons() & QTextBoundaryFinder::EndOfItem) {
             QString word = text.sliced(prevPos, pos - prevPos);
-            bool ok = checkWord(speller->speller, word);
+            bool ok = checkWord(speller->speller, dictScript, word);
             if (!ok) {
                 result.append(std::make_pair<size_t, size_t>(prevPos, pos - prevPos));
             }

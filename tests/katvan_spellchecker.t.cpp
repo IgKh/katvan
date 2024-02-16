@@ -49,11 +49,9 @@ TEST(SpellCheckerTests, BasicEnglish) {
     SpellChecker checker;
     checker.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
 
-    auto result1 = checker.checkSpelling("A good bad 12 word עברית");
+    auto result1 = checker.checkSpelling("A good bad 12 word עברית z");
     EXPECT_THAT(result1, ::testing::ElementsAre(
-        std::make_pair( 0, 1), // A
-        std::make_pair( 7, 3), // bad
-        std::make_pair(19, 5)  // עברית
+        std::make_pair( 7, 3)  // bad
     ));
 
     auto result2 = checker.checkSpelling("Good WORD foo");
@@ -71,10 +69,7 @@ TEST(SpellCheckerTests, BasicHebrew) {
         std::make_pair( 5, 6), // בעברית
         std::make_pair(17, 4), // שהיא
         std::make_pair(22, 3), // חלק
-        std::make_pair(39, 1), // ד
-        std::make_pair(41, 2), // ה'
-        std::make_pair(44, 3), // ת"א
-        std::make_pair(48, 7)  // English
+        std::make_pair(44, 3)  // ת"א
     ));
 }
 
