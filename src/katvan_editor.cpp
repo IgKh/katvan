@@ -30,10 +30,18 @@
 namespace katvan {
 
 static constexpr QChar LRM_MARK = (ushort)0x200e;
+static constexpr QChar RLM_MARK = (ushort)0x200f;
+static constexpr QChar LRE_MARK = (ushort)0x202a;
+static constexpr QChar RLE_MARK = (ushort)0x202b;
+static constexpr QChar PDF_MARK = (ushort)0x202c;
+static constexpr QChar LRO_MARK = (ushort)0x202d;
+static constexpr QChar RLO_MARK = (ushort)0x202e;
 static constexpr QChar LRI_MARK = (ushort)0x2066;
+static constexpr QChar RLI_MARK = (ushort)0x2067;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
+static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
 
 class LineNumberGutter : public QWidget
 {
@@ -81,6 +89,11 @@ Editor::Editor(QWidget* parent)
     toggleDirection->setContext(Qt::WidgetShortcut);
     connect(toggleDirection, &QShortcut::activated, this, &Editor::toggleTextBlockDirection);
 
+    QShortcut* insertPopup = new QShortcut(this);
+    insertPopup->setKey(INSERT_POPUP);
+    insertPopup->setContext(Qt::WidgetShortcut);
+    connect(insertPopup, &QShortcut::activated, this, &Editor::popupInsertMenu);
+
     d_debounceTimer = new QTimer(this);
     d_debounceTimer->setSingleShot(true);
     d_debounceTimer->setInterval(500);
@@ -93,31 +106,49 @@ Editor::Editor(QWidget* parent)
     });
 }
 
-void Editor::insertLRM()
+QMenu* Editor::createInsertMenu()
 {
-    textCursor().insertText(LRM_MARK);
-}
+    QMenu* menu = new QMenu();
 
-void Editor::insertInlineMath()
-{
-    QTextCursor cursor = textCursor();
-    cursor.insertText(LRI_MARK + QStringLiteral("$") + cursor.selectedText() + QStringLiteral("$") + PDI_MARK);
-    cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 2);
-    setTextCursor(cursor);
+    menu->addAction(tr("Reft-to-Light Mark"), this, [this]() { insertMark(RLM_MARK); });
+    menu->addAction(tr("Left-to-Right Mark"), this, [this]() { insertMark(LRM_MARK); });
+
+    menu->addSeparator();
+
+    menu->addAction(tr("Right-to-Left Isolate"), this, [this]() { insertSurroundingMarks(RLI_MARK, PDI_MARK); });
+    menu->addAction(tr("Left-to-Right Isolate"), this, [this]() { insertSurroundingMarks(LRI_MARK, PDI_MARK); });
+    menu->addAction(tr("Right-to-Left Embedding"), this, [this]() { insertSurroundingMarks(RLE_MARK, PDF_MARK); });
+    menu->addAction(tr("Left-to-Right Embedding"), this, [this]() { insertSurroundingMarks(LRE_MARK, PDF_MARK); });
+    menu->addAction(tr("Right-to-Left Override"), this, [this]() { insertSurroundingMarks(RLO_MARK, PDF_MARK); });
+    menu->addAction(tr("Left-to-Right Override"), this, [this]() { insertSurroundingMarks(LRO_MARK, PDF_MARK); });
+
+    menu->addSeparator();
+
+    QAction* insertInlineMathAction = menu->addAction(tr("Inline &Math"), this, [this]() {
+        insertSurroundingMarks(LRI_MARK + QStringLiteral("$"), QStringLiteral("$") + PDI_MARK);
+    });
+    insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
+
+    return menu;
 }
 
 void Editor::toggleTextBlockDirection()
 {
-    QTextCursor cursor = textCursor();
-    Qt::LayoutDirection currentDirection = cursor.block().textDirection();
-
-    QTextBlockFormat fmt;
+    Qt::LayoutDirection currentDirection = textCursor().block().textDirection();
     if (currentDirection == Qt::LeftToRight) {
-        fmt.setLayoutDirection(Qt::RightToLeft);
+        setTextBlockDirection(Qt::RightToLeft);
     }
     else {
-        fmt.setLayoutDirection(Qt::LeftToRight);
+        setTextBlockDirection(Qt::LeftToRight);
     }
+}
+
+void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
+{
+    QTextCursor cursor = textCursor();
+
+    QTextBlockFormat fmt;
+    fmt.setLayoutDirection(dir);
     cursor.mergeBlockFormat(fmt);
 }
 
@@ -132,6 +163,27 @@ void Editor::goToBlock(int blockNum)
 void Editor::forceRehighlighting()
 {
     d_highlighter->rehighlight();
+}
+
+bool Editor::event(QEvent* event)
+{
+#ifdef Q_OS_LINUX
+    if (event->type() == QEvent::ShortcutOverride) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
+            if (keyEvent->nativeScanCode() == 50) {
+                d_pendingDirectionChange = Qt::LeftToRight;
+            }
+            else if (keyEvent->nativeScanCode() == 62) {
+                d_pendingDirectionChange = Qt::RightToLeft;
+            }
+            else {
+                d_pendingDirectionChange.reset();
+            }
+        }
+    }
+#endif
+    return QTextEdit::event(event);
 }
 
 void Editor::contextMenuEvent(QContextMenuEvent* event)
@@ -194,6 +246,16 @@ void Editor::keyPressEvent(QKeyEvent* event)
     QTextEdit::keyPressEvent(event);
 }
 
+void Editor::keyReleaseEvent(QKeyEvent* event)
+{
+    if (d_pendingDirectionChange) {
+        setTextBlockDirection(d_pendingDirectionChange.value());
+        d_pendingDirectionChange.reset();
+        return;
+    }
+    QTextEdit::keyReleaseEvent(event);
+}
+
 void Editor::resizeEvent(QResizeEvent* event)
 {
     QTextEdit::resizeEvent(event);
@@ -210,6 +272,15 @@ void Editor::resizeEvent(QResizeEvent* event)
         d_rightLineNumberGutter->setGeometry(QRect(cr.left() + verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
         d_leftLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth, cr.top(), gutterWidth, cr.height()));
     }
+}
+
+void Editor::popupInsertMenu()
+{
+    QMenu* insertMenu = createInsertMenu();
+    insertMenu->setAttribute(Qt::WA_DeleteOnClose);
+
+    QPoint globalPos = viewport()->mapToGlobal(cursorRect().topLeft());
+    insertMenu->exec(globalPos);
 }
 
 QString Editor::misspelledWordAtCursor(QTextCursor cursor)
@@ -231,19 +302,6 @@ QString Editor::misspelledWordAtCursor(QTextCursor cursor)
         }
     }
     return QString();
-}
-
-void Editor::changeWordAtPosition(int position, const QString& into)
-{
-    QTextBlock block = document()->findBlock(position);
-    if (!block.isValid()) {
-        return;
-    }
-
-    QTextCursor cursor{ block };
-    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, position - block.position());
-    cursor.select(QTextCursor::WordUnderCursor);
-    cursor.insertText(into);
 }
 
 void Editor::spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions)
@@ -273,6 +331,32 @@ void Editor::spellingSuggestionsReady(const QString& word, int position, const Q
         d_contextMenu->insertMenu(suggestionsPlaceholder, suggestionsMenu);
         d_contextMenu->removeAction(suggestionsPlaceholder);
     }
+}
+
+void Editor::changeWordAtPosition(int position, const QString& into)
+{
+    QTextBlock block = document()->findBlock(position);
+    if (!block.isValid()) {
+        return;
+    }
+
+    QTextCursor cursor{ block };
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, position - block.position());
+    cursor.select(QTextCursor::WordUnderCursor);
+    cursor.insertText(into);
+}
+
+void Editor::insertMark(QChar mark)
+{
+    textCursor().insertText(mark);
+}
+
+void Editor::insertSurroundingMarks(QString before, QString after)
+{
+    QTextCursor cursor = textCursor();
+    cursor.insertText(before + cursor.selectedText() + after);
+    cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, after.length());
+    setTextCursor(cursor);
 }
 
 int Editor::lineNumberGutterWidth()

@@ -20,6 +20,8 @@
 #include <QPointer>
 #include <QTextEdit>
 
+#include <optional>
+
 QT_BEGIN_NAMESPACE
 class QMenu;
 class QTimer;
@@ -41,27 +43,34 @@ public:
 
     SpellChecker* spellChecker() const { return d_spellChecker; }
 
+    QMenu* createInsertMenu();
+
 public slots:
-    void insertLRM();
-    void insertInlineMath();
     void toggleTextBlockDirection();
+    void setTextBlockDirection(Qt::LayoutDirection dir);
     void goToBlock(int blockNum);
     void forceRehighlighting();
 
 protected:
+    bool event(QEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:
     QString misspelledWordAtCursor(QTextCursor cursor);
+
     void changeWordAtPosition(int position, const QString& into);
+    void insertMark(QChar mark);
+    void insertSurroundingMarks(QString before, QString after);
 
     int lineNumberGutterWidth();
     QTextBlock getFirstVisibleBlock();
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
 private slots:
+    void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
     void updateLineNumberGutterWidth();
@@ -79,6 +88,7 @@ private:
     SpellChecker* d_spellChecker;
 
     QPointer<QMenu> d_contextMenu;
+    std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
     int d_pendingSUggestionsPosition;
 };

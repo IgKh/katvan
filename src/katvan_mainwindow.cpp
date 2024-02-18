@@ -209,12 +209,9 @@ void MainWindow::setupActions()
 
     editMenu->addSeparator();
 
-    QMenu* insertMenu = editMenu->addMenu(tr("&Insert"));
-
-    QAction* insertInlineMathAction = insertMenu->addAction(tr("Inline &Math"), d_editor, &Editor::insertInlineMath);
-    insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
-
-    insertMenu->addAction(tr("Left-to-Right Mark"), d_editor, &Editor::insertLRM);
+    QMenu* insertMenu = d_editor->createInsertMenu();
+    insertMenu->setTitle(tr("&Insert"));
+    editMenu->addMenu(insertMenu);
 
     editMenu->addSeparator();
 
