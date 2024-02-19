@@ -44,6 +44,7 @@ struct Token
     size_t startPos = 0;
     size_t length = 0;
     QStringView text = QStringView();
+    bool discard = false;
 };
 
 class Tokenizer
@@ -161,12 +162,11 @@ private:
             return false;
         }
 
-        Q_ASSERT(!usedTokens.isEmpty());
-        d_startMarker = usedTokens.first().startPos;
-        d_endMarker = usedTokens.last().startPos + usedTokens.last().length - 1;
-        Q_ASSERT(d_startMarker <= d_endMarker);
+        updateMarkers(usedTokens);
         return true;
     }
+
+    void updateMarkers(const QList<Token>& tokens);
 
     void instantState(ParserState::Kind stateKind);
     void pushState(ParserState::Kind stateKind);
@@ -177,6 +177,7 @@ private:
     QList<std::reference_wrapper<ParsingListener>> d_listeners;
     ParserStateStack d_stateStack;
 
+    bool d_enteredContentBlock;
     size_t d_startMarker;
     size_t d_endMarker;
 };

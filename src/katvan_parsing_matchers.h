@@ -156,6 +156,41 @@ public:
     }
 };
 
+template <Matcher M>
+class Discard
+{
+    M d_matcher;
+
+public:
+    Discard(const M& matcher): d_matcher(matcher) {}
+
+    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    {
+        QList<Token> nested;
+        bool matched = d_matcher.tryMatch(stream, nested);
+        if (matched) {
+            for (Token& token : nested) {
+                token.discard = true;
+            }
+        }
+        usedTokens.append(nested);
+        return matched;
+    }
+};
+
+class Condition
+{
+    bool d_condition;
+
+public:
+    Condition(bool condition): d_condition(condition) {}
+
+    bool tryMatch(TokenStream&, QList<Token>&) const
+    {
+        return d_condition;
+    }
+};
+
 class TokenType
 {
     parsing::TokenType d_type;
@@ -219,6 +254,15 @@ auto FullCodeNumber() {
     return All(
         TokenType(parsing::TokenType::CODE_NUMBER),
         Optionally(Any(TokenType(parsing::TokenType::WORD), Symbol(QLatin1Char('%'))))
+    );
+}
+
+// Start of content line
+auto LineStartAnchor(bool enteredContentBlock) {
+    return Any(
+        TokenType(parsing::TokenType::BEGIN),
+        TokenType(parsing::TokenType::LINE_END),
+        Condition(enteredContentBlock)
     );
 }
 

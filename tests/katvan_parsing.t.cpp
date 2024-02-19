@@ -373,8 +373,8 @@ TEST(HiglightingParserTests, Heading) {
 
     markers = highlightText(QStringLiteral("=== this is a heading\nthis is not.\n \t= but this is"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 0, 22 },
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 34, 16 }
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING,  0, 22 },
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 37, 13 }
     ));
 
     markers = highlightText(QStringLiteral("a == not header\n=not header too"));
@@ -453,14 +453,14 @@ TEST(HiglightingParserTests, Lists) {
     markers = highlightText(QStringLiteral("- - this\n- this\n\t- that"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  0, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  8, 3 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 15, 4 }
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  9, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 17, 2 }
     ));
 
     markers = highlightText(QStringLiteral("+ - this\n+this\n\t+ that"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  0, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 14, 4 }
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 16, 2 }
     ));
 
     markers = highlightText(QStringLiteral("/ This: That\n/Not This: Not that\n/Neither This"));
@@ -555,7 +555,7 @@ TEST(HiglightingParserTests, SetRules) {
         HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         30,  4 },
         HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   35,  4 },
         HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  49, 21 },
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING,         73, 15 }
+        HiglightingMarker{ HiglightingMarker::Kind::HEADING,         74, 14 }
     ));
 
     markers = highlightText(QStringLiteral(
@@ -573,6 +573,7 @@ TEST(HiglightingParserTests, SetRules) {
         HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         39, 3 },
         HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   43, 4 },
         HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         53, 2 },
+        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,      68, 2 },
         HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   70, 5 },
         HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   80, 5 },
         HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         96, 4 },

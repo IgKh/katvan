@@ -18,7 +18,6 @@
 
 /*
     Known gaps in syntax highlighting:
-    - Headings and list items at start of content block
     - Special highlighting on show expression selectors
 */
 
@@ -337,12 +336,14 @@ Token TokenStream::fetchToken()
 void TokenStream::returnToken(const Token& token)
 {
     d_tokenQueue.prepend(token);
+    d_tokenQueue.first().discard = false;
 }
 
 void TokenStream::returnTokens(QList<Token>& tokens)
 {
     while (!tokens.isEmpty()) {
         d_tokenQueue.prepend(tokens.takeLast());
+        d_tokenQueue.first().discard = false;
     }
 }
 
@@ -350,6 +351,7 @@ Parser::Parser(QStringView text, const ParserStateStack* initialState)
     : d_text(text)
     , d_tokenStream(text)
     , d_stateStack(initialState != nullptr ? *initialState : ParserStateStack())
+    , d_enteredContentBlock(false)
     , d_startMarker(0)
     , d_endMarker(0)
 {
@@ -405,6 +407,9 @@ void Parser::parse()
         }
 
         if (isContentHolderState(state)) {
+            bool enteredContentBlock = d_enteredContentBlock;
+            d_enteredContentBlock = false;
+
             if (handleCommentStart()) {
                 continue;
             }
@@ -463,15 +468,6 @@ void Parser::parse()
                 }
                 continue;
             }
-            else if (match(m::All(
-                m::Any(m::TokenType(TokenType::BEGIN), m::TokenType(TokenType::LINE_END)),
-                m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE)),
-                m::OneOrMore(m::Symbol(QLatin1Char('='))),
-                m::TokenType(TokenType::WHITESPACE)
-            ))) {
-                pushState(ParserState::Kind::CONTENT_HEADING);
-                continue;
-            }
             else if (match(m::SymbolSequence(QStringLiteral("```")))) {
                 pushState(ParserState::Kind::CONTENT_RAW_BLOCK);
                 continue;
@@ -498,8 +494,25 @@ void Parser::parse()
                 continue;
             }
             else if (match(m::All(
-                m::Any(m::TokenType(TokenType::BEGIN), m::TokenType(TokenType::LINE_END)),
-                m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE)),
+                m::Discard(
+                    m::All(
+                        m::LineStartAnchor(enteredContentBlock),
+                        m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE))
+                    )
+                ),
+                m::OneOrMore(m::Symbol(QLatin1Char('='))),
+                m::TokenType(TokenType::WHITESPACE)
+            ))) {
+                pushState(ParserState::Kind::CONTENT_HEADING);
+                continue;
+            }
+            else if (match(m::All(
+                m::Discard(
+                    m::All(
+                        m::LineStartAnchor(enteredContentBlock),
+                        m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE))
+                    )
+                ),
                 m::Any(m::Symbol(QLatin1Char('-')), m::Symbol(QLatin1Char('+'))),
                 m::OneOrMore(m::TokenType(TokenType::WHITESPACE))
             ))) {
@@ -507,8 +520,12 @@ void Parser::parse()
                 continue;
             }
             else if (match(m::All(
-                m::Any(m::TokenType(TokenType::BEGIN), m::TokenType(TokenType::LINE_END)),
-                m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE)),
+                m::Discard(
+                    m::All(
+                        m::LineStartAnchor(enteredContentBlock),
+                        m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE))
+                    )
+                ),
                 m::Symbol(QLatin1Char('/')),
                 m::OneOrMore(m::TokenType(TokenType::WHITESPACE))
             ))) {
@@ -801,6 +818,25 @@ bool Parser::handleCodeStart()
     return false;
 }
 
+void Parser::updateMarkers(const QList<Token>& tokens)
+{
+    // Leading tokens that were marked by the "Discard" matcher are
+    // not part of the match
+    Token startToken;
+    for (const Token& token : tokens) {
+        if (!token.discard) {
+            startToken = token;
+            break;
+        }
+    }
+    Q_ASSERT(startToken.type != TokenType::INVALID);
+
+    d_startMarker = startToken.startPos;
+    d_endMarker = tokens.last().startPos + tokens.last().length - 1;
+
+    Q_ASSERT(d_startMarker <= d_endMarker);
+}
+
 void Parser::instantState(ParserState::Kind stateKind)
 {
     ParserState state { stateKind, d_startMarker };
@@ -811,6 +847,10 @@ void Parser::instantState(ParserState::Kind stateKind)
 
 void Parser::pushState(ParserState::Kind stateKind)
 {
+    if (stateKind == ParserState::Kind::CONTENT_BLOCK) {
+        d_enteredContentBlock = true;
+    }
+
     d_stateStack.append(ParserState{ stateKind, d_startMarker });
     for (auto& listener : d_listeners) {
         listener.get().initializeState(d_stateStack.last(), d_endMarker);
