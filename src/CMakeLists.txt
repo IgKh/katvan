@@ -23,6 +23,7 @@ set(SOURCES
     katvan_highlighter.cpp
     katvan_mainwindow.cpp
     katvan_parsing.cpp
+    katvan_previewer.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
     katvan_spellchecker.cpp

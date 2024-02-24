@@ -32,7 +32,12 @@ TypstDriver::TypstDriver(QObject* parent)
     , d_inputFile(nullptr)
 {
     d_compilerPath = findTypstCompiler();
-    qDebug() << "Found typst at" << d_compilerPath;
+    if (!d_compilerPath.isEmpty()) {
+        qDebug() << "Found typst at" << d_compilerPath;
+    }
+    else {
+        qWarning() << "Did not find typst CLI";
+    }
 
     d_outputFile = new QTemporaryFile(QDir::tempPath() + "/katvan_XXXXXX.pdf", this);
     d_outputFile->open();
@@ -59,11 +64,11 @@ void TypstDriver::resetInputFile(const QString& sourceFileName)
     d_status = Status::INITIALIZED;
 
     if (d_inputFile != nullptr) {
-        d_inputFile->deleteLater();
+        delete d_inputFile;
     }
 
     if (sourceFileName.isEmpty()) {
-        d_inputFile = new QTemporaryFile(this);
+        d_inputFile = new QTemporaryFile(QDir::tempPath() + "/katvan_XXXXXX.typ", this);
     }
     else {
         QFileInfo info(sourceFileName);

@@ -17,12 +17,14 @@
  */
 #include "katvan_editor.h"
 #include "katvan_mainwindow.h"
+#include "katvan_previewer.h"
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
 #include "katvan_spellchecker.h"
 #include "katvan_typstdriver.h"
 
 #include <QApplication>
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QDesktopServices>
 #include <QDockWidget>
@@ -31,10 +33,7 @@
 #include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QPdfDocument>
-#include <QPdfView>
 #include <QPlainTextEdit>
-#include <QScrollBar>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTextEdit>
@@ -51,6 +50,7 @@ static constexpr QLatin1StringView SETTING_EDITOR_FONT = QLatin1StringView("edit
 
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
+    , d_exportPdfPending(false)
 {
     d_recentFiles = new RecentFiles(this);
     connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
@@ -58,8 +58,6 @@ MainWindow::MainWindow()
     d_driver = new TypstDriver(this);
     connect(d_driver, &TypstDriver::previewReady, this, &MainWindow::updatePreview);
     connect(d_driver, &TypstDriver::compilationFailed, this, &MainWindow::compilationFailed);
-
-    d_previewDocument = new QPdfDocument();
 
     setupUI();
     setupActions();
@@ -100,10 +98,7 @@ void MainWindow::setupUI()
 
     setCentralWidget(centralWidget);
 
-    d_pdfPreview = new QPdfView();
-    d_pdfPreview->setDocument(d_previewDocument);
-    d_pdfPreview->setPageMode(QPdfView::PageMode::MultiPage);
-    d_pdfPreview->setZoomMode(QPdfView::ZoomMode::FitToWidth);
+    d_previewer = new Previewer();
 
     QFont monospaceFont { "Monospace" };
     monospaceFont.setStyleHint(QFont::Monospace);
@@ -118,7 +113,7 @@ void MainWindow::setupUI()
     d_previewDock->setObjectName("previewDockPanel");
     d_previewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     d_previewDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable);
-    d_previewDock->setWidget(d_pdfPreview);
+    d_previewDock->setWidget(d_previewer);
     addDockWidget(Qt::RightDockWidgetArea, d_previewDock);
 
     d_compilerOutputDock = new QDockWidget(tr("Compiler Output"));
@@ -305,6 +300,7 @@ void MainWindow::readSettings()
     }
 
     d_recentFiles->restoreRecents(settings);
+    d_previewer->restoreSettings(settings);
     restoreSpellingDictionary(settings);
 }
 
@@ -313,6 +309,8 @@ void MainWindow::saveSettings()
     QSettings settings;
     settings.setValue(SETTING_MAIN_WINDOW_STATE, saveState());
     settings.setValue(SETTING_MAIN_WINDOW_GEOMETRY, saveGeometry());
+
+    d_previewer->saveSettings(settings);
 }
 
 void MainWindow::loadFile(const QString& fileName)
@@ -329,7 +327,7 @@ void MainWindow::loadFile(const QString& fileName)
 
     QTextStream stream(&file);
     d_editor->setPlainText(stream.readAll());
-    d_previewDocument->close();
+    d_previewer->reset();
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("Loaded %1").arg(d_currentFileName));
@@ -398,7 +396,7 @@ void MainWindow::newFile()
         return;
     }
     d_editor->clear();
-    d_previewDocument->close();
+    d_previewer->reset();
     setCurrentFile(QString());
 }
 
@@ -488,15 +486,17 @@ bool MainWindow::saveFileAs()
 
 void MainWindow::exportPdf()
 {
-    if (d_driver->status() == TypstDriver::Status::FAILED) {
-        QMessageBox::critical(
-            this,
-            QCoreApplication::applicationName(),
-            tr("The document %1 has errors.\nTo export the document, please correct them.").arg(d_currentFileShortName));
-
-        return;
-    }
-    else if (d_driver->status() != TypstDriver::Status::SUCCESS) {
+    if (d_driver->status() != TypstDriver::Status::SUCCESS) {
+        if (d_driver->status() == TypstDriver::Status::FAILED) {
+            QMessageBox::critical(
+                this,
+                QCoreApplication::applicationName(),
+                tr("The document %1 has errors.\nTo export the document, please correct them.").arg(d_currentFileShortName));
+        }
+        else if (d_driver->status() == TypstDriver::Status::INITIALIZED) {
+            d_driver->updatePreview(d_editor->toPlainText());
+            d_exportPdfPending = true;
+        }
         return;
     }
 
@@ -683,21 +683,16 @@ void MainWindow::toggleCursorMovementStyle()
 
 void MainWindow::updatePreview(const QString& pdfFile)
 {
-    int origY = d_pdfPreview->verticalScrollBar()->value();
-
-    QPdfDocument::Error rc = d_previewDocument->load(pdfFile);
-    if (rc != QPdfDocument::Error::None) {
-        QString err = QVariant::fromValue(rc).toString();
-        QMessageBox::warning(
-            this,
-            QCoreApplication::applicationName(),
-            tr("Failed loading preview: %1").arg(err));
-
+    if (!d_previewer->updatePreview(pdfFile)) {
         return;
     }
 
     d_compilerOutput->clear();
-    d_pdfPreview->verticalScrollBar()->setValue(origY);
+
+    if (d_exportPdfPending) {
+        QTimer::singleShot(0, this, &MainWindow::exportPdf);
+        d_exportPdfPending = false;
+    }
 }
 
 void MainWindow::compilationFailed(const QString& output)

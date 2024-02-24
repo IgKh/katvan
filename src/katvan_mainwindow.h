@@ -21,7 +21,6 @@
 
 QT_BEGIN_NAMESPACE
 class QPdfDocument;
-class QPdfView;
 class QPlainTextEdit;
 class QSettings;
 class QToolButton;
@@ -32,6 +31,7 @@ namespace katvan
 
 class Editor;
 class TypstDriver;
+class Previewer;
 class RecentFiles;
 class SearchBar;
 
@@ -78,6 +78,7 @@ private:
 
     QString d_currentFileName;
     QString d_currentFileShortName;
+    bool d_exportPdfPending;
 
     RecentFiles* d_recentFiles;
     TypstDriver* d_driver;
@@ -85,7 +86,7 @@ private:
 
     Editor* d_editor;
     SearchBar* d_searchBar;
-    QPdfView* d_pdfPreview;
+    Previewer* d_previewer;
     QPlainTextEdit* d_compilerOutput;
 
     QToolButton* d_cursorPosButton;

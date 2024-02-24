@@ -110,7 +110,7 @@ QMenu* Editor::createInsertMenu()
 {
     QMenu* menu = new QMenu();
 
-    menu->addAction(tr("Reft-to-Light Mark"), this, [this]() { insertMark(RLM_MARK); });
+    menu->addAction(tr("Right-to-Left Mark"), this, [this]() { insertMark(RLM_MARK); });
     menu->addAction(tr("Left-to-Right Mark"), this, [this]() { insertMark(LRM_MARK); });
 
     menu->addSeparator();
@@ -162,7 +162,7 @@ void Editor::goToBlock(int blockNum)
 
 void Editor::forceRehighlighting()
 {
-    d_highlighter->rehighlight();
+    QTimer::singleShot(0, d_highlighter, &QSyntaxHighlighter::rehighlight);
 }
 
 bool Editor::event(QEvent* event)
