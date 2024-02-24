@@ -19,10 +19,14 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 Not a whole lot so far, but for now we have:
 - Reasonably good RTL editing
     - Mostly thanks the Qt Rich Text Framework
-    - But also specific additional functionallity, like toggling between logical and visual cursor movement, manually flipping paragraph direction, and commands to insert Unicode direction isolates when the BiDi algorithm doesn't lead to the right result (e.g for inline math).
+    - But also specific additional functionality, for example:
+      - Toggling between logical and visual cursor movement
+      - Manually flipping paragraph direction (using both Windows style `Ctrl+RShift`/`LShift`, or Firefox style `Ctrl+Shift+X`)
+      - Handy commands to insert BiDi control marks and isolates for when the algorithm doesn't quite lead to the right result (e.g. for inline math)
 - Live-ish previews[^1]
 - Syntax highlighting
-- Tested on Linux and Windows 10/11
+- Syntax-aware spell checking
+- Supported on Linux and Windows 10/11
 
 [^1]: Previews are currently rendered by running the entire file through the _Typst_ CLI after each change. It is plenty fast at least for smaller documents, so good enough for now.
 
@@ -32,11 +36,13 @@ Regardless of how Katvan is installed, it is required to install the `typst` CLI
 
 ### Linux
 
-A pre-built AppImage for the `x86_64` architecture is available from the project releases page. If it isn't suitable, you'll need to compile from source.
+A pre-built AppImage for the `x86_64` architecture is available from the project releases page. If it isn't suitable, you'll need to compile from source. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
 
 ### Windows
 
-A build for 64-bit Windows 10/11 is available from the project releases page. Note that this is a portable build, which will store settings in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
+A build for 64-bit Windows 10/11 is available from the project releases page. Note that this is a portable build, which will store settings and the personal dictionary file in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
+
+This build does not include spell checking dictionaries. You'll need to download hunsepll dictionaries for any desired languages (as a pair of `.dic` and `.aff` files), and save them to the `hunspell` sub-directory next to the main executable file. See the hunspell [README](https://github.com/hunspell/hunspell?tab=readme-ov-file#dictionaries) page for locations to get dictionaries from.
 
 ### From Source
 
@@ -44,11 +50,13 @@ To compile and install Katvan from source code, you'll need:
 - A C++ compiler toolchain that supports C++20, and is [supported by Qt](https://doc.qt.io/qt-6/supported-platforms.html)
 - Development files for Qt 6.5 (or a later 6.x release)
 - CMake 3.16 or later
-- GoogleTest (optional, for running unit tests)
+- A working `pkg-config`
+- [hunspell](http://hunspell.github.io/)
+- [GoogleTest](https://google.github.io/googletest/) (optional, for running unit tests)
 
 Get those from your distribution repositories, vcpkg, or wherever.
 
-To build, perform a usual CMake invocation. For example, on Linux this will be:
+To build, perform a usual CMake invocation. For example, on Linux this might look like:
 
 ```bash
   mkdir build
@@ -69,7 +77,7 @@ Contributions aren't really expected. Issues and PRs in Github are open to creat
 
 A few things I'd like and may happen at some point, in no particular order:
 
-- Spell checking
-- Better controls to insert and see BiDi control characters
+- Ability to view BiDi control characters
 - Better integration with `typst` (incremental previews, highlight errors)
 - Editor configuration with modelines
+- Dark theme support
