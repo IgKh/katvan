@@ -3,8 +3,8 @@
 IDI_ICON1   ICON    "katvan.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,2,0,0
- PRODUCTVERSION 0,2,0,0
+ FILEVERSION 0,3,0,0
+ PRODUCTVERSION 0,3,0,0
  FILEFLAGS 0x0L
  FILEFLAGSMASK 0x3fL
  FILEOS VOS_NT_WINDOWS32
@@ -16,12 +16,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Katvan"
             VALUE "FileDescription", "A bare-bones editor for Typst files, with a bias for RTL"
-            VALUE "FileVersion", "0.2.0.0"
+            VALUE "FileVersion", "0.3.0.0"
             VALUE "LegalCopyright", "Copyright (c) 2024 Igor Khanin"
             VALUE "InternalName", "katvan"
             VALUE "OriginalFilename", "katvan.exe"
             VALUE "ProductName", "Katvan"
-            VALUE "ProductVersion", "0.2.0.0"
+            VALUE "ProductVersion", "0.3.0.0"
         END
     END
     BLOCK "VarFileInfo"
