@@ -17,6 +17,8 @@
  */
 #pragma once
 
+#include "katvan_editorsettings.h"
+
 #include <QPointer>
 #include <QTextEdit>
 
@@ -42,6 +44,8 @@ public:
     Editor(QWidget* parent = nullptr);
 
     SpellChecker* spellChecker() const { return d_spellChecker; }
+
+    void applySettings(const EditorSettings& settings);
 
     QMenu* createInsertMenu();
 
@@ -86,6 +90,8 @@ private:
     QTimer* d_debounceTimer;
     Highlighter* d_highlighter;
     SpellChecker* d_spellChecker;
+
+    EditorSettings d_settings;
 
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;

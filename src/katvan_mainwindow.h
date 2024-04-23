@@ -30,6 +30,7 @@ namespace katvan
 {
 
 class Editor;
+class EditorSettingsDialog;
 class TypstDriver;
 class Previewer;
 class RecentFiles;
@@ -52,13 +53,13 @@ private slots:
     bool saveFileAs();
     void exportPdf();
     void goToLine();
-    void changeEditorFont();
     void showTypstDocs();
     void showAbout();
 
     void cursorPositionChanged();
     void changeSpellCheckingDictionary();
     void toggleCursorMovementStyle();
+    void editorSettingsDialogAccepted();
     void updatePreview(const QString& pdfFile);
     void compilationFailed(const QString& output);
 
@@ -88,6 +89,8 @@ private:
     SearchBar* d_searchBar;
     Previewer* d_previewer;
     QPlainTextEdit* d_compilerOutput;
+
+    EditorSettingsDialog* d_editorSettingsDialog;
 
     QToolButton* d_cursorPosButton;
     QToolButton* d_spellingButton;

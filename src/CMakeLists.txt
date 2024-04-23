@@ -20,6 +20,7 @@ pkg_check_modules(hunspell REQUIRED IMPORTED_TARGET hunspell)
 
 set(SOURCES
     katvan_editor.cpp
+    katvan_editorsettings.cpp
     katvan_highlighter.cpp
     katvan_mainwindow.cpp
     katvan_parsing.cpp

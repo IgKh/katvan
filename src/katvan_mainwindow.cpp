@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_editor.h"
+#include "katvan_editorsettings.h"
 #include "katvan_mainwindow.h"
 #include "katvan_previewer.h"
 #include "katvan_recentfiles.h"
@@ -46,7 +47,7 @@ namespace katvan {
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_STATE = QLatin1StringView("MainWindow/state");
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_GEOMETRY = QLatin1StringView("MainWindow/geometry");
 static constexpr QLatin1StringView SETTING_SPELLING_DICT = QLatin1StringView("spelling/dict");
-static constexpr QLatin1StringView SETTING_EDITOR_FONT = QLatin1StringView("editor/font");
+static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("editor/mode");
 
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
@@ -97,6 +98,9 @@ void MainWindow::setupUI()
     centralLayout->addWidget(d_searchBar, 0);
 
     setCentralWidget(centralWidget);
+
+    d_editorSettingsDialog = new EditorSettingsDialog(this);
+    connect(d_editorSettingsDialog, &QDialog::accepted, this, &MainWindow::editorSettingsDialogAccepted);
 
     d_previewer = new Previewer();
 
@@ -222,7 +226,7 @@ void MainWindow::setupActions()
      */
     QMenu* viewMenu = menuBar()->addMenu(tr("&View"));
 
-    viewMenu->addAction(tr("Editor &Font..."), this, &MainWindow::changeEditorFont);
+    viewMenu->addAction(tr("&Editor Settings..."), d_editorSettingsDialog, &QDialog::show);
 
     viewMenu->addSeparator();
 
@@ -294,10 +298,12 @@ void MainWindow::readSettings()
         restoreState(mainWindowState);
     }
 
-    if (settings.contains(SETTING_EDITOR_FONT)) {
-        QFont editorFont = settings.value(SETTING_EDITOR_FONT).value<QFont>();
-        d_editor->setFont(editorFont);
+    EditorSettings editorSettings;
+    if (settings.contains(SETTING_EDITOR_MODE)) {
+        editorSettings = EditorSettings(settings.value(SETTING_EDITOR_MODE).toString());
     }
+    d_editorSettingsDialog->setSettings(editorSettings);
+    d_editor->applySettings(editorSettings);
 
     d_recentFiles->restoreRecents(settings);
     d_previewer->restoreSettings(settings);
@@ -550,21 +556,6 @@ void MainWindow::goToLine()
     }
 }
 
-void MainWindow::changeEditorFont()
-{
-    bool ok = false;
-    QFont font = QFontDialog::getFont(&ok, d_editor->font(), this);
-
-    if (!ok) {
-        return;
-    }
-
-    d_editor->setFont(font);
-
-    QSettings settings;
-    settings.setValue(SETTING_EDITOR_FONT, font);
-}
-
 void MainWindow::showTypstDocs()
 {
     QDesktopServices::openUrl(QUrl("https://typst.app/docs/"));
@@ -679,6 +670,16 @@ void MainWindow::toggleCursorMovementStyle()
         d_editor->document()->setDefaultCursorMoveStyle(Qt::LogicalMoveStyle);
         d_cursorStyleButton->setText(tr("Logical"));
     }
+}
+
+void MainWindow::editorSettingsDialogAccepted()
+{
+    EditorSettings editorSettings = d_editorSettingsDialog->settings();
+
+    d_editor->applySettings(editorSettings);
+
+    QSettings settings;
+    settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
 }
 
 void MainWindow::updatePreview(const QString& pdfFile)

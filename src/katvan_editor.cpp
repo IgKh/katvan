@@ -106,6 +106,17 @@ Editor::Editor(QWidget* parent)
     });
 }
 
+void Editor::applySettings(const EditorSettings& settings)
+{
+    d_settings = settings;
+
+    setFont(settings.font());
+
+    QTextOption textOption = document()->defaultTextOption();
+    textOption.setTabStopDistance(settings.tabWidth() * fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+    document()->setDefaultTextOption(textOption);
+}
+
 QMenu* Editor::createInsertMenu()
 {
     QMenu* menu = new QMenu();
