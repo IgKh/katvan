@@ -33,6 +33,10 @@ jobs:
       - name: Install dependencies
         run: vcpkg install gtest hunspell
 
+      - name: Install pkg-config
+        run: vcpkg install pkgconf
+        if: matrix.os == 'windows-latest'
+
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 

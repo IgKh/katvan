@@ -109,7 +109,7 @@ jobs:
           vcpkgGitCommitId: '53bef8994c541b6561884a8395ea35715ece75db'
 
       - name: Install dependencies
-        run: vcpkg install hunspell
+        run: vcpkg install hunspell pkgconf
 
       - name: Configure
         run: cmake -S . -B build -DKATVAN_PORTABLE_BUILD=ON -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
