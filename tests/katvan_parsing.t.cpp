@@ -445,6 +445,12 @@ TEST(HiglightingParserTests, ReferenceAndLabel) {
         HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS,  24, 21 },
         HiglightingMarker{ HiglightingMarker::Kind::LABEL,     37,  7 }
     ));
+
+    markers = highlightText(QStringLiteral("<ref.a_b-d> And @label.a_b-c E"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     0 ,  11 },
+        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 16,  12 }
+    ));
 }
 
 TEST(HiglightingParserTests, Lists) {

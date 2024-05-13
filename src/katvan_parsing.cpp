@@ -478,8 +478,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('<')),
-                m::FullWord(),
-                m::ZeroOrMore(m::Symbol(QLatin1Char('_'))),
+                m::LabelName(),
                 m::Symbol(QLatin1Char('>'))
             ))) {
                 instantState(ParserState::Kind::CONTENT_LABEL);
@@ -487,8 +486,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('@')),
-                m::FullWord(),
-                m::ZeroOrMore(m::Symbol(QLatin1Char('_')))
+                m::LabelName()
             ))) {
                 instantState(ParserState::Kind::CONTENT_REFERENCE);
                 continue;
@@ -653,8 +651,7 @@ void Parser::parse()
             }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('<')),
-                m::FullWord(),
-                m::ZeroOrMore(m::Symbol(QLatin1Char('_'))),
+                m::LabelName(),
                 m::Symbol(QLatin1Char('>'))
             ))) {
                 instantState(ParserState::Kind::CONTENT_LABEL);

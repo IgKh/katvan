@@ -243,7 +243,7 @@ public:
 };
 
 // Because of our tokenizer design (which doesn't backtrack by itself) number
-// base prefixes can cause an otherwise continues word to be broken into
+// base prefixes can cause an otherwise continuous word to be broken into
 // multiple word tokens (e.g "break" -> "b" + "reak"). This covers up for it.
 auto FullWord() {
     return OneOrMore(TokenType(parsing::TokenType::WORD));
@@ -263,6 +263,18 @@ auto LineStartAnchor(bool enteredContentBlock) {
         TokenType(parsing::TokenType::BEGIN),
         TokenType(parsing::TokenType::LINE_END),
         Condition(enteredContentBlock)
+    );
+}
+
+auto LabelName() {
+    return OneOrMore(
+        Any(
+            TokenType(parsing::TokenType::WORD),
+            TokenType(parsing::TokenType::CODE_NUMBER),
+            Symbol(QLatin1Char('_')),
+            Symbol(QLatin1Char('-')),
+            Symbol(QLatin1Char('.'))
+        )
     );
 }
 
