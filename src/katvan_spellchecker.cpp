@@ -51,8 +51,8 @@ SpellChecker::SpellChecker(QObject* parent)
     : QObject(parent)
     , d_suggestionsCache(SUGGESTIONS_CACHE_SIZE)
 {
-    d_suggestionThread = new QThread(this);
-    d_suggestionThread->setObjectName("SuggestionThread");
+    d_workerThread = new QThread(this);
+    d_workerThread->setObjectName("SpellerWorkerThread");
 
     QString loc = s_personalDictionaryLocation;
     if (loc.isEmpty()) {
@@ -69,9 +69,16 @@ SpellChecker::SpellChecker(QObject* parent)
 
 SpellChecker::~SpellChecker()
 {
-    if (d_suggestionThread->isRunning()) {
-        d_suggestionThread->quit();
-        d_suggestionThread->wait();
+    if (d_workerThread->isRunning()) {
+        d_workerThread->quit();
+        d_workerThread->wait();
+    }
+}
+
+void SpellChecker::ensureWorkerThread()
+{
+    if (!d_workerThread->isRunning()) {
+        d_workerThread->start();
     }
 }
 
@@ -131,16 +138,21 @@ void SpellChecker::setPersonalDictionaryLocation(const QString& dirPath)
 
 void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictAffFile)
 {
-    if (!dictName.isEmpty() && !d_spellers.contains(dictName)) {
-        QString dicFile = QFileInfo(dictAffFile).path() + "/" + dictName + ".dic";
+    d_suggestionsCache.clear();
 
-        QByteArray affPath = dictAffFile.toLocal8Bit();
-        QByteArray dicPath = dicFile.toLocal8Bit();
-        d_spellers.emplace(dictName, std::make_unique<LoadedSpeller>(affPath.data(), dicPath.data()));
+    if (dictName.isEmpty()) {
+        d_currentDictName = dictName;
+        Q_EMIT dictionaryChanged(dictName);
+        return;
     }
 
-    d_currentDictName = dictName;
-    d_suggestionsCache.clear();
+    DictionaryLoaderWorker* worker = new DictionaryLoaderWorker(dictName, dictAffFile);
+
+    ensureWorkerThread();
+    worker->moveToThread(d_workerThread);
+
+    connect(worker, &DictionaryLoaderWorker::dictionaryLoaded, this, &SpellChecker::loaderWorkerDone);
+    QMetaObject::invokeMethod(worker, &DictionaryLoaderWorker::process, Qt::QueuedConnection);
 }
 
 static bool isSingleGrapheme(const QString& word)
@@ -337,18 +349,26 @@ void SpellChecker::requestSuggestions(const QString& word, int position)
         return;
     }
 
-    if (!d_suggestionThread->isRunning()) {
-        qDebug() << "Starting suggestion generation thread";
-        d_suggestionThread->start();
-    }
-
     LoadedSpeller* speller = d_spellers[d_currentDictName].get();
-
     SpellingSuggestionsWorker* worker = new SpellingSuggestionsWorker(speller, word, position);
-    worker->moveToThread(d_suggestionThread);
+
+    ensureWorkerThread();
+    worker->moveToThread(d_workerThread);
 
     connect(worker, &SpellingSuggestionsWorker::suggestionsReady, this, &SpellChecker::suggestionsWorkerDone);
     QMetaObject::invokeMethod(worker, &SpellingSuggestionsWorker::process, Qt::QueuedConnection);
+}
+
+void SpellChecker::loaderWorkerDone(QString dictName, LoadedSpeller* speller)
+{
+    std::unique_ptr<LoadedSpeller> spellerPtr(speller);
+
+    if (!d_spellers.contains(dictName)) {
+        d_spellers.emplace(dictName, std::move(spellerPtr));
+    }
+
+    d_currentDictName = dictName;
+    Q_EMIT dictionaryChanged(dictName);
 }
 
 void SpellChecker::suggestionsWorkerDone(QString word, int position, QStringList suggestions)
@@ -356,6 +376,18 @@ void SpellChecker::suggestionsWorkerDone(QString word, int position, QStringList
     d_suggestionsCache.insert(word, new QStringList(suggestions));
 
     Q_EMIT suggestionsReady(word, position, suggestions);
+}
+
+void DictionaryLoaderWorker::process()
+{
+    QString dicFile = QFileInfo(d_dictAffFile).path() + "/" + d_dictName + ".dic";
+
+    QByteArray affPath = d_dictAffFile.toLocal8Bit();
+    QByteArray dicPath = dicFile.toLocal8Bit();
+
+    Q_EMIT dictionaryLoaded(d_dictName, new LoadedSpeller(affPath.data(), dicPath.data()));
+
+    deleteLater();
 }
 
 void SpellingSuggestionsWorker::process()

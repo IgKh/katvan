@@ -60,13 +60,16 @@ public:
     void requestSuggestions(const QString& word, int position);
 
 signals:
+    void dictionaryChanged(const QString& dictName);
     void suggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
 private slots:
     void personalDictionaryFileChanged();
+    void loaderWorkerDone(QString dictName, LoadedSpeller* speller);
     void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
 
 private:
+    void ensureWorkerThread();
     bool checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word);
     void flushPersonalDictionary();
     void loadPersonalDictionary();
@@ -80,9 +83,29 @@ private:
     QSet<QString> d_personalDictionary;
 
     QFileSystemWatcher* d_watcher;
-    QThread* d_suggestionThread;
+    QThread* d_workerThread;
 
     std::map<QString, std::unique_ptr<LoadedSpeller>> d_spellers;
+};
+
+class DictionaryLoaderWorker : public QObject
+{
+    Q_OBJECT
+
+public:
+    DictionaryLoaderWorker(const QString& dictName, const QString& dictAffFile)
+        : d_dictName(dictName)
+        , d_dictAffFile(dictAffFile) {}
+
+public slots:
+    void process();
+
+signals:
+    void dictionaryLoaded(QString dictName, LoadedSpeller* speller);
+
+private:
+    QString d_dictName;
+    QString d_dictAffFile;
 };
 
 class SpellingSuggestionsWorker : public QObject

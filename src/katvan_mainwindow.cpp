@@ -642,11 +642,7 @@ void MainWindow::changeSpellCheckingDictionary()
 
     QString selectedDictName = dictNames[dictLabels.indexOf(result)];
     d_editor->spellChecker()->setCurrentDictionary(selectedDictName, dicts.value(selectedDictName));
-
     d_spellingButton->setText(selectedDictName.isEmpty() ? result : selectedDictName);
-    if (selectedDictName != currentDict) {
-        d_editor->forceRehighlighting();
-    }
 
     QSettings settings;
     settings.setValue(SETTING_SPELLING_DICT, selectedDictName);

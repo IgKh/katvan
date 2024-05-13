@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include <QCoreApplication>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 
 using namespace katvan;
@@ -47,7 +48,10 @@ TEST(SpellCheckerTests, DetectDictionaries) {
 
 TEST(SpellCheckerTests, BasicEnglish) {
     SpellChecker checker;
+    QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
+
     checker.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
+    ASSERT_TRUE(spy.wait(100));
 
     auto result1 = checker.checkSpelling("A good bad 12 word עברית z");
     EXPECT_THAT(result1, ::testing::ElementsAre(
@@ -62,7 +66,10 @@ TEST(SpellCheckerTests, BasicEnglish) {
 
 TEST(SpellCheckerTests, BasicHebrew) {
     SpellChecker checker;
+    QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
+
     checker.setCurrentDictionary("he_XX", getDictionaryPath("he_XX"));
+    ASSERT_TRUE(spy.wait(100));
 
     auto result = checker.checkSpelling("מילה בעברית טובה שהיא חלק ת'רד נתב\"ג 3 ד ה' ת\"א English");
     EXPECT_THAT(result, ::testing::ElementsAre(
@@ -78,7 +85,10 @@ TEST(SpellCheckerTests, PersonalDict) {
     SpellChecker::setPersonalDictionaryLocation(dir.path());
 
     SpellChecker checker1;
+    QSignalSpy spy1(&checker1, &SpellChecker::dictionaryChanged);
+
     checker1.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
+    EXPECT_TRUE(spy1.wait(100));
 
     auto result1 = checker1.checkSpelling("good bar bad");
     EXPECT_THAT(result1, ::testing::ElementsAre(
@@ -94,7 +104,10 @@ TEST(SpellCheckerTests, PersonalDict) {
     ));
 
     SpellChecker checker2;
+    QSignalSpy spy2(&checker2, &SpellChecker::dictionaryChanged);
+
     checker2.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
+    EXPECT_TRUE(spy2.wait(100));
 
     auto result3 = checker2.checkSpelling("good bar bad");
     EXPECT_THAT(result3, ::testing::ElementsAre(

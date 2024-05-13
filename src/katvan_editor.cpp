@@ -71,6 +71,7 @@ Editor::Editor(QWidget* parent)
 
     d_spellChecker = new SpellChecker(this);
     connect(d_spellChecker, &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
+    connect(d_spellChecker, &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
 
     d_highlighter = new Highlighter(document(), d_spellChecker);
 
