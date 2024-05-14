@@ -32,6 +32,7 @@ Q_GLOBAL_STATIC(QStringList, CODE_KEYWORDS, {
     QStringLiteral("as"),
     QStringLiteral("auto"),
     QStringLiteral("break"),
+    QStringLiteral("context"),
     QStringLiteral("else"),
     QStringLiteral("false"),
     QStringLiteral("for"),
@@ -688,10 +689,6 @@ void Parser::parse()
         else if (state.kind == ParserState::Kind::COMMENT_BLOCK) {
             if (match(m::SymbolSequence(QStringLiteral("*/")))) {
                 popState();
-                continue;
-            }
-            else if (match(m::SymbolSequence(QStringLiteral("//")))) {
-                pushState(ParserState::Kind::COMMENT_LINE);
                 continue;
             }
         }

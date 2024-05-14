@@ -313,8 +313,8 @@ TEST(HiglightingParserTests, BlockComment) {
 
     markers = highlightText(QStringLiteral("/* aaa\naaa // aaaaaaa */\naaa*/ aaaa"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 11, 14 },
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 0, 30 }
+        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,          0, 24 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 28,  7 }
     ));
 }
 
