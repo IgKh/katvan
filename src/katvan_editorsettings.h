@@ -80,6 +80,7 @@ public:
     void setSettings(const EditorSettings& settings);
 
 private slots:
+    void updateControlStates();
     void updateFontSizes();
 
 private:

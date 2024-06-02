@@ -237,6 +237,74 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
     d_contextMenu->popup(event->globalPos());
 }
 
+std::tuple<QTextBlock, QTextBlock, bool> Editor::selectedBlockRange() const
+{
+    QTextCursor cursor = textCursor();
+    if (!cursor.hasSelection()) {
+        return std::make_tuple(cursor.block(), cursor.block(), false);
+    }
+
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+    QTextBlock startBlock = document()->findBlock(selectionStart);
+    QTextBlock endBlock = document()->findBlock(selectionEnd);
+
+    bool fullFirstBlock = selectionStart == startBlock.position() &&
+                          selectionEnd >= (endBlock.position() + endBlock.length() - 1);
+
+    return std::make_tuple(startBlock, endBlock, fullFirstBlock);
+}
+
+QString Editor::getIndentString(QTextCursor cursor) const
+{
+    if (d_settings.indentMode() == EditorSettings::IndentMode::SPACES) {
+        qsizetype numSpaces = d_settings.indentWidth() - (cursor.positionInBlock() % d_settings.indentWidth());
+        return QString(numSpaces, QLatin1Char(' '));
+    }
+    return QLatin1String("\t");
+}
+
+static bool isAllWhitespace(const QString& text)
+{
+    auto isSpace = [](QChar ch) {
+            return ch.category() == QChar::Separator_Space || ch == QLatin1Char('\t');
+    };
+    return std::all_of(text.begin(), text.end(), isSpace);
+}
+
+void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
+{
+    QTextCursor cursor = blockStartCursor;
+    while (document()->characterAt(cursor.position()).category() == QChar::Other_Format) {
+        cursor.movePosition(QTextCursor::MoveOperation::NextCharacter);
+    }
+
+    if (!notAfter.isNull() && cursor >= notAfter) {
+        return;
+    }
+
+    // Remove up to one tab or indentWidth spaces from begining of block
+    cursor.beginEditBlock();
+    if (d_settings.indentMode() == EditorSettings::IndentMode::TABS) {
+        if (document()->characterAt(cursor.position()) == QLatin1Char('\t')) {
+            cursor.deleteChar();
+        }
+    }
+    else {
+        int numSpacesToDelete = d_settings.indentWidth();
+        if (!notAfter.isNull()) {
+            numSpacesToDelete = std::min(numSpacesToDelete, std::max(0, notAfter.position() - cursor.position()));
+        }
+
+        while (document()->characterAt(cursor.position()).category() == QChar::Separator_Space
+               && numSpacesToDelete > 0) {
+            cursor.deleteChar();
+            numSpacesToDelete--;
+        }
+    }
+    cursor.endEditBlock();
+}
+
 void Editor::keyPressEvent(QKeyEvent* event)
 {
     if (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Return) {
@@ -255,6 +323,56 @@ void Editor::keyPressEvent(QKeyEvent* event)
         QTextEdit::keyPressEvent(&overrideEvent);
         return;
     }
+
+    if (event->key() == Qt::Key_Tab || event->key() == Qt::Key_Backtab || event->key() == Qt::Key_Backspace) {
+        auto [selectionBlockStart, selectionBlockEnd, fullFirstBlock] = selectedBlockRange();
+
+        if (event->keyCombination() == QKeyCombination(Qt::Key_Tab)) {
+            if (fullFirstBlock || selectionBlockEnd.position() > selectionBlockStart.position()) {
+                // Indent all blocks in selection
+                QTextCursor cursor(selectionBlockStart);
+                cursor.beginEditBlock();
+
+                for (auto it = selectionBlockStart; it < selectionBlockEnd || it == selectionBlockEnd; it = it.next()) {
+                    if (!isAllWhitespace(it.text())) {
+                        cursor.insertText(getIndentString(cursor));
+                    }
+                    cursor.movePosition(QTextCursor::NextBlock);
+                }
+                cursor.endEditBlock();
+            }
+            else {
+                // Insert one indent at cursor
+                QTextCursor cursor = textCursor();
+                cursor.insertText(getIndentString(cursor));
+            }
+            return;
+        }
+        else if (event->key() == Qt::Key_Backtab) {
+            // Unindent all blocks in range
+            QTextCursor cursor(selectionBlockStart);
+            cursor.beginEditBlock();
+
+            for (auto it = selectionBlockStart; it < selectionBlockEnd || it == selectionBlockEnd; it = it.next()) {
+                unindentBlock(cursor);
+                cursor.movePosition(QTextCursor::NextBlock);
+            }
+            cursor.endEditBlock();
+            return;
+        }
+        else if (event->keyCombination() == QKeyCombination(Qt::Key_Backspace)) {
+            // Unindent current block only, if cursor is in leading whitespace
+            QTextCursor cursor = textCursor();
+            QString blockText = cursor.block().text();
+            QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
+
+            if (isAllWhitespace(textBeforeCursor)) {
+                unindentBlock(QTextCursor(cursor.block()), cursor);
+                return;
+            }
+        }
+    }
+
     QTextEdit::keyPressEvent(event);
 }
 

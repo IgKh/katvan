@@ -73,6 +73,10 @@ private:
     QTextBlock getFirstVisibleBlock();
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
+    std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;
+    QString getIndentString(QTextCursor cursor) const;
+    void unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter = QTextCursor());
+
 private slots:
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);

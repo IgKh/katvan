@@ -224,6 +224,8 @@ void EditorSettingsDialog::setSettings(const EditorSettings& settings)
 
     d_indentWidth->setValue(settings.indentWidth());
     d_tabWidth->setValue(settings.tabWidth());
+
+    updateControlStates();
 }
 
 void EditorSettingsDialog::setupUI()
@@ -244,6 +246,7 @@ void EditorSettingsDialog::setupUI()
     QButtonGroup* indentTypeBtnGroup = new QButtonGroup(this);
     indentTypeBtnGroup->addButton(d_indentWithSpaces);
     indentTypeBtnGroup->addButton(d_indentWithTabs);
+    connect(indentTypeBtnGroup, &QButtonGroup::buttonToggled, this, &EditorSettingsDialog::updateControlStates);
 
     d_indentWidth = new QSpinBox();
     d_indentWidth->setSuffix(tr(" characters"));
@@ -286,6 +289,11 @@ void EditorSettingsDialog::setupUI()
     mainLayout->addWidget(appearanceGroup);
     mainLayout->addWidget(indentationGroup);
     mainLayout->addWidget(buttonBox);
+}
+
+void EditorSettingsDialog::updateControlStates()
+{
+    d_indentWidth->setEnabled(!d_indentWithTabs->isChecked());
 }
 
 void EditorSettingsDialog::updateFontSizes()
