@@ -9,8 +9,10 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Test)
 
 add_executable(katvan_tests
+    katvan_editorsettings.t.cpp
     katvan_parsing.t.cpp
     katvan_spellchecker.t.cpp
+    katvan_testutils.cpp
     main.cpp
 )
 

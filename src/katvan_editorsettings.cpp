@@ -52,7 +52,7 @@ void EditorSettings::parseModeLine(QString mode)
 
     qsizetype pos = mode.indexOf(QLatin1Char(':'));
     if (pos > 0) {
-        mode = mode.sliced(pos, mode.size() - pos);
+        mode = mode.sliced(pos + 1, mode.size() - pos - 1);
     }
 
     auto parts = mode.split(QLatin1Char(';'), Qt::SkipEmptyParts);
@@ -134,12 +134,18 @@ QString EditorSettings::toModeLine() const
 
 QString EditorSettings::fontFamily() const
 {
-    return d_fontFamily.value_or(QApplication::font().family());
+    if (d_fontFamily) {
+        return d_fontFamily.value();
+    }
+    return QApplication::font().family();
 }
 
 int EditorSettings::fontSize() const
 {
-    return d_fontSize.value_or(QApplication::font().pointSize());
+    if (d_fontSize) {
+        return d_fontSize.value();
+    }
+    return QApplication::font().pointSize();
 }
 
 QFont EditorSettings::font() const

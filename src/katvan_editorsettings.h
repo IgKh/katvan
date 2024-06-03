@@ -57,6 +57,12 @@ public:
     void setIndentWidth(int indentWidth) { d_indentWidth = indentWidth; }
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
 
+    bool hasFontFamily() const { return d_fontFamily.has_value(); }
+    bool hasFontSize() const { return d_fontSize.has_value(); }
+    bool hasIndentMode() const { return d_indentMode.has_value(); }
+    bool hasIndentWidth() const { return d_indentWidth.has_value(); }
+    bool hasTabWidth() const { return d_tabWidth.has_value(); }
+
     void mergeSettings(const EditorSettings& other);
 
 private:

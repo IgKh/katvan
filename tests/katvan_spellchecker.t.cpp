@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_testutils.h"
+
 #include "katvan_spellchecker.h"
 
 #include <gmock/gmock.h>
@@ -25,10 +27,6 @@
 #include <QTemporaryDir>
 
 using namespace katvan;
-
-void PrintTo(const QString& str, std::ostream* os) {
-    *os << str.toStdString();
-}
 
 static QString getDictionaryPath(const char* name)
 {
