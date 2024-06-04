@@ -22,6 +22,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QMenu>
 #include <QPainter>
+#include <QRegularExpression>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QTextBlock>
@@ -42,6 +43,10 @@ static constexpr QChar PDI_MARK = (ushort)0x2069;
 
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
+
+static constexpr int MAX_LINE_FOR_MODELINES = 10;
+
+Q_GLOBAL_STATIC(QRegularExpression, MODELINE_REGEX, QStringLiteral("((kate|katvan):.+)$"))
 
 class LineNumberGutter : public QWidget
 {
@@ -109,12 +114,20 @@ Editor::Editor(QWidget* parent)
 
 void Editor::applySettings(const EditorSettings& settings)
 {
-    d_settings = settings;
+    d_appSettings = settings;
+    applyEffectiveSettings();
+}
 
-    setFont(settings.font());
+void Editor::applyEffectiveSettings()
+{
+    d_effectiveSettings = EditorSettings();
+    d_effectiveSettings.mergeSettings(d_appSettings);
+    d_effectiveSettings.mergeSettings(d_fileMode);
+
+    setFont(d_effectiveSettings.font());
 
     QTextOption textOption = document()->defaultTextOption();
-    textOption.setTabStopDistance(settings.tabWidth() * fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+    textOption.setTabStopDistance(d_effectiveSettings.tabWidth() * fontMetrics().horizontalAdvance(QLatin1Char(' ')));
     document()->setDefaultTextOption(textOption);
 }
 
@@ -175,6 +188,24 @@ void Editor::goToBlock(int blockNum)
 void Editor::forceRehighlighting()
 {
     QTimer::singleShot(0, d_highlighter, &QSyntaxHighlighter::rehighlight);
+}
+
+void Editor::checkForModelines()
+{
+    EditorSettings mode;
+
+    QTextBlock block = document()->firstBlock();
+    while (block.isValid() && block.blockNumber() < MAX_LINE_FOR_MODELINES) {
+        QRegularExpressionMatch match = MODELINE_REGEX->match(block.text());
+        if (match.hasMatch()) {
+            EditorSettings lineMode(match.captured());
+            mode.mergeSettings(lineMode);
+        }
+        block = block.next();
+    }
+
+    d_fileMode = mode;
+    applyEffectiveSettings();
 }
 
 bool Editor::event(QEvent* event)
@@ -257,8 +288,8 @@ std::tuple<QTextBlock, QTextBlock, bool> Editor::selectedBlockRange() const
 
 QString Editor::getIndentString(QTextCursor cursor) const
 {
-    if (d_settings.indentMode() == EditorSettings::IndentMode::SPACES) {
-        qsizetype numSpaces = d_settings.indentWidth() - (cursor.positionInBlock() % d_settings.indentWidth());
+    if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SPACES) {
+        qsizetype numSpaces = d_effectiveSettings.indentWidth() - (cursor.positionInBlock() % d_effectiveSettings.indentWidth());
         return QString(numSpaces, QLatin1Char(' '));
     }
     return QLatin1String("\t");
@@ -285,13 +316,13 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 
     // Remove up to one tab or indentWidth spaces from begining of block
     cursor.beginEditBlock();
-    if (d_settings.indentMode() == EditorSettings::IndentMode::TABS) {
+    if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::TABS) {
         if (document()->characterAt(cursor.position()) == QLatin1Char('\t')) {
             cursor.deleteChar();
         }
     }
     else {
-        int numSpacesToDelete = d_settings.indentWidth();
+        int numSpacesToDelete = d_effectiveSettings.indentWidth();
         if (!notAfter.isNull()) {
             numSpacesToDelete = std::min(numSpacesToDelete, std::max(0, notAfter.position() - cursor.position()));
         }
@@ -363,12 +394,14 @@ void Editor::keyPressEvent(QKeyEvent* event)
         else if (event->keyCombination() == QKeyCombination(Qt::Key_Backspace)) {
             // Unindent current block only, if cursor is in leading whitespace
             QTextCursor cursor = textCursor();
-            QString blockText = cursor.block().text();
-            QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
+            if (!cursor.hasSelection() && cursor.positionInBlock() > 0) {
+                QString blockText = cursor.block().text();
+                QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
 
-            if (isAllWhitespace(textBeforeCursor)) {
-                unindentBlock(QTextCursor(cursor.block()), cursor);
-                return;
+                if (isAllWhitespace(textBeforeCursor)) {
+                    unindentBlock(QTextCursor(cursor.block()), cursor);
+                    return;
+                }
             }
         }
     }

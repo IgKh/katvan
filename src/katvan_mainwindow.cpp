@@ -374,6 +374,8 @@ void MainWindow::setCurrentFile(const QString& fileName)
         d_recentFiles->addRecent(d_currentFileName);
     }
 
+    d_editor->checkForModelines();
+
     d_editor->document()->setModified(false);
     setWindowModified(false);
 
@@ -463,6 +465,7 @@ bool MainWindow::saveFile()
     }
 
     d_editor->document()->setModified(false);
+    d_editor->checkForModelines();
     statusBar()->showMessage(tr("Saved %1").arg(d_currentFileName));
 
     return true;

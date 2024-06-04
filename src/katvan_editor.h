@@ -54,6 +54,7 @@ public slots:
     void setTextBlockDirection(Qt::LayoutDirection dir);
     void goToBlock(int blockNum);
     void forceRehighlighting();
+    void checkForModelines();
 
 protected:
     bool event(QEvent* event) override;
@@ -69,13 +70,15 @@ private:
     void insertMark(QChar mark);
     void insertSurroundingMarks(QString before, QString after);
 
-    int lineNumberGutterWidth();
-    QTextBlock getFirstVisibleBlock();
-    void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
-
     std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;
     QString getIndentString(QTextCursor cursor) const;
     void unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter = QTextCursor());
+
+    void applyEffectiveSettings();
+
+    int lineNumberGutterWidth();
+    QTextBlock getFirstVisibleBlock();
+    void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
 private slots:
     void popupInsertMenu();
@@ -95,7 +98,9 @@ private:
     Highlighter* d_highlighter;
     SpellChecker* d_spellChecker;
 
-    EditorSettings d_settings;
+    EditorSettings d_appSettings;
+    EditorSettings d_fileMode;
+    EditorSettings d_effectiveSettings;
 
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
