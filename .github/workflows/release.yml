@@ -43,7 +43,7 @@ jobs:
           if-no-files-found: error
 
   build-linux-appimage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [prepare]
 
     steps:
@@ -58,7 +58,7 @@ jobs:
           cache: true
 
       - name: Install additional packages
-        run: sudo apt install -y libhunspell-dev g++-10
+        run: sudo apt install -y libhunspell-dev g++-10 libfuse2
 
       - name: Install AppImage tools
         uses: miurahr/install-linuxdeploy-action@v1
