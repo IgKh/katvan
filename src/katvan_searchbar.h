@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QTextCursor>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -34,15 +35,22 @@ public:
     SearchBar(QTextEdit* editor, QWidget* parent = nullptr);
 
 public slots:
-    void ensureVisible();
+    void ensureFindVisible();
+    void ensureReplaceVisible();
+    void resetSearchRange();
 
 private slots:
     void checkTermIsValid();
     void findNext();
     void findPrevious();
+    void replaceNext();
+    void replaceAll();
 
 private:
     void setupUI();
+    void setReplaceLineVisible(bool visible);
+    void ensureVisibleImpl();
+    QTextCursor findImpl(const QString& searchTerm, bool forward);
     void find(bool forward);
 
 protected:
@@ -52,11 +60,19 @@ private:
     QTextEdit* d_editor;
 
     QLineEdit* d_searchTerm;
+    QLineEdit* d_replaceWith;
 
     QAction* d_normalMatchType;
     QAction* d_regexMatchType;
     QAction* d_wholeWordsMatchType;
     QAction* d_matchCase;
+    QAction* d_findInSelection;
+
+    QTextCursor d_searchRangeStart;
+    QTextCursor d_searchRangeEnd;
+    bool d_resultSettingInProgress;
+
+    QTextCursor d_lastMatch;
 };
 
 }

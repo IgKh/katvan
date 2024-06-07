@@ -214,9 +214,13 @@ void MainWindow::setupActions()
 
     editMenu->addSeparator();
 
-    QAction* findAction = editMenu->addAction(tr("&Find..."), d_searchBar, &SearchBar::ensureVisible);
+    QAction* findAction = editMenu->addAction(tr("&Find..."), d_searchBar, &SearchBar::ensureFindVisible);
     findAction->setIcon(QIcon::fromTheme("edit-find", QIcon(":/icons/edit-find.svg")));
     findAction->setShortcut(QKeySequence::Find);
+
+    QAction* replaceAction = editMenu->addAction(tr("&Replace..."), d_searchBar, &SearchBar::ensureReplaceVisible);
+    replaceAction->setIcon(QIcon::fromTheme("edit-find-replace", QIcon(":/icons/edit-find-replace.svg")));
+    replaceAction->setShortcut(QKeySequence::Replace);
 
     QAction* gotoLineAction = editMenu->addAction(tr("&Go to line..."), this, &MainWindow::goToLine);
     gotoLineAction->setShortcut(Qt::CTRL | Qt::Key_G);
@@ -384,6 +388,7 @@ void MainWindow::setCurrentFile(const QString& fileName)
         d_currentFileShortName));
 
     d_driver->resetInputFile(fileName);
+    d_searchBar->resetSearchRange();
     d_searchBar->hide();
 }
 

@@ -19,6 +19,7 @@
 
 #include <QActionGroup>
 #include <QCoreApplication>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
@@ -26,6 +27,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QTextBlock>
 #include <QTextEdit>
 #include <QToolButton>
 #include <QValidator>
@@ -75,8 +77,13 @@ static QString processToolTip(const QString& toolTipTemplate, const QKeySequence
 SearchBar::SearchBar(QTextEdit* editor, QWidget* parent)
     : QWidget(parent)
     , d_editor(editor)
+    , d_searchRangeStart(editor->document())
+    , d_searchRangeEnd(editor->document())
+    , d_resultSettingInProgress(false)
 {
     setupUI();
+
+    connect(editor, &QTextEdit::selectionChanged, this, &SearchBar::resetSearchRange);
 }
 
 void SearchBar::setupUI()
@@ -105,10 +112,17 @@ void SearchBar::setupUI()
     d_matchCase = settingsMenu->addAction(tr("Match Case"));
     d_matchCase->setCheckable(true);
 
+    d_findInSelection = settingsMenu->addAction(tr("Find in Selection"));
+    d_findInSelection->setCheckable(true);
+    connect(d_findInSelection, &QAction::toggled, this, &SearchBar::resetSearchRange);
+
     d_searchTerm = new QLineEdit();
     d_searchTerm->setValidator(new RegexFormatValidator(d_regexMatchType, this));
     connect(d_searchTerm, &QLineEdit::returnPressed, this, &SearchBar::findNext);
     connect(d_searchTerm, &QLineEdit::textEdited, this, &SearchBar::checkTermIsValid);
+
+    d_replaceWith = new QLineEdit();
+    connect(d_replaceWith, &QLineEdit::returnPressed, this, &SearchBar::replaceNext);
 
     QToolButton* findNextButton = new QToolButton();
     findNextButton->setIcon(QIcon::fromTheme("go-down", QIcon(":/icons/go-down.svg")));
@@ -128,37 +142,119 @@ void SearchBar::setupUI()
     settingsButton->setIcon(QIcon::fromTheme("settings-configure", QIcon(":/icons/settings-configure.svg")));
     settingsButton->setToolTip(tr("Find settings"));
 
+    QToolButton* replaceButton = new QToolButton();
+    replaceButton->setText(tr("Replace"));
+    replaceButton->setToolTip(tr("Replace next match"));
+    connect(replaceButton, &QToolButton::clicked, this, &SearchBar::replaceNext);
+
+    QToolButton* replaceAllButton = new QToolButton();
+    replaceAllButton->setText(tr("Replace All"));
+    replaceAllButton->setToolTip(tr("Replace all matches"));
+    connect(replaceAllButton, &QToolButton::clicked, this, &SearchBar::replaceAll);
+
     QToolButton* closeButton = new QToolButton();
     closeButton->setIcon(QIcon::fromTheme("window-close", QIcon(":/icons/window-close.svg")));
     closeButton->setToolTip(tr("Close search bar"));
     connect(closeButton, &QToolButton::clicked, this, &QWidget::hide);
 
-    QHBoxLayout* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(
-        layout->contentsMargins().left(),
-        0,
-        layout->contentsMargins().right(),
-        0);
+    QHBoxLayout* findLayout = new QHBoxLayout();
+    findLayout->addWidget(d_searchTerm, 1);
+    findLayout->addWidget(findNextButton);
+    findLayout->addWidget(findPrevButton);
+    findLayout->addWidget(settingsButton);
 
-    layout->addWidget(new QLabel(tr("Find:")));
-    layout->addWidget(d_searchTerm, 1);
-    layout->addWidget(findNextButton);
-    layout->addWidget(findPrevButton);
-    layout->addWidget(settingsButton);
-    layout->addWidget(closeButton);
+    QHBoxLayout* replaceLayout = new QHBoxLayout();
+    replaceLayout->addWidget(d_replaceWith, 1);
+    replaceLayout->addWidget(replaceButton);
+    replaceLayout->addWidget(replaceAllButton);
+
+    QGridLayout* layout = new QGridLayout(this);
+
+    QMargins margins = layout->contentsMargins();
+    margins.setTop(0);
+    layout->setContentsMargins(margins);
+
+    layout->addWidget(new QLabel(tr("Find:")), 0, 0);
+    layout->addLayout(findLayout, 0, 1);
+    layout->addWidget(closeButton, 0, 2);
+    layout->addWidget(new QLabel(tr("Replace:")), 1, 0);
+    layout->addLayout(replaceLayout, 1, 1);
+    layout->setColumnStretch(1, 1);
 }
 
-void SearchBar::ensureVisible()
+static void setLayoutItemVisible(QLayoutItem* item, bool visible)
+{
+    if (item == nullptr) {
+        return;
+    }
+
+    if (item->widget() != nullptr) {
+        item->widget()->setVisible(visible);
+    }
+    else if (item->layout() != nullptr) {
+        QLayout* layout = item->layout();
+        for (int i = 0; i < layout->count(); i++) {
+            setLayoutItemVisible(layout->itemAt(i), visible);
+        }
+    }
+}
+
+void SearchBar::setReplaceLineVisible(bool visible)
+{
+    QGridLayout* topLayout = qobject_cast<QGridLayout *>(layout());
+    for (int i = 0; i < topLayout->columnCount(); i++) {
+        setLayoutItemVisible(topLayout->itemAtPosition(1, i), visible);
+    }
+}
+
+void SearchBar::ensureVisibleImpl()
 {
     show();
 
     QTextCursor cursor = d_editor->textCursor();
     if (cursor.hasSelection()) {
-        d_searchTerm->setText(cursor.selectedText());
+        QTextBlock selectionBeginBlock = d_editor->document()->findBlock(cursor.selectionStart());
+        QTextBlock selectionEndBlock = d_editor->document()->findBlock(cursor.selectionEnd());
+
+        if (selectionBeginBlock == selectionEndBlock) {
+            d_searchTerm->setText(cursor.selectedText().trimmed());
+        }
     }
 
     d_searchTerm->setFocus();
     d_searchTerm->selectAll();
+    d_lastMatch = QTextCursor();
+}
+
+void SearchBar::ensureFindVisible()
+{
+    if (!isVisible()) {
+        setReplaceLineVisible(false);
+    }
+    ensureVisibleImpl();
+}
+
+void SearchBar::ensureReplaceVisible()
+{
+    ensureVisibleImpl();
+    setReplaceLineVisible(true);
+}
+
+void SearchBar::resetSearchRange()
+{
+    if (d_resultSettingInProgress) {
+        return;
+    }
+
+    QTextCursor cursor = d_editor->textCursor();
+    if (cursor.hasSelection() && d_findInSelection->isChecked()) {
+        d_searchRangeStart.setPosition(cursor.selectionStart());
+        d_searchRangeEnd.setPosition(cursor.selectionEnd());
+    }
+    else {
+        d_searchRangeStart.movePosition(QTextCursor::Start);
+        d_searchRangeEnd.movePosition(QTextCursor::End);
+    }
 }
 
 void SearchBar::checkTermIsValid()
@@ -171,6 +267,7 @@ void SearchBar::checkTermIsValid()
         d_searchTerm->setStyleSheet(QString());
         d_searchTerm->setToolTip(QString());
     }
+    d_lastMatch = QTextCursor();
 }
 
 void SearchBar::findNext()
@@ -183,13 +280,8 @@ void SearchBar::findPrevious()
     find(false);
 }
 
-void SearchBar::find(bool forward)
+QTextCursor SearchBar::findImpl(const QString& searchTerm, bool forward)
 {
-    QString searchTerm = d_searchTerm->text();
-    if (searchTerm.isEmpty()) {
-        return;
-    }
-
     QRegularExpression regex;
     if (d_regexMatchType->isChecked()) {
         regex.setPattern(searchTerm);
@@ -213,26 +305,88 @@ void SearchBar::find(bool forward)
     QTextDocument* document = d_editor->document();
     QTextCursor cursor = d_editor->textCursor();
 
+    auto isValidResult = [this](const QTextCursor& result) {
+        return !result.isNull() && result >= d_searchRangeStart && result <= d_searchRangeEnd;
+    };
+
     QTextCursor found = document->find(regex, cursor, flags);
-    if (!found.isNull()) {
-        d_editor->setTextCursor(found);
-        return;
+    if (isValidResult(found)) {
+        return found;
     }
 
     // Maybe there is a match before the cursor
-    QTextCursor edgeCursor(document);
-    if (!forward) {
-        edgeCursor.movePosition(QTextCursor::End);
-    }
+    QTextCursor edgeCursor = forward ? d_searchRangeStart : d_searchRangeEnd;
 
     found = document->find(regex, edgeCursor, flags);
-    if (!found.isNull()) {
-        d_editor->setTextCursor(found);
-        return;
+    if (isValidResult(found)) {
+        return found;
     }
 
     // There really are no matches
-    QMessageBox::warning(window(), QCoreApplication::applicationName(), tr("No matches found"));
+    return QTextCursor();
+}
+
+void SearchBar::find(bool forward)
+{
+    d_lastMatch = QTextCursor();
+
+    QString searchTerm = d_searchTerm->text();
+    if (searchTerm.isEmpty()) {
+        return;
+    }
+
+    QTextCursor found = findImpl(searchTerm, forward);
+    if (!found.isNull()) {
+        d_resultSettingInProgress = true;
+        d_lastMatch = found;
+        d_editor->setTextCursor(found);
+        d_resultSettingInProgress = false;
+    }
+    else {
+        QMessageBox::warning(window(), QCoreApplication::applicationName(), tr("No matches found"));
+    }
+}
+
+void SearchBar::replaceNext()
+{
+    if (!d_lastMatch.isNull()) {
+        d_lastMatch.beginEditBlock();
+        d_lastMatch.removeSelectedText();
+        d_lastMatch.insertText(d_replaceWith->text());
+        d_lastMatch.endEditBlock();
+    }
+    findNext();
+}
+
+void SearchBar::replaceAll()
+{
+    QString searchTerm = d_searchTerm->text();
+    if (searchTerm.isEmpty()) {
+        return;
+    }
+
+    qsizetype replacementCount = 0;
+
+    QTextCursor cursor(d_editor->document());
+    cursor.beginEditBlock();
+
+    QTextCursor result = findImpl(searchTerm, true);
+    while (!result.isNull()) {
+        cursor.setPosition(result.selectionStart());
+        cursor.setPosition(result.selectionEnd(), QTextCursor::KeepAnchor);
+        cursor.removeSelectedText();
+        cursor.insertText(d_replaceWith->text());
+
+        replacementCount++;
+        result = findImpl(searchTerm, true);
+    }
+
+    cursor.endEditBlock();
+
+    QMessageBox::information(
+        window(),
+        QCoreApplication::applicationName(),
+        tr("%n replacements were performed", "", replacementCount));
 }
 
 void SearchBar::keyPressEvent(QKeyEvent* event)
