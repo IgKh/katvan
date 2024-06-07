@@ -65,7 +65,7 @@ signals:
 
 private slots:
     void personalDictionaryFileChanged();
-    void loaderWorkerDone(QString dictName, LoadedSpeller* speller);
+    void loaderWorkerDone(QString dictName, katvan::LoadedSpeller* speller);
     void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
 
 private:
@@ -101,7 +101,7 @@ public slots:
     void process();
 
 signals:
-    void dictionaryLoaded(QString dictName, LoadedSpeller* speller);
+    void dictionaryLoaded(QString dictName, katvan::LoadedSpeller* speller);
 
 private:
     QString d_dictName;

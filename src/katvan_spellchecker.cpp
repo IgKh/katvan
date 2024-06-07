@@ -359,7 +359,7 @@ void SpellChecker::requestSuggestions(const QString& word, int position)
     QMetaObject::invokeMethod(worker, &SpellingSuggestionsWorker::process, Qt::QueuedConnection);
 }
 
-void SpellChecker::loaderWorkerDone(QString dictName, LoadedSpeller* speller)
+void SpellChecker::loaderWorkerDone(QString dictName, katvan::LoadedSpeller* speller)
 {
     std::unique_ptr<LoadedSpeller> spellerPtr(speller);
 
