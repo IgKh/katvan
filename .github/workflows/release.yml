@@ -51,14 +51,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: 6.5.*
           modules: 'qtpdf'
           cache: true
 
       - name: Install additional packages
-        run: sudo apt install -y libxcb-cursor0 libhunspell-dev g++-10
+        run: sudo apt install -y libhunspell-dev g++-10
 
       - name: Install AppImage tools
         uses: miurahr/install-linuxdeploy-action@v1
@@ -80,6 +80,9 @@ jobs:
         run: |
           linuxdeploy-x86_64.AppImage --appdir build/AppDir --plugin qt --output appimage
           mv Katvan-x86_64.AppImage Katvan-${{ needs.prepare.outputs.katvan_version }}-linux-x86_64.AppImage
+        env:
+          EXTRA_QT_PLUGINS: waylandcompositor
+          EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
@@ -97,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: 6.5.*
           modules: 'qtpdf'
