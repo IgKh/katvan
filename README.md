@@ -18,7 +18,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 
 Not a whole lot so far, but for now we have:
 - Reasonably good RTL editing
-    - Mostly thanks the Qt Rich Text Framework
+    - Mostly thanks to Qt's excellent Rich Text Framework
     - But also specific additional functionality, for example:
       - Toggling between logical and visual cursor movement
       - Manually flipping paragraph direction (using both Windows style `Ctrl+RShift`/`LShift`, or Firefox style `Ctrl+Shift+X`)
@@ -26,6 +26,7 @@ Not a whole lot so far, but for now we have:
 - Live-ish previews[^1]
 - Syntax highlighting
 - Syntax-aware spell checking
+- [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
 - Supported on Linux and Windows 10/11
 
 [^1]: Previews are currently rendered by running the entire file through the _Typst_ CLI after each change. It is plenty fast at least for smaller documents, so good enough for now.
@@ -79,5 +80,4 @@ A few things I'd like and may happen at some point, in no particular order:
 
 - Ability to view BiDi control characters
 - Better integration with `typst` (incremental previews, highlight errors)
-- Editor configuration with modelines
 - Dark theme support
