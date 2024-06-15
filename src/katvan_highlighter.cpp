@@ -80,6 +80,10 @@ void Highlighter::setupFormats()
     strongEmphasisFormat.setFontWeight(QFont::Bold);
     d_formats.insert(parsing::HiglightingMarker::Kind::STRONG_EMPHASIS, strongEmphasisFormat);
 
+    QTextCharFormat urlFormat;
+    urlFormat.setFontUnderline(true);
+    d_formats.insert(parsing::HiglightingMarker::Kind::URL, urlFormat);
+
     QTextCharFormat rawFormat;
     rawFormat.setForeground(QColor(0x81, 0x81, 0x81));
     d_formats.insert(parsing::HiglightingMarker::Kind::RAW, rawFormat);

@@ -26,8 +26,7 @@
 
 namespace katvan::parsing {
 
-// NOTE - Must be in sorted order
-Q_GLOBAL_STATIC(QStringList, CODE_KEYWORDS, {
+Q_GLOBAL_STATIC(QSet<QString>, CODE_KEYWORDS, {
     QStringLiteral("and"),
     QStringLiteral("as"),
     QStringLiteral("auto"),
@@ -49,6 +48,11 @@ Q_GLOBAL_STATIC(QStringList, CODE_KEYWORDS, {
     QStringLiteral("show"),
     QStringLiteral("true"),
     QStringLiteral("while")
+})
+
+Q_GLOBAL_STATIC(QSet<QString>, URL_PROTOCOLS, {
+    QStringLiteral("http"),
+    QStringLiteral("https")
 })
 
 static constexpr QLatin1StringView MATH_NON_OPERATORS = QLatin1StringView("()[]{},;");
@@ -375,6 +379,7 @@ static bool isBlockScopedState(const ParserState& state)
 {
     return state.kind == ParserState::Kind::COMMENT_LINE
         || state.kind == ParserState::Kind::CONTENT_HEADING
+        || state.kind == ParserState::Kind::CONTENT_URL
         || state.kind == ParserState::Kind::CODE_LINE;
 }
 
@@ -469,6 +474,13 @@ void Parser::parse()
                 }
                 continue;
             }
+            else if (match(m::All(
+                m::Keyword(*URL_PROTOCOLS),
+                m::SymbolSequence(QStringLiteral("://"))
+            ))) {
+                pushState(ParserState::Kind::CONTENT_URL);
+                continue;
+            }
             else if (match(m::SymbolSequence(QStringLiteral("```")))) {
                 pushState(ParserState::Kind::CONTENT_RAW_BLOCK);
                 continue;
@@ -532,6 +544,17 @@ void Parser::parse()
                 if (match(m::All(m::TokenType(TokenType::WORD), m::Peek(m::Symbol(QLatin1Char(':')))))) {
                     instantState(ParserState::Kind::CONTENT_TERM);
                 }
+                continue;
+            }
+        }
+        else if (state.kind == ParserState::Kind::CONTENT_URL) {
+            if (match(m::Ignore(m::Any(
+                    m::TokenType(TokenType::WHITESPACE),
+                    m::Symbol(QLatin1Char(']')),
+                    m::Symbol(QLatin1Char(')')),
+                    m::Symbol(QLatin1Char('}'))
+            )))) {
+                popState();
                 continue;
             }
         }
@@ -650,6 +673,11 @@ void Parser::parse()
                 instantState(ParserState::Kind::CODE_NUMERIC_LITERAL);
                 continue;
             }
+            else if (match(m::Symbol(QLatin1Char('$')))) {
+                instantState(ParserState::Kind::MATH_DELIMITER);
+                pushState(ParserState::Kind::MATH);
+                continue;
+            }
             else if (match(m::All(
                 m::Symbol(QLatin1Char('<')),
                 m::LabelName(),
@@ -710,6 +738,7 @@ void Parser::parse()
 
         // In any other case - just burn a token and continue
         Token t = d_tokenStream.fetchToken();
+        updateMarkers(t);
         for (auto& listener : d_listeners) {
             listener.get().handleLooseToken(t, state);
         }
@@ -814,6 +843,10 @@ bool Parser::handleCodeStart()
 
 void Parser::updateMarkers(const QList<Token>& tokens)
 {
+    if (tokens.empty()) {
+        return;
+    }
+
     // Leading tokens that were marked by the "Discard" matcher are
     // not part of the match
     Token startToken;
@@ -829,6 +862,14 @@ void Parser::updateMarkers(const QList<Token>& tokens)
     d_endMarker = tokens.last().startPos + tokens.last().length - 1;
 
     Q_ASSERT(d_startMarker <= d_endMarker);
+}
+
+void Parser::updateMarkers(const Token& token)
+{
+    if (!token.discard) {
+        d_startMarker = token.startPos;
+        d_endMarker = token.startPos + token.length - 1;
+    }
 }
 
 void Parser::instantState(ParserState::Kind stateKind)
@@ -896,6 +937,9 @@ void HighlightingListener::finalizeState(const ParserState& state, size_t endMar
         break;
     case ParserState::Kind::CONTENT_STRONG_EMPHASIS:
         d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, start, length });
+        break;
+    case ParserState::Kind::CONTENT_URL:
+        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::URL, start, length });
         break;
     case ParserState::Kind::CONTENT_RAW_BLOCK:
     case ParserState::Kind::CONTENT_RAW:

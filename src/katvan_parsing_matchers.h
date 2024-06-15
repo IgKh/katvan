@@ -19,7 +19,7 @@
 
 #include "katvan_parsing.h"
 
-#include <algorithm>
+#include <QSet>
 
 //
 // Parser Combinator library for the Katvan Typst parser
@@ -178,6 +178,24 @@ public:
     }
 };
 
+template <Matcher M>
+class Ignore
+{
+    M d_matcher;
+
+public:
+    Ignore(const M& matcher): d_matcher(matcher) {}
+
+    bool tryMatch(TokenStream& stream, QList<Token>&) const
+    {
+        QList<Token> nested;
+        bool matched = d_matcher.tryMatch(stream, nested);
+        stream.returnTokens(nested);
+
+        return matched;
+    }
+};
+
 class Condition
 {
     bool d_condition;
@@ -280,10 +298,10 @@ auto LabelName() {
 
 class Keyword
 {
-    const QStringList& d_keywords;
+    const QSet<QString>& d_keywords;
 
 public:
-    Keyword(const QStringList& keywords): d_keywords(keywords) {}
+    Keyword(const QSet<QString>& keywords): d_keywords(keywords) {}
 
     bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
     {
@@ -299,7 +317,7 @@ public:
         for (const Token& t : nested) {
             word.append(t.text);
         }
-        return std::binary_search(d_keywords.begin(), d_keywords.end(), word);
+        return d_keywords.contains(word);
     }
 };
 

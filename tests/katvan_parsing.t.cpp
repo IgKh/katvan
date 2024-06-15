@@ -405,6 +405,28 @@ TEST(HiglightingParserTests, Emphasis) {
     ));
 }
 
+TEST(HiglightingParserTests, URL) {
+    QList<HiglightingMarker> markers;
+
+    markers = highlightText(QStringLiteral("This is from #footnote[https://foo.bar.com/there] here"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME, 13,  9 },
+        HiglightingMarker{ HiglightingMarker::Kind::URL,           23, 25 }
+    ));
+
+    markers = highlightText(QStringLiteral("This is a url http://example.com but #link(\"https://this.isnt\")"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::URL,            14, 18 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  37,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 43, 19 }
+    ));
+
+    markers = highlightText(QStringLiteral("ssh://not.a.real.server"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,         4, 19 }
+    ));
+}
+
 TEST(HiglightingParserTests, RawContent) {
     QList<HiglightingMarker> markers;
 
@@ -673,6 +695,28 @@ TEST(HiglightingParserTests, Loops) {
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  61,  2 },
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  77,  1 },
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  82,  1 }
+    ));
+}
+
+TEST(HiglightingParserTests, MathInCode) {
+    auto markers = highlightText(QStringLiteral(
+        "#align(center, table(\n"
+        "  columns: count,\n"
+        "  ..nums.map(n => $F_#n$),\n"
+        "  ..nums.map(n => str(fib(n)),\n"
+        "))"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  6 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   15,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   49,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  58,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   60,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   61,  2 },
+        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  63,  1 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   76,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   85,  3 },
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   89,  3 }
     ));
 }
 

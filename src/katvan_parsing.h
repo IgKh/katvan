@@ -100,6 +100,7 @@ struct ParserState
         CONTENT_HEADING,
         CONTENT_EMPHASIS,
         CONTENT_STRONG_EMPHASIS,
+        CONTENT_URL,
         CONTENT_RAW,
         CONTENT_RAW_BLOCK,
         CONTENT_LABEL,
@@ -167,6 +168,7 @@ private:
     }
 
     void updateMarkers(const QList<Token>& tokens);
+    void updateMarkers(const Token& token);
 
     void instantState(ParserState::Kind stateKind);
     void pushState(ParserState::Kind stateKind);
@@ -188,6 +190,7 @@ struct HiglightingMarker
         HEADING,
         EMPHASIS,
         STRONG_EMPHASIS,
+        URL,
         RAW,
         LABEL,
         REFERENCE,
