@@ -92,6 +92,9 @@ int main(int argc, char** argv)
     if (!parser.positionalArguments().isEmpty()) {
         wnd.loadFile(parser.positionalArguments().at(0));
     }
+    else {
+        wnd.newFile();
+    }
 
     return app.exec();
 }

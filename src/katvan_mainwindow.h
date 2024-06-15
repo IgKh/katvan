@@ -20,8 +20,6 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
-class QPdfDocument;
-class QPlainTextEdit;
 class QSettings;
 class QToolButton;
 QT_END_NAMESPACE
@@ -29,6 +27,7 @@ QT_END_NAMESPACE
 namespace katvan
 {
 
+class CompilerOutput;
 class Editor;
 class EditorSettingsDialog;
 class TypstDriver;
@@ -45,8 +44,10 @@ public:
 
     void loadFile(const QString& fileName);
 
-private slots:
+public slots:
     void newFile();
+
+private slots:
     void openFile();
     void openNamedFile(const QString& fileName);
     bool saveFile();
@@ -61,7 +62,6 @@ private slots:
     void toggleCursorMovementStyle();
     void editorSettingsDialogAccepted();
     void updatePreview(const QString& pdfFile);
-    void compilationFailed(const QString& output);
 
 private:
     void setupUI();
@@ -83,12 +83,11 @@ private:
 
     RecentFiles* d_recentFiles;
     TypstDriver* d_driver;
-    QPdfDocument* d_previewDocument;
 
     Editor* d_editor;
     SearchBar* d_searchBar;
     Previewer* d_previewer;
-    QPlainTextEdit* d_compilerOutput;
+    CompilerOutput* d_compilerOutput;
 
     EditorSettingsDialog* d_editorSettingsDialog;
 

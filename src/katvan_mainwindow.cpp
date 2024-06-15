@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_compileroutput.h"
 #include "katvan_editor.h"
 #include "katvan_editorsettings.h"
 #include "katvan_mainwindow.h"
@@ -34,7 +35,6 @@
 #include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QPlainTextEdit>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTextEdit>
@@ -57,15 +57,16 @@ MainWindow::MainWindow()
     connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
 
     d_driver = new TypstDriver(this);
-    connect(d_driver, &TypstDriver::previewReady, this, &MainWindow::updatePreview);
-    connect(d_driver, &TypstDriver::compilationFailed, this, &MainWindow::compilationFailed);
 
     setupUI();
     setupActions();
     setupStatusBar();
 
+    connect(d_driver, &TypstDriver::previewReady, this, &MainWindow::updatePreview);
+    connect(d_driver, &TypstDriver::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
+    connect(d_driver, &TypstDriver::compilationFailed, d_compilerOutputDock, &QDockWidget::show);
+
     readSettings();
-    setCurrentFile(QString());
     cursorPositionChanged();
 
     if (!d_driver->compilerFound()) {
@@ -86,7 +87,7 @@ void MainWindow::setupUI()
     d_editor = new Editor();
     connect(d_editor, &Editor::contentModified, d_driver, &TypstDriver::updatePreview);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
-    connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
+    connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified, Qt::QueuedConnection);
 
     d_searchBar = new SearchBar(d_editor);
     d_searchBar->setVisible(false);
@@ -103,13 +104,7 @@ void MainWindow::setupUI()
     connect(d_editorSettingsDialog, &QDialog::accepted, this, &MainWindow::editorSettingsDialogAccepted);
 
     d_previewer = new Previewer();
-
-    QFont monospaceFont { "Monospace" };
-    monospaceFont.setStyleHint(QFont::Monospace);
-
-    d_compilerOutput = new QPlainTextEdit();
-    d_compilerOutput->setReadOnly(true);
-    d_compilerOutput->setFont(monospaceFont);
+    d_compilerOutput = new CompilerOutput();
 
     setDockOptions(QMainWindow::AnimatedDocks);
 
@@ -380,12 +375,12 @@ void MainWindow::setCurrentFile(const QString& fileName)
 
     d_editor->checkForModelines();
 
-    d_editor->document()->setModified(false);
-    setWindowModified(false);
-
     setWindowTitle(QString("%1[*] - %2").arg(
         QCoreApplication::applicationName(),
         d_currentFileShortName));
+
+    d_editor->document()->setModified(false);
+    setWindowModified(false);
 
     d_driver->resetInputFile(fileName);
     d_searchBar->resetSearchRange();
@@ -692,18 +687,10 @@ void MainWindow::updatePreview(const QString& pdfFile)
         return;
     }
 
-    d_compilerOutput->clear();
-
     if (d_exportPdfPending) {
         QTimer::singleShot(0, this, &MainWindow::exportPdf);
         d_exportPdfPending = false;
     }
-}
-
-void MainWindow::compilationFailed(const QString& output)
-{
-    d_compilerOutput->setPlainText(output);
-    d_compilerOutputDock->show();
 }
 
 }

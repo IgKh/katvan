@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QList>
 #include <QObject>
 #include <QTemporaryFile>
 
@@ -32,6 +33,7 @@ class TypstDriver : public QObject
 
 public:
     enum class Status {
+        INITIALIZING,
         INITIALIZED,
         PROCESSING,
         SUCCESS,
@@ -40,6 +42,7 @@ public:
 
 public:
     TypstDriver(QObject* parent = nullptr);
+    ~TypstDriver();
 
     bool compilerFound() const { return !d_compilerPath.isEmpty(); }
     Status status() const { return d_status; }
@@ -49,14 +52,15 @@ public:
 
 signals:
     void previewReady(const QString& pdfPath);
-    void compilationFailed(const QString& output);
+    void outputReady(const QStringList& output);
+    void compilationFailed();
 
 public slots:
     void updatePreview(const QString& source);
 
 private slots:
     void processErrorOccurred();
-    void compilerFinished(int exitCode);
+    void signalCompilerFailed();
     void compilerOutputReady();
 
 private:
@@ -64,7 +68,7 @@ private:
 
     Status d_status;
     QString d_compilerPath;
-    QString d_compilerOutput;
+    QStringList d_compilerOutput;
     QTemporaryFile* d_outputFile;
     QTemporaryFile* d_inputFile;
     QProcess* d_process;

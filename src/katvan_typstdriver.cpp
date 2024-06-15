@@ -28,7 +28,7 @@ namespace katvan {
 
 TypstDriver::TypstDriver(QObject* parent)
     : QObject(parent)
-    , d_status(Status::INITIALIZED)
+    , d_status(Status::INITIALIZING)
     , d_inputFile(nullptr)
 {
     d_compilerPath = findTypstCompiler();
@@ -45,8 +45,16 @@ TypstDriver::TypstDriver(QObject* parent)
     d_process = new QProcess(this);
     d_process->setProcessChannelMode(QProcess::MergedChannels);
     connect(d_process, &QProcess::errorOccurred, this, &TypstDriver::processErrorOccurred);
-    connect(d_process, &QProcess::finished, this, &TypstDriver::compilerFinished);
     connect(d_process, &QProcess::readyRead, this, &TypstDriver::compilerOutputReady);
+}
+
+TypstDriver::~TypstDriver()
+{
+    if (d_process->state() != QProcess::NotRunning) {
+        d_process->disconnect();
+        d_process->terminate();
+        d_process->waitForFinished();
+    }
 }
 
 QString TypstDriver::findTypstCompiler() const
@@ -61,29 +69,56 @@ QString TypstDriver::findTypstCompiler() const
 
 void TypstDriver::resetInputFile(const QString& sourceFileName)
 {
-    d_status = Status::INITIALIZED;
+    if (d_compilerPath.isEmpty()) {
+        return;
+    }
+    d_status = Status::INITIALIZING;
 
     if (d_inputFile != nullptr) {
         delete d_inputFile;
+        d_inputFile = nullptr;
     }
 
+    if (d_process->state() != QProcess::NotRunning) {
+        // To avoid blocking the event loop while we wait for the Typst compiler
+        // to exit, schedule a one time re-run of this method when it is done.
+        connect(d_process, &QProcess::finished, this, [this, sourceFileName]() {
+            resetInputFile(sourceFileName);
+        },
+        Qt::SingleShotConnection);
+
+        d_process->terminate();
+        return;
+    }
+
+    QString workingDir;
     if (sourceFileName.isEmpty()) {
-        d_inputFile = new QTemporaryFile(QDir::tempPath() + "/katvan_XXXXXX.typ", this);
+        workingDir = QDir::tempPath();
+        d_inputFile = new QTemporaryFile(workingDir + "/katvan_XXXXXX.typ", this);
     }
     else {
         QFileInfo info(sourceFileName);
-        d_inputFile = new QTemporaryFile(info.absolutePath() + "/.katvan_XXXXXX.typ", this);
+        workingDir = info.absolutePath();
+        d_inputFile = new QTemporaryFile(workingDir + "/.katvan_XXXXXX.typ", this);
     }
     d_inputFile->open();
+
+    d_process->setWorkingDirectory(workingDir);
+    d_process->setProgram(d_compilerPath);
+    d_process->setArguments(QStringList()
+        << "watch"
+        << "--diagnostic-format" << "short"
+        << d_inputFile->fileName()
+        << d_outputFile->fileName());
+
+    d_process->start();
+    d_status = Status::INITIALIZED;
 }
 
 void TypstDriver::updatePreview(const QString& source)
 {
-    if (d_compilerPath.isEmpty()) {
-        return;
-    }
-    if (d_status == Status::PROCESSING) {
-        qDebug() << "Compiler already running, skipping";
+    if (d_status == Status::PROCESSING || d_status == Status::INITIALIZING) {
+        qDebug() << "Compiler not available at the moment, skipping";
         return;
     }
 
@@ -98,51 +133,60 @@ void TypstDriver::updatePreview(const QString& source)
     stream.flush();
 
     if (stream.status() != QTextStream::Ok) {
-        d_compilerOutput = QStringLiteral("Error preparing preview input %1: %2").arg(
+        d_compilerOutput.append(QStringLiteral("Error preparing preview input %1: %2").arg(
             d_inputFile->fileName(),
-            d_inputFile->errorString());
+            d_inputFile->errorString()));
 
-        compilerFinished(-1);
+        signalCompilerFailed();
         return;
     }
 
     d_inputFile->resize(d_inputFile->pos());
-
-    d_process->setWorkingDirectory(QFileInfo(d_inputFile->fileName()).path());
-    d_process->setProgram(d_compilerPath);
-    d_process->setArguments(QStringList()
-        << "compile"
-        << d_inputFile->fileName()
-        << d_outputFile->fileName());
-
-    d_process->start();
 }
 
 void TypstDriver::processErrorOccurred()
 {
-    d_compilerOutput += QStringLiteral("Error starting typst compiler at %1: %2").arg(
+    d_compilerOutput.append(QStringLiteral("Error starting typst compiler at %1: %2").arg(
         d_compilerPath,
-        d_process->errorString());
+        d_process->errorString()));
 
-    compilerFinished(-2);
+    signalCompilerFailed();
 }
 
-void TypstDriver::compilerFinished(int exitCode)
+void TypstDriver::signalCompilerFailed()
 {
-    if (exitCode == 0) {
-        d_status = Status::SUCCESS;
-        Q_EMIT previewReady(d_outputFile->fileName());
-    }
-    else {
-        d_status = Status::FAILED;
-        Q_EMIT compilationFailed(d_compilerOutput);
-    }
+    d_status = Status::FAILED;
+    Q_EMIT outputReady(d_compilerOutput);
+    Q_EMIT compilationFailed();
 }
 
 void TypstDriver::compilerOutputReady()
 {
     QTextStream stream(d_process);
-    d_compilerOutput += stream.readAll();
+
+    QString line;
+    while (!stream.atEnd()) {
+        stream.readLineInto(&line);
+
+        if (line.startsWith(QStringLiteral("watching ")) || line.startsWith(QStringLiteral("writing to "))) {
+            continue;
+        }
+
+        if (!line.isEmpty()) {
+            d_compilerOutput.append(line);
+        }
+
+        if (line.indexOf("compiled successfully") >= 0) {
+            d_status = Status::SUCCESS;
+            Q_EMIT previewReady(d_outputFile->fileName());
+        }
+        else if (line.indexOf("compiled with errors") >= 0) {
+            d_status = Status::FAILED;
+            Q_EMIT compilationFailed();
+        }
+    }
+
+    Q_EMIT outputReady(d_compilerOutput);
 }
 
 }
