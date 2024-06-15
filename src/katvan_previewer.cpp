@@ -99,6 +99,11 @@ Previewer::Previewer(QWidget* parent)
     layout->addWidget(d_pdfView, 1);
 }
 
+Previewer::~Previewer()
+{
+    d_previewDocument->close();
+}
+
 void Previewer::restoreSettings(const QSettings& settings)
 {
     QVariant zoomValue = settings.value(SETTING_PREVIEW_ZOOM, FIT_TO_WIDTH);

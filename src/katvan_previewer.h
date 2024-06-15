@@ -35,6 +35,7 @@ class Previewer : public QWidget
 
 public:
     Previewer(QWidget* parent = nullptr);
+    ~Previewer();
 
     void restoreSettings(const QSettings& settings);
     void saveSettings(QSettings& settings);
