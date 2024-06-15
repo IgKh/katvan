@@ -64,14 +64,17 @@ private slots:
     void compilerOutputReady();
 
 private:
-    QString findTypstCompiler() const;
+    static QString findTypstCompiler();
+    void terminateCompiler();
 
     Status d_status;
     QString d_compilerPath;
-    QStringList d_compilerOutput;
     QTemporaryFile* d_outputFile;
     QTemporaryFile* d_inputFile;
     QProcess* d_process;
+
+    QStringList d_compilerOutput;
+    QString d_compilerOutputLineBuffer;
 };
 
 }

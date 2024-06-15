@@ -81,13 +81,13 @@ MainWindow::MainWindow()
 
 void MainWindow::setupUI()
 {
-    setWindowTitle(tr("Katvan"));
+    setWindowTitle(QString("%1[*]").arg(QCoreApplication::applicationName()));
     setWindowIcon(QIcon(":/assets/katvan.svg"));
 
     d_editor = new Editor();
     connect(d_editor, &Editor::contentModified, d_driver, &TypstDriver::updatePreview);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
-    connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified, Qt::QueuedConnection);
+    connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 
     d_searchBar = new SearchBar(d_editor);
     d_searchBar->setVisible(false);

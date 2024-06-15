@@ -52,12 +52,12 @@ TypstDriver::~TypstDriver()
 {
     if (d_process->state() != QProcess::NotRunning) {
         d_process->disconnect();
-        d_process->terminate();
+        terminateCompiler();
         d_process->waitForFinished();
     }
 }
 
-QString TypstDriver::findTypstCompiler() const
+QString TypstDriver::findTypstCompiler()
 {
     QString localPath = QStandardPaths::findExecutable("typst", { QCoreApplication::applicationDirPath() });
     if (!localPath.isEmpty()) {
@@ -65,6 +65,16 @@ QString TypstDriver::findTypstCompiler() const
     }
 
     return QStandardPaths::findExecutable("typst");
+}
+
+void TypstDriver::terminateCompiler()
+{
+#ifdef Q_OS_WINDOWS
+    // No better way known to gracefuly kill a CLI process on Windows :(
+    d_process->kill();
+#else
+    d_process->terminate();
+#endif
 }
 
 void TypstDriver::resetInputFile(const QString& sourceFileName)
@@ -83,11 +93,11 @@ void TypstDriver::resetInputFile(const QString& sourceFileName)
         // To avoid blocking the event loop while we wait for the Typst compiler
         // to exit, schedule a one time re-run of this method when it is done.
         connect(d_process, &QProcess::finished, this, [this, sourceFileName]() {
-            resetInputFile(sourceFileName);
-        },
-        Qt::SingleShotConnection);
+                resetInputFile(sourceFileName);
+            },
+            Qt::SingleShotConnection);
 
-        d_process->terminate();
+        terminateCompiler();
         return;
     }
 
@@ -146,6 +156,11 @@ void TypstDriver::updatePreview(const QString& source)
 
 void TypstDriver::processErrorOccurred()
 {
+    if (d_status == Status::INITIALIZING && d_process->error() == QProcess::Crashed) {
+        // Going to assume this is because of a kill on Windows. Ignore...
+        return;
+    }
+
     d_compilerOutput.append(QStringLiteral("Error starting typst compiler at %1: %2").arg(
         d_compilerPath,
         d_process->errorString()));
@@ -155,18 +170,32 @@ void TypstDriver::processErrorOccurred()
 
 void TypstDriver::signalCompilerFailed()
 {
-    d_status = Status::FAILED;
+    if (d_status != Status::INITIALIZING) {
+        d_status = Status::FAILED;
+    }
     Q_EMIT outputReady(d_compilerOutput);
     Q_EMIT compilationFailed();
 }
 
 void TypstDriver::compilerOutputReady()
 {
-    QTextStream stream(d_process);
+    if (d_status == Status::INITIALIZING) {
+        return;
+    }
 
-    QString line;
-    while (!stream.atEnd()) {
-        stream.readLineInto(&line);
+    while (!d_process->atEnd()) {
+        QByteArray buffer = d_process->readLine();
+        QString line = QString::fromUtf8(buffer);
+
+        if (!line.endsWith('\n')) {
+            d_compilerOutputLineBuffer += line;
+            continue;
+        }
+        if (!d_compilerOutputLineBuffer.isEmpty()) {
+            line = d_compilerOutputLineBuffer + line;
+            d_compilerOutputLineBuffer.clear();
+        }
+        line = line.trimmed();
 
         if (line.startsWith(QStringLiteral("watching ")) || line.startsWith(QStringLiteral("writing to "))) {
             continue;

@@ -33,7 +33,6 @@ void CompilerOutput::setOutputLines(const QStringList& output)
     clear();
     QTextCursor cursor(document());
 
-    QString outputString = "";
     for (const auto& line : output) {
         cursor.insertText(line);
         cursor.insertBlock();
