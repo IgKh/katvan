@@ -210,8 +210,13 @@ void Editor::checkForModelines()
 
 bool Editor::event(QEvent* event)
 {
+    if (event->type() == QEvent::PaletteChange)
+    {
+        d_highlighter->setupFormats();
+        forceRehighlighting();
+    }
 #ifdef Q_OS_LINUX
-    if (event->type() == QEvent::ShortcutOverride) {
+    else if (event->type() == QEvent::ShortcutOverride) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
             if (keyEvent->nativeScanCode() == 50) {
@@ -538,7 +543,7 @@ int Editor::lineNumberGutterWidth()
 void Editor::updateLineNumberGutterWidth()
 {
     int gutterWidth = lineNumberGutterWidth();
-    setViewportMargins(gutterWidth, 0, gutterWidth, 0);
+    setViewportMargins(gutterWidth + 1, 0, gutterWidth + 1, 0);
 }
 
 void Editor::updateLineNumberGutters()
@@ -577,8 +582,8 @@ QTextBlock Editor::getFirstVisibleBlock()
 
 void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
 {
-    QColor bgColor(Qt::lightGray);
-    QColor fgColor(120, 120, 120);
+    QColor bgColor = palette().color(QPalette::Active, QPalette::Window);
+    QColor fgColor = palette().color(QPalette::Active, QPalette::WindowText);
 
     QPainter painter(gutter);
     painter.fillRect(event->rect(), bgColor);

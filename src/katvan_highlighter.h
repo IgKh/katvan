@@ -52,12 +52,12 @@ class Highlighter : public QSyntaxHighlighter
 public:
     Highlighter(QTextDocument* document, SpellChecker* spellChecker);
 
+    void setupFormats();
+
 protected:
     void highlightBlock(const QString& text) override;
 
 private:
-    void setupFormats();
-
     void doSyntaxHighlighting(
         parsing::HighlightingListener& listener,
         QList<QTextCharFormat>& charFormats);

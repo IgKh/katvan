@@ -18,7 +18,10 @@
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
 
+#include <QGuiApplication>
 #include <QHash>
+#include <QPalette>
+#include <QStyleHints>
 #include <QTextDocument>
 
 namespace katvan {
@@ -44,27 +47,43 @@ Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
     setupFormats();
 }
 
+static bool isAppInDarkMode()
+{
+    if (qGuiApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
+        return true;
+    }
+
+    // If the Qt platform integration doesn't support signaling a color scheme,
+    // sniff it from the global palette.
+    QPalette palette = qGuiApp->palette();
+    return palette.color(QPalette::WindowText).lightness() > palette.color(QPalette::Window).lightness();
+}
+
 void Highlighter::setupFormats()
 {
+    bool isDark = isAppInDarkMode();
+
+    d_formats.clear();
+
     QTextCharFormat commentFormat;
-    commentFormat.setForeground(QColor(0x8a, 0x8a, 0x8a));
+    commentFormat.setForeground(isDark ? QColor(0xb0, 0xb3, 0xc2) : QColor(0x8a, 0x8a, 0x8a));
     d_formats.insert(parsing::HiglightingMarker::Kind::COMMENT, commentFormat);
 
     QTextCharFormat stringLiteralFormat;
-    stringLiteralFormat.setForeground(QColor(0x29, 0x8e, 0x0d));
+    stringLiteralFormat.setForeground(isDark ? QColor(0x80, 0xf4, 0xb6) : QColor(0x29, 0x8e, 0x0d));
     d_formats.insert(parsing::HiglightingMarker::Kind::STRING_LITERAL, stringLiteralFormat);
 
     QTextCharFormat numberLiteralFormat;
-    numberLiteralFormat.setForeground(QColor(0xb6, 0x01, 0x57));
+    numberLiteralFormat.setForeground(isDark ? QColor(0xff, 0x7d, 0x79) : QColor(0xb6, 0x01, 0x57));
     d_formats.insert(parsing::HiglightingMarker::Kind::NUMBER_LITERAL, numberLiteralFormat);
 
     QTextCharFormat escapeFormat;
-    escapeFormat.setForeground(QColor(0x1d, 0x6c, 0x76));
+    escapeFormat.setForeground(isDark ? QColor(0xd9, 0xf8, 0xf4) : QColor(0x1d, 0x6c, 0x76));
     d_formats.insert(parsing::HiglightingMarker::Kind::ESCAPE, escapeFormat);
     d_formats.insert(parsing::HiglightingMarker::Kind::MATH_OPERATOR, escapeFormat);
 
     QTextCharFormat mathDelimiterFormat;
-    mathDelimiterFormat.setForeground(QColor(0x29, 0x8e, 0x0d));
+    mathDelimiterFormat.setForeground(isDark ? QColor(0x80, 0xf4, 0xb6) : QColor(0x29, 0x8e, 0x0d));
     d_formats.insert(parsing::HiglightingMarker::Kind::MATH_DELIMITER, mathDelimiterFormat);
 
     QTextCharFormat headingFormat;
@@ -89,12 +108,12 @@ void Highlighter::setupFormats()
     d_formats.insert(parsing::HiglightingMarker::Kind::RAW, rawFormat);
 
     QTextCharFormat labelAndReferenceFormat;
-    labelAndReferenceFormat.setForeground(QColor(0x1d, 0x6c, 0x76));
+    labelAndReferenceFormat.setForeground(isDark ? QColor(0xd9, 0xf8, 0xf4) : QColor(0x1d, 0x6c, 0x76));
     d_formats.insert(parsing::HiglightingMarker::Kind::LABEL, labelAndReferenceFormat);
     d_formats.insert(parsing::HiglightingMarker::Kind::REFERENCE, labelAndReferenceFormat);
 
     QTextCharFormat listEntryFormat;
-    listEntryFormat.setForeground(QColor(0x8b, 0x41, 0xb1));
+    listEntryFormat.setForeground(isDark ? QColor(0xca, 0xa8, 0xff) : QColor(0x8b, 0x41, 0xb1));
     d_formats.insert(parsing::HiglightingMarker::Kind::LIST_ENTRY, listEntryFormat);
 
     QTextCharFormat termFormat;
@@ -102,15 +121,15 @@ void Highlighter::setupFormats()
     d_formats.insert(parsing::HiglightingMarker::Kind::TERM, termFormat);
 
     QTextCharFormat variableNameFormat;
-    variableNameFormat.setForeground(QColor(0x8b, 0x41, 0xb1));
+    variableNameFormat.setForeground(isDark ? QColor(0xca, 0xa8, 0xff) : QColor(0x8b, 0x41, 0xb1));
     d_formats.insert(parsing::HiglightingMarker::Kind::VARIABLE_NAME, variableNameFormat);
 
     QTextCharFormat functionNameFormat;
-    functionNameFormat.setForeground(QColor(0x4b, 0x69, 0xc6));
+    functionNameFormat.setForeground(isDark ? QColor(0x7c, 0xd5, 0xff) : QColor(0x4b, 0x69, 0xc6));
     d_formats.insert(parsing::HiglightingMarker::Kind::FUNCTION_NAME, functionNameFormat);
 
     QTextCharFormat keywordFormat;
-    keywordFormat.setForeground(QColor(0xd7, 0x3a, 0x49));
+    keywordFormat.setForeground(isDark ? QColor(0xff, 0xa4, 0x9d) : QColor(0xd7, 0x3a, 0x49));
     d_formats.insert(parsing::HiglightingMarker::Kind::KEYWORD, keywordFormat);
 
     d_misspelledWordFormat.setFontUnderline(true);
