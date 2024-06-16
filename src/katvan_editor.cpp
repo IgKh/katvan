@@ -87,6 +87,7 @@ Editor::Editor(QWidget* parent)
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateLineNumberGutters);
+    connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::highlightCurrentLine);
 
     updateLineNumberGutters();
 
@@ -221,6 +222,7 @@ bool Editor::event(QEvent* event)
     {
         d_highlighter->setupFormats();
         forceRehighlighting();
+        highlightCurrentLine();
     }
 #ifdef Q_OS_LINUX
     else if (event->type() == QEvent::ShortcutOverride) {
@@ -566,6 +568,19 @@ void Editor::updateLineNumberGutters()
         d_leftLineNumberGutter->scroll(0, dy);
         d_rightLineNumberGutter->scroll(0, dy);
     }
+}
+
+void Editor::highlightCurrentLine()
+{
+    QTextEdit::ExtraSelection selection;
+    selection.format.setBackground(palette().color(QPalette::AlternateBase));
+    selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+    selection.cursor = textCursor();
+    selection.cursor.clearSelection();
+
+    QList<QTextEdit::ExtraSelection> extraSelections;
+    extraSelections.append(selection);
+    setExtraSelections(extraSelections);
 }
 
 QTextBlock Editor::getFirstVisibleBlock()

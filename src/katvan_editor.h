@@ -86,6 +86,7 @@ private slots:
 
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
+    void highlightCurrentLine();
 
 signals:
     void contentModified(const QString& text);
