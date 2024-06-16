@@ -30,7 +30,19 @@ public:
     CompilerOutput(QWidget* parent = nullptr);
 
 public slots:
+    void setInputFileShortName(const QString& fileName);
     void setOutputLines(const QStringList& output);
+
+signals:
+    void goToPosition(int blockNum, int charOffset);
+
+protected:
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+
+private:
+    QString d_fileName;
+    bool d_cursorOverLink;
 };
 
 }

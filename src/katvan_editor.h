@@ -52,7 +52,7 @@ public:
 public slots:
     void toggleTextBlockDirection();
     void setTextBlockDirection(Qt::LayoutDirection dir);
-    void goToBlock(int blockNum);
+    void goToBlock(int blockNum, int charOffset);
     void forceRehighlighting();
     void checkForModelines();
 

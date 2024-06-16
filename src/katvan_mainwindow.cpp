@@ -31,7 +31,6 @@
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QFileDialog>
-#include <QFontDialog>
 #include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -104,7 +103,9 @@ void MainWindow::setupUI()
     connect(d_editorSettingsDialog, &QDialog::accepted, this, &MainWindow::editorSettingsDialogAccepted);
 
     d_previewer = new Previewer();
+
     d_compilerOutput = new CompilerOutput();
+    connect(d_compilerOutput, &CompilerOutput::goToPosition, d_editor, &Editor::goToBlock);
 
     setDockOptions(QMainWindow::AnimatedDocks);
 
@@ -364,6 +365,8 @@ void MainWindow::setCurrentFile(const QString& fileName)
     if (fileName.isEmpty()) {
         d_currentFileName.clear();
         d_currentFileShortName = tr("Untitled");
+
+        d_compilerOutput->setInputFileShortName(QString());
     }
     else {
         QFileInfo info(fileName);
@@ -371,6 +374,7 @@ void MainWindow::setCurrentFile(const QString& fileName)
         d_currentFileShortName = info.fileName();
 
         d_recentFiles->addRecent(d_currentFileName);
+        d_compilerOutput->setInputFileShortName(d_currentFileShortName);
     }
 
     d_editor->checkForModelines();
@@ -555,7 +559,7 @@ void MainWindow::goToLine()
         &ok);
 
     if (ok) {
-        d_editor->goToBlock(line - 1);
+        d_editor->goToBlock(line - 1, 0);
     }
 }
 

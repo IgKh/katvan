@@ -177,12 +177,19 @@ void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
     cursor.mergeBlockFormat(fmt);
 }
 
-void Editor::goToBlock(int blockNum)
+void Editor::goToBlock(int blockNum, int charOffset)
 {
     QTextBlock block = document()->findBlockByNumber(blockNum);
-    if (block.isValid()) {
-        setTextCursor(QTextCursor(block));
+    if (!block.isValid()) {
+        return;
     }
+
+    QTextCursor cursor { block };
+    if (charOffset > 0) {
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, charOffset);
+    }
+    setTextCursor(cursor);
+    setFocus();
 }
 
 void Editor::forceRehighlighting()
