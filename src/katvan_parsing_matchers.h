@@ -178,24 +178,6 @@ public:
     }
 };
 
-template <Matcher M>
-class Ignore
-{
-    M d_matcher;
-
-public:
-    Ignore(const M& matcher): d_matcher(matcher) {}
-
-    bool tryMatch(TokenStream& stream, QList<Token>&) const
-    {
-        QList<Token> nested;
-        bool matched = d_matcher.tryMatch(stream, nested);
-        stream.returnTokens(nested);
-
-        return matched;
-    }
-};
-
 class Condition
 {
     bool d_condition;

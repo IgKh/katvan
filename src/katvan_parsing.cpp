@@ -548,7 +548,7 @@ void Parser::parse()
             }
         }
         else if (state.kind == ParserState::Kind::CONTENT_URL) {
-            if (match(m::Ignore(m::Any(
+            if (match(m::Peek(m::Any(
                     m::TokenType(TokenType::WHITESPACE),
                     m::Symbol(QLatin1Char(']')),
                     m::Symbol(QLatin1Char(')')),
