@@ -20,11 +20,20 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QProcess>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QTextStream>
 
 namespace katvan {
+
+static constexpr QLatin1StringView SETTING_PREFIX_TEMP_FILES = QLatin1StringView("compilertmp/");
+
+static QString settingsKeyForFile(QString fileName)
+{
+    fileName.replace(QDir::separator(), QLatin1Char('_'));
+    return SETTING_PREFIX_TEMP_FILES + "/" + fileName;
+}
 
 TypstDriver::TypstDriver(QObject* parent)
     : QObject(parent)
@@ -50,6 +59,11 @@ TypstDriver::TypstDriver(QObject* parent)
 
 TypstDriver::~TypstDriver()
 {
+    if (!d_inputSourceFile.isEmpty()) {
+        QSettings settings;
+        settings.remove(settingsKeyForFile(d_inputSourceFile));
+    }
+
     if (d_process->state() != QProcess::NotRunning) {
         d_process->disconnect();
         terminateCompiler();
@@ -77,29 +91,10 @@ void TypstDriver::terminateCompiler()
 #endif
 }
 
-void TypstDriver::resetInputFile(const QString& sourceFileName)
+void TypstDriver::startCompiler(const QString& sourceFileName)
 {
-    if (d_compilerPath.isEmpty()) {
-        return;
-    }
-    d_status = Status::INITIALIZING;
-
-    if (d_inputFile != nullptr) {
-        delete d_inputFile;
-        d_inputFile = nullptr;
-    }
-
-    if (d_process->state() != QProcess::NotRunning) {
-        // To avoid blocking the event loop while we wait for the Typst compiler
-        // to exit, schedule a one time re-run of this method when it is done.
-        connect(d_process, &QProcess::finished, this, [this, sourceFileName]() {
-                resetInputFile(sourceFileName);
-            },
-            Qt::SingleShotConnection);
-
-        terminateCompiler();
-        return;
-    }
+    Q_ASSERT(d_status == Status::INITIALIZING);
+    Q_ASSERT(d_inputFile == nullptr);
 
     QString workingDir;
     if (sourceFileName.isEmpty()) {
@@ -123,6 +118,49 @@ void TypstDriver::resetInputFile(const QString& sourceFileName)
 
     d_process->start();
     d_status = Status::INITIALIZED;
+
+    d_inputSourceFile = sourceFileName;
+    if (!sourceFileName.isEmpty()) {
+        QSettings settings;
+        settings.setValue(settingsKeyForFile(sourceFileName), d_inputFile->fileName());
+    }
+}
+
+QString TypstDriver::resetInputFile(const QString& sourceFileName)
+{
+    if (d_compilerPath.isEmpty()) {
+        return QString();
+    }
+    d_status = Status::INITIALIZING;
+
+    QSettings settings;
+    if (!d_inputSourceFile.isEmpty()) {
+        settings.remove(settingsKeyForFile(d_inputSourceFile));
+    }
+
+    if (d_inputFile != nullptr) {
+        delete d_inputFile;
+        d_inputFile = nullptr;
+    }
+
+    // To avoid blocking the event loop while we wait for the Typst compiler
+    // to exit, schedule a start of the compiler when it is done. For
+    // consistency, do the same even when a compiler isn't already running
+    auto startCompilerCallback = [this, sourceFileName]() {
+        startCompiler(sourceFileName);
+    };
+
+    if (d_process->state() != QProcess::NotRunning) {
+        connect(d_process, &QProcess::finished, this, startCompilerCallback, Qt::SingleShotConnection);
+        terminateCompiler();
+    }
+    else {
+        QMetaObject::invokeMethod(this, startCompilerCallback, Qt::QueuedConnection);
+    }
+
+    // Check if there is a left over settings key for the new file, indicating
+    // a previous crash with it open
+    return settings.value(settingsKeyForFile(sourceFileName), QString()).toString();
 }
 
 void TypstDriver::updatePreview(const QString& source)

@@ -20,6 +20,7 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
+class QSessionManager;
 class QSettings;
 class QToolButton;
 QT_END_NAMESPACE
@@ -45,6 +46,8 @@ public:
     void loadFile(const QString& fileName);
 
 public slots:
+    void commitSession(QSessionManager& manager);
+
     void newFile();
 
 private slots:
@@ -74,6 +77,7 @@ private:
 
     bool maybeSave();
     void setCurrentFile(const QString& fileName);
+    void tryRecover(const QString& fileName, const QString& tmpFile);
 
     void closeEvent(QCloseEvent* event) override;
 

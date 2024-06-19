@@ -34,6 +34,7 @@
 #include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QSessionManager>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTextEdit>
@@ -52,6 +53,8 @@ MainWindow::MainWindow()
     : QMainWindow(nullptr)
     , d_exportPdfPending(false)
 {
+    setObjectName("katvanMainWindow");
+
     d_recentFiles = new RecentFiles(this);
     connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
 
@@ -386,9 +389,60 @@ void MainWindow::setCurrentFile(const QString& fileName)
     d_editor->document()->setModified(false);
     setWindowModified(false);
 
-    d_driver->resetInputFile(fileName);
+    QString previousTmpFile = d_driver->resetInputFile(fileName);
+    if (!previousTmpFile.isEmpty()) {
+        tryRecover(fileName, previousTmpFile);
+    }
+
     d_searchBar->resetSearchRange();
     d_searchBar->hide();
+}
+
+void MainWindow::tryRecover(const QString& fileName, const QString& tmpFile)
+{
+    qDebug() << "left over temporary file" << tmpFile << "was found for" << fileName;
+
+    QFileInfo fileInfo(fileName);
+    QFileInfo tmpInfo(tmpFile);
+
+    if (!tmpInfo.exists()) {
+        return;
+    }
+
+    QString msg = tr("Unsaved changes were found for the file %1. Would you like to recover these changes?")
+        .arg(fileInfo.fileName());
+
+    QString timeDiff;
+    if (tmpInfo.lastModified() >= fileInfo.lastModified()) {
+        timeDiff = tr("newer than last saved version");
+    }
+    else {
+        timeDiff = tr("older than last saved version");
+    }
+    QString lastModified = QLocale().toString(tmpInfo.lastModified(), QLocale::ShortFormat);
+    QString informativeText = tr("These changes were made at %2 (%3).").arg(lastModified, timeDiff);
+
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setText(msg);
+    msgBox.setInformativeText(informativeText);
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Discard);
+
+    auto result = msgBox.exec();
+    if (result == QMessageBox::Yes) {
+        QFile file(tmpFile);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            return;
+        }
+
+        QTextStream stream(&file);
+
+        QTextCursor cursor(d_editor->document());
+        cursor.select(QTextCursor::Document);
+        cursor.insertText(stream.readAll());
+    }
+
+    QFile::remove(tmpFile);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -399,6 +453,24 @@ void MainWindow::closeEvent(QCloseEvent* event)
     }
     else {
         event->ignore();
+    }
+}
+
+void MainWindow::commitSession(QSessionManager& manager)
+{
+    if (!d_editor->document()->isModified()) {
+        return;
+    }
+
+    if (!manager.allowsInteraction()) {
+        return;
+    }
+
+    bool ok = maybeSave();
+
+    manager.release();
+    if (!ok) {
+        manager.cancel();
     }
 }
 

@@ -48,7 +48,7 @@ public:
     Status status() const { return d_status; }
     QString pdfFilePath() const { return d_outputFile->fileName(); }
 
-    void resetInputFile(const QString& sourceFileName);
+    QString resetInputFile(const QString& sourceFileName);
 
 signals:
     void previewReady(const QString& pdfPath);
@@ -65,10 +65,13 @@ private slots:
 
 private:
     static QString findTypstCompiler();
+
     void terminateCompiler();
+    void startCompiler(const QString& sourceFileName);
 
     Status d_status;
     QString d_compilerPath;
+    QString d_inputSourceFile;
     QTemporaryFile* d_outputFile;
     QTemporaryFile* d_inputFile;
     QProcess* d_process;

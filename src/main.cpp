@@ -87,6 +87,8 @@ int main(int argc, char** argv)
     }
 
     katvan::MainWindow wnd;
+    QCoreApplication::connect(&app, &QGuiApplication::commitDataRequest, &wnd, &katvan::MainWindow::commitSession);
+
     wnd.show();
 
     if (!parser.positionalArguments().isEmpty()) {
