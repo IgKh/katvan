@@ -28,6 +28,12 @@
 
 using namespace katvan;
 
+#ifdef Q_OS_WINDOWS
+static constexpr int SIGNAL_WAIT_TIMEOUT_MSEC = 500;
+#else
+static constexpr int SIGNAL_WAIT_TIMEOUT_MSEC = 100;
+#endif
+
 static QString getDictionaryPath(const char* name)
 {
     return QCoreApplication::applicationDirPath() + "/hunspell/" + QLatin1String(name) + ".aff";
@@ -49,7 +55,7 @@ TEST(SpellCheckerTests, BasicEnglish) {
     QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
 
     checker.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
-    ASSERT_TRUE(spy.wait(100));
+    ASSERT_TRUE(spy.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result1 = checker.checkSpelling("A good bad 12 word עברית z");
     EXPECT_THAT(result1, ::testing::ElementsAre(
@@ -67,7 +73,7 @@ TEST(SpellCheckerTests, BasicHebrew) {
     QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
 
     checker.setCurrentDictionary("he_XX", getDictionaryPath("he_XX"));
-    ASSERT_TRUE(spy.wait(100));
+    ASSERT_TRUE(spy.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result = checker.checkSpelling("מילה בעברית טובה שהיא חלק ת'רד נתב\"ג 3 ד ה' ת\"א English");
     EXPECT_THAT(result, ::testing::ElementsAre(
@@ -86,7 +92,7 @@ TEST(SpellCheckerTests, PersonalDict) {
     QSignalSpy spy1(&checker1, &SpellChecker::dictionaryChanged);
 
     checker1.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
-    EXPECT_TRUE(spy1.wait(100));
+    EXPECT_TRUE(spy1.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result1 = checker1.checkSpelling("good bar bad");
     EXPECT_THAT(result1, ::testing::ElementsAre(
@@ -105,7 +111,7 @@ TEST(SpellCheckerTests, PersonalDict) {
     QSignalSpy spy2(&checker2, &SpellChecker::dictionaryChanged);
 
     checker2.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
-    EXPECT_TRUE(spy2.wait(100));
+    EXPECT_TRUE(spy2.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result3 = checker2.checkSpelling("good bar bad");
     EXPECT_THAT(result3, ::testing::ElementsAre(
