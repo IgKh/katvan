@@ -22,6 +22,7 @@
 #include <QDialogButtonBox>
 #include <QFontComboBox>
 #include <QFontDatabase>
+#include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -101,6 +102,17 @@ void EditorSettings::parseModeLine(QString mode)
                 d_tabWidth = width;
             }
         }
+        else if (variable == QStringLiteral("show-line-numbers")) {
+            if (rest == QStringLiteral("both")) {
+                d_lineNumberStyle = EditorSettings::LineNumberStyle::BOTH_SIDES;
+            }
+            else if (rest == QStringLiteral("primary")) {
+                d_lineNumberStyle = EditorSettings::LineNumberStyle::PRIMARY_ONLY;
+            }
+            else if (rest == QStringLiteral("none")) {
+                d_lineNumberStyle = EditorSettings::LineNumberStyle::NONE;
+            }
+        }
     }
 }
 
@@ -127,6 +139,19 @@ QString EditorSettings::toModeLine() const
     }
     if (d_tabWidth) {
         result += QLatin1String("tab-width %1; ").arg(QString::number(d_tabWidth.value()));
+    }
+    if (d_lineNumberStyle) {
+        switch (d_lineNumberStyle.value()) {
+            case EditorSettings::LineNumberStyle::BOTH_SIDES:
+                result += QLatin1String("show-line-numbers both; ");
+                break;
+            case EditorSettings::LineNumberStyle::PRIMARY_ONLY:
+                result += QLatin1String("show-line-numbers primary; ");
+                break;
+            case EditorSettings::LineNumberStyle::NONE:
+                result += QLatin1String("show-line-numbers none; ");
+                break;
+        }
     }
 
     return result.trimmed();
@@ -168,6 +193,11 @@ int EditorSettings::tabWidth() const
     return d_tabWidth.value_or(indentWidth());
 }
 
+EditorSettings::LineNumberStyle EditorSettings::lineNumberStyle() const
+{
+    return d_lineNumberStyle.value_or(EditorSettings::LineNumberStyle::BOTH_SIDES);
+}
+
 void EditorSettings::mergeSettings(const EditorSettings& other)
 {
     if (other.d_fontFamily) {
@@ -185,6 +215,9 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
     if (other.d_tabWidth) {
         d_tabWidth = other.d_tabWidth;
     }
+    if (other.d_lineNumberStyle) {
+        d_lineNumberStyle = other.d_lineNumberStyle;
+    }
 }
 
 EditorSettingsDialog::EditorSettingsDialog(QWidget* parent)
@@ -201,6 +234,7 @@ EditorSettings EditorSettingsDialog::settings() const
 
     settings.setFontFamily(d_editorFontComboBox->currentFont().family());
     settings.setFontSize(d_editorFontSizeComboBox->currentText().toInt());
+    settings.setLineNumberStyle(d_lineNumberStyle->currentData().value<EditorSettings::LineNumberStyle>());
 
     if (d_indentWithSpaces->isChecked()) {
         settings.setIndentMode(EditorSettings::IndentMode::SPACES);
@@ -220,6 +254,9 @@ void EditorSettingsDialog::setSettings(const EditorSettings& settings)
     QFont font = settings.font();
     d_editorFontComboBox->setCurrentFont(font);
     d_editorFontSizeComboBox->setCurrentText(QString::number(font.pointSize()));
+
+    QVariant lineNumberStyle = QVariant::fromValue(settings.lineNumberStyle());
+    d_lineNumberStyle->setCurrentIndex(d_lineNumberStyle->findData(lineNumberStyle));
 
     if (settings.indentMode() == EditorSettings::IndentMode::SPACES) {
         d_indentWithSpaces->setChecked(true);
@@ -246,6 +283,11 @@ void EditorSettingsDialog::setupUI()
 
     d_editorFontSizeComboBox = new QComboBox();
 
+    d_lineNumberStyle = new QComboBox();
+    d_lineNumberStyle->addItem(tr("On Both Sides"), QVariant::fromValue(EditorSettings::LineNumberStyle::BOTH_SIDES));
+    d_lineNumberStyle->addItem(tr("On Primary Side"), QVariant::fromValue(EditorSettings::LineNumberStyle::PRIMARY_ONLY));
+    d_lineNumberStyle->addItem(tr("Don't Show"), QVariant::fromValue(EditorSettings::LineNumberStyle::NONE));
+
     d_indentWithSpaces = new QRadioButton(tr("&Spaces"));
     d_indentWithTabs = new QRadioButton(tr("&Tabs"));
 
@@ -266,12 +308,14 @@ void EditorSettingsDialog::setupUI()
     QLabel* tabWidthLabel = new QLabel(tr("Tab &Display Width:"));
     tabWidthLabel->setBuddy(d_tabWidth);
 
+    QHBoxLayout* editorFontLayout = new QHBoxLayout();
+    editorFontLayout->addWidget(d_editorFontComboBox, 1);
+    editorFontLayout->addWidget(d_editorFontSizeComboBox);
+
     QGroupBox* appearanceGroup = new QGroupBox(tr("Appearance"));
-    QGridLayout* appearanceLayout = new QGridLayout(appearanceGroup);
-    appearanceLayout->setColumnStretch(1, 1);
-    appearanceLayout->addWidget(editorFontLabel, 0, 0);
-    appearanceLayout->addWidget(d_editorFontComboBox, 0, 1);
-    appearanceLayout->addWidget(d_editorFontSizeComboBox, 0, 2);
+    QFormLayout* appearanceLayout = new QFormLayout(appearanceGroup);
+    appearanceLayout->addRow(editorFontLabel, editorFontLayout);
+    appearanceLayout->addRow(tr("Show &Line Numbers:"), d_lineNumberStyle);
 
     QGroupBox* indentationGroup = new QGroupBox(tr("Indentation"));
     QGridLayout* indentationLayout = new QGridLayout(indentationGroup);

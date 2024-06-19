@@ -28,6 +28,7 @@ TEST(EditorSettingsTests, Empty) {
     EditorSettings s;
     EXPECT_THAT(s.hasFontFamily(), ::testing::IsFalse());
     EXPECT_THAT(s.hasFontSize(), ::testing::IsFalse());
+    EXPECT_THAT(s.hasLineNumberStyle(), ::testing::IsFalse());
     EXPECT_THAT(s.hasIndentMode(), ::testing::IsFalse());
     EXPECT_THAT(s.hasIndentWidth(), ::testing::IsFalse());
     EXPECT_THAT(s.hasTabWidth(), ::testing::IsFalse());
@@ -67,6 +68,32 @@ TEST(EditorSettingsTests, FontSize) {
 
     EditorSettings s5 { "font-size" };
     EXPECT_THAT(s5.hasFontSize(), ::testing::IsFalse());
+}
+
+TEST(EditorSettingsTests, LineNumberStyle) {
+    EditorSettings s1 { "show-line-numbers both" };
+    EXPECT_THAT(s1.hasLineNumberStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s1.lineNumberStyle(), ::testing::Eq(EditorSettings::LineNumberStyle::BOTH_SIDES));
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("show-line-numbers both;")));
+
+    EditorSettings s2 { "show-line-numbers primary" };
+    EXPECT_THAT(s2.hasLineNumberStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s2.lineNumberStyle(), ::testing::Eq(EditorSettings::LineNumberStyle::PRIMARY_ONLY));
+    EXPECT_THAT(s2.toModeLine(), ::testing::Eq(QStringLiteral("show-line-numbers primary;")));
+
+    EditorSettings s3 { "show-line-numbers none" };
+    EXPECT_THAT(s3.hasLineNumberStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s3.lineNumberStyle(), ::testing::Eq(EditorSettings::LineNumberStyle::NONE));
+    EXPECT_THAT(s3.toModeLine(), ::testing::Eq(QStringLiteral("show-line-numbers none;")));
+
+    EditorSettings s4 { "show-line-numbers NoNe" };
+    EXPECT_THAT(s4.hasLineNumberStyle(), ::testing::IsFalse());
+
+    EditorSettings s5 { "show-line-numbers 10" };
+    EXPECT_THAT(s5.hasLineNumberStyle(), ::testing::IsFalse());
+
+    EditorSettings s6 { "show-line-numbers" };
+    EXPECT_THAT(s6.hasLineNumberStyle(), ::testing::IsFalse());
 }
 
 TEST(EditorSettingsTests, IndentMode) {
@@ -161,6 +188,7 @@ TEST(EditorSettingsTests, Mixed) {
     EditorSettings s { "katvan: font Arial Special; no-such-flag; replace-tabs on; replace-tabs off; tab-width     5; font-size 10" };
     EXPECT_THAT(s.hasFontFamily(), ::testing::IsTrue());
     EXPECT_THAT(s.hasFontSize(), ::testing::IsTrue());
+    EXPECT_THAT(s.hasLineNumberStyle(), ::testing::IsFalse());
     EXPECT_THAT(s.hasIndentMode(), ::testing::IsTrue());
     EXPECT_THAT(s.hasIndentWidth(), ::testing::IsFalse());
     EXPECT_THAT(s.hasTabWidth(), ::testing::IsTrue());
@@ -185,6 +213,7 @@ TEST(EditorSettingsTests, Overrides) {
 
     EXPECT_THAT(result.hasFontFamily(), ::testing::IsTrue());
     EXPECT_THAT(result.hasFontSize(), ::testing::IsTrue());
+    EXPECT_THAT(result.hasLineNumberStyle(), ::testing::IsFalse());
     EXPECT_THAT(result.hasIndentMode(), ::testing::IsTrue());
     EXPECT_THAT(result.hasIndentWidth(), ::testing::IsTrue());
     EXPECT_THAT(result.hasTabWidth(), ::testing::IsFalse());

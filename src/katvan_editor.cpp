@@ -130,6 +130,17 @@ void Editor::applyEffectiveSettings()
     QTextOption textOption = document()->defaultTextOption();
     textOption.setTabStopDistance(d_effectiveSettings.tabWidth() * fontMetrics().horizontalAdvance(QLatin1Char(' ')));
     document()->setDefaultTextOption(textOption);
+
+    EditorSettings::LineNumberStyle lineNumberStyle = d_effectiveSettings.lineNumberStyle();
+    if (layoutDirection() == Qt::LeftToRight) {
+        d_leftLineNumberGutter->setVisible(lineNumberStyle != EditorSettings::LineNumberStyle::NONE);
+        d_rightLineNumberGutter->setVisible(lineNumberStyle == EditorSettings::LineNumberStyle::BOTH_SIDES);
+    }
+    else {
+        d_rightLineNumberGutter->setVisible(lineNumberStyle != EditorSettings::LineNumberStyle::NONE);
+        d_leftLineNumberGutter->setVisible(lineNumberStyle == EditorSettings::LineNumberStyle::BOTH_SIDES);
+    }
+    updateLineNumberGutters();
 }
 
 QMenu* Editor::createInsertMenu()
@@ -441,13 +452,21 @@ void Editor::resizeEvent(QResizeEvent* event)
     int gutterWidth = lineNumberGutterWidth();
     int verticalScrollBarWidth = verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 0;
 
-    if (layoutDirection() == Qt::LeftToRight) {
-        d_leftLineNumberGutter->setGeometry(QRect(cr.left(), cr.top(), gutterWidth, cr.height()));
-        d_rightLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth - verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
+    if (d_leftLineNumberGutter->isVisible()) {
+        if (layoutDirection() == Qt::LeftToRight) {
+            d_leftLineNumberGutter->setGeometry(QRect(cr.left(), cr.top(), gutterWidth, cr.height()));
+        }
+        else {
+            d_leftLineNumberGutter->setGeometry(QRect(cr.left() + verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
+        }
     }
-    else {
-        d_rightLineNumberGutter->setGeometry(QRect(cr.left() + verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
-        d_leftLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth, cr.top(), gutterWidth, cr.height()));
+    if (d_rightLineNumberGutter->isVisible()) {
+        if (layoutDirection() == Qt::LeftToRight) {
+            d_rightLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth - verticalScrollBarWidth, cr.top(), gutterWidth, cr.height()));
+        }
+        else {
+            d_rightLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth, cr.top(), gutterWidth, cr.height()));
+        }
     }
 }
 
@@ -552,7 +571,18 @@ int Editor::lineNumberGutterWidth()
 void Editor::updateLineNumberGutterWidth()
 {
     int gutterWidth = lineNumberGutterWidth();
-    setViewportMargins(gutterWidth + 1, 0, gutterWidth + 1, 0);
+
+    int leftMargin = 0;
+    if (d_leftLineNumberGutter->isVisible()) {
+        leftMargin = gutterWidth + 1;
+    }
+
+    int rightMargin = 0;
+    if (d_rightLineNumberGutter->isVisible()) {
+        rightMargin = gutterWidth + 1;
+    }
+
+    setViewportMargins(leftMargin, 0, rightMargin, 0);
 }
 
 void Editor::updateLineNumberGutters()
@@ -647,15 +677,12 @@ void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
             int textFlags;
             int textOffset;
             if (gutter == d_leftLineNumberGutter) {
-                textFlags = Qt::AlignRight;
+                textFlags = (layoutDirection() == Qt::RightToLeft) ? Qt::AlignLeft : Qt::AlignRight;
                 textOffset = -5;
             }
             else {
-                textFlags = Qt::AlignLeft;
+                textFlags = (layoutDirection() == Qt::RightToLeft) ? Qt::AlignRight : Qt::AlignLeft;
                 textOffset = 5;
-            }
-            if (layoutDirection() == Qt::RightToLeft) {
-                textOffset *= -1;
             }
 
             QRectF r(textOffset, top, gutter->width(), painter.fontMetrics().height());

@@ -32,11 +32,21 @@ namespace katvan {
 
 class EditorSettings
 {
+    Q_GADGET
+
 public:
+    enum class LineNumberStyle {
+        BOTH_SIDES,
+        PRIMARY_ONLY,
+        NONE
+    };
+    Q_ENUM(LineNumberStyle);
+
     enum class IndentMode {
         SPACES,
         TABS
     };
+    Q_ENUM(IndentMode);
 
     EditorSettings() {}
     explicit EditorSettings(const QString& mode) { parseModeLine(mode); }
@@ -51,17 +61,21 @@ public:
     int indentWidth() const;
     int tabWidth() const;
 
+    LineNumberStyle lineNumberStyle() const;
+
     void setFontFamily(const QString& fontFamily) { d_fontFamily = fontFamily; }
     void setFontSize(int fontSize) { d_fontSize = fontSize; }
     void setIndentMode(IndentMode indentMode) { d_indentMode = indentMode; }
     void setIndentWidth(int indentWidth) { d_indentWidth = indentWidth; }
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
+    void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
 
     bool hasFontFamily() const { return d_fontFamily.has_value(); }
     bool hasFontSize() const { return d_fontSize.has_value(); }
     bool hasIndentMode() const { return d_indentMode.has_value(); }
     bool hasIndentWidth() const { return d_indentWidth.has_value(); }
     bool hasTabWidth() const { return d_tabWidth.has_value(); }
+    bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
 
     void mergeSettings(const EditorSettings& other);
 
@@ -73,6 +87,7 @@ private:
     std::optional<IndentMode> d_indentMode;
     std::optional<int> d_indentWidth;
     std::optional<int> d_tabWidth;
+    std::optional<LineNumberStyle> d_lineNumberStyle;
 };
 
 class EditorSettingsDialog : public QDialog
@@ -94,6 +109,7 @@ private:
 
     QFontComboBox* d_editorFontComboBox;
     QComboBox* d_editorFontSizeComboBox;
+    QComboBox* d_lineNumberStyle;
     QRadioButton* d_indentWithSpaces;
     QRadioButton* d_indentWithTabs;
     QSpinBox* d_indentWidth;

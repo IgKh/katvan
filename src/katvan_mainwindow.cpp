@@ -413,11 +413,14 @@ void MainWindow::tryRecover(const QString& fileName, const QString& tmpFile)
         .arg(fileInfo.fileName());
 
     QString timeDiff;
-    if (tmpInfo.lastModified() >= fileInfo.lastModified()) {
+    if (tmpInfo.lastModified() > fileInfo.lastModified()) {
         timeDiff = tr("newer than last saved version");
     }
-    else {
+    else if (tmpInfo.lastModified() < fileInfo.lastModified()) {
         timeDiff = tr("older than last saved version");
+    }
+    else {
+        timeDiff = tr("same time as last saved version");
     }
     QString lastModified = QLocale().toString(tmpInfo.lastModified(), QLocale::ShortFormat);
     QString informativeText = tr("These changes were made at %2 (%3).").arg(lastModified, timeDiff);
