@@ -53,7 +53,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.5.*
+          version: 6.7.*
           modules: 'qtpdf'
           cache: true
 
@@ -102,7 +102,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.5.*
+          version: 6.7.*
           modules: 'qtpdf'
           cache: true
 
