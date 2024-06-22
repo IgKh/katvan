@@ -398,6 +398,27 @@ void MainWindow::setCurrentFile(const QString& fileName)
     d_searchBar->hide();
 }
 
+static bool areFilesEqual(const QString& fileName1, const QString& fileName2)
+{
+    QFile file1(fileName1);
+    QFile file2(fileName2);
+
+    if (!file1.open(QIODevice::ReadOnly) || !file2.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+
+    while (!file1.atEnd() && !file2.atEnd())
+    {
+        QByteArray buff1 = file1.read(4096);
+        QByteArray buff2 = file2.read(4096);
+
+        if (buff1 != buff2) {
+            return false;
+        }
+    }
+    return file1.atEnd() && file2.atEnd();
+}
+
 void MainWindow::tryRecover(const QString& fileName, const QString& tmpFile)
 {
     qDebug() << "left over temporary file" << tmpFile << "was found for" << fileName;
@@ -406,6 +427,10 @@ void MainWindow::tryRecover(const QString& fileName, const QString& tmpFile)
     QFileInfo tmpInfo(tmpFile);
 
     if (!tmpInfo.exists()) {
+        return;
+    }
+    if (areFilesEqual(fileName, tmpFile)) {
+        QFile::remove(tmpFile);
         return;
     }
 
