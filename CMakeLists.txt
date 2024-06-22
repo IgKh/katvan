@@ -3,7 +3,7 @@ project(katvan LANGUAGES CXX)
 
 enable_testing()
 
-set(KATVAN_VERSION "0.4.0")
+set(KATVAN_VERSION "0.5.0")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

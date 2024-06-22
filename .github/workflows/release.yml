@@ -54,6 +54,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.7.*
+          arch: linux_gcc_64
           modules: 'qtpdf'
           cache: true
 
