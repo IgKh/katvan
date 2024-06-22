@@ -79,5 +79,4 @@ Contributions aren't really expected. Issues and PRs in Github are open to creat
 A few things I'd like and may happen at some point, in no particular order:
 
 - Ability to view BiDi control characters
-- Better integration with `typst` (incremental previews, highlight errors)
-- Dark theme support
+- More code editing niceties - bracket matching, auto indent, etc.
