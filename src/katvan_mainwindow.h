@@ -65,6 +65,7 @@ private slots:
     void toggleCursorMovementStyle();
     void editorSettingsDialogAccepted();
     void updatePreview(const QString& pdfFile);
+    void compilationStatusChanged();
 
 private:
     void setupUI();
@@ -95,6 +96,7 @@ private:
 
     EditorSettingsDialog* d_editorSettingsDialog;
 
+    QToolButton* d_compilationStatusButton;
     QToolButton* d_cursorPosButton;
     QToolButton* d_spellingButton;
     QToolButton* d_cursorStyleButton;

@@ -25,6 +25,8 @@
 #include <QTemporaryFile>
 #include <QTextStream>
 
+#include <optional>
+
 namespace katvan {
 
 static constexpr QLatin1StringView SETTING_PREFIX_TEMP_FILES = QLatin1StringView("compilertmp/");
@@ -131,7 +133,9 @@ QString TypstDriver::resetInputFile(const QString& sourceFileName)
     if (d_compilerPath.isEmpty()) {
         return QString();
     }
+
     d_status = Status::INITIALIZING;
+    Q_EMIT compilationStatusChanged();
 
     QSettings settings;
     if (!d_inputSourceFile.isEmpty()) {
@@ -173,6 +177,8 @@ void TypstDriver::updatePreview(const QString& source)
     Q_ASSERT(d_inputFile != nullptr);
 
     d_status = Status::PROCESSING;
+    Q_EMIT compilationStatusChanged();
+
     d_compilerOutput.clear();
     d_inputFile->seek(0);
 
@@ -212,7 +218,7 @@ void TypstDriver::signalCompilerFailed()
         d_status = Status::FAILED;
     }
     Q_EMIT outputReady(d_compilerOutput);
-    Q_EMIT compilationFailed();
+    Q_EMIT compilationStatusChanged();
 }
 
 void TypstDriver::compilerOutputReady()
@@ -243,13 +249,24 @@ void TypstDriver::compilerOutputReady()
             d_compilerOutput.append(line);
         }
 
-        if (line.indexOf("compiled successfully") >= 0) {
-            d_status = Status::SUCCESS;
-            Q_EMIT previewReady(d_outputFile->fileName());
+        std::optional<Status> newStatus;
+        if (line.indexOf("compiled successfully") >= 0 ) {
+            newStatus = Status::SUCCESS;
+        }
+        else if (line.indexOf("compiled with warnings") >= 0) {
+            newStatus = Status::SUCCESS_WITH_WARNINGS;
         }
         else if (line.indexOf("compiled with errors") >= 0) {
-            d_status = Status::FAILED;
-            Q_EMIT compilationFailed();
+            newStatus = Status::FAILED;
+        }
+
+        if (newStatus) {
+            d_status = newStatus.value();
+            Q_EMIT compilationStatusChanged();
+
+            if (d_status != Status::FAILED) {
+                Q_EMIT previewReady(d_outputFile->fileName());
+            }
         }
     }
 

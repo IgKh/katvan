@@ -37,6 +37,7 @@ public:
         INITIALIZED,
         PROCESSING,
         SUCCESS,
+        SUCCESS_WITH_WARNINGS,
         FAILED
     };
 
@@ -53,7 +54,7 @@ public:
 signals:
     void previewReady(const QString& pdfPath);
     void outputReady(const QStringList& output);
-    void compilationFailed();
+    void compilationStatusChanged();
 
 public slots:
     void updatePreview(const QString& source);

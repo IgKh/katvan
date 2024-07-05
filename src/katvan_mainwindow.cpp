@@ -65,8 +65,8 @@ MainWindow::MainWindow()
     setupStatusBar();
 
     connect(d_driver, &TypstDriver::previewReady, this, &MainWindow::updatePreview);
+    connect(d_driver, &TypstDriver::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
     connect(d_driver, &TypstDriver::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
-    connect(d_driver, &TypstDriver::compilationFailed, d_compilerOutputDock, &QDockWidget::show);
 
     readSettings();
     cursorPositionChanged();
@@ -267,6 +267,13 @@ void MainWindow::setupStatusBar()
         return button;
     };
 
+    d_compilationStatusButton = buildStatusBarButton();
+    d_compilationStatusButton->setToolTip(tr("Compilation status"));
+    d_compilationStatusButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    connect(d_compilationStatusButton, &QToolButton::clicked, d_compilerOutputDock, &QDockWidget::show);
+
+    statusBar()->addPermanentWidget(d_compilationStatusButton);
+
     d_cursorPosButton = buildStatusBarButton();
     connect(d_cursorPosButton, &QToolButton::clicked, this, &MainWindow::goToLine);
 
@@ -274,7 +281,6 @@ void MainWindow::setupStatusBar()
 
     d_spellingButton = buildStatusBarButton();
     d_spellingButton->setToolTip(tr("Spell checking dictionary"));
-    d_spellingButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     connect(d_spellingButton, &QToolButton::clicked, this, &MainWindow::changeSpellCheckingDictionary);
 
     statusBar()->addPermanentWidget(d_spellingButton);
@@ -599,7 +605,8 @@ bool MainWindow::saveFileAs()
 
 void MainWindow::exportPdf()
 {
-    if (d_driver->status() != TypstDriver::Status::SUCCESS) {
+    if (d_driver->status() != TypstDriver::Status::SUCCESS &&
+        d_driver->status() != TypstDriver::Status::SUCCESS_WITH_WARNINGS) {
         if (d_driver->status() == TypstDriver::Status::FAILED) {
             QMessageBox::critical(
                 this,
@@ -794,6 +801,32 @@ void MainWindow::updatePreview(const QString& pdfFile)
     if (d_exportPdfPending) {
         QTimer::singleShot(0, this, &MainWindow::exportPdf);
         d_exportPdfPending = false;
+    }
+}
+
+void MainWindow::compilationStatusChanged()
+{
+    TypstDriver::Status status = d_driver->status();
+
+    if (status == TypstDriver::Status::PROCESSING) {
+        d_compilationStatusButton->setText(tr("Compiling..."));
+    }
+    else if (status == TypstDriver::Status::SUCCESS) {
+        d_compilationStatusButton->setText(tr("Success"));
+        d_compilationStatusButton->setIcon(QIcon(":/icons/data-success.svg"));
+    }
+    else if (status == TypstDriver::Status::SUCCESS_WITH_WARNINGS) {
+        d_compilationStatusButton->setText(tr("Success"));
+        d_compilationStatusButton->setIcon(QIcon(":/icons/data-warning.svg"));
+    }
+    else if (status == TypstDriver::Status::FAILED) {
+        d_compilerOutputDock->show();
+        d_compilationStatusButton->setText(tr("Failed"));
+        d_compilationStatusButton->setIcon(QIcon(":/icons/data-error.svg"));
+    }
+    else {
+        d_compilationStatusButton->setText(QString());
+        d_compilationStatusButton->setIcon(QIcon());
     }
 }
 
