@@ -51,6 +51,8 @@ public:
     EditorSettings() {}
     explicit EditorSettings(const QString& mode) { parseModeLine(mode); }
 
+    bool operator==(const EditorSettings&) const = default;
+
     QString toModeLine() const;
 
     QString fontFamily() const;

@@ -115,13 +115,13 @@ void MainWindow::setupUI()
     d_previewDock = new QDockWidget(tr("Preview"));
     d_previewDock->setObjectName("previewDockPanel");
     d_previewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    d_previewDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable);
+    d_previewDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     d_previewDock->setWidget(d_previewer);
     addDockWidget(Qt::RightDockWidgetArea, d_previewDock);
 
     d_compilerOutputDock = new QDockWidget(tr("Compiler Output"));
     d_compilerOutputDock->setObjectName("compilerOutputDockPanel");
-    d_compilerOutputDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable);
+    d_compilerOutputDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     d_compilerOutputDock->setWidget(d_compilerOutput);
     addDockWidget(Qt::RightDockWidgetArea, d_compilerOutputDock);
 }

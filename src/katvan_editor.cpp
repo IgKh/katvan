@@ -121,9 +121,15 @@ void Editor::applySettings(const EditorSettings& settings)
 
 void Editor::applyEffectiveSettings()
 {
+    EditorSettings origSettings = d_effectiveSettings;
+
     d_effectiveSettings = EditorSettings();
     d_effectiveSettings.mergeSettings(d_appSettings);
     d_effectiveSettings.mergeSettings(d_fileMode);
+
+    if (origSettings == d_effectiveSettings) {
+        return;
+    }
 
     setFont(d_effectiveSettings.font());
 
@@ -271,7 +277,7 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         QAction* addToPersonalAction = new QAction(tr("Add to Personal Dictionary"));
         connect(addToPersonalAction, &QAction::triggered, this, [this, misspelledWord, cursor]() {
             d_spellChecker->addToPersonalDictionary(misspelledWord);
-            d_highlighter->rehighlightBlock(cursor.block());
+            forceRehighlighting();
         });
 
         d_contextMenu->insertAction(origFirstAction, placeholderAction);

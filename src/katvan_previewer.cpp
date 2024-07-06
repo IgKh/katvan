@@ -142,6 +142,7 @@ void Previewer::reset()
 bool Previewer::updatePreview(const QString& pdfFile)
 {
     int origY = d_pdfView->verticalScrollBar()->value();
+    int origX = d_pdfView->horizontalScrollBar()->value();
 
     QPdfDocument::Error rc = d_previewDocument->load(pdfFile);
     if (rc != QPdfDocument::Error::None) {
@@ -155,6 +156,7 @@ bool Previewer::updatePreview(const QString& pdfFile)
     }
 
     d_pdfView->verticalScrollBar()->setValue(origY);
+    d_pdfView->horizontalScrollBar()->setValue(origX);
 
     currentPageChanged(d_pdfView->pageNavigator()->currentPage());
 
