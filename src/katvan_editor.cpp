@@ -244,7 +244,8 @@ bool Editor::event(QEvent* event)
 #ifdef Q_OS_LINUX
     else if (event->type() == QEvent::ShortcutOverride) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
-        if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
+        if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) ||
+            keyEvent->keyCombination() == QKeyCombination(Qt::ControlModifier, Qt::Key_Shift)) {
             if (keyEvent->nativeScanCode() == 50) {
                 d_pendingDirectionChange = Qt::LeftToRight;
             }
