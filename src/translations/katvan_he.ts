@@ -4,72 +4,72 @@
 <context>
     <name>katvan::Editor</name>
     <message>
-        <location filename="../katvan_editor.cpp" line="164"/>
+        <location filename="../katvan_editor.cpp" line="170"/>
         <source>Inline &amp;Math</source>
         <translation>קטע &amp;מתמטיקה מוטבע</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="151"/>
+        <location filename="../katvan_editor.cpp" line="157"/>
         <source>Left-to-Right Mark</source>
         <translation>סימן יישור שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="150"/>
+        <location filename="../katvan_editor.cpp" line="156"/>
         <source>Right-to-Left Mark</source>
         <translation>סימן יישור ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="155"/>
+        <location filename="../katvan_editor.cpp" line="161"/>
         <source>Right-to-Left Isolate</source>
         <translation>סביבה מבודדת ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="156"/>
+        <location filename="../katvan_editor.cpp" line="162"/>
         <source>Left-to-Right Isolate</source>
         <translation>סביבה מבודדת שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="157"/>
+        <location filename="../katvan_editor.cpp" line="163"/>
         <source>Right-to-Left Embedding</source>
         <translation>שיבוץ ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="158"/>
+        <location filename="../katvan_editor.cpp" line="164"/>
         <source>Left-to-Right Embedding</source>
         <translation>שיבוץ שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="159"/>
+        <location filename="../katvan_editor.cpp" line="165"/>
         <source>Right-to-Left Override</source>
         <translation>דריסה ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="160"/>
+        <location filename="../katvan_editor.cpp" line="166"/>
         <source>Left-to-Right Override</source>
         <translation>דריסה שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="268"/>
+        <location filename="../katvan_editor.cpp" line="275"/>
         <source>Calculating Suggestions...</source>
         <translation>בודק הצעות איות...</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="271"/>
+        <location filename="../katvan_editor.cpp" line="278"/>
         <source>Add to Personal Dictionary</source>
         <translation>הוסף למילון האישי</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="283"/>
+        <location filename="../katvan_editor.cpp" line="290"/>
         <source>Toggle Text Direction</source>
         <translation>הפוך את כיוון הטקסט</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="517"/>
+        <location filename="../katvan_editor.cpp" line="524"/>
         <source>No Suggestions Available</source>
         <translation>אין הצעות איות</translation>
     </message>
     <message numerus="yes">
-        <location filename="../katvan_editor.cpp" line="520"/>
+        <location filename="../katvan_editor.cpp" line="527"/>
         <source>%n Suggestion(s)</source>
         <translation>
             <numerusform>הצעת איות אחת</numerusform>
@@ -154,10 +154,9 @@
 <context>
     <name>katvan::MainWindow</name>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="79"/>
         <source>The typst compiler was not found, and therefore previews and export will not work.
 Please make sure it is installed and in your system path.</source>
-        <translation>המהדר של typst לא נמצא, ולכן תצוגה מקדימה וייצוא אינם פעילים.
+        <translation type="vanished">המהדר של typst לא נמצא, ולכן תצוגה מקדימה וייצוא אינם פעילים.
 אנא ודאו כי הוא מותקן וזמין בנתיב המערכת.</translation>
     </message>
     <message>
@@ -165,108 +164,108 @@ Please make sure it is installed and in your system path.</source>
         <translation type="vanished">כתבן</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="115"/>
+        <location filename="../katvan_mainwindow.cpp" line="117"/>
         <source>Preview</source>
         <translation>תצוגה מקדימה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="122"/>
+        <location filename="../katvan_mainwindow.cpp" line="124"/>
         <source>Compiler Output</source>
         <translation>פלט מהדר</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="134"/>
+        <location filename="../katvan_mainwindow.cpp" line="136"/>
         <source>&amp;File</source>
         <translation>&amp;קובץ</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="136"/>
+        <location filename="../katvan_mainwindow.cpp" line="138"/>
         <source>&amp;New</source>
         <translation>&amp;חדש</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="142"/>
+        <location filename="../katvan_mainwindow.cpp" line="144"/>
         <source>&amp;Open...</source>
         <translation>&amp;פתיחה...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="146"/>
+        <location filename="../katvan_mainwindow.cpp" line="148"/>
         <source>&amp;Recent Files</source>
         <translation>פתח &amp;אחרונים</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="150"/>
+        <location filename="../katvan_mainwindow.cpp" line="152"/>
         <source>&amp;Save</source>
         <translation>&amp;שמור</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="155"/>
+        <location filename="../katvan_mainwindow.cpp" line="157"/>
         <source>Save &amp;As...</source>
         <translation>שמירה &amp;בשם...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="159"/>
+        <location filename="../katvan_mainwindow.cpp" line="161"/>
         <source>&amp;Export PDF...</source>
         <translation>יי&amp;צוא כ-PDF...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="165"/>
+        <location filename="../katvan_mainwindow.cpp" line="167"/>
         <source>&amp;Quit</source>
         <translation>&amp;יציאה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="172"/>
+        <location filename="../katvan_mainwindow.cpp" line="174"/>
         <source>&amp;Edit</source>
         <translation>&amp;עריכה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="174"/>
+        <location filename="../katvan_mainwindow.cpp" line="176"/>
         <source>&amp;Undo</source>
         <translation>&amp;בטל</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="180"/>
+        <location filename="../katvan_mainwindow.cpp" line="182"/>
         <source>&amp;Redo</source>
         <translation>בצע &amp;שוב</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="188"/>
+        <location filename="../katvan_mainwindow.cpp" line="190"/>
         <source>Cu&amp;t</source>
         <translation>&amp;גזור</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="194"/>
+        <location filename="../katvan_mainwindow.cpp" line="196"/>
         <source>&amp;Copy</source>
         <translation>ה&amp;עתק</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="200"/>
+        <location filename="../katvan_mainwindow.cpp" line="202"/>
         <source>&amp;Paste</source>
         <translation>ה&amp;דבק</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="211"/>
+        <location filename="../katvan_mainwindow.cpp" line="213"/>
         <source>&amp;Insert</source>
         <translation>ה&amp;כנס</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="271"/>
+        <location filename="../katvan_mainwindow.cpp" line="273"/>
         <source>Compilation status</source>
         <translation>מצב הידור</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="812"/>
+        <location filename="../katvan_mainwindow.cpp" line="824"/>
         <source>Compiling...</source>
         <translation>מהדר...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="815"/>
-        <location filename="../katvan_mainwindow.cpp" line="819"/>
+        <location filename="../katvan_mainwindow.cpp" line="828"/>
+        <location filename="../katvan_mainwindow.cpp" line="832"/>
         <source>Success</source>
         <translation>הצלחה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="824"/>
+        <location filename="../katvan_mainwindow.cpp" line="837"/>
         <source>Failed</source>
         <translation>כשלון</translation>
     </message>
@@ -279,17 +278,17 @@ Please make sure it is installed and in your system path.</source>
         <translation type="vanished">סימן יישור שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="216"/>
+        <location filename="../katvan_mainwindow.cpp" line="218"/>
         <source>&amp;Find...</source>
         <translation>&amp;חיפוש...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="224"/>
+        <location filename="../katvan_mainwindow.cpp" line="226"/>
         <source>&amp;Go to line...</source>
         <translation>&amp;מעבר לשורה...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="230"/>
+        <location filename="../katvan_mainwindow.cpp" line="232"/>
         <source>&amp;View</source>
         <translation>&amp;תצוגה</translation>
     </message>
@@ -298,110 +297,119 @@ Please make sure it is installed and in your system path.</source>
         <translation type="vanished">&amp;גופן עורך...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="242"/>
+        <location filename="../katvan_mainwindow.cpp" line="244"/>
         <source>&amp;Tools</source>
         <translation>&amp;כלים</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="244"/>
+        <location filename="../katvan_mainwindow.cpp" line="246"/>
         <source>&amp;Spell Checking...</source>
         <translation>&amp;בדיקת איות...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="250"/>
+        <location filename="../katvan_mainwindow.cpp" line="252"/>
         <source>&amp;Help</source>
         <translation>&amp;עזרה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="252"/>
+        <location filename="../katvan_mainwindow.cpp" line="254"/>
         <source>Typst &amp;Documentation...</source>
         <translation>אתר ה&amp;תיעוד של typst...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="257"/>
+        <location filename="../katvan_mainwindow.cpp" line="259"/>
         <source>&amp;About...</source>
         <translation>&amp;אודות...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="721"/>
         <location filename="../katvan_mainwindow.cpp" line="729"/>
+        <location filename="../katvan_mainwindow.cpp" line="737"/>
         <source>None</source>
         <translation>ללא</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="283"/>
+        <location filename="../katvan_mainwindow.cpp" line="291"/>
         <source>Spell checking dictionary</source>
         <translation>מילון בדיקת איות</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="220"/>
+        <location filename="../katvan_mainwindow.cpp" line="81"/>
+        <source>The typst compiler was not found, and therefore previews and export will not work.
+
+Please make sure it is installed and in your system path.</source>
+        <translation>המהדר של typst לא נמצא, ולכן תצוגה מקדימה וייצוא אינם פעילים.
+
+אנא ודאו כי הוא מותקן וזמין בנתיב המערכת.</translation>
+    </message>
+    <message>
+        <location filename="../katvan_mainwindow.cpp" line="222"/>
         <source>&amp;Replace...</source>
         <translation>&amp;החלפה...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="232"/>
+        <location filename="../katvan_mainwindow.cpp" line="234"/>
         <source>&amp;Editor Settings...</source>
         <translation>&amp;הגדרות עורך...</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="289"/>
-        <location filename="../katvan_mainwindow.cpp" line="781"/>
+        <location filename="../katvan_mainwindow.cpp" line="297"/>
+        <location filename="../katvan_mainwindow.cpp" line="789"/>
         <source>Logical</source>
         <translation>לוגי</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="290"/>
+        <location filename="../katvan_mainwindow.cpp" line="298"/>
         <source>Cursor movement style</source>
         <translation>סגנון תנועת סמן</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="338"/>
+        <location filename="../katvan_mainwindow.cpp" line="346"/>
         <source>Loading file %1 failed: %2</source>
         <translation>טעינת הקובץ %1 נכשלה: %2</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="348"/>
+        <location filename="../katvan_mainwindow.cpp" line="356"/>
         <source>Loaded %1</source>
         <translation>%1 נטען</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="360"/>
+        <location filename="../katvan_mainwindow.cpp" line="368"/>
         <source>The file %1 has been modified.
 Do you want to save your changes?</source>
         <translation>בקובץ %1 בוצעו שינויים. האם ברצונך לשמור אותם?</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="443"/>
+        <location filename="../katvan_mainwindow.cpp" line="451"/>
         <source>Unsaved changes were found for the file %1. Would you like to recover these changes?</source>
         <translation>בקובץ %1 ישנם שינויים שלא נשמרו. האם ברצונך לשחזר שינויים אלו?</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="448"/>
+        <location filename="../katvan_mainwindow.cpp" line="456"/>
         <source>newer than last saved version</source>
         <translation>חדש יותר מהגרסא השמורה האחרונה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="451"/>
+        <location filename="../katvan_mainwindow.cpp" line="459"/>
         <source>older than last saved version</source>
         <translation>ישן יותר מהגרסא השמורה האחרונה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="454"/>
+        <location filename="../katvan_mainwindow.cpp" line="462"/>
         <source>same time as last saved version</source>
         <translation>אותו הזמן כמו הגרסא השמורה האחרונה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="457"/>
+        <location filename="../katvan_mainwindow.cpp" line="465"/>
         <source>These changes were made at %2 (%3).</source>
         <translation>שינויים אלה נעשו ב-%2 (%3).</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="680"/>
+        <location filename="../katvan_mainwindow.cpp" line="688"/>
         <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;Typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3)</source>
         <translation>&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;Typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3)</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="691"/>
+        <location filename="../katvan_mainwindow.cpp" line="699"/>
         <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Contains icons taken from the &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt; icon theme.&lt;/p&gt;</source>
         <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל צלמיות שנלקחו מן סט הצלמיות &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
@@ -411,73 +419,73 @@ Do you want to save your changes</source>
         <translation type="vanished">בקובץ %1 בוצעו שינויים. האם ברצונך לשמור אותם?</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="376"/>
+        <location filename="../katvan_mainwindow.cpp" line="384"/>
         <source>Untitled</source>
         <translation>ללא שם</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="525"/>
+        <location filename="../katvan_mainwindow.cpp" line="533"/>
         <source>Open Document</source>
         <translation>פתיחת מסמך</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="527"/>
+        <location filename="../katvan_mainwindow.cpp" line="535"/>
         <source>Typst files (*.typ);;All files (*)</source>
         <translation>קבצי typst (*.typ);;כל הקבצים (*)</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="559"/>
+        <location filename="../katvan_mainwindow.cpp" line="567"/>
         <source>Opening file %1 for saving failed: %2</source>
         <translation>פתיתת הקובץ %1 למטרת שמירה נכשלה: %2</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="572"/>
+        <location filename="../katvan_mainwindow.cpp" line="580"/>
         <source>Saving file %1 failed: %2</source>
         <translation>שמירת הקובץ %1 נכשלה: %2</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="579"/>
+        <location filename="../katvan_mainwindow.cpp" line="587"/>
         <source>Saved %1</source>
         <translation>%1 נשמר</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="586"/>
+        <location filename="../katvan_mainwindow.cpp" line="594"/>
         <source>Save Document</source>
         <translation>שמירת מסמך</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="588"/>
+        <location filename="../katvan_mainwindow.cpp" line="596"/>
         <source>Typst files (*.typ)</source>
         <translation>קבצי typst (*.typ)</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="614"/>
+        <location filename="../katvan_mainwindow.cpp" line="622"/>
         <source>The document %1 has errors.
 To export the document, please correct them.</source>
         <translation>במסמך %1 יש שגיאות. על מנת לייצא את המסמך, עליך לתקנן.</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="623"/>
+        <location filename="../katvan_mainwindow.cpp" line="631"/>
         <source>Export to PDF</source>
         <translation>ייצוא כ-PDF</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="625"/>
+        <location filename="../katvan_mainwindow.cpp" line="633"/>
         <source>PDF files (*.pdf)</source>
         <translation>קבצי PDF (*.pdf)</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="649"/>
+        <location filename="../katvan_mainwindow.cpp" line="657"/>
         <source>Failing writing file %1: %2</source>
         <translation>כתיבת הקובץ %1 נכשלה: %2</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="660"/>
+        <location filename="../katvan_mainwindow.cpp" line="668"/>
         <source>Go to Line</source>
         <translation>מעבר לשורה</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="661"/>
+        <location filename="../katvan_mainwindow.cpp" line="669"/>
         <source>Enter a line number (max %1)</source>
         <translation>בחר מספר שורה (מתוך %1)</translation>
     </message>
@@ -490,27 +498,27 @@ To export the document, please correct them.</source>
         <translation type="vanished">&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="699"/>
+        <location filename="../katvan_mainwindow.cpp" line="707"/>
         <source>About Katvan</source>
         <translation>אודות כתבן</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="746"/>
+        <location filename="../katvan_mainwindow.cpp" line="754"/>
         <source>Spell Checking</source>
         <translation>בדיקת איות</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="747"/>
+        <location filename="../katvan_mainwindow.cpp" line="755"/>
         <source>Select dictionary to use for spell checking</source>
         <translation>נא לבחור את המילון שישמש לבדיקת איות</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="768"/>
+        <location filename="../katvan_mainwindow.cpp" line="776"/>
         <source>Line %1, Col %2</source>
         <translation>שורה %1, עמודה %2</translation>
     </message>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="777"/>
+        <location filename="../katvan_mainwindow.cpp" line="785"/>
         <source>Visual</source>
         <translation>ויזואלי</translation>
     </message>

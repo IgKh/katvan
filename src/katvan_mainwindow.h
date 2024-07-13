@@ -20,6 +20,7 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
+class QMovie;
 class QSessionManager;
 class QSettings;
 class QToolButton;
@@ -95,6 +96,8 @@ private:
     CompilerOutput* d_compilerOutput;
 
     EditorSettingsDialog* d_editorSettingsDialog;
+
+    QMovie* d_compilingMovie;
 
     QToolButton* d_compilationStatusButton;
     QToolButton* d_cursorPosButton;

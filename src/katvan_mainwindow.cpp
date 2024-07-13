@@ -34,6 +34,7 @@
 #include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMovie>
 #include <QSessionManager>
 #include <QSettings>
 #include <QStatusBar>
@@ -72,11 +73,12 @@ MainWindow::MainWindow()
     cursorPositionChanged();
 
     if (!d_driver->compilerFound()) {
+        d_compilationStatusButton->hide();
         QTimer::singleShot(0, this, [this]() {
             QMessageBox::warning(
                 this,
                 QCoreApplication::applicationName(),
-                tr("The typst compiler was not found, and therefore previews and export will not work.\nPlease make sure it is installed and in your system path."));
+                tr("The typst compiler was not found, and therefore previews and export will not work.\n\nPlease make sure it is installed and in your system path."));
         });
     }
 }
@@ -273,6 +275,12 @@ void MainWindow::setupStatusBar()
     connect(d_compilationStatusButton, &QToolButton::clicked, d_compilerOutputDock, &QDockWidget::show);
 
     statusBar()->addPermanentWidget(d_compilationStatusButton);
+
+    d_compilingMovie = new QMovie(this);
+    d_compilingMovie->setFileName(":/spinner.gif");
+    connect(d_compilingMovie, &QMovie::frameChanged, this, [this]() {
+        d_compilationStatusButton->setIcon(d_compilingMovie->currentPixmap());
+    });
 
     d_cursorPosButton = buildStatusBarButton();
     connect(d_cursorPosButton, &QToolButton::clicked, this, &MainWindow::goToLine);
@@ -808,8 +816,13 @@ void MainWindow::compilationStatusChanged()
 {
     TypstDriver::Status status = d_driver->status();
 
+    if (status != TypstDriver::Status::PROCESSING) {
+        d_compilingMovie->stop();
+    }
+
     if (status == TypstDriver::Status::PROCESSING) {
         d_compilationStatusButton->setText(tr("Compiling..."));
+        d_compilingMovie->start();
     }
     else if (status == TypstDriver::Status::SUCCESS) {
         d_compilationStatusButton->setText(tr("Success"));
