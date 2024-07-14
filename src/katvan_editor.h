@@ -33,6 +33,7 @@ namespace katvan {
 
 class Highlighter;
 class SpellChecker;
+class CodeModel;
 
 class Editor : public QTextEdit
 {
@@ -76,6 +77,8 @@ private:
 
     void applyEffectiveSettings();
 
+    QTextEdit::ExtraSelection makeBracketHighlight(int pos);
+
     int lineNumberGutterWidth();
     QTextBlock getFirstVisibleBlock();
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
@@ -86,7 +89,7 @@ private slots:
 
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
-    void highlightCurrentLine();
+    void updateExtraSelections();
 
 signals:
     void contentModified(const QString& text);
@@ -98,10 +101,13 @@ private:
     QTimer* d_debounceTimer;
     Highlighter* d_highlighter;
     SpellChecker* d_spellChecker;
+    CodeModel* d_codeModel;
 
     EditorSettings d_appSettings;
     EditorSettings d_fileMode;
     EditorSettings d_effectiveSettings;
+
+    QColor d_bracketHighlightColor;
 
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;

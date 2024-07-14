@@ -143,10 +143,9 @@ public:
 class Parser
 {
 public:
-    Parser(QStringView text, const ParserStateStack* initialState = nullptr);
+    Parser(QStringView text, const QList<ParserState::Kind>& initialStates = QList<ParserState::Kind>());
 
-    ParserStateStack stateStack() const { return d_stateStack; }
-    void addListener(ParsingListener& listener);
+    void addListener(ParsingListener& listener, bool finalizeOnEnd);
 
     void parse();
 
@@ -177,6 +176,7 @@ private:
     QStringView d_text;
     TokenStream d_tokenStream;
     QList<std::reference_wrapper<ParsingListener>> d_listeners;
+    QList<std::reference_wrapper<ParsingListener>> d_finalizingListeners;
     ParserStateStack d_stateStack;
 
     bool d_enteredContentBlock;

@@ -15,30 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_editortheme.h"
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
 
-#include <QGuiApplication>
-#include <QHash>
-#include <QPalette>
-#include <QStyleHints>
 #include <QTextDocument>
 
 namespace katvan {
-
-namespace parsing {
-
-constexpr inline size_t qHash(const ParserState& state, size_t seed = 0) noexcept
-{
-    return qHashMulti(seed, state.kind, state.startPos);
-}
-
-}
-
-int HighlighterStateBlockData::fingerprint() const
-{
-    return static_cast<int>(qHashRange(d_stateStack.begin(), d_stateStack.end()));
-}
 
 Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
     : QSyntaxHighlighter(document)
@@ -47,21 +30,9 @@ Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
     setupFormats();
 }
 
-static bool isAppInDarkMode()
-{
-    if (qGuiApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
-        return true;
-    }
-
-    // If the Qt platform integration doesn't support signaling a color scheme,
-    // sniff it from the global palette.
-    QPalette palette = qGuiApp->palette();
-    return palette.color(QPalette::WindowText).lightness() > palette.color(QPalette::Window).lightness();
-}
-
 void Highlighter::setupFormats()
 {
-    bool isDark = isAppInDarkMode();
+    bool isDark = EditorTheme::isAppInDarkMode();
 
     d_formats.clear();
 
@@ -140,17 +111,29 @@ void Highlighter::setupFormats()
 void Highlighter::highlightBlock(const QString& text)
 {
     auto* prevBlockData = dynamic_cast<HighlighterStateBlockData*>(currentBlock().previous().userData());
-    const parsing::ParserStateStack* initialState = nullptr;
+
+    StateSpanList initialSpans;
+    QList<parsing::ParserState::Kind> initialStates;
     if (prevBlockData != nullptr) {
-        initialState = prevBlockData->stateStack();
+        for (const StateSpan& span : prevBlockData->stateSpans())
+        {
+            if (span.endPos) {
+                continue;
+            }
+            initialSpans.elements().append(span);
+            initialStates.append(span.state);
+        }
     }
 
+    StateSpansListener spanListener(initialSpans, currentBlock().position());
     parsing::HighlightingListener highlightingListener;
     parsing::ContentWordsListener contentListenger;
 
-    parsing::Parser parser(text, initialState);
-    parser.addListener(highlightingListener);
-    parser.addListener(contentListenger);
+    parsing::Parser parser(text, initialStates);
+    parser.addListener(spanListener, false);
+    parser.addListener(highlightingListener, true);
+    parser.addListener(contentListenger, true);
+
     parser.parse();
 
     QList<QTextCharFormat> charFormats;
@@ -165,12 +148,12 @@ void Highlighter::highlightBlock(const QString& text)
         setFormat(i, 1, charFormats[i]);
     }
 
-    // In addition to storing the parser state stack at the end of the block as
+    // In addition to storing the detailed block data obtained from parsing it as
     // the block's user data, set a hash of that as the block state. This is to
     // force re-highlighting of the next block if something changed - QSyntaxHighlighter
     // only tracks changes to the block state number.
-    auto* blockData = new HighlighterStateBlockData(parser.stateStack(), std::move(misspelledWords));
-    setCurrentBlockState(blockData->fingerprint());
+    auto* blockData = new HighlighterStateBlockData(std::move(spanListener).spans(), std::move(misspelledWords));
+    setCurrentBlockState(blockData->stateSpans().fingerprint());
     setCurrentBlockUserData(blockData);
 }
 

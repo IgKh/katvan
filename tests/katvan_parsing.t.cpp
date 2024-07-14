@@ -291,7 +291,7 @@ static QList<HiglightingMarker> highlightText(QStringView text)
 {
     HighlightingListener listener;
     Parser parser(text);
-    parser.addListener(listener);
+    parser.addListener(listener, true);
     parser.parse();
     return listener.markers();
 }
@@ -724,7 +724,7 @@ static QList<ContentSegment> extractContent(QStringView text)
 {
     ContentWordsListener listener;
     Parser parser(text);
-    parser.addListener(listener);
+    parser.addListener(listener, true);
     parser.parse();
     return listener.segments();
 }

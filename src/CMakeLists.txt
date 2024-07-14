@@ -19,9 +19,11 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(hunspell REQUIRED IMPORTED_TARGET hunspell)
 
 set(SOURCES
+    katvan_codemodel.cpp
     katvan_compileroutput.cpp
     katvan_editor.cpp
     katvan_editorsettings.cpp
+    katvan_editortheme.cpp
     katvan_highlighter.cpp
     katvan_mainwindow.cpp
     katvan_parsing.cpp

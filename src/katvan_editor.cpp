@@ -15,7 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_codemodel.h"
 #include "katvan_editor.h"
+#include "katvan_editortheme.h"
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
 
@@ -79,6 +81,7 @@ Editor::Editor(QWidget* parent)
     connect(d_spellChecker, &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
 
     d_highlighter = new Highlighter(document(), d_spellChecker);
+    d_codeModel = new CodeModel(document(), this);
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);
@@ -87,7 +90,7 @@ Editor::Editor(QWidget* parent)
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateLineNumberGutters);
-    connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::highlightCurrentLine);
+    connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateExtraSelections);
 
     updateLineNumberGutters();
 
@@ -237,9 +240,10 @@ bool Editor::event(QEvent* event)
 {
     if (event->type() == QEvent::PaletteChange)
     {
+        d_bracketHighlightColor = QColor();
         d_highlighter->setupFormats();
         forceRehighlighting();
-        highlightCurrentLine();
+        updateExtraSelections();
     }
 #ifdef Q_OS_LINUX
     else if (event->type() == QEvent::ShortcutOverride) {
@@ -607,16 +611,56 @@ void Editor::updateLineNumberGutters()
     }
 }
 
-void Editor::highlightCurrentLine()
+QTextEdit::ExtraSelection Editor::makeBracketHighlight(int pos)
 {
+    if (!d_bracketHighlightColor.isValid()) {
+        d_bracketHighlightColor = EditorTheme::isAppInDarkMode() ?
+                QColor(0x8e, 0x44, 0xad) :
+                QColor(0xff, 0xff, 0x00);
+    }
+
     QTextEdit::ExtraSelection selection;
-    selection.format.setBackground(palette().color(QPalette::AlternateBase));
-    selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-    selection.cursor = textCursor();
-    selection.cursor.clearSelection();
+    selection.format.setBackground(d_bracketHighlightColor);
+    selection.cursor = QTextCursor(document());
+    selection.cursor.setPosition(pos);
+    selection.cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+    return selection;
+}
+
+void Editor::updateExtraSelections()
+{
+    QTextCursor cursor = textCursor();
+    int currentPos = cursor.position();
+
+    cursor.clearSelection();
 
     QList<QTextEdit::ExtraSelection> extraSelections;
-    extraSelections.append(selection);
+
+    //
+    // Current Line
+    //
+    QTextEdit::ExtraSelection currentLine;
+    currentLine.format.setBackground(palette().color(QPalette::AlternateBase));
+    currentLine.format.setProperty(QTextFormat::FullWidthSelection, true);
+    currentLine.cursor = cursor;
+    extraSelections.append(currentLine);
+
+    //
+    // Bracket Matching
+    //
+    auto bracketPos = d_codeModel->findMatchingBracket(currentPos);
+    if (bracketPos) {
+        extraSelections.append(makeBracketHighlight(currentPos));
+        extraSelections.append(makeBracketHighlight(bracketPos.value()));
+    }
+    else if (cursor.positionInBlock() > 0) {
+        bracketPos = d_codeModel->findMatchingBracket(currentPos - 1);
+        if (bracketPos) {
+            extraSelections.append(makeBracketHighlight(currentPos - 1));
+            extraSelections.append(makeBracketHighlight(bracketPos.value()));
+        }
+    }
+
     setExtraSelections(extraSelections);
 }
 

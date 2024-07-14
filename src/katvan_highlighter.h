@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include "katvan_codemodel.h"
 #include "katvan_parsing.h"
 
 #include <QHash>
@@ -30,18 +31,18 @@ class HighlighterStateBlockData : public QTextBlockUserData
 {
 public:
     HighlighterStateBlockData(
-        parsing::ParserStateStack&& stateStack,
+        StateSpanList&& stateSpans,
         parsing::SegmentList&& misspelledWords)
-        : d_stateStack(std::move(stateStack))
+        : d_stateSpans(std::move(stateSpans))
         , d_misspelledWords(std::move(misspelledWords)) {}
 
-    const parsing::ParserStateStack* stateStack() const { return &d_stateStack; }
+    const StateSpanList& stateSpans() const { return d_stateSpans; }
     const parsing::SegmentList& misspelledWords() const { return d_misspelledWords; }
 
     int fingerprint() const;
 
 private:
-    parsing::ParserStateStack d_stateStack;
+    StateSpanList d_stateSpans;
     parsing::SegmentList d_misspelledWords;
 };
 

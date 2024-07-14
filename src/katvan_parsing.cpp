@@ -352,27 +352,25 @@ void TokenStream::returnTokens(QList<Token>& tokens)
     }
 }
 
-Parser::Parser(QStringView text, const ParserStateStack* initialState)
+Parser::Parser(QStringView text, const QList<ParserState::Kind>& initialStates)
     : d_text(text)
     , d_tokenStream(text)
-    , d_stateStack(initialState != nullptr ? *initialState : ParserStateStack())
     , d_enteredContentBlock(false)
     , d_startMarker(0)
     , d_endMarker(0)
 {
-    if (d_stateStack.isEmpty()) {
-        d_stateStack.append(ParserState{ ParserState::Kind::CONTENT, 0 });
-    }
-    else {
-        for (ParserState& state : d_stateStack) {
-            state.startPos = 0;
-        }
+    d_stateStack.append(ParserState{ ParserState::Kind::CONTENT, 0 });
+    for (ParserState::Kind state : initialStates) {
+        d_stateStack.append(ParserState{ state, 0 });
     }
 }
 
-void Parser::addListener(ParsingListener& listener)
+void Parser::addListener(ParsingListener& listener, bool finalizeOnEnd)
 {
     d_listeners.append(std::ref(listener));
+    if (finalizeOnEnd) {
+        d_finalizingListeners.append(std::ref(listener));
+    }
 }
 
 static bool isBlockScopedState(const ParserState& state)
@@ -745,16 +743,22 @@ void Parser::parse()
     }
 
     d_endMarker = d_text.size() - 1;
-    for (const ParserState& state : d_stateStack) {
-        for (auto& listener : d_listeners) {
-            listener.get().finalizeState(state, d_endMarker);
-        }
-    }
 
-    // Pop all trailing block scoped states
+    // Clear the state stack - finalize open states only on listeners
+    // that ask for it, but states that are automatically closed by
+    // the text block ending are finalized on all listeners.
+    bool removeBlockScoped = true;
     while (!d_stateStack.isEmpty()) {
-        if (!isBlockScopedState(d_stateStack.last())) {
-            break;
+        if (isBlockScopedState(d_stateStack.last()) && removeBlockScoped) {
+            for (auto& listener : d_listeners) {
+                listener.get().finalizeState(d_stateStack.last(), d_endMarker);
+            }
+        }
+        else {
+            removeBlockScoped = false;
+            for (auto& listener : d_finalizingListeners) {
+                listener.get().finalizeState(d_stateStack.last(), d_endMarker);
+            }
         }
         d_stateStack.removeLast();
     }
@@ -826,15 +830,24 @@ bool Parser::handleCodeStart()
         }
         return true;
     }
-    if (match(m::SymbolSequence(QStringLiteral("#{")))) {
+    if (match(m::All(
+        m::Discard(m::Symbol(QLatin1Char('#'))),
+        m::Symbol(QLatin1Char('{'))
+    ))) {
         pushState(ParserState::Kind::CODE_BLOCK);
         return true;
     }
-    if (match(m::SymbolSequence(QStringLiteral("#[")))) {
+    if (match(m::All(
+        m::Discard(m::Symbol(QLatin1Char('#'))),
+        m::Symbol(QLatin1Char('['))
+    ))) {
         pushState(ParserState::Kind::CONTENT_BLOCK);
         return true;
     }
-    if (match(m::SymbolSequence(QStringLiteral("#(")))) {
+    if (match(m::All(
+        m::Discard(m::Symbol(QLatin1Char('#'))),
+        m::Symbol(QLatin1Char('('))
+    ))) {
         pushState(ParserState::Kind::CODE_ARGUMENTS);
         return true;
     }
