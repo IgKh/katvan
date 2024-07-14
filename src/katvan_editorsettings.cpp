@@ -77,14 +77,22 @@ void EditorSettings::parseModeLine(QString mode)
                 d_fontSize = size;
             }
         }
+        else if (variable == QStringLiteral("indent-mode")) {
+            if (rest == QStringLiteral("none")) {
+                d_indentMode = EditorSettings::IndentMode::NONE;
+            }
+            else if (rest == QStringLiteral("normal")) {
+                d_indentMode = EditorSettings::IndentMode::NORMAL;
+            }
+        }
         else if (variable == QStringLiteral("replace-tabs")) {
             auto ob = parseModeLineBool(rest);
             if (ob) {
                 if (ob.value()) {
-                    d_indentMode = EditorSettings::IndentMode::SPACES;
+                    d_indentStyle = EditorSettings::IndentStyle::SPACES;
                 }
                 else {
-                    d_indentMode = EditorSettings::IndentMode::TABS;
+                    d_indentStyle = EditorSettings::IndentStyle::TABS;
                 }
             }
         }
@@ -127,7 +135,17 @@ QString EditorSettings::toModeLine() const
         result += QLatin1String("font-size %1; ").arg(QString::number(d_fontSize.value()));
     }
     if (d_indentMode) {
-        if (d_indentMode.value() == EditorSettings::IndentMode::SPACES) {
+        switch (d_indentMode.value()) {
+            case EditorSettings::IndentMode::NONE:
+                result += QLatin1String("indent-mode none; ");
+                break;
+            case EditorSettings::IndentMode::NORMAL:
+                result += QLatin1String("indent-mode normal; ");
+                break;
+        }
+    }
+    if (d_indentStyle) {
+        if (d_indentStyle.value() == EditorSettings::IndentStyle::SPACES) {
             result += QStringLiteral("replace-tabs on; ");
         }
         else {
@@ -180,7 +198,12 @@ QFont EditorSettings::font() const
 
 EditorSettings::IndentMode EditorSettings::indentMode() const
 {
-    return d_indentMode.value_or(EditorSettings::IndentMode::SPACES);
+    return d_indentMode.value_or(EditorSettings::IndentMode::NONE);
+}
+
+EditorSettings::IndentStyle EditorSettings::indentStyle() const
+{
+    return d_indentStyle.value_or(EditorSettings::IndentStyle::SPACES);
 }
 
 int EditorSettings::indentWidth() const
@@ -209,6 +232,9 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
     if (other.d_indentMode) {
         d_indentMode = other.d_indentMode;
     }
+    if (other.d_indentStyle) {
+        d_indentStyle = other.d_indentStyle;
+    }
     if (other.d_indentWidth) {
         d_indentWidth = other.d_indentWidth;
     }
@@ -235,12 +261,13 @@ EditorSettings EditorSettingsDialog::settings() const
     settings.setFontFamily(d_editorFontComboBox->currentFont().family());
     settings.setFontSize(d_editorFontSizeComboBox->currentText().toInt());
     settings.setLineNumberStyle(d_lineNumberStyle->currentData().value<EditorSettings::LineNumberStyle>());
+    settings.setIndentMode(d_indentMode->currentData().value<EditorSettings::IndentMode>());
 
     if (d_indentWithSpaces->isChecked()) {
-        settings.setIndentMode(EditorSettings::IndentMode::SPACES);
+        settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
     }
     else {
-        settings.setIndentMode(EditorSettings::IndentMode::TABS);
+        settings.setIndentStyle(EditorSettings::IndentStyle::TABS);
     }
 
     settings.setIndentWidth(d_indentWidth->value());
@@ -258,7 +285,10 @@ void EditorSettingsDialog::setSettings(const EditorSettings& settings)
     QVariant lineNumberStyle = QVariant::fromValue(settings.lineNumberStyle());
     d_lineNumberStyle->setCurrentIndex(d_lineNumberStyle->findData(lineNumberStyle));
 
-    if (settings.indentMode() == EditorSettings::IndentMode::SPACES) {
+    QVariant indentMode = QVariant::fromValue(settings.indentMode());
+    d_indentMode->setCurrentIndex(d_indentMode->findData(indentMode));
+
+    if (settings.indentStyle() == EditorSettings::IndentStyle::SPACES) {
         d_indentWithSpaces->setChecked(true);
     }
     else {
@@ -288,13 +318,17 @@ void EditorSettingsDialog::setupUI()
     d_lineNumberStyle->addItem(tr("On Primary Side"), QVariant::fromValue(EditorSettings::LineNumberStyle::PRIMARY_ONLY));
     d_lineNumberStyle->addItem(tr("Don't Show"), QVariant::fromValue(EditorSettings::LineNumberStyle::NONE));
 
+    d_indentMode = new QComboBox();
+    d_indentMode->addItem(tr("None"), QVariant::fromValue(EditorSettings::IndentMode::NONE));
+    d_indentMode->addItem(tr("Normal"), QVariant::fromValue(EditorSettings::IndentMode::NORMAL));
+
     d_indentWithSpaces = new QRadioButton(tr("&Spaces"));
     d_indentWithTabs = new QRadioButton(tr("&Tabs"));
 
-    QButtonGroup* indentTypeBtnGroup = new QButtonGroup(this);
-    indentTypeBtnGroup->addButton(d_indentWithSpaces);
-    indentTypeBtnGroup->addButton(d_indentWithTabs);
-    connect(indentTypeBtnGroup, &QButtonGroup::buttonToggled, this, &EditorSettingsDialog::updateControlStates);
+    QButtonGroup* indentStyleBtnGroup = new QButtonGroup(this);
+    indentStyleBtnGroup->addButton(d_indentWithSpaces);
+    indentStyleBtnGroup->addButton(d_indentWithTabs);
+    connect(indentStyleBtnGroup, &QButtonGroup::buttonToggled, this, &EditorSettingsDialog::updateControlStates);
 
     d_indentWidth = new QSpinBox();
     d_indentWidth->setSuffix(tr(" characters"));
@@ -318,18 +352,26 @@ void EditorSettingsDialog::setupUI()
     appearanceLayout->addRow(tr("Show &Line Numbers:"), d_lineNumberStyle);
 
     QGroupBox* indentationGroup = new QGroupBox(tr("Indentation"));
-    QGridLayout* indentationLayout = new QGridLayout(indentationGroup);
-    indentationLayout->setColumnStretch(0, 3);
-    indentationLayout->setColumnStretch(3, 1);
+    QVBoxLayout* indentationLayout = new QVBoxLayout(indentationGroup);
 
-    indentationLayout->addWidget(new QLabel(tr("Indent with:")), 0, 0);
-    indentationLayout->addWidget(d_indentWithSpaces, 1, 0);
-    indentationLayout->addWidget(d_indentWithTabs, 2, 0);
+    QFormLayout* indentationTopLayout = new QFormLayout();
+    indentationTopLayout->addRow(tr("Auotmatic Indentation:"), d_indentMode);
 
-    indentationLayout->addWidget(indentWidthLabel, 1, 2);
-    indentationLayout->addWidget(d_indentWidth, 1, 3);
-    indentationLayout->addWidget(tabWidthLabel, 2, 2);
-    indentationLayout->addWidget(d_tabWidth, 2, 3);
+    QGridLayout* indentationStyleLayout = new QGridLayout();
+    indentationStyleLayout->setColumnStretch(0, 3);
+    indentationStyleLayout->setColumnStretch(3, 1);
+
+    indentationStyleLayout->addWidget(new QLabel(tr("Indent with:")), 0, 0);
+    indentationStyleLayout->addWidget(d_indentWithSpaces, 1, 0);
+    indentationStyleLayout->addWidget(d_indentWithTabs, 2, 0);
+
+    indentationStyleLayout->addWidget(indentWidthLabel, 1, 2);
+    indentationStyleLayout->addWidget(d_indentWidth, 1, 3);
+    indentationStyleLayout->addWidget(tabWidthLabel, 2, 2);
+    indentationStyleLayout->addWidget(d_tabWidth, 2, 3);
+
+    indentationLayout->addLayout(indentationTopLayout);
+    indentationLayout->addLayout(indentationStyleLayout);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);

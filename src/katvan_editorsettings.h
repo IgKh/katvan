@@ -43,10 +43,16 @@ public:
     Q_ENUM(LineNumberStyle);
 
     enum class IndentMode {
+        NONE,
+        NORMAL
+    };
+    Q_ENUM(IndentMode);
+
+    enum class IndentStyle {
         SPACES,
         TABS
     };
-    Q_ENUM(IndentMode);
+    Q_ENUM(IndentStyle);
 
     EditorSettings() {}
     explicit EditorSettings(const QString& mode) { parseModeLine(mode); }
@@ -60,6 +66,7 @@ public:
     QFont font() const;
 
     IndentMode indentMode() const;
+    IndentStyle indentStyle() const;
     int indentWidth() const;
     int tabWidth() const;
 
@@ -68,6 +75,7 @@ public:
     void setFontFamily(const QString& fontFamily) { d_fontFamily = fontFamily; }
     void setFontSize(int fontSize) { d_fontSize = fontSize; }
     void setIndentMode(IndentMode indentMode) { d_indentMode = indentMode; }
+    void setIndentStyle(IndentStyle indentStyle) { d_indentStyle = indentStyle; }
     void setIndentWidth(int indentWidth) { d_indentWidth = indentWidth; }
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
     void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
@@ -75,6 +83,7 @@ public:
     bool hasFontFamily() const { return d_fontFamily.has_value(); }
     bool hasFontSize() const { return d_fontSize.has_value(); }
     bool hasIndentMode() const { return d_indentMode.has_value(); }
+    bool hasIndentStyle() const { return d_indentStyle.has_value(); }
     bool hasIndentWidth() const { return d_indentWidth.has_value(); }
     bool hasTabWidth() const { return d_tabWidth.has_value(); }
     bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
@@ -87,6 +96,7 @@ private:
     std::optional<QString> d_fontFamily;
     std::optional<int> d_fontSize;
     std::optional<IndentMode> d_indentMode;
+    std::optional<IndentStyle> d_indentStyle;
     std::optional<int> d_indentWidth;
     std::optional<int> d_tabWidth;
     std::optional<LineNumberStyle> d_lineNumberStyle;
@@ -112,6 +122,7 @@ private:
     QFontComboBox* d_editorFontComboBox;
     QComboBox* d_editorFontSizeComboBox;
     QComboBox* d_lineNumberStyle;
+    QComboBox* d_indentMode;
     QRadioButton* d_indentWithSpaces;
     QRadioButton* d_indentWithTabs;
     QSpinBox* d_indentWidth;

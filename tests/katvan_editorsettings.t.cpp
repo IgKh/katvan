@@ -30,6 +30,7 @@ TEST(EditorSettingsTests, Empty) {
     EXPECT_THAT(s.hasFontSize(), ::testing::IsFalse());
     EXPECT_THAT(s.hasLineNumberStyle(), ::testing::IsFalse());
     EXPECT_THAT(s.hasIndentMode(), ::testing::IsFalse());
+    EXPECT_THAT(s.hasIndentStyle(), ::testing::IsFalse());
     EXPECT_THAT(s.hasIndentWidth(), ::testing::IsFalse());
     EXPECT_THAT(s.hasTabWidth(), ::testing::IsFalse());
 
@@ -97,49 +98,67 @@ TEST(EditorSettingsTests, LineNumberStyle) {
 }
 
 TEST(EditorSettingsTests, IndentMode) {
-    EditorSettings s1 { "replace-tabs ON" };
+    EditorSettings s1 { "indent-mode none" };
     EXPECT_THAT(s1.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s1.indentMode(), ::testing::Eq(EditorSettings::IndentMode::SPACES));
+    EXPECT_THAT(s1.indentMode(), ::testing::Eq(EditorSettings::IndentMode::NONE));
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("indent-mode none;")));
+
+    EditorSettings s2 { "indent-mode normal" };
+    EXPECT_THAT(s2.hasIndentMode(), ::testing::IsTrue());
+    EXPECT_THAT(s2.indentMode(), ::testing::Eq(EditorSettings::IndentMode::NORMAL));
+    EXPECT_THAT(s2.toModeLine(), ::testing::Eq(QStringLiteral("indent-mode normal;")));
+
+    EditorSettings s3 { "indent-mode cstyle" };
+    EXPECT_THAT(s3.hasIndentMode(), ::testing::IsFalse());
+
+    EditorSettings s4 { "indent-mode" };
+    EXPECT_THAT(s4.hasLineNumberStyle(), ::testing::IsFalse());
+}
+
+TEST(EditorSettingsTests, IndentStyle) {
+    EditorSettings s1 { "replace-tabs ON" };
+    EXPECT_THAT(s1.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s1.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs on;")));
 
     EditorSettings s2 { "replace-tabs oN" };
-    EXPECT_THAT(s2.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s2.indentMode(), ::testing::Eq(EditorSettings::IndentMode::SPACES));
+    EXPECT_THAT(s2.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s2.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(s2.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs on;")));
 
     EditorSettings s3 { "replace-tabs 1" };
-    EXPECT_THAT(s3.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s3.indentMode(), ::testing::Eq(EditorSettings::IndentMode::SPACES));
+    EXPECT_THAT(s3.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s3.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(s3.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs on;")));
 
     EditorSettings s4 { "replace-tabs TrUe" };
-    EXPECT_THAT(s4.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s4.indentMode(), ::testing::Eq(EditorSettings::IndentMode::SPACES));
+    EXPECT_THAT(s4.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s4.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(s4.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs on;")));
 
     EditorSettings s5 { "replace-tabs false" };
-    EXPECT_THAT(s5.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s5.indentMode(), ::testing::Eq(EditorSettings::IndentMode::TABS));
+    EXPECT_THAT(s5.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s5.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::TABS));
     EXPECT_THAT(s5.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs off;")));
 
     EditorSettings s6 { "replace-tabs off" };
-    EXPECT_THAT(s6.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s6.indentMode(), ::testing::Eq(EditorSettings::IndentMode::TABS));
+    EXPECT_THAT(s6.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s6.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::TABS));
     EXPECT_THAT(s6.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs off;")));
 
     EditorSettings s7 { "replace-tabs 0" };
-    EXPECT_THAT(s7.hasIndentMode(), ::testing::IsTrue());
-    EXPECT_THAT(s7.indentMode(), ::testing::Eq(EditorSettings::IndentMode::TABS));
+    EXPECT_THAT(s7.hasIndentStyle(), ::testing::IsTrue());
+    EXPECT_THAT(s7.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::TABS));
     EXPECT_THAT(s7.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs off;")));
 
     EditorSettings s8 { "replace-tabs 3" };
-    EXPECT_THAT(s8.hasIndentMode(), ::testing::IsFalse());
+    EXPECT_THAT(s8.hasIndentStyle(), ::testing::IsFalse());
 
     EditorSettings s9 { "replace-tabs foo" };
-    EXPECT_THAT(s9.hasIndentMode(), ::testing::IsFalse());
+    EXPECT_THAT(s9.hasIndentStyle(), ::testing::IsFalse());
 
     EditorSettings s10 { "replace-tabs" };
-    EXPECT_THAT(s10.hasIndentMode(), ::testing::IsFalse());
+    EXPECT_THAT(s10.hasIndentStyle(), ::testing::IsFalse());
 }
 
 TEST(EditorSettingsTests, IndentWidth) {
@@ -185,20 +204,22 @@ TEST(EditorSettingsTests, TabWidth) {
 }
 
 TEST(EditorSettingsTests, Mixed) {
-    EditorSettings s { "katvan: font Arial Special; no-such-flag; replace-tabs on; replace-tabs off; tab-width     5; font-size 10" };
+    EditorSettings s { "katvan: font Arial Special; no-such-flag; replace-tabs on; replace-tabs off; tab-width     5; font-size 10; indent-mode normal;" };
     EXPECT_THAT(s.hasFontFamily(), ::testing::IsTrue());
     EXPECT_THAT(s.hasFontSize(), ::testing::IsTrue());
     EXPECT_THAT(s.hasLineNumberStyle(), ::testing::IsFalse());
     EXPECT_THAT(s.hasIndentMode(), ::testing::IsTrue());
+    EXPECT_THAT(s.hasIndentStyle(), ::testing::IsTrue());
     EXPECT_THAT(s.hasIndentWidth(), ::testing::IsFalse());
     EXPECT_THAT(s.hasTabWidth(), ::testing::IsTrue());
 
     EXPECT_THAT(s.fontFamily(), ::testing::Eq(QStringLiteral("Arial Special")));
     EXPECT_THAT(s.fontSize(), ::testing::Eq(10));
-    EXPECT_THAT(s.indentMode(), ::testing::Eq(EditorSettings::IndentMode::TABS));
+    EXPECT_THAT(s.indentMode(), ::testing::Eq(EditorSettings::IndentMode::NORMAL));
+    EXPECT_THAT(s.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::TABS));
     EXPECT_THAT(s.tabWidth(), ::testing::Eq(5));
 
-    EXPECT_THAT(s.toModeLine(), ::testing::Eq(QStringLiteral("font Arial Special; font-size 10; replace-tabs off; tab-width 5;")));
+    EXPECT_THAT(s.toModeLine(), ::testing::Eq(QStringLiteral("font Arial Special; font-size 10; indent-mode normal; replace-tabs off; tab-width 5;")));
 }
 
 TEST(EditorSettingsTests, Overrides) {
@@ -214,12 +235,13 @@ TEST(EditorSettingsTests, Overrides) {
     EXPECT_THAT(result.hasFontFamily(), ::testing::IsTrue());
     EXPECT_THAT(result.hasFontSize(), ::testing::IsTrue());
     EXPECT_THAT(result.hasLineNumberStyle(), ::testing::IsFalse());
-    EXPECT_THAT(result.hasIndentMode(), ::testing::IsTrue());
+    EXPECT_THAT(result.hasIndentMode(), ::testing::IsFalse());
+    EXPECT_THAT(result.hasIndentStyle(), ::testing::IsTrue());
     EXPECT_THAT(result.hasIndentWidth(), ::testing::IsTrue());
     EXPECT_THAT(result.hasTabWidth(), ::testing::IsFalse());
 
     EXPECT_THAT(result.fontFamily(), ::testing::Eq(QStringLiteral("Verdana")));
     EXPECT_THAT(result.fontSize(), ::testing::Eq(4));
-    EXPECT_THAT(result.indentMode(), ::testing::Eq(EditorSettings::IndentMode::SPACES));
+    EXPECT_THAT(result.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(result.indentWidth(), ::testing::Eq(8));
 }

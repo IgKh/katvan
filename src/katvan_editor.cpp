@@ -324,19 +324,30 @@ std::tuple<QTextBlock, QTextBlock, bool> Editor::selectedBlockRange() const
 
 QString Editor::getIndentString(QTextCursor cursor) const
 {
-    if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SPACES) {
+    if (d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::SPACES) {
         qsizetype numSpaces = d_effectiveSettings.indentWidth() - (cursor.positionInBlock() % d_effectiveSettings.indentWidth());
         return QString(numSpaces, QLatin1Char(' '));
     }
     return QLatin1String("\t");
 }
 
+static bool isSpace(QChar ch)
+{
+    return ch.category() == QChar::Separator_Space || ch == QLatin1Char('\t');
+}
+
 static bool isAllWhitespace(const QString& text)
 {
-    auto isSpace = [](QChar ch) {
-            return ch.category() == QChar::Separator_Space || ch == QLatin1Char('\t');
-    };
     return std::all_of(text.begin(), text.end(), isSpace);
+}
+
+static QString getLeadingIndent(const QString& text)
+{
+    qsizetype i = 0;
+    while (i < text.size() && isSpace(text[i])) {
+        i++;
+    }
+    return text.left(i);
 }
 
 void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
@@ -352,7 +363,7 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 
     // Remove up to one tab or indentWidth spaces from begining of block
     cursor.beginEditBlock();
-    if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::TABS) {
+    if (d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::TABS) {
         if (document()->characterAt(cursor.position()) == QLatin1Char('\t')) {
             cursor.deleteChar();
         }
@@ -374,7 +385,10 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 
 void Editor::keyPressEvent(QKeyEvent* event)
 {
-    if (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Return) {
+    if (event->key() == Qt::Key_Return) {
+        QTextCursor origCursor = textCursor();
+        QString initialIndent = getLeadingIndent(origCursor.block().text());
+
         // For displayed line numbers to make sense, each QTextBlock must correspond
         // to one plain text line - meaning no newlines allowed in the middle of a
         // block. Since we only ever import and export plain text to the editor, the
@@ -387,7 +401,15 @@ void Editor::keyPressEvent(QKeyEvent* event)
             QLatin1String("\n"),
             event->isAutoRepeat());
 
+        origCursor.beginEditBlock();
         QTextEdit::keyPressEvent(&overrideEvent);
+
+        if (d_effectiveSettings.indentMode() != EditorSettings::IndentMode::NONE) {
+            QTextCursor cursor = textCursor();
+            cursor.movePosition(QTextCursor::StartOfBlock);
+            cursor.insertText(initialIndent);
+        }
+        origCursor.endEditBlock();
         return;
     }
 
