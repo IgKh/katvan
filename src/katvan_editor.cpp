@@ -386,30 +386,18 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 void Editor::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Return) {
-        QTextCursor origCursor = textCursor();
-        QString initialIndent = getLeadingIndent(origCursor.block().text());
+        QTextCursor cursor = textCursor();
+        QString initialIndent = getLeadingIndent(cursor.block().text());
 
-        // For displayed line numbers to make sense, each QTextBlock must correspond
-        // to one plain text line - meaning no newlines allowed in the middle of a
-        // block. Since we only ever import and export plain text to the editor, the
-        // only way to create such a newline is by typing it with Shift+Return; disable
-        // this by sending the base implementation an event without the Shift modifier.
-        QKeyEvent overrideEvent(
-            QEvent::KeyPress,
-            event->key(),
-            Qt::NoModifier,
-            QLatin1String("\n"),
-            event->isAutoRepeat());
-
-        origCursor.beginEditBlock();
-        QTextEdit::keyPressEvent(&overrideEvent);
+        cursor.beginEditBlock();
+        cursor.insertBlock();
 
         if (d_effectiveSettings.indentMode() != EditorSettings::IndentMode::NONE) {
-            QTextCursor cursor = textCursor();
             cursor.movePosition(QTextCursor::StartOfBlock);
             cursor.insertText(initialIndent);
         }
-        origCursor.endEditBlock();
+
+        cursor.endEditBlock();
         return;
     }
 
@@ -422,8 +410,22 @@ void Editor::keyPressEvent(QKeyEvent* event)
                 QTextCursor cursor(selectionBlockStart);
                 cursor.beginEditBlock();
 
-                for (auto it = selectionBlockStart; it < selectionBlockEnd || it == selectionBlockEnd; it = it.next()) {
-                    if (!isAllWhitespace(it.text())) {
+                for (auto it = selectionBlockStart; it.isValid(); it = it.next()) {
+                    if (!(it < selectionBlockEnd) && it != selectionBlockEnd) {
+                        break;
+                    }
+
+                    QString blockText = it.text();
+                    while (!cursor.atBlockEnd()) {
+                        if (isSpace(blockText[cursor.positionInBlock()])) {
+                            cursor.movePosition(QTextCursor::NextCharacter);
+                        }
+                        else {
+                            break;
+                        }
+                    }
+
+                    if (!cursor.atBlockEnd()) {
                         cursor.insertText(getIndentString(cursor));
                     }
                     cursor.movePosition(QTextCursor::NextBlock);
@@ -452,7 +454,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
         else if (event->keyCombination() == QKeyCombination(Qt::Key_Backspace)) {
             // Unindent current block only, if cursor is in leading whitespace
             QTextCursor cursor = textCursor();
-            if (!cursor.hasSelection() && cursor.positionInBlock() > 0) {
+            if (!cursor.hasSelection() && !cursor.atBlockStart()) {
                 QString blockText = cursor.block().text();
                 QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
 
@@ -675,7 +677,7 @@ void Editor::updateExtraSelections()
         extraSelections.append(makeBracketHighlight(currentPos));
         extraSelections.append(makeBracketHighlight(bracketPos.value()));
     }
-    else if (cursor.positionInBlock() > 0) {
+    else if (!cursor.atBlockStart()) {
         bracketPos = d_codeModel->findMatchingBracket(currentPos - 1);
         if (bracketPos) {
             extraSelections.append(makeBracketHighlight(currentPos - 1));
