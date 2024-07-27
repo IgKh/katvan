@@ -99,10 +99,10 @@ TEST(CodeModelTests, FindMatchingBracket_Simple) {
 
     // Function params in math mode
     res = model.findMatchingBracket(89);
-    EXPECT_THAT(res, ::testing::Eq(std::nullopt));
+    EXPECT_THAT(res, ::testing::Eq(91));
 
     res = model.findMatchingBracket(91);
-    EXPECT_THAT(res, ::testing::Eq(std::nullopt));
+    EXPECT_THAT(res, ::testing::Eq(89));
 
     // Round brackets inside a string literal
     res = model.findMatchingBracket(116);
@@ -144,4 +144,34 @@ TEST(CodeModelTests, FindMatchingBracket_CodeExpression) {
 
     res = model.findMatchingBracket(17);
     EXPECT_THAT(res, ::testing::Eq(1));
+}
+
+TEST(CodeModelTests, FindMatchingBracket_MathBrackets) {
+    auto doc = buildDocument({
+        QStringLiteral("$ (ln(2) + (7) $")
+    });
+
+    CodeModel model(doc.get());
+    std::optional<int> res;
+
+    res = model.findMatchingBracket(0);
+    EXPECT_THAT(res, ::testing::Eq(15));
+
+    res = model.findMatchingBracket(15);
+    EXPECT_THAT(res, ::testing::Eq(0));
+
+    res = model.findMatchingBracket(2);
+    EXPECT_THAT(res, ::testing::Eq(15));
+
+    res = model.findMatchingBracket(5);
+    EXPECT_THAT(res, ::testing::Eq(7));
+
+    res = model.findMatchingBracket(7);
+    EXPECT_THAT(res, ::testing::Eq(5));
+
+    res = model.findMatchingBracket(11);
+    EXPECT_THAT(res, ::testing::Eq(13));
+
+    res = model.findMatchingBracket(13);
+    EXPECT_THAT(res, ::testing::Eq(11));
 }

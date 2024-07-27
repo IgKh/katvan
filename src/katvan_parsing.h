@@ -110,6 +110,7 @@ struct ParserState
         MATH,
         MATH_DELIMITER,
         MATH_EXPRESSION_CHAIN,
+        MATH_ARGUMENTS,
         CODE_VARIABLE_NAME,
         CODE_FUNCTION_NAME,
         CODE_NUMERIC_LITERAL,

@@ -108,6 +108,7 @@ static bool isDelimitedState(State state)
 {
     return state == State::CONTENT_BLOCK
         || state == State::MATH
+        || state == State::MATH_ARGUMENTS
         || state == State::CODE_BLOCK
         || state == State::CODE_ARGUMENTS;
 }

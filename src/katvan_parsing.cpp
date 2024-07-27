@@ -391,6 +391,12 @@ static bool isContentHolderState(const ParserState& state)
         || state.kind == ParserState::Kind::CONTENT_STRONG_EMPHASIS;
 }
 
+static bool isMathHolderState(const ParserState& state)
+{
+    return state.kind == ParserState::Kind::MATH
+        || state.kind == ParserState::Kind::MATH_ARGUMENTS;
+}
+
 static bool isCodeHolderState(const ParserState& state)
 {
     return state.kind == ParserState::Kind::CODE_BLOCK
@@ -568,20 +574,34 @@ void Parser::parse()
                 continue;
             }
         }
-        else if (state.kind == ParserState::Kind::MATH) {
+        else if (isMathHolderState(state)) {
             if (handleCommentStart()) {
                 continue;
             }
             else if (handleCodeStart()) {
                 continue;
             }
+            else if (state.kind == ParserState::Kind::MATH_ARGUMENTS && match(m::Symbol(QLatin1Char(')')))) {
+                popState();
+                continue;
+            }
             else if (match(m::Symbol(QLatin1Char('$')))) {
                 instantState(ParserState::Kind::MATH_DELIMITER);
+
+                while (d_stateStack.last().kind == ParserState::Kind::MATH_ARGUMENTS) {
+                    popState();
+                }
+                Q_ASSERT(d_stateStack.last().kind == ParserState::Kind::MATH);
+
                 popState();
                 continue;
             }
             else if (match(m::Symbol(QLatin1Char('"')))) {
                 pushState(ParserState::Kind::STRING_LITERAL);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('(')))) {
+                pushState(ParserState::Kind::MATH_ARGUMENTS);
                 continue;
             }
             else if (match(m::All(m::FullWord(), m::Peek(m::Symbol(QLatin1Char('(')))))) {
