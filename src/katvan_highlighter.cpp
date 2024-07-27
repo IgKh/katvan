@@ -173,10 +173,13 @@ parsing::SegmentList Highlighter::doSpellChecking(
     parsing::ContentWordsListener& listener,
     QList<QTextCharFormat>& charFormats)
 {
-    auto segments = listener.segments();
-
     parsing::SegmentList result;
 
+    if (d_spellChecker == nullptr) {
+        return result;
+    }
+
+    auto segments = listener.segments();
     for (const auto& segment : segments) {
         auto misspelledWords = d_spellChecker->checkSpelling(text.sliced(segment.startPos, segment.length));
         for (const auto& [wordPos, len] : misspelledWords) {

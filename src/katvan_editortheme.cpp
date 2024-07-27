@@ -25,13 +25,19 @@ namespace katvan {
 
 bool EditorTheme::isAppInDarkMode()
 {
-    if (qGuiApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
+    QGuiApplication* app = qobject_cast<QGuiApplication *>(QCoreApplication::instance());
+    if (!app) {
+        // Happens in test suite
+        return false;
+    }
+
+    if (app->styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
         return true;
     }
 
     // If the Qt platform integration doesn't support signaling a color scheme,
     // sniff it from the global palette.
-    QPalette palette = qGuiApp->palette();
+    QPalette palette = app->palette();
     return palette.color(QPalette::WindowText).lightness() > palette.color(QPalette::Window).lightness();
 }
 
