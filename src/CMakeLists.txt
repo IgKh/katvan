@@ -40,7 +40,9 @@ set(MAIN_SOURCES
 
 qt_add_resources(MAIN_SOURCES ${PROJECT_SOURCE_DIR}/assets/assets.qrc)
 if(WIN32)
-    list(APPEND MAIN_SOURCES ${PROJECT_SOURCE_DIR}/assets/katvan.rc)
+    file(COPY ${PROJECT_SOURCE_DIR}/assets/katvan.ico DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    configure_file(${PROJECT_SOURCE_DIR}/assets/katvan.rc.in katvan.rc @ONLY)
+    list(APPEND MAIN_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/katvan.rc)
 endif()
 
 add_library(libkatvan STATIC ${SOURCES})

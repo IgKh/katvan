@@ -16,7 +16,7 @@ jobs:
 
       - name: Determine version
         id: get_version
-        run: echo "katvan_version=$(grep KATVAN_VERSION CMakeLists.txt | cut -d"\"" -f2)" >> $GITHUB_OUTPUT
+        run: echo "katvan_version=$(grep project CMakeLists.txt | head -1 | cut -d"\"" -f2)" >> $GITHUB_OUTPUT
 
   create-source-tarball:
     runs-on: ubuntu-latest

@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
-project(katvan LANGUAGES CXX)
+project(katvan LANGUAGES CXX VERSION "0.5.0")
 
 enable_testing()
-
-set(KATVAN_VERSION "0.5.0")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

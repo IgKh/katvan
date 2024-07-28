@@ -21,7 +21,7 @@
 
 namespace katvan {
 
-constexpr QLatin1StringView KATVAN_VERSION("@KATVAN_VERSION@");
+constexpr QLatin1StringView KATVAN_VERSION("@PROJECT_VERSION@");
 constexpr QLatin1StringView KATVAN_GIT_SHA("@KATVAN_GIT_SHA@");
 
 }
