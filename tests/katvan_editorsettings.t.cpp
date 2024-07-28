@@ -108,11 +108,16 @@ TEST(EditorSettingsTests, IndentMode) {
     EXPECT_THAT(s2.indentMode(), ::testing::Eq(EditorSettings::IndentMode::NORMAL));
     EXPECT_THAT(s2.toModeLine(), ::testing::Eq(QStringLiteral("indent-mode normal;")));
 
-    EditorSettings s3 { "indent-mode cstyle" };
-    EXPECT_THAT(s3.hasIndentMode(), ::testing::IsFalse());
+    EditorSettings s3 { "indent-mode typst" };
+    EXPECT_THAT(s3.hasIndentMode(), ::testing::IsTrue());
+    EXPECT_THAT(s3.indentMode(), ::testing::Eq(EditorSettings::IndentMode::SMART));
+    EXPECT_THAT(s3.toModeLine(), ::testing::Eq(QStringLiteral("indent-mode typst;")));
 
-    EditorSettings s4 { "indent-mode" };
-    EXPECT_THAT(s4.hasLineNumberStyle(), ::testing::IsFalse());
+    EditorSettings s4 { "indent-mode cstyle" };
+    EXPECT_THAT(s4.hasIndentMode(), ::testing::IsFalse());
+
+    EditorSettings s5 { "indent-mode" };
+    EXPECT_THAT(s5.hasLineNumberStyle(), ::testing::IsFalse());
 }
 
 TEST(EditorSettingsTests, IndentStyle) {

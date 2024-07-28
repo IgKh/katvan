@@ -60,6 +60,12 @@ TEST(CodeModelTests, FindMatchingBracket_Simple) {
     CodeModel model(doc.get());
     std::optional<int> res;
 
+    res = model.findMatchingBracket(5000);
+    EXPECT_THAT(res, ::testing::Eq(std::nullopt));
+
+    res = model.findMatchingBracket(-1);
+    EXPECT_THAT(res, ::testing::Eq(std::nullopt));
+
     res = model.findMatchingBracket(0);
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
@@ -174,4 +180,83 @@ TEST(CodeModelTests, FindMatchingBracket_MathBrackets) {
 
     res = model.findMatchingBracket(13);
     EXPECT_THAT(res, ::testing::Eq(11));
+}
+
+TEST(CodeModelTests, ShouldIncreaseIndent)
+{
+    auto doc = buildDocument({
+        "#if 5 > 2 { pagebreak()",      // 0  - 23
+        "table(",                       // 24 - 30
+        "..nums.map(n => $F_#n$) + 1",  // 31 - 58
+        "[Final]) }"                    // 59 - 69
+    });
+
+    CodeModel model(doc.get());
+
+    EXPECT_FALSE(model.shouldIncreaseIndent(5000));
+    EXPECT_FALSE(model.shouldIncreaseIndent(-1));
+
+    EXPECT_FALSE(model.shouldIncreaseIndent(0));
+    EXPECT_FALSE(model.shouldIncreaseIndent(9));
+    EXPECT_FALSE(model.shouldIncreaseIndent(10));
+    EXPECT_TRUE (model.shouldIncreaseIndent(11));
+    EXPECT_TRUE (model.shouldIncreaseIndent(22));
+    EXPECT_TRUE (model.shouldIncreaseIndent(23));
+
+    EXPECT_FALSE(model.shouldIncreaseIndent(24));
+    EXPECT_FALSE(model.shouldIncreaseIndent(29));
+    EXPECT_TRUE (model.shouldIncreaseIndent(30));
+
+    EXPECT_FALSE(model.shouldIncreaseIndent(31));
+    EXPECT_FALSE(model.shouldIncreaseIndent(41));
+    EXPECT_TRUE (model.shouldIncreaseIndent(42));
+    EXPECT_TRUE (model.shouldIncreaseIndent(47));
+    EXPECT_TRUE (model.shouldIncreaseIndent(52));
+    EXPECT_TRUE (model.shouldIncreaseIndent(53));
+    EXPECT_FALSE(model.shouldIncreaseIndent(54));
+    EXPECT_FALSE(model.shouldIncreaseIndent(58));
+
+    EXPECT_FALSE(model.shouldIncreaseIndent(59));
+    EXPECT_TRUE (model.shouldIncreaseIndent(60));
+    EXPECT_TRUE (model.shouldIncreaseIndent(65));
+    EXPECT_FALSE(model.shouldIncreaseIndent(66));
+}
+
+TEST(CodeModelTests, FindMatchingIndentBlock)
+{
+    auto doc = buildDocument({
+        "#if 5 > 2 { pagebreak() }",        // 0  - 25
+        "#while 1 < 2 [",                   // 26 - 40
+        "foo ]"                             // 41 - 46
+    });
+
+    CodeModel model(doc.get());
+    QTextBlock res;
+
+    res = model.findMatchingIndentBlock(10000);
+    EXPECT_FALSE(res.isValid());
+
+    res = model.findMatchingIndentBlock(-1);
+    EXPECT_FALSE(res.isValid());
+
+    res = model.findMatchingIndentBlock(0);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
+
+    res = model.findMatchingIndentBlock(12);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
+
+    res = model.findMatchingIndentBlock(24);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
+
+    res = model.findMatchingIndentBlock(26);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
+
+    res = model.findMatchingIndentBlock(39);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
+
+    res = model.findMatchingIndentBlock(41);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(2));
+
+    res = model.findMatchingIndentBlock(45);
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }

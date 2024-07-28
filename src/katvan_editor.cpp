@@ -350,6 +350,19 @@ static QString getLeadingIndent(const QString& text)
     return text.left(i);
 }
 
+static void cursorSkipWhite(QTextCursor& cursor)
+{
+    QString blockText = cursor.block().text();
+    while (!cursor.atBlockEnd()) {
+        if (isSpace(blockText[cursor.positionInBlock()])) {
+            cursor.movePosition(QTextCursor::NextCharacter);
+        }
+        else {
+            break;
+        }
+    }
+}
+
 void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 {
     QTextCursor cursor = blockStartCursor;
@@ -389,15 +402,41 @@ void Editor::keyPressEvent(QKeyEvent* event)
         QTextCursor cursor = textCursor();
         QString initialIndent = getLeadingIndent(cursor.block().text());
 
+        int origPos = cursor.position();
+        QTextBlock origBlock = cursor.block();
+
         cursor.beginEditBlock();
         cursor.insertBlock();
 
         if (d_effectiveSettings.indentMode() != EditorSettings::IndentMode::NONE) {
             cursor.movePosition(QTextCursor::StartOfBlock);
             cursor.insertText(initialIndent);
+
+            if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SMART) {
+                d_highlighter->rehighlightBlock(origBlock);
+
+                if (d_codeModel->shouldIncreaseIndent(origPos)) {
+                    cursorSkipWhite(cursor);
+                    QTextBlock indentBlock = d_codeModel->findMatchingIndentBlock(cursor.position());
+
+                    cursor.insertText(getIndentString(cursor));
+
+                    // If return is pressed directly between two delimiters, move
+                    // the closing bracket to another new line, with no indent
+                    // relative to original. Cursor should be at end of first new
+                    // block.
+                    if (indentBlock == origBlock) {
+                        int savedPos = cursor.position();
+                        cursor.insertBlock();
+                        cursor.insertText(initialIndent);
+                        cursor.setPosition(savedPos);
+                    }
+                }
+            }
         }
 
         cursor.endEditBlock();
+        setTextCursor(cursor);
         return;
     }
 
@@ -411,20 +450,11 @@ void Editor::keyPressEvent(QKeyEvent* event)
                 cursor.beginEditBlock();
 
                 for (auto it = selectionBlockStart; it.isValid(); it = it.next()) {
-                    if (!(it < selectionBlockEnd) && it != selectionBlockEnd) {
+                    if (selectionBlockEnd < it) {
                         break;
                     }
 
-                    QString blockText = it.text();
-                    while (!cursor.atBlockEnd()) {
-                        if (isSpace(blockText[cursor.positionInBlock()])) {
-                            cursor.movePosition(QTextCursor::NextCharacter);
-                        }
-                        else {
-                            break;
-                        }
-                    }
-
+                    cursorSkipWhite(cursor);
                     if (!cursor.atBlockEnd()) {
                         cursor.insertText(getIndentString(cursor));
                     }
@@ -444,7 +474,10 @@ void Editor::keyPressEvent(QKeyEvent* event)
             QTextCursor cursor(selectionBlockStart);
             cursor.beginEditBlock();
 
-            for (auto it = selectionBlockStart; it < selectionBlockEnd || it == selectionBlockEnd; it = it.next()) {
+            for (auto it = selectionBlockStart; it.isValid(); it = it.next()) {
+                if (selectionBlockEnd < it) {
+                    break;
+                }
                 unindentBlock(cursor);
                 cursor.movePosition(QTextCursor::NextBlock);
             }

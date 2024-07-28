@@ -44,7 +44,7 @@ bool operator<(const StateSpan& lhs, const StateSpan& rhs)
 
 constexpr inline size_t qHash(const StateSpan& span, size_t seed = 0) noexcept
 {
-    return qHashMulti(seed, span.spanId, span.state, span.startPos.value_or(0));
+    return qHashMulti(seed, span.spanId, span.state, span.startPos, span.endPos.value_or(0));
 }
 
 int StateSpanList::fingerprint() const
@@ -56,7 +56,12 @@ void StateSpansListener::initializeState(const parsing::ParserState& state, size
 {
     Q_UNUSED(endMarker);
 
-    d_spans.elements().append(StateSpan { g_spanIdCounter++, state.kind, d_basePos + state.startPos, std::nullopt });
+    d_spans.elements().append(StateSpan {
+        g_spanIdCounter++,
+        state.kind,
+        d_basePos + static_cast<int>(state.startPos),
+        std::nullopt
+    });
 }
 
 void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t endMarker)
@@ -124,7 +129,6 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
     if (!blockData) {
         return std::nullopt;
     }
-
     Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
 
     for (const StateSpan& span : blockData->stateSpans()) {
@@ -136,8 +140,7 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
         }
 
         if (span.endPos == pos) {
-            Q_ASSERT(span.startPos.has_value());
-            return span.startPos.value();
+            return span.startPos;
         }
         else if (span.startPos == pos) {
             if (span.endPos) {
@@ -147,6 +150,69 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
         }
     }
     return std::nullopt;
+}
+
+static bool isIndentingState(State state)
+{
+    return state == State::CONTENT_BLOCK
+        || state == State::CODE_BLOCK
+        || state == State::CODE_ARGUMENTS;
+}
+
+bool CodeModel::shouldIncreaseIndent(int pos) const
+{
+    QTextBlock block = d_document->findBlock(pos);
+    if (!block.isValid()) {
+        return false;
+    }
+
+    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    if (!blockData) {
+        return false;
+    }
+
+    // Find last relevant open state (at pos) beginning before pos
+    const auto& spans = blockData->stateSpans().elements();
+    for (auto rit = spans.rbegin(); rit != spans.rend(); ++rit) {
+        if (!isIndentingState(rit->state)
+            || rit->startPos >= pos
+            || (rit->endPos.has_value() && rit->endPos.value() < pos)) {
+            continue;
+        }
+
+        QTextBlock startBlock = d_document->findBlock(rit->startPos);
+        return startBlock == block;
+    }
+    return false;
+}
+
+QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
+{
+    QTextBlock block = d_document->findBlock(pos);
+    if (!block.isValid()) {
+        return block;
+    }
+
+    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    if (!blockData) {
+        return block;
+    }
+    Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
+
+    // Find a relevant state span that ends on pos exactly.
+    for (const StateSpan& span : blockData->stateSpans()) {
+        if (span.startPos > pos) {
+            break;
+        }
+        if (!isIndentingState(span.state)) {
+            continue;
+        }
+
+        if (span.endPos == pos) {
+            return d_document->findBlock(span.startPos);
+        }
+    }
+    return block;
 }
 
 }

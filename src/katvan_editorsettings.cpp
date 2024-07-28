@@ -84,6 +84,9 @@ void EditorSettings::parseModeLine(QString mode)
             else if (rest == QStringLiteral("normal")) {
                 d_indentMode = EditorSettings::IndentMode::NORMAL;
             }
+            else if (rest == QStringLiteral("typst")) {
+                d_indentMode = EditorSettings::IndentMode::SMART;
+            }
         }
         else if (variable == QStringLiteral("replace-tabs")) {
             auto ob = parseModeLineBool(rest);
@@ -141,6 +144,9 @@ QString EditorSettings::toModeLine() const
                 break;
             case EditorSettings::IndentMode::NORMAL:
                 result += QLatin1String("indent-mode normal; ");
+                break;
+            case EditorSettings::IndentMode::SMART:
+                result += QLatin1String("indent-mode typst; ");
                 break;
         }
     }
@@ -321,6 +327,7 @@ void EditorSettingsDialog::setupUI()
     d_indentMode = new QComboBox();
     d_indentMode->addItem(tr("None"), QVariant::fromValue(EditorSettings::IndentMode::NONE));
     d_indentMode->addItem(tr("Normal"), QVariant::fromValue(EditorSettings::IndentMode::NORMAL));
+    d_indentMode->addItem(tr("Smart"), QVariant::fromValue(EditorSettings::IndentMode::SMART));
 
     d_indentWithSpaces = new QRadioButton(tr("&Spaces"));
     d_indentWithTabs = new QRadioButton(tr("&Tabs"));

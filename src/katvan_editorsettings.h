@@ -44,7 +44,8 @@ public:
 
     enum class IndentMode {
         NONE,
-        NORMAL
+        NORMAL,
+        SMART
     };
     Q_ENUM(IndentMode);
 

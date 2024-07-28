@@ -25,6 +25,7 @@
 #include <optional>
 
 QT_BEGIN_NAMESPACE
+class QTextBlock;
 class QTextDocument;
 QT_END_NAMESPACE
 
@@ -34,8 +35,8 @@ struct StateSpan
 {
     unsigned long spanId;
     parsing::ParserState::Kind state;
-    std::optional<size_t> startPos;
-    std::optional<size_t> endPos;
+    int startPos;
+    std::optional<int> endPos;
 
     friend bool operator<(const StateSpan& lhs, const StateSpan& rhs);
 };
@@ -59,7 +60,7 @@ private:
 class StateSpansListener : public parsing::ParsingListener
 {
 public:
-    StateSpansListener(const StateSpanList& initialSpans, size_t basePos)
+    StateSpansListener(const StateSpanList& initialSpans, int basePos)
         : d_spans(initialSpans), d_basePos(basePos) {}
 
     const StateSpanList& spans() const & { return d_spans; }
@@ -70,7 +71,7 @@ public:
 
 private:
     StateSpanList d_spans;
-    size_t d_basePos;
+    int d_basePos;
 };
 
 class CodeModel : public QObject
@@ -82,7 +83,18 @@ public:
         : QObject(parent)
         , d_document(document) {}
 
+    // If there is a delimiting bracket at the given global position,
+    // find the position of the matching (opening/closing) bracket.
     std::optional<int> findMatchingBracket(int pos) const;
+
+    // Check if should increase the indent level by one in the next block, if
+    // inserting a newline at global position _pos_.
+    bool shouldIncreaseIndent(int pos) const;
+
+    // For the given global document position, find a previous block where the
+    // indent level of the given position should match that block's indent level.
+    // If none, returns the position's own block.
+    QTextBlock findMatchingIndentBlock(int pos) const;
 
 private:
     QTextDocument* d_document;
