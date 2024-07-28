@@ -211,7 +211,7 @@ TEST(CodeModelTests, ShouldIncreaseIndent)
     EXPECT_FALSE(model.shouldIncreaseIndent(41));
     EXPECT_TRUE (model.shouldIncreaseIndent(42));
     EXPECT_TRUE (model.shouldIncreaseIndent(47));
-    EXPECT_TRUE (model.shouldIncreaseIndent(52));
+    EXPECT_FALSE(model.shouldIncreaseIndent(52));
     EXPECT_TRUE (model.shouldIncreaseIndent(53));
     EXPECT_FALSE(model.shouldIncreaseIndent(54));
     EXPECT_FALSE(model.shouldIncreaseIndent(58));

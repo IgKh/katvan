@@ -170,14 +170,17 @@ bool CodeModel::shouldIncreaseIndent(int pos) const
     if (!blockData) {
         return false;
     }
+    Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
 
-    // Find last relevant open state (at pos) beginning before pos
+    // Find last open state (at pos) beginning before pos
     const auto& spans = blockData->stateSpans().elements();
     for (auto rit = spans.rbegin(); rit != spans.rend(); ++rit) {
-        if (!isIndentingState(rit->state)
-            || rit->startPos >= pos
-            || (rit->endPos.has_value() && rit->endPos.value() < pos)) {
+        if (rit->startPos >= pos || (rit->endPos.has_value() && rit->endPos.value() < pos)) {
             continue;
+        }
+
+        if (!isIndentingState(rit->state)) {
+            return false;
         }
 
         QTextBlock startBlock = d_document->findBlock(rit->startPos);
