@@ -73,6 +73,8 @@ private:
 
     std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;
     QString getIndentString(QTextCursor cursor) const;
+    void handleNewLine();
+    void handleClosingBracket(const QString& bracket);
     void unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter = QTextCursor());
 
     void applyEffectiveSettings();

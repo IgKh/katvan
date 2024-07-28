@@ -50,6 +50,10 @@ static constexpr int MAX_LINE_FOR_MODELINES = 10;
 
 Q_GLOBAL_STATIC(QRegularExpression, MODELINE_REGEX, QStringLiteral("((kate|katvan):.+)$"))
 
+Q_GLOBAL_STATIC(QSet<QString>, INDENT_CLOSE_BRACKETS, {
+    QStringLiteral(")"), QStringLiteral("]"), QStringLiteral("}")
+})
+
 class LineNumberGutter : public QWidget
 {
 public:
@@ -363,6 +367,83 @@ static void cursorSkipWhite(QTextCursor& cursor)
     }
 }
 
+static bool cursorInLeadingWhitespace(const QTextCursor& cursor)
+{
+    QString blockText = cursor.block().text();
+    QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
+    return isAllWhitespace(textBeforeCursor);
+}
+
+void Editor::handleNewLine()
+{
+    QTextCursor cursor = textCursor();
+    QString initialIndent = getLeadingIndent(cursor.block().text());
+
+    int origPos = cursor.position();
+    QTextBlock origBlock = cursor.block();
+
+    cursor.beginEditBlock();
+    cursor.insertBlock();
+
+    if (d_effectiveSettings.indentMode() != EditorSettings::IndentMode::NONE) {
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.insertText(initialIndent);
+
+        if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SMART) {
+            d_highlighter->rehighlightBlock(origBlock);
+
+            if (d_codeModel->shouldIncreaseIndent(origPos)) {
+                cursorSkipWhite(cursor);
+                QTextBlock indentBlock = d_codeModel->findMatchingIndentBlock(cursor.position());
+
+                cursor.insertText(getIndentString(cursor));
+
+                // If return is pressed directly between two delimiters, move
+                // the closing bracket to another new line, with no indent
+                // relative to original. Cursor should be at end of first new
+                // block.
+                if (indentBlock == origBlock) {
+                    int savedPos = cursor.position();
+                    cursor.insertBlock();
+                    cursor.insertText(initialIndent);
+                    cursor.setPosition(savedPos);
+                }
+            }
+        }
+    }
+
+    cursor.endEditBlock();
+    setTextCursor(cursor);
+}
+
+void Editor::handleClosingBracket(const QString& bracket)
+{
+    QTextCursor cursor = textCursor();
+    int origPos = cursor.position();
+    bool wasAtLeadingWhitespace = cursorInLeadingWhitespace(cursor);
+
+    cursor.beginEditBlock();
+    cursor.insertText(bracket);
+
+    // Auto dedent
+    if (wasAtLeadingWhitespace && d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SMART)
+    {
+        d_highlighter->rehighlightBlock(cursor.block());
+
+        QTextBlock indentBlock = d_codeModel->findMatchingIndentBlock(origPos);
+        if (indentBlock != cursor.block())
+        {
+            // Select everything from start of block, and replace with correct indent
+            cursor.movePosition(QTextCursor::PreviousCharacter);
+            cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
+            cursor.insertText(getLeadingIndent(indentBlock.text()));
+            cursor.movePosition(QTextCursor::NextCharacter);
+        }
+    }
+    cursor.endEditBlock();
+    setTextCursor(cursor);
+}
+
 void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 {
     QTextCursor cursor = blockStartCursor;
@@ -399,44 +480,7 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 void Editor::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Return) {
-        QTextCursor cursor = textCursor();
-        QString initialIndent = getLeadingIndent(cursor.block().text());
-
-        int origPos = cursor.position();
-        QTextBlock origBlock = cursor.block();
-
-        cursor.beginEditBlock();
-        cursor.insertBlock();
-
-        if (d_effectiveSettings.indentMode() != EditorSettings::IndentMode::NONE) {
-            cursor.movePosition(QTextCursor::StartOfBlock);
-            cursor.insertText(initialIndent);
-
-            if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SMART) {
-                d_highlighter->rehighlightBlock(origBlock);
-
-                if (d_codeModel->shouldIncreaseIndent(origPos)) {
-                    cursorSkipWhite(cursor);
-                    QTextBlock indentBlock = d_codeModel->findMatchingIndentBlock(cursor.position());
-
-                    cursor.insertText(getIndentString(cursor));
-
-                    // If return is pressed directly between two delimiters, move
-                    // the closing bracket to another new line, with no indent
-                    // relative to original. Cursor should be at end of first new
-                    // block.
-                    if (indentBlock == origBlock) {
-                        int savedPos = cursor.position();
-                        cursor.insertBlock();
-                        cursor.insertText(initialIndent);
-                        cursor.setPosition(savedPos);
-                    }
-                }
-            }
-        }
-
-        cursor.endEditBlock();
-        setTextCursor(cursor);
+        handleNewLine();
         return;
     }
 
@@ -488,15 +532,17 @@ void Editor::keyPressEvent(QKeyEvent* event)
             // Unindent current block only, if cursor is in leading whitespace
             QTextCursor cursor = textCursor();
             if (!cursor.hasSelection() && !cursor.atBlockStart()) {
-                QString blockText = cursor.block().text();
-                QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
-
-                if (isAllWhitespace(textBeforeCursor)) {
+                if (cursorInLeadingWhitespace(cursor)) {
                     unindentBlock(QTextCursor(cursor.block()), cursor);
                     return;
                 }
             }
         }
+    }
+
+    if (INDENT_CLOSE_BRACKETS->contains(event->text())) {
+        handleClosingBracket(event->text());
+        return;
     }
 
     QTextEdit::keyPressEvent(event);
