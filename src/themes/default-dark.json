@@ -1,0 +1,37 @@
+{
+    "highlighting-formats": {
+        "comment": "#b0b3c2",
+        "string-literal": "#80f4b6",
+        "number-literal": "#ff7d89",
+        "escape": "#d9f8f4",
+        "math-operator": "#d9f8f4",
+        "math-delimiter": "#80f4b6",
+        "heading": {
+            "font-weight": 600,
+            "font-underline": true
+        },
+        "emphasis": {
+            "font-italic": true
+        },
+        "strong-emphasis": {
+            "font-weight": 700
+        },
+        "url": {
+            "font-underline": true
+        },
+        "raw": "#818181",
+        "label": "#d9f8f4",
+        "reference": "#d9f8f4",
+        "list-entry": "#caa8ff",
+        "list-term": {
+            "font-weight": 800
+        },
+        "variable": "#caa8ff",
+        "function": "#7cd5ff",
+        "keyword": "#ffa49d"
+    },
+    "editor-colors": {
+        "spelling-error": "#ff0000",
+        "matching-bracket": "#8e44ad"
+    }
+}

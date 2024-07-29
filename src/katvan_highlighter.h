@@ -25,6 +25,7 @@
 
 namespace katvan {
 
+class EditorTheme;
 class SpellChecker;
 
 class HighlighterStateBlockData : public QTextBlockUserData
@@ -39,8 +40,6 @@ public:
     const StateSpanList& stateSpans() const { return d_stateSpans; }
     const parsing::SegmentList& misspelledWords() const { return d_misspelledWords; }
 
-    int fingerprint() const;
-
 private:
     StateSpanList d_stateSpans;
     parsing::SegmentList d_misspelledWords;
@@ -53,25 +52,22 @@ class Highlighter : public QSyntaxHighlighter
 public:
     Highlighter(QTextDocument* document, SpellChecker* spellChecker);
 
-    void setupFormats();
-
 protected:
     void highlightBlock(const QString& text) override;
 
 private:
     void doSyntaxHighlighting(
-        parsing::HighlightingListener& listener,
+        const parsing::HighlightingListener& listener,
+        const EditorTheme& theme,
         QList<QTextCharFormat>& charFormats);
 
     parsing::SegmentList doSpellChecking(
         const QString& text,
-        parsing::ContentWordsListener& listener,
+        const parsing::ContentWordsListener& listener,
+        const EditorTheme& theme,
         QList<QTextCharFormat>& charFormats);
 
     SpellChecker* d_spellChecker;
-
-    QHash<parsing::HiglightingMarker::Kind, QTextCharFormat> d_formats;
-    QTextCharFormat d_misspelledWordFormat;
 };
 
 }

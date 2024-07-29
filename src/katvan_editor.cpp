@@ -245,7 +245,6 @@ bool Editor::event(QEvent* event)
     if (event->type() == QEvent::PaletteChange)
     {
         d_bracketHighlightColor = QColor();
-        d_highlighter->setupFormats();
         forceRehighlighting();
         updateExtraSelections();
     }
@@ -717,9 +716,7 @@ void Editor::updateLineNumberGutters()
 QTextEdit::ExtraSelection Editor::makeBracketHighlight(int pos)
 {
     if (!d_bracketHighlightColor.isValid()) {
-        d_bracketHighlightColor = EditorTheme::isAppInDarkMode() ?
-                QColor(0x8e, 0x44, 0xad) :
-                QColor(0xff, 0xff, 0x00);
+        d_bracketHighlightColor = EditorTheme::defaultTheme().editorColor(EditorTheme::EditorColor::MATCHING_BRACKET);
     }
 
     QTextEdit::ExtraSelection selection;

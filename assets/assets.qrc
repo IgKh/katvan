@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/assets/">
         <file>katvan.svg</file>
+        <file>spinner.gif</file>
     </qresource>
 
     <qresource prefix="/">
@@ -30,7 +31,5 @@
         <file>icons/window-close.svg</file>
         <file>icons/zoom-in.svg</file>
         <file>icons/zoom-out.svg</file>
-
-        <file>spinner.gif</file>
     </qresource>
 </RCC>

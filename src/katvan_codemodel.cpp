@@ -74,7 +74,7 @@ void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t
 
         // If the state kind differs, it means it is an "instant" state
         if (it->state == state.kind) {
-            it->endPos = d_basePos + endMarker;
+            it->endPos = d_basePos + static_cast<int>(endMarker);
         }
         break;
     }

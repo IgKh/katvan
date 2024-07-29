@@ -17,12 +17,35 @@
  */
 #pragma once
 
+#include "katvan_parsing.h"
+
+#include <QColor>
+#include <QHash>
+#include <QString>
+#include <QTextCharFormat>
+
 namespace katvan {
 
 class EditorTheme
 {
 public:
+    enum class EditorColor {
+        SPELLING_ERROR,
+        MATCHING_BRACKET
+    };
+
     static bool isAppInDarkMode();
+
+    static EditorTheme& defaultTheme();
+
+    QTextCharFormat highlightingFormat(parsing::HiglightingMarker::Kind marker) const { return d_highlightingFormats[marker]; }
+    QColor editorColor(EditorColor color) const { return d_editorColors[color]; }
+
+private:
+    explicit EditorTheme(const QString& themeJsonFile);
+
+    QHash<parsing::HiglightingMarker::Kind, QTextCharFormat> d_highlightingFormats;
+    QHash<EditorColor, QColor> d_editorColors;
 };
 
 }

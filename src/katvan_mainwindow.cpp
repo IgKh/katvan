@@ -277,7 +277,7 @@ void MainWindow::setupStatusBar()
     statusBar()->addPermanentWidget(d_compilationStatusButton);
 
     d_compilingMovie = new QMovie(this);
-    d_compilingMovie->setFileName(":/spinner.gif");
+    d_compilingMovie->setFileName(":/assets/spinner.gif");
     connect(d_compilingMovie, &QMovie::frameChanged, this, [this]() {
         d_compilationStatusButton->setIcon(d_compilingMovie->currentPixmap());
     });
