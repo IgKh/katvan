@@ -18,6 +18,7 @@
 #include "katvan_testutils.h"
 
 #include "katvan_codemodel.h"
+#include "katvan_editortheme.h"
 #include "katvan_highlighter.h"
 
 #include <gmock/gmock.h>
@@ -37,7 +38,7 @@ static std::unique_ptr<QTextDocument> buildDocument(const QStringList& lines)
         cursor.insertBlock();
     }
 
-    Highlighter highlighter(doc.get(), nullptr);
+    Highlighter highlighter(doc.get(), nullptr, EditorTheme::defaultTheme());
     highlighter.rehighlight();
 
     return doc;

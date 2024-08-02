@@ -17,7 +17,6 @@
  */
 #include "katvan_codemodel.h"
 #include "katvan_editor.h"
-#include "katvan_editortheme.h"
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
 
@@ -76,7 +75,8 @@ private:
 
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
-    , d_pendingSUggestionsPosition(-1)
+    , d_theme(EditorTheme::defaultTheme())
+    , d_pendingSuggestionsPosition(-1)
 {
     setAcceptRichText(false);
 
@@ -84,7 +84,7 @@ Editor::Editor(QWidget* parent)
     connect(d_spellChecker, &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
     connect(d_spellChecker, &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
 
-    d_highlighter = new Highlighter(document(), d_spellChecker);
+    d_highlighter = new Highlighter(document(), d_spellChecker, d_theme);
     d_codeModel = new CodeModel(document(), this);
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
@@ -244,7 +244,7 @@ bool Editor::event(QEvent* event)
 {
     if (event->type() == QEvent::PaletteChange)
     {
-        d_bracketHighlightColor = QColor();
+        d_theme = EditorTheme::defaultTheme();
         forceRehighlighting();
         updateExtraSelections();
     }
@@ -301,7 +301,7 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         // shown. If suggestions are already in cache, the suggestionsReady
         // signal will be instantly invoked as a direct connection.
         d_pendingSuggestionsWord = misspelledWord;
-        d_pendingSUggestionsPosition = cursor.position();
+        d_pendingSuggestionsPosition = cursor.position();
         d_spellChecker->requestSuggestions(misspelledWord, cursor.position());
     }
     d_contextMenu->popup(event->globalPos());
@@ -619,11 +619,11 @@ void Editor::spellingSuggestionsReady(const QString& word, int position, const Q
         return;
     }
 
-    if (d_pendingSuggestionsWord != word || d_pendingSUggestionsPosition != position) {
+    if (d_pendingSuggestionsWord != word || d_pendingSuggestionsPosition != position) {
         return;
     }
     d_pendingSuggestionsWord.clear();
-    d_pendingSUggestionsPosition = -1;
+    d_pendingSuggestionsPosition = -1;
 
     QAction* suggestionsPlaceholder = d_contextMenu->actions().first();
     if (suggestions.isEmpty()) {
@@ -715,12 +715,8 @@ void Editor::updateLineNumberGutters()
 
 QTextEdit::ExtraSelection Editor::makeBracketHighlight(int pos)
 {
-    if (!d_bracketHighlightColor.isValid()) {
-        d_bracketHighlightColor = EditorTheme::defaultTheme().editorColor(EditorTheme::EditorColor::MATCHING_BRACKET);
-    }
-
     QTextEdit::ExtraSelection selection;
-    selection.format.setBackground(d_bracketHighlightColor);
+    selection.format.setBackground(d_theme.editorColor(EditorTheme::EditorColor::MATCHING_BRACKET));
     selection.cursor = QTextCursor(document());
     selection.cursor.setPosition(pos);
     selection.cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);

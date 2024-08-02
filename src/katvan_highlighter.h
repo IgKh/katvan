@@ -50,7 +50,7 @@ class Highlighter : public QSyntaxHighlighter
     Q_OBJECT
 
 public:
-    Highlighter(QTextDocument* document, SpellChecker* spellChecker);
+    Highlighter(QTextDocument* document, SpellChecker* spellChecker, const EditorTheme& theme);
 
 protected:
     void highlightBlock(const QString& text) override;
@@ -58,15 +58,14 @@ protected:
 private:
     void doSyntaxHighlighting(
         const parsing::HighlightingListener& listener,
-        const EditorTheme& theme,
         QList<QTextCharFormat>& charFormats);
 
     parsing::SegmentList doSpellChecking(
         const QString& text,
         const parsing::ContentWordsListener& listener,
-        const EditorTheme& theme,
         QList<QTextCharFormat>& charFormats);
 
+    const EditorTheme& d_theme;
     SpellChecker* d_spellChecker;
 };
 

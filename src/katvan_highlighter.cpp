@@ -23,8 +23,9 @@
 
 namespace katvan {
 
-Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker)
+Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker, const EditorTheme& theme)
     : QSyntaxHighlighter(document)
+    , d_theme(theme)
     , d_spellChecker(spellChecker)
 {
 }
@@ -60,12 +61,10 @@ void Highlighter::highlightBlock(const QString& text)
     QList<QTextCharFormat> charFormats;
     charFormats.resize(text.size());
 
-    const EditorTheme& theme = EditorTheme::defaultTheme();
-
-    doSyntaxHighlighting(highlightingListener, theme, charFormats);
+    doSyntaxHighlighting(highlightingListener, charFormats);
 
     parsing::SegmentList misspelledWords;
-    misspelledWords = doSpellChecking(text, contentListenger, theme, charFormats);
+    misspelledWords = doSpellChecking(text, contentListenger, charFormats);
 
     for (qsizetype i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
@@ -82,14 +81,13 @@ void Highlighter::highlightBlock(const QString& text)
 
 void Highlighter::doSyntaxHighlighting(
     const parsing::HighlightingListener& listener,
-    const EditorTheme& theme,
     QList<QTextCharFormat>& charFormats)
 {
     auto markers = listener.markers();
 
     for (const auto& m : markers) {
         for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
-            charFormats[i].merge(theme.highlightingFormat(m.kind));
+            charFormats[i].merge(d_theme.highlightingFormat(m.kind));
         }
     }
 }
@@ -97,12 +95,11 @@ void Highlighter::doSyntaxHighlighting(
 parsing::SegmentList Highlighter::doSpellChecking(
     const QString& text,
     const parsing::ContentWordsListener& listener,
-    const EditorTheme& theme,
     QList<QTextCharFormat>& charFormats)
 {
     QTextCharFormat misspelledWordFormat;
     misspelledWordFormat.setFontUnderline(true);
-    misspelledWordFormat.setUnderlineColor(theme.editorColor(EditorTheme::EditorColor::SPELLING_ERROR));
+    misspelledWordFormat.setUnderlineColor(d_theme.editorColor(EditorTheme::EditorColor::SPELLING_ERROR));
     misspelledWordFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
 
     parsing::SegmentList result;

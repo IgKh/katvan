@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include "katvan_editortheme.h"
 #include "katvan_editorsettings.h"
 
 #include <QPointer>
@@ -108,13 +109,12 @@ private:
     EditorSettings d_appSettings;
     EditorSettings d_fileMode;
     EditorSettings d_effectiveSettings;
-
-    QColor d_bracketHighlightColor;
+    EditorTheme d_theme;
 
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
-    int d_pendingSUggestionsPosition;
+    int d_pendingSuggestionsPosition;
 };
 
 }
