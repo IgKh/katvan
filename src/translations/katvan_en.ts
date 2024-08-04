@@ -4,7 +4,7 @@
 <context>
     <name>katvan::Editor</name>
     <message numerus="yes">
-        <location filename="../katvan_editor.cpp" line="520"/>
+        <location filename="../katvan_editor.cpp" line="661"/>
         <source>%n Suggestion(s)</source>
         <translation>
             <numerusform>One Suggestion</numerusform>

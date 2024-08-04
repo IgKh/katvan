@@ -4,72 +4,72 @@
 <context>
     <name>katvan::Editor</name>
     <message>
-        <location filename="../katvan_editor.cpp" line="170"/>
+        <location filename="../katvan_editor.cpp" line="187"/>
         <source>Inline &amp;Math</source>
         <translation>קטע &amp;מתמטיקה מוטבע</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="157"/>
+        <location filename="../katvan_editor.cpp" line="174"/>
         <source>Left-to-Right Mark</source>
         <translation>סימן יישור שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="156"/>
+        <location filename="../katvan_editor.cpp" line="173"/>
         <source>Right-to-Left Mark</source>
         <translation>סימן יישור ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="161"/>
+        <location filename="../katvan_editor.cpp" line="178"/>
         <source>Right-to-Left Isolate</source>
         <translation>סביבה מבודדת ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="162"/>
+        <location filename="../katvan_editor.cpp" line="179"/>
         <source>Left-to-Right Isolate</source>
         <translation>סביבה מבודדת שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="163"/>
+        <location filename="../katvan_editor.cpp" line="180"/>
         <source>Right-to-Left Embedding</source>
         <translation>שיבוץ ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="164"/>
+        <location filename="../katvan_editor.cpp" line="181"/>
         <source>Left-to-Right Embedding</source>
         <translation>שיבוץ שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="165"/>
+        <location filename="../katvan_editor.cpp" line="182"/>
         <source>Right-to-Left Override</source>
         <translation>דריסה ימין לשמאל</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="166"/>
+        <location filename="../katvan_editor.cpp" line="183"/>
         <source>Left-to-Right Override</source>
         <translation>דריסה שמאל לימין</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="275"/>
+        <location filename="../katvan_editor.cpp" line="292"/>
         <source>Calculating Suggestions...</source>
         <translation>בודק הצעות איות...</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="278"/>
+        <location filename="../katvan_editor.cpp" line="295"/>
         <source>Add to Personal Dictionary</source>
         <translation>הוסף למילון האישי</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="290"/>
+        <location filename="../katvan_editor.cpp" line="307"/>
         <source>Toggle Text Direction</source>
         <translation>הפוך את כיוון הטקסט</translation>
     </message>
     <message>
-        <location filename="../katvan_editor.cpp" line="524"/>
+        <location filename="../katvan_editor.cpp" line="658"/>
         <source>No Suggestions Available</source>
         <translation>אין הצעות איות</translation>
     </message>
     <message numerus="yes">
-        <location filename="../katvan_editor.cpp" line="527"/>
+        <location filename="../katvan_editor.cpp" line="661"/>
         <source>%n Suggestion(s)</source>
         <translation>
             <numerusform>הצעת איות אחת</numerusform>
@@ -80,73 +80,93 @@
 <context>
     <name>katvan::EditorSettingsDialog</name>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="276"/>
+        <location filename="../katvan_editorsettings.cpp" line="312"/>
         <source>Editor Settings</source>
         <translation>הגדרות עורך</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="287"/>
+        <location filename="../katvan_editorsettings.cpp" line="323"/>
         <source>On Both Sides</source>
         <translation>בשני הצדדים</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="288"/>
+        <location filename="../katvan_editorsettings.cpp" line="324"/>
         <source>On Primary Side</source>
         <translation>בצד העיקרי  בלבד</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="289"/>
+        <location filename="../katvan_editorsettings.cpp" line="325"/>
         <source>Don&apos;t Show</source>
         <translation>אל תציג</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="318"/>
+        <location filename="../katvan_editorsettings.cpp" line="328"/>
+        <source>None</source>
+        <translation>ללא</translation>
+    </message>
+    <message>
+        <location filename="../katvan_editorsettings.cpp" line="329"/>
+        <source>Normal</source>
+        <translation>רגילה</translation>
+    </message>
+    <message>
+        <location filename="../katvan_editorsettings.cpp" line="330"/>
+        <source>Smart</source>
+        <translation>חכמה</translation>
+    </message>
+    <message>
+        <location filename="../katvan_editorsettings.cpp" line="359"/>
         <source>Show &amp;Line Numbers:</source>
         <translation>הצגת &amp;מספרי שורות:</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="305"/>
+        <location filename="../katvan_editorsettings.cpp" line="346"/>
         <source>&amp;Indent Width:</source>
         <translation>רוחב &amp;הזחה:</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="308"/>
+        <location filename="../katvan_editorsettings.cpp" line="349"/>
         <source>Tab &amp;Display Width:</source>
         <translation>רוחב &amp;טאב:</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="315"/>
+        <location filename="../katvan_editorsettings.cpp" line="356"/>
         <source>Appearance</source>
         <translation>תצוגה</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="325"/>
+        <location filename="../katvan_editorsettings.cpp" line="365"/>
+        <source>Auotmatic Indentation:</source>
+        <translation>הזחה אוטומטית:</translation>
+    </message>
+    <message>
+        <location filename="../katvan_editorsettings.cpp" line="371"/>
         <source>Indent with:</source>
         <translation>הזח באמצעות:</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="291"/>
+        <location filename="../katvan_editorsettings.cpp" line="332"/>
         <source>&amp;Spaces</source>
         <translation>&amp;רווחים</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="292"/>
+        <location filename="../katvan_editorsettings.cpp" line="333"/>
         <source>&amp;Tabs</source>
         <translation>&amp;טאבים</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="281"/>
+        <location filename="../katvan_editorsettings.cpp" line="317"/>
         <source>Editor &amp;Font:</source>
         <translation>&amp;גופן עורך:</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="300"/>
-        <location filename="../katvan_editorsettings.cpp" line="303"/>
+        <location filename="../katvan_editorsettings.cpp" line="341"/>
+        <location filename="../katvan_editorsettings.cpp" line="344"/>
         <source> characters</source>
         <translation> תווים</translation>
     </message>
     <message>
-        <location filename="../katvan_editorsettings.cpp" line="320"/>
+        <location filename="../katvan_editorsettings.cpp" line="361"/>
         <source>Indentation</source>
         <translation>הזחה</translation>
     </message>
