@@ -549,6 +549,23 @@ void Editor::keyPressEvent(QKeyEvent* event)
         }
     }
 
+    if (event->matches(QKeySequence::MoveToStartOfLine) || event->matches(QKeySequence::SelectStartOfLine)) {
+        QTextCursor cursor = textCursor();
+        if (cursor.atBlockStart() || !cursorInLeadingWhitespace(cursor)) {
+            QTextCursor c { cursor.block() };
+            cursorSkipWhite(c);
+
+            if (event->matches(QKeySequence::SelectStartOfLine)) {
+                cursor.setPosition(c.position(), QTextCursor::KeepAnchor);
+                setTextCursor(cursor);
+            }
+            else {
+                setTextCursor(c);
+            }
+            return;
+        }
+    }
+
     if (CLOSING_BRACKETS->contains(event->text())) {
         QTextCursor cursor = textCursor();
         if (!cursor.atBlockEnd() && cursor.block().text().at(cursor.positionInBlock()) == event->text().at(0)) {

@@ -261,10 +261,10 @@ TEST(CodeModelTests, FindMatchingIndentBlock)
     res = model.findMatchingIndentBlock(globalPos(*doc, 1, 13));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 
-    res = model.findMatchingIndentBlock(globalPos(*doc, 3, 0));
+    res = model.findMatchingIndentBlock(globalPos(*doc, 2, 0));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(2));
 
-    res = model.findMatchingIndentBlock(globalPos(*doc, 3, 4));
+    res = model.findMatchingIndentBlock(globalPos(*doc, 2, 4));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 
