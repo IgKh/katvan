@@ -38,6 +38,8 @@ public:
 
     static EditorTheme& defaultTheme();
 
+    EditorTheme() {};
+
     QTextCharFormat highlightingFormat(parsing::HiglightingMarker::Kind marker) const { return d_highlightingFormats[marker]; }
     QColor editorColor(EditorColor color) const { return d_editorColors[color]; }
 

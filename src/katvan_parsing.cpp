@@ -771,13 +771,13 @@ void Parser::parse()
     while (!d_stateStack.isEmpty()) {
         if (isBlockScopedState(d_stateStack.last()) && removeBlockScoped) {
             for (auto& listener : d_listeners) {
-                listener.get().finalizeState(d_stateStack.last(), d_endMarker);
+                listener.get().finalizeState(d_stateStack.last(), d_endMarker, true);
             }
         }
         else {
             removeBlockScoped = false;
             for (auto& listener : d_finalizingListeners) {
-                listener.get().finalizeState(d_stateStack.last(), d_endMarker);
+                listener.get().finalizeState(d_stateStack.last(), d_endMarker, true);
             }
         }
         d_stateStack.removeLast();
@@ -909,7 +909,7 @@ void Parser::instantState(ParserState::Kind stateKind)
 {
     ParserState state { stateKind, d_startMarker };
     for (auto& listener : d_listeners) {
-        listener.get().finalizeState(state, d_endMarker);
+        listener.get().finalizeState(state, d_endMarker, false);
     }
 }
 
@@ -925,11 +925,11 @@ void Parser::pushState(ParserState::Kind stateKind)
     }
 }
 
-void Parser::popState()
+void Parser::popState(bool implicit)
 {
     ParserState state = d_stateStack.takeLast();
     for (auto& listener : d_listeners) {
-        listener.get().finalizeState(state, d_endMarker);
+        listener.get().finalizeState(state, d_endMarker, implicit);
     }
 }
 
@@ -945,8 +945,10 @@ void HighlightingListener::initializeState(const ParserState& state, size_t endM
     }
 }
 
-void HighlightingListener::finalizeState(const ParserState& state, size_t endMarker)
+void HighlightingListener::finalizeState(const ParserState& state, size_t endMarker, bool implicit)
 {
+    Q_UNUSED(implicit);
+
     size_t start = state.startPos;
     size_t length = endMarker - state.startPos + 1;
 

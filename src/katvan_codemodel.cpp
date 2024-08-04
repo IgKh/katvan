@@ -60,11 +60,12 @@ void StateSpansListener::initializeState(const parsing::ParserState& state, size
         g_spanIdCounter++,
         state.kind,
         d_basePos + static_cast<int>(state.startPos),
-        std::nullopt
+        std::nullopt,
+        false
     });
 }
 
-void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t endMarker)
+void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t endMarker, bool implicit)
 {
     // Find last unended state
     for (auto it = d_spans.elements().rbegin(); it != d_spans.elements().rend(); ++it) {
@@ -75,6 +76,7 @@ void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t
         // If the state kind differs, it means it is an "instant" state
         if (it->state == state.kind) {
             it->endPos = d_basePos + static_cast<int>(endMarker);
+            it->implicitlyClosed = implicit;
         }
         break;
     }
@@ -156,7 +158,27 @@ static bool isIndentingState(State state)
 {
     return state == State::CONTENT_BLOCK
         || state == State::CODE_BLOCK
-        || state == State::CODE_ARGUMENTS;
+        || state == State::CODE_ARGUMENTS
+        || state == State::MATH_ARGUMENTS;
+}
+
+std::optional<StateSpan> CodeModel::spanAtPosition(QTextBlock block, int globalPos) const
+{
+    Q_ASSERT(d_document->findBlock(globalPos) == block);
+
+    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    if (!blockData) {
+        return std::nullopt;
+    }
+    Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
+
+    const auto& spans = blockData->stateSpans().elements();
+    for (auto rit = spans.rbegin(); rit != spans.rend(); ++rit) {
+        if (rit->startPos < globalPos && (!rit->endPos.has_value() || rit->endPos.value() >= globalPos)) {
+            return *rit;
+        }
+    }
+    return std::nullopt;
 }
 
 bool CodeModel::shouldIncreaseIndent(int pos) const
@@ -166,27 +188,17 @@ bool CodeModel::shouldIncreaseIndent(int pos) const
         return false;
     }
 
-    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
-    if (!blockData) {
+    auto span = spanAtPosition(block, pos);
+    if (!span) {
         return false;
     }
-    Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
 
-    // Find last open state (at pos) beginning before pos
-    const auto& spans = blockData->stateSpans().elements();
-    for (auto rit = spans.rbegin(); rit != spans.rend(); ++rit) {
-        if (rit->startPos >= pos || (rit->endPos.has_value() && rit->endPos.value() < pos)) {
-            continue;
-        }
-
-        if (!isIndentingState(rit->state)) {
-            return false;
-        }
-
-        QTextBlock startBlock = d_document->findBlock(rit->startPos);
-        return startBlock == block;
+    if (!isIndentingState(span->state)) {
+        return false;
     }
-    return false;
+
+    QTextBlock startBlock = d_document->findBlock(span->startPos);
+    return startBlock == block;
 }
 
 QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
@@ -216,6 +228,80 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
         }
     }
     return block;
+}
+
+std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const
+{
+    State state = State::CONTENT;
+    auto span = spanAtPosition(cursor.block(), cursor.position());
+    if (span) {
+        state = span->state;
+    }
+    else if (cursor.atBlockEnd() && !cursor.atBlockStart()) {
+        // If we are at end of the line, the parser may have already implicitly
+        // closed block scoped states, so we might have fallen back to a generic
+        // content state.
+        auto span = spanAtPosition(cursor.block(), cursor.position() - 1);
+        if (span && span->implicitlyClosed) {
+            state = span->state;
+        }
+    }
+
+    QChar prevChar;
+    if (!cursor.atBlockStart()) {
+        prevChar = cursor.block().text().at(cursor.positionInBlock() - 1);
+    }
+
+    bool isInCode = state == State::CODE_BLOCK
+                    || state == State::CODE_ARGUMENTS
+                    || state == State::CODE_LINE;
+
+    bool isInMath = state == State::MATH
+                    || state == State::MATH_ARGUMENTS;
+
+    bool isInContent = state == State::CONTENT
+                        || state == State::CONTENT_BLOCK
+                        || state == State::CONTENT_HEADING
+                        || state == State::CONTENT_EMPHASIS
+                        || state == State::CONTENT_STRONG_EMPHASIS;
+
+    bool isInRaw = state == State::CONTENT_RAW
+                    || state == State::CONTENT_RAW_BLOCK;
+
+    if (openBracket == QLatin1Char('(')) {
+        if (isInCode || isInMath || (isInContent && prevChar == QLatin1Char('#'))) {
+            return QLatin1Char(')');
+        }
+    }
+    else if (openBracket == QLatin1Char('{')) {
+        if (isInCode || ((isInContent || isInMath) && prevChar == QLatin1Char('#'))) {
+            return QLatin1Char('}');
+        }
+    }
+    else if (openBracket == QLatin1Char('[')) {
+        if (isInCode || ((isInContent || isInMath) && prevChar == QLatin1Char('#'))) {
+            return QLatin1Char(']');
+        }
+    }
+    else if (openBracket == QLatin1Char('$')) {
+        if (isInCode || (isInContent && prevChar != QLatin1Char('\\'))) {
+            return QLatin1Char('$');
+        }
+    }
+    else if (openBracket == QLatin1Char('"')) {
+        if (isInCode || isInMath
+            || ((isInContent || isInRaw) &&
+                prevChar != QLatin1Char('\\') &&
+                (prevChar.script() != QChar::Script_Hebrew || cursor.hasSelection()))) {
+            return QLatin1Char('"');
+        }
+    }
+    else if (openBracket == QLatin1Char('<')) {
+        if (isInContent) {
+            return QLatin1Char('>');
+        }
+    }
+    return std::nullopt;
 }
 
 }

@@ -23,7 +23,13 @@
 
 QT_BEGIN_NAMESPACE
 
-void PrintTo(const QString& str, std::ostream* os) {
+void PrintTo(QChar ch, std::ostream* os)
+{
+    *os << '\'' << ch.toLatin1() << '\'';
+}
+
+void PrintTo(const QString& str, std::ostream* os)
+{
     *os << '\"' << str.toStdString() << '\"';
 }
 

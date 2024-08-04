@@ -21,11 +21,12 @@
 
 #include <QList>
 #include <QObject>
+#include <QTextBlock>
+#include <QTextCursor>
 
 #include <optional>
 
 QT_BEGIN_NAMESPACE
-class QTextBlock;
 class QTextDocument;
 QT_END_NAMESPACE
 
@@ -37,6 +38,7 @@ struct StateSpan
     parsing::ParserState::Kind state;
     int startPos;
     std::optional<int> endPos;
+    bool implicitlyClosed;
 
     friend bool operator<(const StateSpan& lhs, const StateSpan& rhs);
 };
@@ -67,7 +69,7 @@ public:
     StateSpanList spans() const && { return d_spans; }
 
     void initializeState(const parsing::ParserState& state, size_t endMarker) override;
-    void finalizeState(const parsing::ParserState& state, size_t endMarker) override;
+    void finalizeState(const parsing::ParserState& state, size_t endMarker, bool implicit) override;
 
 private:
     StateSpanList d_spans;
@@ -96,7 +98,14 @@ public:
     // If none, returns the position's own block.
     QTextBlock findMatchingIndentBlock(int pos) const;
 
+    // Find closing bracket character that should be automatically appended
+    // if _openBracket_ is inserted at the given cursor's position.
+    std::optional<QChar> getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const;
+
 private:
+    // Find the inner most state span still in effect at the given global position
+    std::optional<StateSpan> spanAtPosition(QTextBlock block, int globalPos) const;
+
     QTextDocument* d_document;
 };
 

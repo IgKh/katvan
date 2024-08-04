@@ -136,9 +136,21 @@ class ParsingListener
 public:
     virtual ~ParsingListener() = default;
 
-    virtual void initializeState(const ParserState& state, size_t endMarker) { Q_UNUSED(state); Q_UNUSED(endMarker); }
-    virtual void finalizeState(const ParserState& state, size_t endMarker) { Q_UNUSED(state); Q_UNUSED(endMarker); }
-    virtual void handleLooseToken(const Token& t, const ParserState& state) { Q_UNUSED(t); Q_UNUSED(state); }
+    virtual void initializeState(const ParserState& state, size_t endMarker) {
+        Q_UNUSED(state);
+        Q_UNUSED(endMarker);
+    }
+
+    virtual void finalizeState(const ParserState& state, size_t endMarker, bool implicit) {
+        Q_UNUSED(state);
+        Q_UNUSED(endMarker);
+        Q_UNUSED(implicit);
+    }
+
+    virtual void handleLooseToken(const Token& t, const ParserState& state) {
+        Q_UNUSED(t);
+        Q_UNUSED(state);
+    }
 };
 
 class Parser
@@ -172,7 +184,7 @@ private:
 
     void instantState(ParserState::Kind stateKind);
     void pushState(ParserState::Kind stateKind);
-    void popState();
+    void popState(bool implicit = false);
 
     QStringView d_text;
     TokenStream d_tokenStream;
@@ -224,7 +236,7 @@ public:
     QList<HiglightingMarker> markers() const { return d_markers; }
 
     void initializeState(const ParserState& state, size_t endMarker) override;
-    void finalizeState(const ParserState& state, size_t endMarker) override;
+    void finalizeState(const ParserState& state, size_t endMarker, bool implicit) override;
     void handleLooseToken(const Token& t, const ParserState& state) override;
 
 private:

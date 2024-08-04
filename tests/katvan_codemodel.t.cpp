@@ -38,7 +38,7 @@ static std::unique_ptr<QTextDocument> buildDocument(const QStringList& lines)
         cursor.insertBlock();
     }
 
-    Highlighter highlighter(doc.get(), nullptr, EditorTheme::defaultTheme());
+    Highlighter highlighter(doc.get(), nullptr, EditorTheme{});
     highlighter.rehighlight();
 
     return doc;
@@ -188,8 +188,8 @@ TEST(CodeModelTests, ShouldIncreaseIndent)
     auto doc = buildDocument({
         "#if 5 > 2 { pagebreak()",      // 0  - 23
         "table(",                       // 24 - 30
-        "..nums.map(n => $F_#n$) + 1",  // 31 - 58
-        "[Final]) }"                    // 59 - 69
+        "..nums.map(n => $ln(n)$) + 1", // 31 - 59
+        "[Final]) }"                    // 69 - 70
     });
 
     CodeModel model(doc.get());
@@ -212,15 +212,16 @@ TEST(CodeModelTests, ShouldIncreaseIndent)
     EXPECT_FALSE(model.shouldIncreaseIndent(41));
     EXPECT_TRUE (model.shouldIncreaseIndent(42));
     EXPECT_TRUE (model.shouldIncreaseIndent(47));
-    EXPECT_FALSE(model.shouldIncreaseIndent(52));
-    EXPECT_TRUE (model.shouldIncreaseIndent(53));
-    EXPECT_FALSE(model.shouldIncreaseIndent(54));
-    EXPECT_FALSE(model.shouldIncreaseIndent(58));
-
+    EXPECT_TRUE (model.shouldIncreaseIndent(51));
+    EXPECT_FALSE(model.shouldIncreaseIndent(53));
+    EXPECT_TRUE (model.shouldIncreaseIndent(54));
+    EXPECT_FALSE(model.shouldIncreaseIndent(55));
     EXPECT_FALSE(model.shouldIncreaseIndent(59));
-    EXPECT_TRUE (model.shouldIncreaseIndent(60));
-    EXPECT_TRUE (model.shouldIncreaseIndent(65));
-    EXPECT_FALSE(model.shouldIncreaseIndent(66));
+
+    EXPECT_FALSE(model.shouldIncreaseIndent(60));
+    EXPECT_TRUE (model.shouldIncreaseIndent(61));
+    EXPECT_TRUE (model.shouldIncreaseIndent(66));
+    EXPECT_FALSE(model.shouldIncreaseIndent(67));
 }
 
 TEST(CodeModelTests, FindMatchingIndentBlock)
@@ -260,4 +261,209 @@ TEST(CodeModelTests, FindMatchingIndentBlock)
 
     res = model.findMatchingIndentBlock(45);
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
+}
+
+static auto s_getMatchingCloseBracketTestDoc = buildDocument({
+    /* 0 */ "== English \\content",
+    /* 1 */ "תוכן בעברית",
+    /* 2 */ "#while 1 > 2",
+    /* 3 */ "$\"AB\" = ln(1 + x)$",
+    /* 4 */ "// a comment",
+    /* 5 */ "`raw content`"
+});
+
+class CodeModel_GetMatchingCloseBracketTests : public ::testing::Test {
+protected:
+    CodeModel_GetMatchingCloseBracketTests() : model(s_getMatchingCloseBracketTestDoc.get())
+    {
+    }
+
+    QTextCursor cursorAt(int block, int positionInBlock, int selectionLength = 0)
+    {
+        QTextCursor cursor { s_getMatchingCloseBracketTestDoc->findBlockByNumber(block) };
+
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, positionInBlock);
+        if (selectionLength > 0) {
+            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, selectionLength);
+        }
+        return cursor;
+    }
+
+    CodeModel model;
+};
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, Parentheses)
+{
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 10), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 19), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6),  QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 12), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 0),  QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 1),  QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 7),  QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 12), QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 0),  QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 1),  QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 2),  QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 12), QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 17), QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 18), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 10), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 12), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+}
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, CurlyBrackets)
+{
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 10), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 19), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6),  QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 12), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 0),  QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 1),  QLatin1Char('{')), ::testing::Eq(QLatin1Char('}')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 7),  QLatin1Char('{')), ::testing::Eq(QLatin1Char('}')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 12), QLatin1Char('{')), ::testing::Eq(QLatin1Char('}')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 0),  QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 1),  QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 2),  QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 12), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 17), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 18), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 10), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 12), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+}
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, SquareBrackets)
+{
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 10), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 19), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6),  QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 12), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 0),  QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 1),  QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 7),  QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 12), QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 0),  QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 1),  QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 2),  QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 12), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 17), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 18), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 10), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 12), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+}
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, MathDelimiters)
+{
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 10), QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 12), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 19), QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6),  QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 12), QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 0),  QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 1),  QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 7),  QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 12), QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 0),  QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 1),  QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 2),  QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 12), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 17), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 18), QLatin1Char('$')), ::testing::Eq(QLatin1Char('$')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 10), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 12), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('$')), ::testing::Eq(std::nullopt));
+}
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, DoubleQuotes)
+{
+    // Content or raw, but not after hebrew
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 10), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 12), QLatin1Char('"')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 19), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6),    QLatin1Char('"')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6, 1), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 12),   QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 0),  QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 1),  QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 7),  QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 12), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 0),  QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 1),  QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 2),  QLatin1Char('"')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 12), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 17), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 18), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 10), QLatin1Char('"')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 12), QLatin1Char('"')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('"')), ::testing::Eq(QLatin1Char('"')));
+
+}
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, AngleBrackets)
+{
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 10), QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(0, 19), QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 6),  QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(1, 12), QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 0),  QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 1),  QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 7),  QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(2, 12), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 0),  QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 1),  QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 2),  QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 12), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 17), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(3, 18), QLatin1Char('<')), ::testing::Eq(QLatin1Char('>')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 10), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(4, 12), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('<')), ::testing::Eq(std::nullopt));
+}
+
+TEST_F(CodeModel_GetMatchingCloseBracketTests, UnsupportedChar)
+{
+    QTextCursor cursor { s_getMatchingCloseBracketTestDoc.get() };
+    while (!cursor.atEnd()) {
+        EXPECT_THAT(model.getMatchingCloseBracket(cursor, QLatin1Char('\'')), ::testing::Eq(std::nullopt));
+        cursor.movePosition(QTextCursor::NextCharacter);
+    }
 }

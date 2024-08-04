@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QChar>
 #include <QtGlobal>
 
 #include <iosfwd>
@@ -25,6 +26,7 @@ QT_BEGIN_NAMESPACE
 
 class QString;
 
+void PrintTo(QChar ch, std::ostream* os);
 void PrintTo(const QString& str, std::ostream* os);
 
 QT_END_NAMESPACE

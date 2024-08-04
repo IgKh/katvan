@@ -49,8 +49,18 @@ static constexpr int MAX_LINE_FOR_MODELINES = 10;
 
 Q_GLOBAL_STATIC(QRegularExpression, MODELINE_REGEX, QStringLiteral("((kate|katvan):.+)$"))
 
-Q_GLOBAL_STATIC(QSet<QString>, INDENT_CLOSE_BRACKETS, {
-    QStringLiteral(")"), QStringLiteral("]"), QStringLiteral("}")
+Q_GLOBAL_STATIC(QSet<QString>, OPENING_BRACKETS, {
+    QStringLiteral("("), QStringLiteral("{"),  QStringLiteral("["),
+    QStringLiteral("$"), QStringLiteral("\""), QStringLiteral("<")
+});
+
+Q_GLOBAL_STATIC(QSet<QString>, CLOSING_BRACKETS, {
+    QStringLiteral(")"), QStringLiteral("}"),  QStringLiteral("]"),
+    QStringLiteral("$"), QStringLiteral("\""), QStringLiteral(">")
+});
+
+Q_GLOBAL_STATIC(QSet<QString>, DEDENTING_CLOSING_BRACKETS, {
+    QStringLiteral(")"), QStringLiteral("}"), QStringLiteral("]")
 })
 
 class LineNumberGutter : public QWidget
@@ -539,9 +549,27 @@ void Editor::keyPressEvent(QKeyEvent* event)
         }
     }
 
-    if (INDENT_CLOSE_BRACKETS->contains(event->text())) {
-        handleClosingBracket(event->text());
-        return;
+    if (CLOSING_BRACKETS->contains(event->text())) {
+        QTextCursor cursor = textCursor();
+        if (!cursor.atBlockEnd() && cursor.block().text().at(cursor.positionInBlock()) == event->text().at(0)) {
+            cursor.movePosition(QTextCursor::NextCharacter);
+            setTextCursor(cursor);
+            return;
+        }
+        else if (DEDENTING_CLOSING_BRACKETS->contains(event->text())) {
+            handleClosingBracket(event->text());
+            return;
+        }
+    }
+    if (OPENING_BRACKETS->contains(event->text())) {
+        QTextCursor cursor = textCursor();
+        if (cursor.hasSelection() || cursor.atBlockEnd() || isSpace(cursor.block().text().at(cursor.positionInBlock()))) {
+            auto closingBracket = d_codeModel->getMatchingCloseBracket(textCursor(), event->text().at(0));
+            if (closingBracket) {
+                insertSurroundingMarks(event->text(), QString(closingBracket.value()));
+                return;
+            }
+        }
     }
 
     QTextEdit::keyPressEvent(event);
@@ -663,8 +691,12 @@ void Editor::insertMark(QChar mark)
 void Editor::insertSurroundingMarks(QString before, QString after)
 {
     QTextCursor cursor = textCursor();
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+
     cursor.insertText(before + cursor.selectedText() + after);
-    cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, after.length());
+    cursor.setPosition(selectionStart + before.length(), QTextCursor::MoveAnchor);
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, selectionEnd - selectionStart);
     setTextCursor(cursor);
 }
 
