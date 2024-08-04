@@ -44,18 +44,23 @@ static std::unique_ptr<QTextDocument> buildDocument(const QStringList& lines)
     return doc;
 }
 
+static int globalPos(const QTextDocument& doc, int blockNum, int posInBlock)
+{
+    return doc.findBlockByNumber(blockNum).position() + posInBlock;
+}
+
 TEST(CodeModelTests, FindMatchingBracket_Simple) {
     auto doc = buildDocument({
-        QStringLiteral("#align(center, canvas({"),              // 0 - 23
-        QStringLiteral("    plot.plot( "),                      // 24 - 39
-        QStringLiteral("        size: (10, 5),"),               // 40 - 62
-        QStringLiteral("        x-label: $C + sqrt(i)$,"),      // 63 - 93
-        QStringLiteral("        y-grid: \"both()\","),          // 94 - 120
-        QStringLiteral("        ["),                            // 121 - 130
-        QStringLiteral("            _foo_ (bar)"),              // 131 - 154
-        QStringLiteral("        ]"),                            // 155 - 164
-        QStringLiteral("    )"),                                // 165 - 170
-        QStringLiteral("}))")                                   // 171 - 174
+        /* 0 */ QStringLiteral("#align(center, canvas({"),
+        /* 1 */ QStringLiteral("    plot.plot( "),
+        /* 2 */ QStringLiteral("        size: (10, 5),"),
+        /* 3 */ QStringLiteral("        x-label: $C + sqrt(i)$,"),
+        /* 4 */ QStringLiteral("        y-grid: \"both()\","),
+        /* 5 */ QStringLiteral("        ["),
+        /* 6 */ QStringLiteral("            _foo_ (bar)"),
+        /* 7 */ QStringLiteral("        ]"),
+        /* 8 */ QStringLiteral("    )"),
+        /* 9 */ QStringLiteral("}))")
     });
 
     CodeModel model(doc.get());
@@ -67,90 +72,90 @@ TEST(CodeModelTests, FindMatchingBracket_Simple) {
     res = model.findMatchingBracket(-1);
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
-    res = model.findMatchingBracket(0);
+    res = model.findMatchingBracket(globalPos(*doc, 0, 0));
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
     // Code round brackets, multiline
-    res = model.findMatchingBracket(6);
-    EXPECT_THAT(res, ::testing::Eq(173));
+    res = model.findMatchingBracket(globalPos(*doc, 0, 6));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 9, 2)));
 
-    res = model.findMatchingBracket(173);
-    EXPECT_THAT(res, ::testing::Eq(6));
+    res = model.findMatchingBracket(globalPos(*doc, 9, 2));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 0, 6)));
 
-    res = model.findMatchingBracket(21);
-    EXPECT_THAT(res, ::testing::Eq(172));
+    res = model.findMatchingBracket(globalPos(*doc, 0, 21));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 9, 1)));
 
-    res = model.findMatchingBracket(172);
-    EXPECT_THAT(res, ::testing::Eq(21));
+    res = model.findMatchingBracket(globalPos(*doc, 9, 1));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 0, 21)));
 
     // Code block, multiline
-    res = model.findMatchingBracket(22);
-    EXPECT_THAT(res, ::testing::Eq(171));
+    res = model.findMatchingBracket(globalPos(*doc, 0, 22));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 9, 0)));
 
-    res = model.findMatchingBracket(171);
-    EXPECT_THAT(res, ::testing::Eq(22));
+    res = model.findMatchingBracket(globalPos(*doc, 9, 0));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 0, 22)));
 
     // Code round brackets, same line
-    res = model.findMatchingBracket(54);
-    EXPECT_THAT(res, ::testing::Eq(60));
+    res = model.findMatchingBracket(globalPos(*doc, 2, 14));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 2, 20)));
 
-    res = model.findMatchingBracket(60);
-    EXPECT_THAT(res, ::testing::Eq(54));
+    res = model.findMatchingBracket(globalPos(*doc, 2, 20));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 2, 14)));
 
     // Math delimiters
-    res = model.findMatchingBracket(80);
-    EXPECT_THAT(res, ::testing::Eq(92));
+    res = model.findMatchingBracket(globalPos(*doc, 3, 17));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 3, 29)));
 
-    res = model.findMatchingBracket(92);
-    EXPECT_THAT(res, ::testing::Eq(80));
+    res = model.findMatchingBracket(globalPos(*doc, 3, 29));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 3, 17)));
 
     // Function params in math mode
-    res = model.findMatchingBracket(89);
-    EXPECT_THAT(res, ::testing::Eq(91));
+    res = model.findMatchingBracket(globalPos(*doc, 3, 26));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 3, 28)));
 
-    res = model.findMatchingBracket(91);
-    EXPECT_THAT(res, ::testing::Eq(89));
+    res = model.findMatchingBracket(globalPos(*doc, 3, 28));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 3, 26)));
 
     // Round brackets inside a string literal
-    res = model.findMatchingBracket(116);
+    res = model.findMatchingBracket(globalPos(*doc, 4, 22));
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
-    res = model.findMatchingBracket(117);
+    res = model.findMatchingBracket(globalPos(*doc, 4, 23));
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
     // Content block delimiters
-    res = model.findMatchingBracket(129);
-    EXPECT_THAT(res, ::testing::Eq(163));
+    res = model.findMatchingBracket(globalPos(*doc, 5, 8));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 7, 8)));
 
-    res = model.findMatchingBracket(163);
-    EXPECT_THAT(res, ::testing::Eq(129));
+    res = model.findMatchingBracket(globalPos(*doc, 7, 8));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 5, 8)));
 
     // Round brackets in content mode
-    res = model.findMatchingBracket(149);
+    res = model.findMatchingBracket(globalPos(*doc, 6, 18));
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
-    res = model.findMatchingBracket(153);
+    res = model.findMatchingBracket(globalPos(*doc, 6, 22   ));
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 }
 
 TEST(CodeModelTests, FindMatchingBracket_CodeExpression) {
     auto doc = buildDocument({
-        QStringLiteral("#{"),                   // 0 - 2
-        QStringLiteral("    let x = 2"),        // 3 - 16
-        QStringLiteral("}")                     // 17 - 18
+        /* 0 */ QStringLiteral("#{"),
+        /* 1 */ QStringLiteral("    let x = 2"),
+        /* 2 */ QStringLiteral("}")
     });
 
     CodeModel model(doc.get());
     std::optional<int> res;
 
-    res = model.findMatchingBracket(0);
+    res = model.findMatchingBracket(globalPos(*doc, 0, 0));
     EXPECT_THAT(res, ::testing::Eq(std::nullopt));
 
-    res = model.findMatchingBracket(1);
-    EXPECT_THAT(res, ::testing::Eq(17));
+    res = model.findMatchingBracket(globalPos(*doc, 0, 1));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 2, 0)));
 
-    res = model.findMatchingBracket(17);
-    EXPECT_THAT(res, ::testing::Eq(1));
+    res = model.findMatchingBracket(globalPos(*doc, 2, 0));
+    EXPECT_THAT(res, ::testing::Eq(globalPos(*doc, 0, 1)));
 }
 
 TEST(CodeModelTests, FindMatchingBracket_MathBrackets) {
@@ -186,10 +191,10 @@ TEST(CodeModelTests, FindMatchingBracket_MathBrackets) {
 TEST(CodeModelTests, ShouldIncreaseIndent)
 {
     auto doc = buildDocument({
-        "#if 5 > 2 { pagebreak()",      // 0  - 23
-        "table(",                       // 24 - 30
-        "..nums.map(n => $ln(n)$) + 1", // 31 - 59
-        "[Final]) }"                    // 69 - 70
+        /* 0 */ "#if 5 > 2 { pagebreak()",
+        /* 1 */ "table(",
+        /* 2 */ "..nums.map(n => $ln(n)$) + 1",
+        /* 3 */ "[Final]) }"
     });
 
     CodeModel model(doc.get());
@@ -197,39 +202,39 @@ TEST(CodeModelTests, ShouldIncreaseIndent)
     EXPECT_FALSE(model.shouldIncreaseIndent(5000));
     EXPECT_FALSE(model.shouldIncreaseIndent(-1));
 
-    EXPECT_FALSE(model.shouldIncreaseIndent(0));
-    EXPECT_FALSE(model.shouldIncreaseIndent(9));
-    EXPECT_FALSE(model.shouldIncreaseIndent(10));
-    EXPECT_TRUE (model.shouldIncreaseIndent(11));
-    EXPECT_TRUE (model.shouldIncreaseIndent(22));
-    EXPECT_TRUE (model.shouldIncreaseIndent(23));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 0, 0)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 0, 9)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 0, 10)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 0, 11)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 0, 22)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 0, 23)));
 
-    EXPECT_FALSE(model.shouldIncreaseIndent(24));
-    EXPECT_FALSE(model.shouldIncreaseIndent(29));
-    EXPECT_TRUE (model.shouldIncreaseIndent(30));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 1, 0)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 1, 5)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 1, 6)));
 
-    EXPECT_FALSE(model.shouldIncreaseIndent(31));
-    EXPECT_FALSE(model.shouldIncreaseIndent(41));
-    EXPECT_TRUE (model.shouldIncreaseIndent(42));
-    EXPECT_TRUE (model.shouldIncreaseIndent(47));
-    EXPECT_TRUE (model.shouldIncreaseIndent(51));
-    EXPECT_FALSE(model.shouldIncreaseIndent(53));
-    EXPECT_TRUE (model.shouldIncreaseIndent(54));
-    EXPECT_FALSE(model.shouldIncreaseIndent(55));
-    EXPECT_FALSE(model.shouldIncreaseIndent(59));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 2, 0)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 2, 10)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 2, 11)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 2, 16)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 2, 20)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 2, 22)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 2, 23)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 2, 24)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 2, 28)));
 
-    EXPECT_FALSE(model.shouldIncreaseIndent(60));
-    EXPECT_TRUE (model.shouldIncreaseIndent(61));
-    EXPECT_TRUE (model.shouldIncreaseIndent(66));
-    EXPECT_FALSE(model.shouldIncreaseIndent(67));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 3, 0)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 3, 1)));
+    EXPECT_TRUE (model.shouldIncreaseIndent(globalPos(*doc, 3, 6)));
+    EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 3, 7)));
 }
 
 TEST(CodeModelTests, FindMatchingIndentBlock)
 {
     auto doc = buildDocument({
-        "#if 5 > 2 { pagebreak() }",        // 0  - 25
-        "#while 1 < 2 [",                   // 26 - 40
-        "foo ]"                             // 41 - 46
+        /* 0 */ "#if 5 > 2 { pagebreak() }",
+        /* 1 */ "#while 1 < 2 [",
+        /* 2 */ "foo ]"
     });
 
     CodeModel model(doc.get());
@@ -241,25 +246,25 @@ TEST(CodeModelTests, FindMatchingIndentBlock)
     res = model.findMatchingIndentBlock(-1);
     EXPECT_FALSE(res.isValid());
 
-    res = model.findMatchingIndentBlock(0);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 0, 0));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
 
-    res = model.findMatchingIndentBlock(12);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 0, 12));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
 
-    res = model.findMatchingIndentBlock(24);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 0, 24));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
 
-    res = model.findMatchingIndentBlock(26);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 1, 0));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 
-    res = model.findMatchingIndentBlock(39);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 1, 13));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 
-    res = model.findMatchingIndentBlock(41);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 3, 0));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(2));
 
-    res = model.findMatchingIndentBlock(45);
+    res = model.findMatchingIndentBlock(globalPos(*doc, 3, 4));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 
