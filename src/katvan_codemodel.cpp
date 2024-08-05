@@ -241,7 +241,7 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
         // If we are at end of the line, the parser may have already implicitly
         // closed block scoped states, so we might have fallen back to a generic
         // content state.
-        auto span = spanAtPosition(cursor.block(), cursor.position() - 1);
+        span = spanAtPosition(cursor.block(), cursor.position() - 1);
         if (span && span->implicitlyClosed) {
             state = span->state;
         }

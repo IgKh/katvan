@@ -24,6 +24,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <QGlobalStatic>
+
 #include <memory>
 
 using namespace katvan;
@@ -268,24 +270,26 @@ TEST(CodeModelTests, FindMatchingIndentBlock)
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 
-static auto s_getMatchingCloseBracketTestDoc = buildDocument({
+Q_GLOBAL_STATIC(QStringList, GET_MATCHING_CLOSE_BRACKET_TEST_DOC, {
     /* 0 */ "== English \\content",
     /* 1 */ "תוכן בעברית",
     /* 2 */ "#while 1 > 2",
     /* 3 */ "$\"AB\" = ln(1 + x)$",
     /* 4 */ "// a comment",
     /* 5 */ "`raw content`"
-});
+})
 
 class CodeModel_GetMatchingCloseBracketTests : public ::testing::Test {
 protected:
-    CodeModel_GetMatchingCloseBracketTests() : model(s_getMatchingCloseBracketTestDoc.get())
+    CodeModel_GetMatchingCloseBracketTests()
+        : doc(buildDocument(*GET_MATCHING_CLOSE_BRACKET_TEST_DOC))
+        , model(doc.get())
     {
     }
 
     QTextCursor cursorAt(int block, int positionInBlock, int selectionLength = 0)
     {
-        QTextCursor cursor { s_getMatchingCloseBracketTestDoc->findBlockByNumber(block) };
+        QTextCursor cursor { doc->findBlockByNumber(block) };
 
         cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, positionInBlock);
         if (selectionLength > 0) {
@@ -294,6 +298,7 @@ protected:
         return cursor;
     }
 
+    std::unique_ptr<QTextDocument> doc;
     CodeModel model;
 };
 
@@ -466,7 +471,7 @@ TEST_F(CodeModel_GetMatchingCloseBracketTests, AngleBrackets)
 
 TEST_F(CodeModel_GetMatchingCloseBracketTests, UnsupportedChar)
 {
-    QTextCursor cursor { s_getMatchingCloseBracketTestDoc.get() };
+    QTextCursor cursor { doc.get() };
     while (!cursor.atEnd()) {
         EXPECT_THAT(model.getMatchingCloseBracket(cursor, QLatin1Char('\'')), ::testing::Eq(std::nullopt));
         cursor.movePosition(QTextCursor::NextCharacter);

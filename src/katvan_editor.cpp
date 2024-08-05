@@ -52,12 +52,12 @@ Q_GLOBAL_STATIC(QRegularExpression, MODELINE_REGEX, QStringLiteral("((kate|katva
 Q_GLOBAL_STATIC(QSet<QString>, OPENING_BRACKETS, {
     QStringLiteral("("), QStringLiteral("{"),  QStringLiteral("["),
     QStringLiteral("$"), QStringLiteral("\""), QStringLiteral("<")
-});
+})
 
 Q_GLOBAL_STATIC(QSet<QString>, CLOSING_BRACKETS, {
     QStringLiteral(")"), QStringLiteral("}"),  QStringLiteral("]"),
     QStringLiteral("$"), QStringLiteral("\""), QStringLiteral(">")
-});
+})
 
 Q_GLOBAL_STATIC(QSet<QString>, DEDENTING_CLOSING_BRACKETS, {
     QStringLiteral(")"), QStringLiteral("}"), QStringLiteral("]")
