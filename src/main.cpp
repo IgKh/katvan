@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     if (!katvan::KATVAN_GIT_SHA.isEmpty()) {
         version += "-" + katvan::KATVAN_GIT_SHA;
     }
-#ifdef KATVAN_PORTABLE_BUILD
+#if defined(KATVAN_PORTABLE_BUILD) && !defined(KATVAN_DISABLE_PORTABLE)
     version += "-portable";
 #endif
     QCoreApplication::setApplicationVersion(version);
@@ -54,15 +54,19 @@ int main(int argc, char** argv)
     QCommandLineParser parser;
     parser.addPositionalArgument("file", "File to open");
     parser.addOptions({
-        QCommandLineOption{ "heb", "Force Hebrew UI" },
+#if !defined(KATVAN_DISABLE_PORTABLE)
         QCommandLineOption{ "portable", "Use portable mode" },
-        QCommandLineOption{ "no-portable", "Don't use portable mode, even if this is a portable build" }
+        QCommandLineOption{ "no-portable", "Don't use portable mode, even if this is a portable build" },
+#endif
+        QCommandLineOption{ "heb", "Force Hebrew UI" }
     });
     parser.addVersionOption();
     parser.addHelpOption();
     parser.process(app);
 
-#ifdef KATVAN_PORTABLE_BUILD
+#if defined(KATVAN_DISABLE_PORTABLE)
+    bool enablePortableMode = false;
+#elif defined(KATVAN_PORTABLE_BUILD)
     bool enablePortableMode = !parser.isSet("no-portable");
 #else
     bool enablePortableMode = parser.isSet("portable") && !parser.isSet("no-portable");

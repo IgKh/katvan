@@ -67,7 +67,7 @@ jobs:
           plugins: qt appimage
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+        run: cmake -S . -B build -DKATVAN_DISABLE_PORTABLE=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
         env:
           CXX: g++-10
 
@@ -82,8 +82,8 @@ jobs:
           linuxdeploy-x86_64.AppImage --appdir build/AppDir --plugin qt --output appimage
           mv Katvan-x86_64.AppImage Katvan-${{ needs.prepare.outputs.katvan_version }}-linux-x86_64.AppImage
         env:
-          EXTRA_QT_PLUGINS: waylandcompositor
-          EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so
+          EXTRA_QT_MODULES: waylandcompositor;svg
+          EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so;libqwayland-egl.so
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4

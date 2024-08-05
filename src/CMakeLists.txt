@@ -65,7 +65,9 @@ target_link_libraries(libkatvan PUBLIC
 add_executable(katvan ${MAIN_SOURCES})
 target_link_libraries(katvan PRIVATE libkatvan)
 
-if(KATVAN_PORTABLE_BUILD)
+if(KATVAN_DISABLE_PORTABLE)
+    target_compile_definitions(katvan PRIVATE KATVAN_DISABLE_PORTABLE)
+elseif(KATVAN_PORTABLE_BUILD)
     target_compile_definitions(katvan PRIVATE KATVAN_PORTABLE_BUILD)
 endif()
 
