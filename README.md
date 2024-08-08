@@ -2,9 +2,11 @@
 
 A bare-bones graphical editor for [Typst](https://github.com/typst/typst) files, with a strong bias for Right-to-Left editing.
 
-## Screenshot
+## Screenshots
 
 ![App Screenshot](.github/assets/screenshot.png)
+
+![App Screenshot - Dark Mode](.github/assets/screenshot-dark.png)
 
 ## Motivation
 
@@ -26,6 +28,7 @@ Not a whole lot so far, but for now we have:
 - Live-ish previews[^1]
 - Syntax highlighting
 - Syntax-aware spell checking
+- Typical code editor niceties - auto indentation, bracket insertion, etc.
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
 - Supported on Linux and Windows 10/11
 
@@ -38,6 +41,8 @@ Regardless of how Katvan is installed, it is required to install the `typst` CLI
 ### Linux
 
 A pre-built AppImage for the `x86_64` architecture is available from the project releases page. If it isn't suitable, you'll need to compile from source. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
+
+There is also an [AUR package](https://aur.archlinux.org/packages/katvan) for Arch Linux users.
 
 ### Windows
 
@@ -79,4 +84,4 @@ Contributions aren't really expected. Issues and PRs in Github are open to creat
 A few things I'd like and may happen at some point, in no particular order:
 
 - Ability to view BiDi control characters
-- More code editing niceties - bracket matching, auto indent, etc.
+- Forward/inverse search between editor and preview
