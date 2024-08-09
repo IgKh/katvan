@@ -17,17 +17,22 @@
  */
 #pragma once
 
+#include <QByteArray>
 #include <QList>
 #include <QObject>
-#include <QTemporaryFile>
 
 QT_BEGIN_NAMESPACE
-class QProcess;
+class QThread;
 QT_END_NAMESPACE
 
 namespace katvan {
 
-class TypstDriver : public QObject
+namespace typstdriver {
+class Engine;
+class Logger;
+}
+
+class TypstDriverWrapper : public QObject
 {
     Q_OBJECT
 
@@ -42,17 +47,16 @@ public:
     };
 
 public:
-    TypstDriver(QObject* parent = nullptr);
-    ~TypstDriver();
+    TypstDriverWrapper(QObject* parent = nullptr);
+    ~TypstDriverWrapper();
 
-    bool compilerFound() const { return !d_compilerPath.isEmpty(); }
     Status status() const { return d_status; }
-    QString pdfFilePath() const { return d_outputFile->fileName(); }
+    QByteArray pdfBuffer() const;
 
-    QString resetInputFile(const QString& sourceFileName);
+    void resetInputFile(const QString& sourceFileName);
 
 signals:
-    void previewReady(const QString& pdfPath);
+    void previewReady(QByteArray pdfBuffer);
     void outputReady(const QStringList& output);
     void compilationStatusChanged();
 
@@ -60,25 +64,17 @@ public slots:
     void updatePreview(const QString& source);
 
 private slots:
-    void processErrorOccurred();
-    void signalCompilerFailed();
-    void compilerOutputReady();
+    void compilerOutputLogged(QStringList messages);
 
 private:
-    static QString findTypstCompiler();
+    typstdriver::Engine* d_engine;
+    typstdriver::Logger* d_compilerLogger;
 
-    void terminateCompiler();
-    void startCompiler(const QString& sourceFileName);
+    QThread* d_thread;
 
     Status d_status;
-    QString d_compilerPath;
-    QString d_inputSourceFile;
-    QTemporaryFile* d_outputFile;
-    QTemporaryFile* d_inputFile;
-    QProcess* d_process;
-
     QStringList d_compilerOutput;
-    QString d_compilerOutputLineBuffer;
+    QString d_pendingSourceToCompile;
 };
 
 }

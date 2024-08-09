@@ -17,6 +17,7 @@
  */
 #include "katvan_previewer.h"
 
+#include <QBuffer>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QHBoxLayout>
@@ -43,6 +44,7 @@ Previewer::Previewer(QWidget* parent)
     : QWidget(parent)
 {
     d_previewDocument = new QPdfDocument(this);
+    d_buffer = new QBuffer(this);
 
     d_pdfView = new QPdfView(this);
     d_pdfView->setDocument(d_previewDocument);
@@ -101,7 +103,7 @@ Previewer::Previewer(QWidget* parent)
 
 Previewer::~Previewer()
 {
-    d_previewDocument->close();
+    reset();
 }
 
 void Previewer::restoreSettings(const QSettings& settings)
@@ -136,17 +138,24 @@ void Previewer::saveSettings(QSettings& settings)
 void Previewer::reset()
 {
     d_previewDocument->close();
+    d_buffer->close();
     d_currentPageLabel->setText(QString());
 }
 
-bool Previewer::updatePreview(const QString& pdfFile)
+bool Previewer::updatePreview(QByteArray pdfBuffer)
 {
     int origY = d_pdfView->verticalScrollBar()->value();
     int origX = d_pdfView->horizontalScrollBar()->value();
 
-    QPdfDocument::Error rc = d_previewDocument->load(pdfFile);
-    if (rc != QPdfDocument::Error::None) {
-        QString err = QVariant::fromValue(rc).toString();
+    if (d_buffer->isOpen()) {
+        d_buffer->close();
+    }
+    d_buffer->setData(pdfBuffer);
+    d_buffer->open(QIODevice::ReadOnly);
+    d_previewDocument->load(d_buffer);
+
+    if (d_previewDocument->error() != QPdfDocument::Error::None) {
+        QString err = QVariant::fromValue(d_previewDocument->error()).toString();
         QMessageBox::warning(
             window(),
             QCoreApplication::applicationName(),

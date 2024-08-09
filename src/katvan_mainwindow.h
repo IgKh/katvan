@@ -29,13 +29,14 @@ QT_END_NAMESPACE
 namespace katvan
 {
 
+class BackupHandler;
 class CompilerOutput;
 class Editor;
 class EditorSettingsDialog;
-class TypstDriver;
 class Previewer;
 class RecentFiles;
 class SearchBar;
+class TypstDriverWrapper;
 
 class MainWindow : public QMainWindow
 {
@@ -65,7 +66,7 @@ private slots:
     void changeSpellCheckingDictionary();
     void toggleCursorMovementStyle();
     void editorSettingsDialogAccepted();
-    void updatePreview(const QString& pdfFile);
+    void updatePreview(QByteArray pdfBuffer);
     void compilationStatusChanged();
 
 private:
@@ -88,7 +89,8 @@ private:
     bool d_exportPdfPending;
 
     RecentFiles* d_recentFiles;
-    TypstDriver* d_driver;
+    TypstDriverWrapper* d_driver;
+    BackupHandler* d_backupHandler;
 
     Editor* d_editor;
     SearchBar* d_searchBar;

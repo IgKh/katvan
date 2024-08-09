@@ -22,9 +22,9 @@
 #include <QMouseEvent>
 #include <QRegularExpression>
 
-// .katvan_RPivYF.typ:89:13: error: unknown variable: abc
+// MAIN:89:13: error: unknown variable: abc
 Q_GLOBAL_STATIC(QRegularExpression, DIAGNOSTIC_MESSAGE_REGEX,
-                QStringLiteral("^(\\S*\\.?katvan_[A-Za-z0-9]+\\.typ):(\\d+):(\\d+):\\s+(.+)$"))
+                QStringLiteral("^MAIN:(\\d+):(\\d+):\\s+(.+)$"))
 
 namespace katvan {
 
@@ -55,8 +55,8 @@ void CompilerOutput::setOutputLines(const QStringList& output)
             cursor.insertText(line);
         }
         else {
-            QString row = m.captured(2);
-            QString col = m.captured(3);
+            QString row = m.captured(1);
+            QString col = m.captured(2);
 
             QString locator = QStringLiteral("%1:%2:%3").arg(
                 d_fileName.isEmpty() ? "Untitled" : d_fileName,
@@ -69,7 +69,7 @@ void CompilerOutput::setOutputLines(const QStringList& output)
             linkFormat.setFontUnderline(true);
 
             cursor.insertText(locator, linkFormat);
-            cursor.insertText(": " + m.captured(4), origFormat);
+            cursor.insertText(": " + m.captured(3), origFormat);
         }
         cursor.insertBlock();
     }

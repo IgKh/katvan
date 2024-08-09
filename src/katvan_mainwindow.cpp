@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_backuphandler.h"
 #include "katvan_compileroutput.h"
 #include "katvan_editor.h"
 #include "katvan_editorsettings.h"
@@ -23,7 +24,7 @@
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
 #include "katvan_spellchecker.h"
-#include "katvan_typstdriver.h"
+#include "katvan_typstdriverwrapper.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -59,28 +60,19 @@ MainWindow::MainWindow()
     d_recentFiles = new RecentFiles(this);
     connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
 
-    d_driver = new TypstDriver(this);
+    d_driver = new TypstDriverWrapper(this);
+    d_backupHandler = new BackupHandler(this);
 
     setupUI();
     setupActions();
     setupStatusBar();
 
-    connect(d_driver, &TypstDriver::previewReady, this, &MainWindow::updatePreview);
-    connect(d_driver, &TypstDriver::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
-    connect(d_driver, &TypstDriver::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
+    connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::updatePreview);
+    connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
+    connect(d_driver, &TypstDriverWrapper::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
 
     readSettings();
     cursorPositionChanged();
-
-    if (!d_driver->compilerFound()) {
-        d_compilationStatusButton->hide();
-        QTimer::singleShot(0, this, [this]() {
-            QMessageBox::warning(
-                this,
-                QCoreApplication::applicationName(),
-                tr("The typst compiler was not found, and therefore previews and export will not work.\n\nPlease make sure it is installed and in your system path."));
-        });
-    }
 }
 
 void MainWindow::setupUI()
@@ -89,7 +81,8 @@ void MainWindow::setupUI()
     setWindowIcon(QIcon(":/assets/katvan.svg"));
 
     d_editor = new Editor();
-    connect(d_editor, &Editor::contentModified, d_driver, &TypstDriver::updatePreview);
+    connect(d_editor, &Editor::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
+    connect(d_editor, &Editor::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 
@@ -160,7 +153,6 @@ void MainWindow::setupActions()
 
     QAction* exportPdfAction = fileMenu->addAction(tr("&Export PDF..."), this, &MainWindow::exportPdf);
     exportPdfAction->setIcon(QIcon::fromTheme("document-send", QIcon(":/icons/document-send.svg")));
-    exportPdfAction->setEnabled(d_driver->compilerFound());
 
     fileMenu->addSeparator();
 
@@ -403,7 +395,9 @@ void MainWindow::setCurrentFile(const QString& fileName)
     d_editor->document()->setModified(false);
     setWindowModified(false);
 
-    QString previousTmpFile = d_driver->resetInputFile(fileName);
+    d_driver->resetInputFile(fileName);
+
+    QString previousTmpFile = d_backupHandler->resetSourceFile(fileName);
     if (!previousTmpFile.isEmpty()) {
         tryRecover(fileName, previousTmpFile);
     }
@@ -613,15 +607,15 @@ bool MainWindow::saveFileAs()
 
 void MainWindow::exportPdf()
 {
-    if (d_driver->status() != TypstDriver::Status::SUCCESS &&
-        d_driver->status() != TypstDriver::Status::SUCCESS_WITH_WARNINGS) {
-        if (d_driver->status() == TypstDriver::Status::FAILED) {
+    if (d_driver->status() != TypstDriverWrapper::Status::SUCCESS &&
+        d_driver->status() != TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS) {
+        if (d_driver->status() == TypstDriverWrapper::Status::FAILED) {
             QMessageBox::critical(
                 this,
                 QCoreApplication::applicationName(),
                 tr("The document %1 has errors.\nTo export the document, please correct them.").arg(d_currentFileShortName));
         }
-        else if (d_driver->status() == TypstDriver::Status::INITIALIZED) {
+        else if (d_driver->status() == TypstDriverWrapper::Status::INITIALIZED) {
             d_driver->updatePreview(d_editor->toPlainText());
             d_exportPdfPending = true;
         }
@@ -644,18 +638,18 @@ void MainWindow::exportPdf()
     }
 
     QString targetFileName = dialog.selectedFiles().at(0);
-    if (QFile::exists(targetFileName)) {
-        QFile::remove(targetFileName);
-    }
 
-    QFile sourceFile(d_driver->pdfFilePath());
-    bool ok = sourceFile.copy(targetFileName);
-    if (!ok) {
+    QFile file(targetFileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Failing writing file %1: %2").arg(targetFileName, sourceFile.errorString()));
+            tr("Opening write %1 for writing failed: %2").arg(targetFileName, file.errorString()));
+
+        return;
     }
+
+    file.write(d_driver->pdfBuffer());
 }
 
 void MainWindow::goToLine()
@@ -800,9 +794,9 @@ void MainWindow::editorSettingsDialogAccepted()
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
 }
 
-void MainWindow::updatePreview(const QString& pdfFile)
+void MainWindow::updatePreview(QByteArray pdfBuffer)
 {
-    if (!d_previewer->updatePreview(pdfFile)) {
+    if (!d_previewer->updatePreview(pdfBuffer)) {
         return;
     }
 
@@ -814,25 +808,25 @@ void MainWindow::updatePreview(const QString& pdfFile)
 
 void MainWindow::compilationStatusChanged()
 {
-    TypstDriver::Status status = d_driver->status();
+    TypstDriverWrapper::Status status = d_driver->status();
 
-    if (status != TypstDriver::Status::PROCESSING) {
+    if (status != TypstDriverWrapper::Status::PROCESSING) {
         d_compilingMovie->stop();
     }
 
-    if (status == TypstDriver::Status::PROCESSING) {
+    if (status == TypstDriverWrapper::Status::PROCESSING) {
         d_compilationStatusButton->setText(tr("Compiling..."));
         d_compilingMovie->start();
     }
-    else if (status == TypstDriver::Status::SUCCESS) {
+    else if (status == TypstDriverWrapper::Status::SUCCESS) {
         d_compilationStatusButton->setText(tr("Success"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-success.svg"));
     }
-    else if (status == TypstDriver::Status::SUCCESS_WITH_WARNINGS) {
+    else if (status == TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS) {
         d_compilationStatusButton->setText(tr("Success"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-warning.svg"));
     }
-    else if (status == TypstDriver::Status::FAILED) {
+    else if (status == TypstDriverWrapper::Status::FAILED) {
         d_compilerOutputDock->show();
         d_compilationStatusButton->setText(tr("Failed"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-error.svg"));

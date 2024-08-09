@@ -5,7 +5,6 @@ A bare-bones graphical editor for [Typst](https://github.com/typst/typst) files,
 ## Screenshots
 
 ![App Screenshot](.github/assets/screenshot.png)
-
 ![App Screenshot - Dark Mode](.github/assets/screenshot-dark.png)
 
 ## Motivation
@@ -36,7 +35,9 @@ Not a whole lot so far, but for now we have:
 
 ## Installation
 
-Regardless of how Katvan is installed, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details.
+:warning: **IMPORTANT UPCOMING CHANGE**: Starting from the upcoming 0.7.0 release, Katvan will directly embed the Typst compiler. This will require having a Rust toolchain to build from source.
+
+For all existing release, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details.
 
 ### Linux
 
@@ -54,8 +55,10 @@ This build does not include spell checking dictionaries. You'll need to download
 
 To compile and install Katvan from source code, you'll need:
 - A C++ compiler toolchain that supports C++20, and is [supported by Qt](https://doc.qt.io/qt-6/supported-platforms.html)
-- Development files for Qt 6.5 (or a later 6.x release)
-- CMake 3.16 or later
+- A recent stable Rust toolchain
+- Development files for Qt 6.5 (or any later 6.x release)
+- CMake 3.19 or later
+- [Corrosion](https://github.com/corrosion-rs/corrosion) (optional, will be automatically downloaded if missing)
 - A working `pkg-config`
 - [hunspell](http://hunspell.github.io/)
 - [GoogleTest](https://google.github.io/googletest/) (optional, for running unit tests)

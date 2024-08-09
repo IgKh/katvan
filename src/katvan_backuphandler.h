@@ -17,54 +17,32 @@
  */
 #pragma once
 
-#include <QByteArray>
-#include <QSettings>
-#include <QWidget>
+#include <QObject>
+#include <QString>
 
 QT_BEGIN_NAMESPACE
-class QBuffer;
-class QComboBox;
-class QLabel;
-class QPdfDocument;
-class QPdfView;
+class QTemporaryFile;
 QT_END_NAMESPACE
 
 namespace katvan {
 
-class Previewer : public QWidget
+class BackupHandler : public QObject
 {
     Q_OBJECT
 
 public:
-    Previewer(QWidget* parent = nullptr);
-    ~Previewer();
+    BackupHandler(QObject* parent = nullptr);
+    ~BackupHandler();
 
-    void restoreSettings(const QSettings& settings);
-    void saveSettings(QSettings& settings);
+    QString resetSourceFile(const QString& sourceFileName);
 
 public slots:
-    void reset();
-    bool updatePreview(QByteArray pdfBuffer);
-
-private slots:
-    void zoomIn();
-    void zoomOut();
-    void zoomOptionSelected(int index);
-    void manualZoomEntered();
-    void currentPageChanged(int page);
+    void editorContentChanged(const QString& content);
 
 private:
-    qreal effectiveZoom();
-    void setZoom(QVariant value);
-    void setCustomZoom(qreal factor);
-
-private:
-    QPdfView* d_pdfView;
-    QPdfDocument* d_previewDocument;
-    QBuffer* d_buffer;
-
-    QComboBox* d_zoomComboBox;
-    QLabel* d_currentPageLabel;
+    QString d_sourceFile;
+    QTemporaryFile* d_backupFile;
+    qint64 d_lastSaveTimestamp;
 };
 
 }
