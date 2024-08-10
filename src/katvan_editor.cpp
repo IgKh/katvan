@@ -677,7 +677,7 @@ void Editor::spellingSuggestionsReady(const QString& word, int position, const Q
     else {
         QMenu* suggestionsMenu = new QMenu(tr("%n Suggestion(s)", "", suggestions.size()));
         for (const QString& suggestion : suggestions) {
-            suggestionsMenu->addAction(QString(suggestion), [this, position, suggestion]() {
+            suggestionsMenu->addAction(QString(suggestion), this, [this, position, suggestion]() {
                 changeWordAtPosition(position, suggestion);
             });
         }

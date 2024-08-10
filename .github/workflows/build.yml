@@ -33,6 +33,8 @@ jobs:
         with:
           shared-key: 'build'
           cache-targets: 'false'
+          workspaces: |
+            typstdriver/rust
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
@@ -73,6 +75,8 @@ jobs:
         with:
           shared-key: 'build'
           cache-targets: 'false'
+          workspaces: |
+            typstdriver/rust
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
@@ -111,6 +115,8 @@ jobs:
         with:
           shared-key: 'build'
           cache-targets: 'false'
+          workspaces: |
+            typstdriver/rust
 
       - name: Run Clazy analysis
         run: |

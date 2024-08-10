@@ -418,7 +418,7 @@ void EditorSettingsDialog::updateFontSizes()
 
     QStringList values;
     values.reserve(pointSizes.size());
-    for (int size : pointSizes) {
+    for (int size : std::as_const(pointSizes)) {
         values.append(QString::number(size));
 
         if (values.last() == currentSizeText) {

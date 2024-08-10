@@ -71,7 +71,7 @@ static std::vector<Token> tokenizeString(const QString& str)
 }
 
 TEST(TokenizerTests, Empty) {
-    Tokenizer tok(QStringLiteral(""));
+    Tokenizer tok { QString() };
 
     ASSERT_FALSE(tok.atEnd());
     ASSERT_EQ(tok.nextToken(), (TokenMatcher{ TokenType::BEGIN }));
@@ -731,7 +731,7 @@ static QList<ContentSegment> extractContent(QStringView text)
 
 TEST(ContentParserTests, Empty)
 {
-    auto segments = extractContent(QStringLiteral(""));
+    auto segments = extractContent(QString());
     EXPECT_THAT(segments, ::testing::IsEmpty());
 }
 

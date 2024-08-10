@@ -296,7 +296,7 @@ public:
         }
 
         QString word;
-        for (const Token& t : nested) {
+        for (const Token& t : std::as_const(nested)) {
             word.append(t.text);
         }
         return d_keywords.contains(word);

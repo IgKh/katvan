@@ -37,7 +37,7 @@ Not a whole lot so far, but for now we have:
 
 :warning: **IMPORTANT UPCOMING CHANGE**: Starting from the upcoming 0.7.0 release, Katvan will directly embed the Typst compiler. This will require having a Rust toolchain to build from source.
 
-For all existing release, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details.
+For all existing releases, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details.
 
 ### Linux
 

@@ -92,7 +92,7 @@ QMap<QString, QString> SpellChecker::findDictionaries()
     dictDirs.append(QCoreApplication::applicationDirPath() + "/hunspell");
 
     QStringList systemDirs = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
-    for (const QString& dir : systemDirs) {
+    for (const QString& dir : std::as_const(systemDirs)) {
         dictDirs.append(dir + "/hunspell");
     }
 

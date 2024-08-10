@@ -77,7 +77,7 @@ void RecentFiles::rebuildMenu()
     d_menu->clear();
 
     for (QString& filePath : d_fileList) {
-        d_menu->addAction(filePath, [this, filePath]() {
+        d_menu->addAction(filePath, this, [this, filePath]() {
             Q_EMIT fileSelected(filePath);
         });
     }

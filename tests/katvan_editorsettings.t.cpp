@@ -34,7 +34,7 @@ TEST(EditorSettingsTests, Empty) {
     EXPECT_THAT(s.hasIndentWidth(), ::testing::IsFalse());
     EXPECT_THAT(s.hasTabWidth(), ::testing::IsFalse());
 
-    EXPECT_THAT(s.toModeLine(), ::testing::Eq(QStringLiteral("")));
+    EXPECT_THAT(s.toModeLine(), ::testing::Eq(QString()));
 }
 
 TEST(EditorSettingsTests, FontFamily) {

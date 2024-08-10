@@ -85,7 +85,7 @@ void Highlighter::doSyntaxHighlighting(
 {
     auto markers = listener.markers();
 
-    for (const auto& m : markers) {
+    for (const auto& m : std::as_const(markers)) {
         for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
             charFormats[i].merge(d_theme.highlightingFormat(m.kind));
         }
@@ -108,9 +108,9 @@ parsing::SegmentList Highlighter::doSpellChecking(
     }
 
     auto segments = listener.segments();
-    for (const auto& segment : segments) {
+    for (const auto& segment : std::as_const(segments)) {
         auto misspelledWords = d_spellChecker->checkSpelling(text.sliced(segment.startPos, segment.length));
-        for (const auto& [wordPos, len] : misspelledWords) {
+        for (const auto& [wordPos, len] : std::as_const(misspelledWords)) {
             size_t start = segment.startPos + wordPos;
             for (size_t i = 0; i < len; i++) {
                 charFormats[start + i].merge(misspelledWordFormat);
