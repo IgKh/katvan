@@ -6,13 +6,45 @@ on:
     pull_request:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.5.*
+          modules: 'qtpdf'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgmock-dev libhunspell-dev
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: 'build'
+          cache-targets: 'false'
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Run tests
+        run: ctest --output-on-failure --test-dir build
+
+  build-windows:
+    runs-on: windows-latest
 
     steps:
       - name: Checkout source code
@@ -31,23 +63,26 @@ jobs:
           vcpkgGitCommitId: '53bef8994c541b6561884a8395ea35715ece75db'
 
       - name: Install dependencies
-        run: vcpkg install gtest hunspell
-
-      - name: Install pkg-config
-        run: vcpkg install pkgconf
-        if: matrix.os == 'windows-latest'
+        run: vcpkg install gtest hunspell pkgconf
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: 'build'
+          cache-targets: 'false'
+
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build
-        run: cmake --build build -j
+        run: cmake --build build -j --config RelWithDebInfo
 
       - name: Run tests
         run: ctest --output-on-failure --test-dir build
+
 
   analyse:
     runs-on: ubuntu-latest
@@ -70,6 +105,12 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: 'build'
+          cache-targets: 'false'
 
       - name: Run Clazy analysis
         run: |

@@ -17,6 +17,8 @@
  */
 #pragma once
 
+#include "typstdriver_export.h"
+
 #include <QByteArray>
 #include <QObject>
 #include <QString>
@@ -27,7 +29,7 @@ namespace katvan::typstdriver {
 
 class Logger;
 
-class Engine : public QObject
+class TYPSTDRIVER_EXPORT Engine : public QObject
 {
     Q_OBJECT
 

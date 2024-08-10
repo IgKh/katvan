@@ -3,6 +3,20 @@ project(katvan LANGUAGES CXX VERSION "0.6.0")
 
 enable_testing()
 
+#
+# The Rust standard library for MSVC targets always requests linking to the non
+# debug CRT library, no matter the profile. However actual linking of the
+# typstdriver DLL is done by the C++ compiler, which might try to use the debug
+# CRT. Also we could work with pre-built Qt that uses the debug CRT. This makes
+# things... not work. Until something like the -Zlink-directives flag for rustc
+# stabilizes, Windows builds MUST NOT be done in Debug mode.
+#
+# See: https://github.com/rust-lang/rust/issues/39016
+#
+if(MSVC)
+    list(REMOVE_ITEM CMAKE_CONFIGURATION_TYPES "Debug")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

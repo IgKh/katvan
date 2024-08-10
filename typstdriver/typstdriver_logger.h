@@ -17,13 +17,15 @@
  */
 #pragma once
 
+#include "typstdriver_export.h"
+
 #include <QList>
 #include <QObject>
 #include <QString>
 
 namespace katvan::typstdriver {
 
-class Logger : public QObject
+class TYPSTDRIVER_EXPORT Logger : public QObject
 {
     Q_OBJECT
 

@@ -1,6 +1,6 @@
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
-find_package(Corrosion)
+find_package(Corrosion QUIET)
 if(NOT Corrosion_FOUND)
     include(FetchContent)
 
@@ -20,13 +20,19 @@ corrosion_add_cxxbridge(typstdriver_ffi
     FILES bridge.rs
 )
 target_include_directories(typstdriver_ffi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+set_property(TARGET typstdriver_ffi PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(typstdriver SHARED
     typstdriver_engine.cpp
     typstdriver_logger.cpp
 )
 
-target_include_directories(typstdriver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+include(GenerateExportHeader)
+generate_export_header(typstdriver)
+
+set_property(TARGET typstdriver PROPERTY CXX_VISIBILITY_PRESET hidden)
+
+target_include_directories(typstdriver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(typstdriver PUBLIC QT_RESTRICTED_CAST_FROM_ASCII QT_NO_EMIT)
 
 target_link_libraries(typstdriver PRIVATE typstdriver_rs typstdriver_ffi)
