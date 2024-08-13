@@ -61,6 +61,7 @@ To compile and install Katvan from source code, you'll need:
 - [Corrosion](https://github.com/corrosion-rs/corrosion) (optional, will be automatically downloaded if missing)
 - A working `pkg-config`
 - [hunspell](http://hunspell.github.io/)
+- [libarchive](https://libarchive.org/)
 - [GoogleTest](https://google.github.io/googletest/) (optional, for running unit tests)
 
 Get those from your distribution repositories, vcpkg, or wherever.

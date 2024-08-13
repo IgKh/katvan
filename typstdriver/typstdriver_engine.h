@@ -28,13 +28,14 @@
 namespace katvan::typstdriver {
 
 class Logger;
+class PackageManager;
 
 class TYPSTDRIVER_EXPORT Engine : public QObject
 {
     Q_OBJECT
 
 public:
-    Engine(const QString& filePath, Logger* logger, QObject* parent = nullptr);
+    Engine(const QString& filePath, Logger* logger, PackageManager* packageManager, QObject* parent = nullptr);
     ~Engine();
 
     QByteArray pdfBuffer() const;

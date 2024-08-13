@@ -21,20 +21,25 @@
 
 namespace katvan::typstdriver {
 
-class Logger;
+class PackageManager;
 
-class LoggerProxy
+enum class PackageManagerError : ::std::uint8_t;
+
+class PackageManagerProxy
 {
 public:
-    LoggerProxy(Logger& logger);
+    PackageManagerProxy(PackageManager& manager);
 
-    void logOne(rust::Str message) const;
+    rust::String getPackageLocalPath(
+        rust::Str packageNamespace,
+        rust::Str name,
+        rust::Str version) const;
 
-    void logToBatch(rust::Str message) const;
-    void releaseBatched() const;
+    PackageManagerError error() const;
+    rust::String errorMessage() const;
 
 private:
-    Logger& d_logger;
+    PackageManager& d_manager;
 };
 
 }

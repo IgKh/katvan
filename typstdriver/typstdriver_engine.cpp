@@ -20,6 +20,7 @@
 
 #include "typstdriver_ffi/bridge.h"
 
+#include <QFileInfo>
 #include <QUuid>
 
 #include <optional>
@@ -34,21 +35,26 @@ static rust::String qstringToRust(const QString& str)
 
 struct Engine::EnginePrivate
 {
-    EnginePrivate(Engine* q, Logger* logger)
+    EnginePrivate(Engine* q, Logger* logger, PackageManager* packageManager, QString fileRoot)
         : innerLogger(*logger)
+        , innerPackageManager(*packageManager)
         , engine()
+        , fileRoot(fileRoot)
     {
     }
 
-    RustLogger innerLogger;
+    LoggerProxy innerLogger;
+    PackageManagerProxy innerPackageManager;
     std::optional<rust::Box<EngineImpl>> engine;
+    QString fileRoot;
     QByteArray pdfBuffer;
 };
 
-Engine::Engine(const QString& filePath, Logger* logger, QObject* parent)
+Engine::Engine(const QString& filePath, Logger* logger, PackageManager* packageManager, QObject* parent)
     : QObject(parent)
 {
-    d_ptr.reset(new EnginePrivate(this, logger));
+    QFileInfo info { filePath };
+    d_ptr.reset(new EnginePrivate(this, logger, packageManager, info.canonicalPath()));
 }
 
 Engine::~Engine()
@@ -70,7 +76,9 @@ void Engine::init()
 
     d_ptr->engine = create_engine_impl(
         d_ptr->innerLogger,
-        qstringToRust(instanceId)
+        d_ptr->innerPackageManager,
+        qstringToRust(instanceId),
+        qstringToRust(d_ptr->fileRoot)
     );
 
     Q_EMIT initialized();

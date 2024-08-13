@@ -17,12 +17,21 @@
  */
 use crate::engine::EngineImpl;
 
+#[allow(clippy::needless_lifetimes)]
 #[cxx::bridge(namespace = "katvan::typstdriver")]
 pub(crate) mod ffi {
+    enum PackageManagerError {
+        Success,
+        NotFound,
+        NetworkError,
+        IoError,
+        ArchiveError,
+    }
+
     unsafe extern "C++" {
         include!("typstdriver_logger_p.h");
 
-        type RustLogger;
+        type LoggerProxy;
 
         #[rust_name = "log_one"]
         fn logOne(&self, message: &str);
@@ -34,15 +43,39 @@ pub(crate) mod ffi {
         fn releaseBatched(&self);
     }
 
+    unsafe extern "C++" {
+        include!("typstdriver_packagemanager_p.h");
+
+        type PackageManagerProxy;
+
+        #[rust_name = "get_package_local_path"]
+        fn getPackageLocalPath(&self, package_namespace: &str, name: &str, version: &str) -> String;
+
+        fn error(&self) -> PackageManagerError;
+
+        #[rust_name = "error_message"]
+        fn errorMessage(&self) -> String;
+    }
+
     extern "Rust" {
         type EngineImpl<'a>;
 
         fn compile(&mut self, source: &str) -> Vec<u8>;
 
-        unsafe fn create_engine_impl<'a>(logger: &'a RustLogger, instance_id: &str) -> Box<EngineImpl<'a>>;
+        unsafe fn create_engine_impl<'a>(
+            logger: &'a LoggerProxy,
+            package_manager: &'a PackageManagerProxy,
+            instance_id: &str,
+            root: &str,
+        ) -> Box<EngineImpl<'a>>;
     }
 }
 
-fn create_engine_impl<'a>(logger: &'a ffi::RustLogger, instance_id: &str) -> Box<EngineImpl<'a>> {
-    Box::new(EngineImpl::new(logger, instance_id))
+fn create_engine_impl<'a>(
+    logger: &'a ffi::LoggerProxy,
+    package_manager: &'a ffi::PackageManagerProxy,
+    instance_id: &str,
+    root: &str,
+) -> Box<EngineImpl<'a>> {
+    Box::new(EngineImpl::new(logger, package_manager, instance_id, root))
 }

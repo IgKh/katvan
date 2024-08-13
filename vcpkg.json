@@ -1,0 +1,13 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "builtin-baseline": "53bef8994c541b6561884a8395ea35715ece75db",
+    "dependencies": [
+        "hunspell",
+        "libarchive",
+        "gtest",
+        {
+            "name": "pkgconf",
+            "platform": "windows"
+        }
+    ]
+}

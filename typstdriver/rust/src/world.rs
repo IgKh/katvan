@@ -15,36 +15,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::cell::OnceCell;
+use std::{
+    cell::{OnceCell, RefCell},
+    collections::HashMap,
+    path::PathBuf,
+};
 
 use comemo::Prehashed;
 use typst::{
-    diag::FileResult,
+    diag::{EcoString, FileError, FileResult, PackageError},
     foundations::Bytes,
-    syntax::{FileId, Source, VirtualPath},
+    syntax::{package::PackageSpec, FileId, Source, VirtualPath},
     text::{Font, FontBook, FontInfo},
     Library,
 };
-use lazy_static::lazy_static;
 
-lazy_static! {
+use crate::bridge::ffi;
+
+lazy_static::lazy_static! {
     static ref MAIN_ID: FileId = FileId::new_fake(VirtualPath::new("MAIN"));
 }
 
-pub struct KatvanWorld {
+pub struct KatvanWorld<'a> {
+    root: PathBuf,
+    package_manager: &'a ffi::PackageManagerProxy,
+    package_roots: RefCell<HashMap<PackageSpec, PathBuf>>,
     library: Prehashed<Library>,
     fonts: FontManager,
     source: Source,
     now: Option<time::OffsetDateTime>,
 }
 
-impl KatvanWorld {
-    pub fn new() -> Self {
+impl<'a> KatvanWorld<'a> {
+    pub fn new(package_manager: &'a ffi::PackageManagerProxy, root: &str) -> Self {
         let fonts = FontManager::new();
-
         let source = Source::new(*MAIN_ID, String::new());
 
         KatvanWorld {
+            root: PathBuf::from(root),
+            package_manager,
+            package_roots: RefCell::new(HashMap::new()),
             library: Prehashed::new(Library::default()),
             fonts,
             source,
@@ -56,9 +66,68 @@ impl KatvanWorld {
         self.source.replace(text);
         self.now = time::OffsetDateTime::now_local().ok();
     }
+
+    fn check_package_manager_error(&self, pkg: &PackageSpec) -> Result<(), PackageError> {
+        let error = self.package_manager.error();
+        let message = EcoString::from(self.package_manager.error_message());
+
+        match error {
+            ffi::PackageManagerError::Success => Ok(()),
+            ffi::PackageManagerError::NotFound => Err(PackageError::NotFound(pkg.clone())),
+            ffi::PackageManagerError::NetworkError => {
+                Err(PackageError::NetworkFailed(Some(message)))
+            }
+            ffi::PackageManagerError::IoError => Err(PackageError::Other(Some(message))),
+            ffi::PackageManagerError::ArchiveError => {
+                Err(PackageError::MalformedArchive(Some(message)))
+            }
+            _ => Err(PackageError::Other(Some(message))),
+        }
+    }
+
+    fn get_package_root(&self, pkg: Option<&PackageSpec>) -> FileResult<PathBuf> {
+        if let Some(pkg) = pkg {
+            let mut cache = self.package_roots.borrow_mut();
+
+            let root = match cache.get(pkg) {
+                Some(root) => root.clone(),
+                None => {
+                    let path = self.package_manager.get_package_local_path(
+                        &pkg.namespace,
+                        &pkg.name,
+                        &pkg.version.to_string(),
+                    );
+
+                    self.check_package_manager_error(pkg)?;
+
+                    let path = PathBuf::from(path);
+                    cache.insert(pkg.clone(), path.clone());
+                    path
+                }
+            };
+            Ok(root)
+        } else {
+            if self.root.as_os_str().is_empty() {
+                return Err(FileError::Other(Some(EcoString::from(
+                    "unsaved files cannot include external files",
+                ))));
+            }
+            Ok(self.root.clone())
+        }
+    }
+
+    fn get_file_content(&self, id: FileId) -> FileResult<Vec<u8>> {
+        let root = self.get_package_root(id.package())?;
+        let path = id.vpath().resolve(&root).ok_or(FileError::AccessDenied)?;
+
+        if path.is_dir() {
+            return Err(FileError::IsDirectory);
+        }
+        std::fs::read(&path).map_err(|err| FileError::from_io(err, &path))
+    }
 }
 
-impl typst::World for KatvanWorld {
+impl<'a> typst::World for KatvanWorld<'a> {
     fn library(&self) -> &Prehashed<Library> {
         &self.library
     }
@@ -72,13 +141,13 @@ impl typst::World for KatvanWorld {
             return Ok(self.main());
         }
 
-        // TODO
-        Err(typst::diag::FileError::InvalidUtf8)
+        let bytes = self.get_file_content(id)?;
+        let text = String::from_utf8(bytes)?;
+        Ok(Source::new(id, text))
     }
 
-    fn file(&self, _id: FileId) -> FileResult<Bytes> {
-        // TODO
-        Err(typst::diag::FileError::InvalidUtf8)
+    fn file(&self, id: FileId) -> FileResult<Bytes> {
+        self.get_file_content(id).map(Bytes::from)
     }
 
     fn book(&self) -> &Prehashed<FontBook> {

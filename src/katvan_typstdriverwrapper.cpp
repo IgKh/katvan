@@ -19,6 +19,7 @@
 
 #include "typstdriver_engine.h"
 #include "typstdriver_logger.h"
+#include "typstdriver_packagemanager.h"
 
 #include <QDebug>
 #include <QThread>
@@ -39,6 +40,9 @@ TypstDriverWrapper::TypstDriverWrapper(QObject* parent)
     d_compilerLogger = new typstdriver::Logger();
     d_compilerLogger->moveToThread(d_thread);
     connect(d_compilerLogger, &typstdriver::Logger::messagesLogged, this, &TypstDriverWrapper::compilerOutputLogged);
+
+    d_packageManager = new typstdriver::PackageManager(d_compilerLogger);
+    d_packageManager->moveToThread(d_thread);
 }
 
 TypstDriverWrapper::~TypstDriverWrapper()
@@ -70,7 +74,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         d_engine->deleteLater();
     }
 
-    d_engine = new typstdriver::Engine(sourceFileName, d_compilerLogger);
+    d_engine = new typstdriver::Engine(sourceFileName, d_compilerLogger, d_packageManager);
     d_engine->moveToThread(d_thread);
 
     auto onInitialized = [this]() {

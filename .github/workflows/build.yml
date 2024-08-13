@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgmock-dev libhunspell-dev
+          sudo apt-get install -y libgmock-dev libhunspell-dev libarchive-dev
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -62,10 +62,7 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
-          vcpkgGitCommitId: '53bef8994c541b6561884a8395ea35715ece75db'
-
-      - name: Install dependencies
-        run: vcpkg install gtest hunspell pkgconf
+          runVcpkgInstall: true
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -105,7 +102,7 @@ jobs:
       - name: Install additional dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y hunspell libgmock-dev libhunspell-dev clazy
+          sudo apt-get install -y libgmock-dev libhunspell-dev libarchive-dev clazy
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable

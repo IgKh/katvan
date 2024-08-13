@@ -30,6 +30,7 @@ namespace katvan {
 namespace typstdriver {
 class Engine;
 class Logger;
+class PackageManager;
 }
 
 class TypstDriverWrapper : public QObject
@@ -69,6 +70,7 @@ private slots:
 private:
     typstdriver::Engine* d_engine;
     typstdriver::Logger* d_compilerLogger;
+    typstdriver::PackageManager* d_packageManager;
 
     QThread* d_thread;
 

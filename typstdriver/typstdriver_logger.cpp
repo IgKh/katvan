@@ -44,22 +44,22 @@ void Logger::releaseBatched()
     }
 }
 
-RustLogger::RustLogger(Logger& logger)
+LoggerProxy::LoggerProxy(Logger& logger)
     : d_logger(logger)
 {
 }
 
-void RustLogger::logOne(rust::Str message) const
+void LoggerProxy::logOne(rust::Str message) const
 {
     d_logger.logMessage(QString::fromUtf8(message.data(), message.size()), false);
 }
 
-void RustLogger::logToBatch(rust::Str message) const
+void LoggerProxy::logToBatch(rust::Str message) const
 {
     d_logger.logMessage(QString::fromUtf8(message.data(), message.size()), true);
 }
 
-void RustLogger::releaseBatched() const
+void LoggerProxy::releaseBatched() const
 {
     d_logger.releaseBatched();
 }

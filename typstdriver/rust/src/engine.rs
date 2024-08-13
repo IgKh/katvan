@@ -21,18 +21,23 @@ use crate::bridge::ffi;
 use crate::world::KatvanWorld;
 
 pub struct EngineImpl<'a> {
-    logger: &'a ffi::RustLogger,
+    logger: &'a ffi::LoggerProxy,
     instance_id: String,
-    world: KatvanWorld,
+    world: KatvanWorld<'a>,
     result: Option<typst::model::Document>,
 }
 
 impl<'a> EngineImpl<'a> {
-    pub fn new(logger: &'a ffi::RustLogger, instance_id: &str) -> Self {
+    pub fn new(
+        logger: &'a ffi::LoggerProxy,
+        package_manager: &'a ffi::PackageManagerProxy,
+        instance_id: &str,
+        root: &str,
+    ) -> Self {
         EngineImpl {
             logger,
             instance_id: String::from(instance_id),
-            world: KatvanWorld::new(),
+            world: KatvanWorld::new(package_manager, root),
             result: None,
         }
     }
@@ -52,14 +57,16 @@ impl<'a> EngineImpl<'a> {
         if let Ok(doc) = res {
             if warnings.is_empty() {
                 self.logger
-                    .log_to_batch(&format!("compiled successfully in {}", elapsed));
+                    .log_to_batch(&format!("compiled successfully in {elapsed}"));
             } else {
                 self.logger
-                    .log_to_batch(&format!("compiled with warnings in {}", elapsed));
+                    .log_to_batch(&format!("compiled with warnings in {elapsed}"));
             }
 
             self.log_diagnostics(&warnings);
             self.logger.release_batched();
+
+            comemo::evict(5);
 
             let pdf = typst_pdf::pdf(
                 &doc,
@@ -73,7 +80,7 @@ impl<'a> EngineImpl<'a> {
             let errors = res.unwrap_err();
 
             self.logger
-                .log_to_batch(&format!("compiled with errors in {}", elapsed));
+                .log_to_batch(&format!("compiled with errors in {elapsed}"));
             self.log_diagnostics(&errors);
             self.log_diagnostics(&warnings);
             self.logger.release_batched();
@@ -90,20 +97,21 @@ impl<'a> EngineImpl<'a> {
             };
 
             let source = self.world.source(id).unwrap();
-            let name = id
-                .vpath()
-                .as_rooted_path()
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy();
+
+            let package = id
+                .package()
+                .map(|pkg| pkg.to_string() + "/")
+                .unwrap_or_default();
+            let file = id.vpath().as_rootless_path().to_string_lossy();
 
             let range = source.range(diag.span).unwrap();
             let line = source.byte_to_line(range.start).unwrap_or(0);
             let col = source.byte_to_column(range.start).unwrap_or(0);
 
             let msg = format!(
-                "{}:{}:{}: {}: {}",
-                name,
+                "{}{}:{}:{}: {}: {}",
+                package,
+                file,
                 line + 1,
                 col,
                 match diag.severity {
