@@ -77,12 +77,7 @@ QString BackupHandler::resetSourceFile(const QString& sourceFileName)
 
     // Check if there is a left over settings key for the new file, indicating
     // a previous crash with it open
-    QString key = settingsKeyForFile(sourceFileName);
-    QString oldBackup = settings.value(key, QString()).toString();
-
-    settings.setValue(key, d_backupFile->fileName());
-
-    return oldBackup;
+    return settings.value(settingsKeyForFile(sourceFileName), QString()).toString();
 }
 
 void BackupHandler::editorContentChanged(const QString& content)
@@ -110,6 +105,9 @@ void BackupHandler::saveContent(const QString& content)
         QFileInfo info(d_sourceFile);
         d_backupFile = new QTemporaryFile(info.absolutePath() + "/.katvan_XXXXXX.typ", this);
         d_backupFile->open();
+
+        QSettings settings;
+        settings.setValue(settingsKeyForFile(d_sourceFile), d_backupFile->fileName());
     }
     else {
         d_backupFile->seek(0);

@@ -61,8 +61,6 @@ jobs:
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
-        with:
-          runVcpkgInstall: true
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -76,7 +74,7 @@ jobs:
             typstdriver/rust
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DVCPKG_MANIFEST_INSTALL=OFF
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build
         run: cmake --build build -j --config RelWithDebInfo
