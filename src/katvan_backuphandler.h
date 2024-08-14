@@ -22,6 +22,7 @@
 
 QT_BEGIN_NAMESPACE
 class QTemporaryFile;
+class QTimer;
 QT_END_NAMESPACE
 
 namespace katvan {
@@ -40,9 +41,14 @@ public slots:
     void editorContentChanged(const QString& content);
 
 private:
+    void saveContent(const QString& content);
+
     QString d_sourceFile;
     QTemporaryFile* d_backupFile;
     qint64 d_lastSaveTimestamp;
+
+    QTimer* d_timer;
+    QString d_pendingContent;
 };
 
 }

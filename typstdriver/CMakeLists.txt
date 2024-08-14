@@ -1,4 +1,5 @@
 find_package(Qt6 REQUIRED COMPONENTS Network)
+find_package(LibArchive REQUIRED)
 
 find_package(Corrosion QUIET)
 if(NOT Corrosion_FOUND)
@@ -22,9 +23,6 @@ corrosion_add_cxxbridge(typstdriver_ffi
 target_include_directories(typstdriver_ffi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET typstdriver_ffi PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(libarchive REQUIRED IMPORTED_TARGET libarchive)
-
 add_library(typstdriver SHARED
     typstdriver_engine.cpp
     typstdriver_logger.cpp
@@ -40,4 +38,4 @@ target_include_directories(typstdriver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAK
 target_compile_definitions(typstdriver PUBLIC QT_RESTRICTED_CAST_FROM_ASCII QT_NO_EMIT)
 
 target_link_libraries(typstdriver PRIVATE typstdriver_rs typstdriver_ffi)
-target_link_libraries(typstdriver PUBLIC Qt6::Network PkgConfig::libarchive)
+target_link_libraries(typstdriver PUBLIC Qt6::Network LibArchive::LibArchive)

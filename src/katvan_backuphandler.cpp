@@ -21,10 +21,14 @@
 #include <QDir>
 #include <QSettings>
 #include <QTemporaryFile>
+#include <QTimer>
 
 namespace katvan {
 
 static constexpr QLatin1StringView SETTING_PREFIX_TEMP_FILES = QLatin1StringView("compilertmp/");
+
+// XXX Make configurable
+static constexpr qint64 MAX_SECS_BETWEEN_BACKUPS = 15;
 
 static QString settingsKeyForFile(QString fileName)
 {
@@ -37,6 +41,11 @@ BackupHandler::BackupHandler(QObject* parent)
     , d_backupFile(nullptr)
     , d_lastSaveTimestamp(0)
 {
+    d_timer = new QTimer(this);
+    d_timer->setSingleShot(true);
+    d_timer->callOnTimeout(this, [this]() {
+        saveContent(d_pendingContent);
+    });
 }
 
 BackupHandler::~BackupHandler()
@@ -63,10 +72,7 @@ QString BackupHandler::resetSourceFile(const QString& sourceFileName)
         return QString();
     }
 
-    QFileInfo info(sourceFileName);
-    d_backupFile = new QTemporaryFile(info.absolutePath() + "/.katvan_XXXXXX.typ", this);
-    d_backupFile->open();
-
+    d_sourceFile = sourceFileName;
     d_lastSaveTimestamp = QDateTime::currentSecsSinceEpoch();
 
     // Check if there is a left over settings key for the new file, indicating
@@ -85,20 +91,38 @@ void BackupHandler::editorContentChanged(const QString& content)
         return;
     }
 
-    // XXX make configurable
     qint64 now = QDateTime::currentSecsSinceEpoch();
-    if (d_lastSaveTimestamp > now - 30) {
+    if (now < d_lastSaveTimestamp + MAX_SECS_BETWEEN_BACKUPS) {
+        d_pendingContent = content;
+        if (!d_timer->isActive()) {
+            d_timer->start((d_lastSaveTimestamp + MAX_SECS_BETWEEN_BACKUPS - now) * 1000);
+        }
         return;
     }
 
-    d_lastSaveTimestamp = now;
-    d_backupFile->seek(0);
+    d_timer->stop();
+    saveContent(content);
+}
+
+void BackupHandler::saveContent(const QString& content)
+{
+    if (d_backupFile == nullptr) {
+        QFileInfo info(d_sourceFile);
+        d_backupFile = new QTemporaryFile(info.absolutePath() + "/.katvan_XXXXXX.typ", this);
+        d_backupFile->open();
+    }
+    else {
+        d_backupFile->seek(0);
+    }
 
     QTextStream stream(d_backupFile);
     stream << content;
     stream.flush();
 
     d_backupFile->resize(d_backupFile->pos());
+
+    d_pendingContent.clear();
+    d_lastSaveTimestamp = QDateTime::currentSecsSinceEpoch();
 }
 
 }

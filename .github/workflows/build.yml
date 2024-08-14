@@ -76,7 +76,7 @@ jobs:
             typstdriver/rust
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DVCPKG_MANIFEST_INSTALL=OFF
 
       - name: Build
         run: cmake --build build -j --config RelWithDebInfo

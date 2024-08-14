@@ -3,8 +3,11 @@
     "builtin-baseline": "53bef8994c541b6561884a8395ea35715ece75db",
     "dependencies": [
         "hunspell",
-        "libarchive",
         "gtest",
+        {
+            "name": "libarchive",
+            "default-features": false
+        },
         {
             "name": "pkgconf",
             "platform": "windows"
