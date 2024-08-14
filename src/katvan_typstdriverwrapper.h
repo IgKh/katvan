@@ -51,6 +51,8 @@ public:
     TypstDriverWrapper(QObject* parent = nullptr);
     ~TypstDriverWrapper();
 
+    static QString typstVersion();
+
     Status status() const { return d_status; }
     QByteArray pdfBuffer() const;
 

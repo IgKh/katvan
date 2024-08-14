@@ -57,6 +57,11 @@ TypstDriverWrapper::~TypstDriverWrapper()
     }
 }
 
+QString TypstDriverWrapper::typstVersion()
+{
+    return typstdriver::Engine::typstVersion();
+}
+
 QByteArray TypstDriverWrapper::pdfBuffer() const
 {
     if (!d_engine) {

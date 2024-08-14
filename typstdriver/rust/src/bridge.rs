@@ -68,6 +68,8 @@ pub(crate) mod ffi {
             instance_id: &str,
             root: &str,
         ) -> Box<EngineImpl<'a>>;
+
+        fn typst_version() -> String;
     }
 }
 
@@ -78,4 +80,8 @@ fn create_engine_impl<'a>(
     root: &str,
 ) -> Box<EngineImpl<'a>> {
     Box::new(EngineImpl::new(logger, package_manager, instance_id, root))
+}
+
+fn typst_version() -> String {
+    typst::syntax::package::PackageVersion::compiler().to_string()
 }

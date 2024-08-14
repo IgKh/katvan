@@ -683,12 +683,13 @@ void MainWindow::showAbout()
         "<h3>Katvan</h3>"
         "<a href=\"%1\">%1</a>"
         "<p>A bare-bones editor for <i>Typst</i> files, with a bias for RTL</p>"
-        "<p>Version %2 (Qt %3)"
+        "<p>Version %2 (Qt %3; Typst %4)"
     )
     .arg(
         QLatin1String("https://github.com/IgKh/katvan"),
         QCoreApplication::applicationVersion(),
-        QLatin1String(qVersion()));
+        QLatin1String(qVersion()),
+        TypstDriverWrapper::typstVersion());
 
     QString informativeText = tr(
         "<p>Katvan is offered under the terms of the <a href=\"%1\">GNU General Public License Version 3</a>. "

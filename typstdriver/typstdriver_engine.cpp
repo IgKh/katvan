@@ -61,6 +61,12 @@ Engine::~Engine()
 {
 }
 
+QString Engine::typstVersion()
+{
+    rust::String version = typst_version();
+    return QString::fromUtf8(version.data(), version.size());
+}
+
 QByteArray Engine::pdfBuffer() const
 {
     return d_ptr->pdfBuffer;

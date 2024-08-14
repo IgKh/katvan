@@ -38,6 +38,8 @@ public:
     Engine(const QString& filePath, Logger* logger, PackageManager* packageManager, QObject* parent = nullptr);
     ~Engine();
 
+    static QString typstVersion();
+
     QByteArray pdfBuffer() const;
 
 signals:
