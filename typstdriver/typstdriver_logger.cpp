@@ -18,6 +18,8 @@
 #include "typstdriver_logger.h"
 #include "typstdriver_logger_p.h"
 
+#include <QTime>
+
 namespace katvan::typstdriver {
 
 Logger::Logger(QObject* parent)
@@ -25,14 +27,24 @@ Logger::Logger(QObject* parent)
 {
 }
 
+static QString withTimestamp(const QString& message)
+{
+    return "[" + QTime::currentTime().toString(Qt::ISODateWithMs) + "] " + message;
+}
+
 void Logger::logMessage(const QString& message, bool toBatch)
 {
     if (toBatch) {
-        d_batchedMessages.append(message);
+        if (d_batchedMessages.isEmpty()) {
+            d_batchedMessages.append(withTimestamp(message));
+        }
+        else {
+            d_batchedMessages.append(message);
+        }
     }
     else {
         releaseBatched();
-        Q_EMIT messagesLogged({ message });
+        Q_EMIT messagesLogged({ withTimestamp(message) });
     }
 }
 

@@ -91,29 +91,9 @@ impl<'a> EngineImpl<'a> {
 
     fn log_diagnostics(&self, diagnostics: &[typst::diag::SourceDiagnostic]) {
         for diag in diagnostics {
-            let id = match diag.span.id() {
-                Some(id) => id,
-                None => continue,
-            };
-
-            let source = self.world.source(id).unwrap();
-
-            let package = id
-                .package()
-                .map(|pkg| pkg.to_string() + "/")
-                .unwrap_or_default();
-            let file = id.vpath().as_rootless_path().to_string_lossy();
-
-            let range = source.range(diag.span).unwrap();
-            let line = source.byte_to_line(range.start).unwrap_or(0);
-            let col = source.byte_to_column(range.start).unwrap_or(0);
-
             let msg = format!(
-                "{}{}:{}:{}: {}: {}",
-                package,
-                file,
-                line + 1,
-                col,
+                "{}: {}: {}",
+                self.span_to_location(diag.span),
                 match diag.severity {
                     typst::diag::Severity::Error => "error",
                     typst::diag::Severity::Warning => "warning",
@@ -121,6 +101,40 @@ impl<'a> EngineImpl<'a> {
                 diag.message
             );
             self.logger.log_to_batch(&msg);
+
+            for trace in &diag.trace {
+                let msg = format!(
+                    "{}: note: {}",
+                    self.span_to_location(trace.span),
+                    trace.v
+                );
+                self.logger.log_to_batch(&msg);
+            }
+
+            for hint in &diag.hints {
+                self.logger.log_to_batch(&format!("hint: {hint}"));
+            }
         }
+    }
+
+    fn span_to_location(&self, span: typst::syntax::Span) -> String {
+        let id = match span.id() {
+            Some(id) => id,
+            None => return String::new(),
+        };
+
+        let source = self.world.source(id).unwrap();
+
+        let package = id
+            .package()
+            .map(|pkg| pkg.to_string() + "/")
+            .unwrap_or_default();
+        let file = id.vpath().as_rootless_path().to_string_lossy();
+
+        let range = source.range(span).unwrap();
+        let line = source.byte_to_line(range.start).unwrap_or(0);
+        let col = source.byte_to_column(range.start).unwrap_or(0);
+
+        format!("{}{}:{}:{}", package, file, line + 1, col)
     }
 }
