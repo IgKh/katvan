@@ -22,7 +22,6 @@ use crate::world::KatvanWorld;
 
 pub struct EngineImpl<'a> {
     logger: &'a ffi::LoggerProxy,
-    instance_id: String,
     world: KatvanWorld<'a>,
     result: Option<typst::model::Document>,
 }
@@ -31,18 +30,16 @@ impl<'a> EngineImpl<'a> {
     pub fn new(
         logger: &'a ffi::LoggerProxy,
         package_manager: &'a ffi::PackageManagerProxy,
-        instance_id: &str,
         root: &str,
     ) -> Self {
         EngineImpl {
             logger,
-            instance_id: String::from(instance_id),
             world: KatvanWorld::new(package_manager, root),
             result: None,
         }
     }
 
-    pub fn compile(&mut self, source: &str) -> Vec<u8> {
+    pub fn compile(&mut self, source: &str) -> Vec<ffi::PreviewPageDataInternal> {
         self.world.reset_source(source);
 
         self.logger.log_one("compiling ...");
@@ -68,14 +65,18 @@ impl<'a> EngineImpl<'a> {
 
             comemo::evict(5);
 
-            let pdf = typst_pdf::pdf(
-                &doc,
-                typst::foundations::Smart::Custom(&self.instance_id),
-                None,
-            );
+            let pages = doc
+                .pages
+                .iter()
+                .map(|page| ffi::PreviewPageDataInternal {
+                    page_num: page.number,
+                    width_pts: page.frame.width().abs().to_pt(),
+                    height_pts: page.frame.height().abs().to_pt(),
+                })
+                .collect();
 
             self.result = Some(doc);
-            pdf
+            pages
         } else {
             let errors = res.unwrap_err();
 
@@ -103,11 +104,7 @@ impl<'a> EngineImpl<'a> {
             self.logger.log_to_batch(&msg);
 
             for trace in &diag.trace {
-                let msg = format!(
-                    "{}: note: {}",
-                    self.span_to_location(trace.span),
-                    trace.v
-                );
+                let msg = format!("{}: note: {}", self.span_to_location(trace.span), trace.v);
                 self.logger.log_to_batch(&msg);
             }
 
@@ -136,5 +133,30 @@ impl<'a> EngineImpl<'a> {
         let col = source.byte_to_column(range.start).unwrap_or(0);
 
         format!("{}{}:{}:{}", package, file, line + 1, col)
+    }
+
+    fn try_render_page(&self, page: usize, point_size: f32) -> Option<ffi::RenderedPage> {
+        let frame = &self.result.as_ref()?.pages.get(page)?.frame;
+        let pixmap = typst_render::render(frame, point_size, typst::visualize::Color::WHITE);
+
+        Some(ffi::RenderedPage {
+            width_px: pixmap.width(),
+            height_px: pixmap.height(),
+            buffer: pixmap.take(),
+        })
+    }
+
+    pub fn render_page(&self, page: usize, point_size: f32) -> ffi::RenderedPage {
+        self.try_render_page(page, point_size).unwrap_or_default()
+    }
+
+    pub fn export_pdf(&self, path: &str) -> String {
+        let document = self.result.as_ref().unwrap();
+        let data = typst_pdf::pdf(document, typst::foundations::Smart::Auto, None);
+
+        match std::fs::write(path, data) {
+            Ok(()) => String::new(),
+            Err(err) => err.to_string(),
+        }
     }
 }

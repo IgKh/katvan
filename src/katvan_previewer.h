@@ -17,26 +17,27 @@
  */
 #pragma once
 
-#include <QByteArray>
+#include "katvan_typstdriverwrapper.h"
+
+#include <QList>
 #include <QSettings>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
-class QBuffer;
 class QComboBox;
 class QLabel;
-class QPdfDocument;
-class QPdfView;
 QT_END_NAMESPACE
 
 namespace katvan {
+
+class PreviewerView;
 
 class Previewer : public QWidget
 {
     Q_OBJECT
 
 public:
-    Previewer(QWidget* parent = nullptr);
+    Previewer(TypstDriverWrapper* driver, QWidget* parent = nullptr);
     ~Previewer();
 
     void restoreSettings(const QSettings& settings);
@@ -44,9 +45,9 @@ public:
 
 public slots:
     void reset();
-    bool updatePreview(QByteArray pdfBuffer);
 
 private slots:
+    void updatePreview(QList<typstdriver::PreviewPageData> pages);
     void zoomIn();
     void zoomOut();
     void zoomOptionSelected(int index);
@@ -54,14 +55,11 @@ private slots:
     void currentPageChanged(int page);
 
 private:
-    qreal effectiveZoom();
     void setZoom(QVariant value);
     void setCustomZoom(qreal factor);
 
 private:
-    QPdfView* d_pdfView;
-    QPdfDocument* d_previewDocument;
-    QBuffer* d_buffer;
+    PreviewerView* d_view;
 
     QComboBox* d_zoomComboBox;
     QLabel* d_currentPageLabel;

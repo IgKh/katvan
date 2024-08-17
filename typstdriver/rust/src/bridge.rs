@@ -28,6 +28,19 @@ pub(crate) mod ffi {
         ArchiveError,
     }
 
+    struct PreviewPageDataInternal {
+        page_num: usize,
+        width_pts: f64,
+        height_pts: f64,
+    }
+
+    #[derive(Default)]
+    struct RenderedPage {
+        width_px: u32,
+        height_px: u32,
+        buffer: Vec<u8>,
+    }
+
     unsafe extern "C++" {
         include!("typstdriver_logger_p.h");
 
@@ -49,7 +62,8 @@ pub(crate) mod ffi {
         type PackageManagerProxy;
 
         #[rust_name = "get_package_local_path"]
-        fn getPackageLocalPath(&self, package_namespace: &str, name: &str, version: &str) -> String;
+        fn getPackageLocalPath(&self, package_namespace: &str, name: &str, version: &str)
+            -> String;
 
         fn error(&self) -> PackageManagerError;
 
@@ -60,12 +74,15 @@ pub(crate) mod ffi {
     extern "Rust" {
         type EngineImpl<'a>;
 
-        fn compile(&mut self, source: &str) -> Vec<u8>;
+        fn compile(&mut self, source: &str) -> Vec<PreviewPageDataInternal>;
+
+        fn render_page(&self, page: usize, point_size: f32) -> RenderedPage;
+
+        fn export_pdf(&self, path: &str) -> String;
 
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,
             package_manager: &'a PackageManagerProxy,
-            instance_id: &str,
             root: &str,
         ) -> Box<EngineImpl<'a>>;
 
@@ -76,10 +93,9 @@ pub(crate) mod ffi {
 fn create_engine_impl<'a>(
     logger: &'a ffi::LoggerProxy,
     package_manager: &'a ffi::PackageManagerProxy,
-    instance_id: &str,
     root: &str,
 ) -> Box<EngineImpl<'a>> {
-    Box::new(EngineImpl::new(logger, package_manager, instance_id, root))
+    Box::new(EngineImpl::new(logger, package_manager, root))
 }
 
 fn typst_version() -> String {

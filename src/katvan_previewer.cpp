@@ -16,19 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_previewer.h"
+#include "katvan_previewerview.h"
+#include "katvan_typstdriverwrapper.h"
 
-#include <QBuffer>
 #include <QComboBox>
-#include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QIntValidator>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
-#include <QPdfDocument>
-#include <QPdfPageNavigator>
-#include <QPdfView>
-#include <QScreen>
 #include <QScrollBar>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -40,17 +35,13 @@ static constexpr QLatin1StringView SETTING_PREVIEW_ZOOM("preview/zoom");
 
 namespace katvan {
 
-Previewer::Previewer(QWidget* parent)
+Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     : QWidget(parent)
 {
-    d_previewDocument = new QPdfDocument(this);
-    d_buffer = new QBuffer(this);
+    d_view = new PreviewerView(driver, this);
 
-    d_pdfView = new QPdfView(this);
-    d_pdfView->setDocument(d_previewDocument);
-    d_pdfView->setPageMode(QPdfView::PageMode::MultiPage);
-
-    connect(d_pdfView->pageNavigator(), &QPdfPageNavigator::currentPageChanged, this, &Previewer::currentPageChanged);
+    connect(driver, &TypstDriverWrapper::previewReady, this, &Previewer::updatePreview);
+    connect(d_view, &PreviewerView::currentPageChanged, this, &Previewer::currentPageChanged);
 
     d_zoomComboBox = new QComboBox();
     d_zoomComboBox->setEditable(true);
@@ -98,12 +89,11 @@ Previewer::Previewer(QWidget* parent)
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(toolLayout);
-    layout->addWidget(d_pdfView, 1);
+    layout->addWidget(d_view, 1);
 }
 
 Previewer::~Previewer()
 {
-    reset();
 }
 
 void Previewer::restoreSettings(const QSettings& settings)
@@ -120,14 +110,14 @@ void Previewer::restoreSettings(const QSettings& settings)
 void Previewer::saveSettings(QSettings& settings)
 {
     QVariant zoomValue;
-    switch (d_pdfView->zoomMode()) {
-        case QPdfView::ZoomMode::Custom:
-            zoomValue = d_pdfView->zoomFactor();
+    switch (d_view->zoomMode()) {
+        case PreviewerView::ZoomMode::Custom:
+            zoomValue = d_view->zoomFactor();
             break;
-        case QPdfView::ZoomMode::FitInView:
+        case PreviewerView::ZoomMode::FitToPage:
             zoomValue = FIT_TO_PAGE;
             break;
-        case QPdfView::ZoomMode::FitToWidth:
+        case PreviewerView::ZoomMode::FitToWidth:
             zoomValue = FIT_TO_WIDTH;
             break;
     }
@@ -137,39 +127,21 @@ void Previewer::saveSettings(QSettings& settings)
 
 void Previewer::reset()
 {
-    d_previewDocument->close();
-    d_buffer->close();
+    d_view->setPages({});
     d_currentPageLabel->setText(QString());
 }
 
-bool Previewer::updatePreview(QByteArray pdfBuffer)
+void Previewer::updatePreview(QList<typstdriver::PreviewPageData> pages)
 {
-    int origY = d_pdfView->verticalScrollBar()->value();
-    int origX = d_pdfView->horizontalScrollBar()->value();
+    int origY = d_view->verticalScrollBar()->value();
+    int origX = d_view->horizontalScrollBar()->value();
 
-    if (d_buffer->isOpen()) {
-        d_buffer->close();
-    }
-    d_buffer->setData(pdfBuffer);
-    d_buffer->open(QIODevice::ReadOnly);
-    d_previewDocument->load(d_buffer);
+    d_view->setPages(pages);
 
-    if (d_previewDocument->error() != QPdfDocument::Error::None) {
-        QString err = QVariant::fromValue(d_previewDocument->error()).toString();
-        QMessageBox::warning(
-            window(),
-            QCoreApplication::applicationName(),
-            tr("Failed loading preview: %1").arg(err));
+    d_view->verticalScrollBar()->setValue(origY);
+    d_view->horizontalScrollBar()->setValue(origX);
 
-        return false;
-    }
-
-    d_pdfView->verticalScrollBar()->setValue(origY);
-    d_pdfView->horizontalScrollBar()->setValue(origX);
-
-    currentPageChanged(d_pdfView->pageNavigator()->currentPage());
-
-    return true;
+    currentPageChanged(d_view->currentPage());
 }
 
 static qreal roundFactor(qreal factor)
@@ -180,12 +152,14 @@ static qreal roundFactor(qreal factor)
 
 void Previewer::zoomIn()
 {
-    setCustomZoom(roundFactor(effectiveZoom()) + 0.05);
+    qreal zoom = roundFactor(d_view->effectiveZoom(d_view->currentPage()));
+    setCustomZoom(zoom + 0.05);
 }
 
 void Previewer::zoomOut()
 {
-    setCustomZoom(roundFactor(effectiveZoom()) - 0.05);
+    qreal zoom = roundFactor(d_view->effectiveZoom(d_view->currentPage()));
+    setCustomZoom(zoom - 0.05);
 }
 
 void Previewer::zoomOptionSelected(int index)
@@ -212,37 +186,10 @@ void Previewer::manualZoomEntered()
 
 void Previewer::currentPageChanged(int page)
 {
-    QString pageLabel = d_previewDocument->pageLabel(page);
-    QString pageCount = QString::number(d_previewDocument->pageCount());
+    QString pageLabel = d_view->pageLabel(page);
+    QString pageCount = QString::number(d_view->pageCount());
 
     d_currentPageLabel->setText(tr("Page %1 of %2").arg(pageLabel, pageCount));
-}
-
-qreal Previewer::effectiveZoom()
-{
-    if (d_pdfView->zoomMode() == QPdfView::ZoomMode::Custom) {
-        return d_pdfView->zoomFactor();
-    }
-
-    QSizeF currentPageSize = d_previewDocument->pagePointSize(d_pdfView->pageNavigator()->currentPage());
-
-    int displayWidth = d_pdfView->viewport()->width()
-        - d_pdfView->documentMargins().left()
-        - d_pdfView->documentMargins().right();
-
-    // A point is 1/72th of an inch
-    qreal pointSize = screen()->logicalDotsPerInch() / 72.0;
-
-    if (d_pdfView->zoomMode() == QPdfView::ZoomMode::FitToWidth) {
-        return displayWidth / (currentPageSize.width() * pointSize);
-    }
-    else if (d_pdfView->zoomMode() == QPdfView::ZoomMode::FitInView) {
-        QSize displaySize(displayWidth, d_pdfView->viewport()->height() - d_pdfView->pageSpacing());
-        QSizeF scaled = (currentPageSize * pointSize).scaled(displaySize, Qt::KeepAspectRatio);
-
-        return scaled.width() / (currentPageSize.width() * pointSize);
-    }
-    return 1.0;
 }
 
 void Previewer::setZoom(QVariant zoomValue)
@@ -256,18 +203,18 @@ void Previewer::setZoom(QVariant zoomValue)
     else {
         QString val = zoomValue.toString();
         if (val == FIT_TO_PAGE) {
-            d_pdfView->setZoomMode(QPdfView::ZoomMode::FitInView);
+            d_view->setZoomMode(PreviewerView::ZoomMode::FitToPage);
         }
         else if (val == FIT_TO_WIDTH) {
-            d_pdfView->setZoomMode(QPdfView::ZoomMode::FitToWidth);
+            d_view->setZoomMode(PreviewerView::ZoomMode::FitToWidth);
         }
     }
 }
 
 void Previewer::setCustomZoom(qreal factor)
 {
-    d_pdfView->setZoomMode(QPdfView::ZoomMode::Custom);
-    d_pdfView->setZoomFactor(factor);
+    d_view->setZoomMode(PreviewerView::ZoomMode::Custom);
+    d_view->setZoomFactor(factor);
     d_zoomComboBox->setEditText(QString("%1%").arg(qRound(factor * 100)));
 }
 

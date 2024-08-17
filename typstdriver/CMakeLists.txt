@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS Network)
+find_package(Qt6 REQUIRED COMPONENTS Gui Network)
 find_package(LibArchive REQUIRED)
 
 find_package(Corrosion QUIET)
@@ -38,4 +38,4 @@ target_include_directories(typstdriver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAK
 target_compile_definitions(typstdriver PUBLIC QT_RESTRICTED_CAST_FROM_ASCII QT_NO_EMIT)
 
 target_link_libraries(typstdriver PRIVATE typstdriver_rs typstdriver_ffi)
-target_link_libraries(typstdriver PUBLIC Qt6::Network LibArchive::LibArchive)
+target_link_libraries(typstdriver PUBLIC Qt6::Gui Qt6::Network LibArchive::LibArchive)

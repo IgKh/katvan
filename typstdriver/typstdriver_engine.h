@@ -19,8 +19,9 @@
 
 #include "typstdriver_export.h"
 
-#include <QByteArray>
+#include <QImage>
 #include <QObject>
+#include <QSize>
 #include <QString>
 
 #include <memory>
@@ -29,6 +30,12 @@ namespace katvan::typstdriver {
 
 class Logger;
 class PackageManager;
+
+struct TYPSTDRIVER_EXPORT PreviewPageData
+{
+    int pageNumber;
+    QSizeF sizeInPoints;
+};
 
 class TYPSTDRIVER_EXPORT Engine : public QObject
 {
@@ -40,15 +47,17 @@ public:
 
     static QString typstVersion();
 
-    QByteArray pdfBuffer() const;
-
 signals:
     void initialized();
-    void previewReady(QByteArray pdfBuffer);
+    void previewReady(QList<PreviewPageData> pages);
+    void pageRendered(int page, QImage renderedPage);
+    void exportFinished(QString errorMessage);
 
 public slots:
     void init();
     void compile(const QString& source);
+    void renderPage(int page, qreal pointSize);
+    void exportToPdf(const QString& outputFile);
 
 private:
     struct EnginePrivate;
@@ -56,3 +65,5 @@ private:
 };
 
 }
+
+Q_DECLARE_METATYPE(katvan::typstdriver::PreviewPageData)

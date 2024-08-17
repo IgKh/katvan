@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS Widgets PdfWidgets LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
 
 find_package(Git)
 if(Git_FOUND)
@@ -27,6 +27,7 @@ set(SOURCES
     katvan_mainwindow.cpp
     katvan_parsing.cpp
     katvan_previewer.cpp
+    katvan_previewerview.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
     katvan_spellchecker.cpp
@@ -58,7 +59,6 @@ endif()
 target_link_libraries(libkatvan PUBLIC
     typstdriver
     Qt6::Widgets
-    Qt6::PdfWidgets
     PkgConfig::hunspell
 )
 

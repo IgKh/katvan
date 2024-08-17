@@ -62,14 +62,6 @@ QString TypstDriverWrapper::typstVersion()
     return typstdriver::Engine::typstVersion();
 }
 
-QByteArray TypstDriverWrapper::pdfBuffer() const
-{
-    if (!d_engine) {
-        return QByteArray();
-    }
-    return d_engine->pdfBuffer();
-}
-
 void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
 {
     d_status = Status::INITIALIZING;
@@ -93,6 +85,8 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     };
 
     connect(d_engine, &typstdriver::Engine::previewReady, this, &TypstDriverWrapper::previewReady);
+    connect(d_engine, &typstdriver::Engine::pageRendered, this, &TypstDriverWrapper::pageRenderComplete);
+    connect(d_engine, &typstdriver::Engine::exportFinished, this, &TypstDriverWrapper::exportFinished);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
     QMetaObject::invokeMethod(d_engine, "init");
@@ -114,6 +108,21 @@ void TypstDriverWrapper::updatePreview(const QString& source)
 
     d_compilerOutput.clear();
     QMetaObject::invokeMethod(d_engine, "compile", source);
+}
+
+void TypstDriverWrapper::renderPage(int page, qreal pointSize)
+{
+    if (d_pendingPagesToRender.contains(page)) {
+        return;
+    }
+
+    d_pendingPagesToRender.insert(page);
+    QMetaObject::invokeMethod(d_engine, "renderPage", page, pointSize);
+}
+
+void TypstDriverWrapper::exportToPdf(const QString& filePath)
+{
+    QMetaObject::invokeMethod(d_engine, "exportToPdf", filePath);
 }
 
 void TypstDriverWrapper::compilerOutputLogged(QStringList messages)
@@ -138,6 +147,12 @@ void TypstDriverWrapper::compilerOutputLogged(QStringList messages)
 
     d_compilerOutput.append(std::move(messages));
     Q_EMIT outputReady(d_compilerOutput);
+}
+
+void TypstDriverWrapper::pageRenderComplete(int page, QImage renderedPage)
+{
+    d_pendingPagesToRender.remove(page);
+    Q_EMIT pageRendered(page, renderedPage);
 }
 
 }

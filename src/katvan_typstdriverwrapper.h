@@ -17,9 +17,11 @@
  */
 #pragma once
 
-#include <QByteArray>
+#include "typstdriver_engine.h"
+
 #include <QList>
 #include <QObject>
+#include <QSet>
 
 QT_BEGIN_NAMESPACE
 class QThread;
@@ -54,20 +56,24 @@ public:
     static QString typstVersion();
 
     Status status() const { return d_status; }
-    QByteArray pdfBuffer() const;
 
     void resetInputFile(const QString& sourceFileName);
 
 signals:
-    void previewReady(QByteArray pdfBuffer);
+    void previewReady(QList<typstdriver::PreviewPageData> pages);
     void outputReady(const QStringList& output);
     void compilationStatusChanged();
+    void pageRendered(int page, QImage renderedPage);
+    void exportFinished(QString errorMessage);
 
 public slots:
     void updatePreview(const QString& source);
+    void renderPage(int page, qreal pageSize);
+    void exportToPdf(const QString& filePath);
 
 private slots:
     void compilerOutputLogged(QStringList messages);
+    void pageRenderComplete(int page, QImage renderedPage);
 
 private:
     typstdriver::Engine* d_engine;
@@ -79,6 +85,7 @@ private:
     Status d_status;
     QStringList d_compilerOutput;
     QString d_pendingSourceToCompile;
+    QSet<int> d_pendingPagesToRender;
 };
 
 }

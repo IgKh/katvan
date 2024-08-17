@@ -17,7 +17,6 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.5.*
-          modules: 'qtpdf'
           cache: true
 
       - name: Install dependencies
@@ -56,7 +55,6 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.5.*
-          modules: 'qtpdf'
           cache: true
 
       - name: Setup vcpkg
@@ -94,7 +92,6 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.5.*
-          modules: 'qtpdf'
           cache: true
 
       - name: Install additional dependencies

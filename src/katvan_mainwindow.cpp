@@ -67,7 +67,7 @@ MainWindow::MainWindow()
     setupActions();
     setupStatusBar();
 
-    connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::updatePreview);
+    connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::previewReady);
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
     connect(d_driver, &TypstDriverWrapper::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
 
@@ -100,7 +100,7 @@ void MainWindow::setupUI()
     d_editorSettingsDialog = new EditorSettingsDialog(this);
     connect(d_editorSettingsDialog, &QDialog::accepted, this, &MainWindow::editorSettingsDialogAccepted);
 
-    d_previewer = new Previewer();
+    d_previewer = new Previewer(d_driver);
 
     d_compilerOutput = new CompilerOutput();
     connect(d_compilerOutput, &CompilerOutput::goToPosition, d_editor, &Editor::goToBlock);
@@ -215,7 +215,7 @@ void MainWindow::setupActions()
     replaceAction->setIcon(QIcon::fromTheme("edit-find-replace", QIcon(":/icons/edit-find-replace.svg")));
     replaceAction->setShortcut(QKeySequence::Replace);
 
-    QAction* gotoLineAction = editMenu->addAction(tr("&Go to line..."), this, &MainWindow::goToLine);
+    QAction* gotoLineAction = editMenu->addAction(tr("&Go to Line..."), this, &MainWindow::goToLine);
     gotoLineAction->setShortcut(Qt::CTRL | Qt::Key_G);
 
     /*
@@ -639,17 +639,21 @@ void MainWindow::exportPdf()
 
     QString targetFileName = dialog.selectedFiles().at(0);
 
-    QFile file(targetFileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        QMessageBox::critical(
-            this,
-            QCoreApplication::applicationName(),
-            tr("Opening write %1 for writing failed: %2").arg(targetFileName, file.errorString()));
+    auto onComplete = [this, targetFileName](QString errorMessage) {
+        qApp->restoreOverrideCursor();
 
-        return;
-    }
+        if (!errorMessage.isEmpty()) {
+            QMessageBox::critical(
+                this,
+                QCoreApplication::applicationName(),
+                tr("Failed exporting PDF to %1: %2").arg(targetFileName, errorMessage));
+        }
+    };
 
-    file.write(d_driver->pdfBuffer());
+    connect(d_driver, &TypstDriverWrapper::exportFinished, this, onComplete, Qt::SingleShotConnection);
+    qApp->setOverrideCursor(Qt::WaitCursor);
+
+    d_driver->exportToPdf(targetFileName);
 }
 
 void MainWindow::goToLine()
@@ -795,12 +799,8 @@ void MainWindow::editorSettingsDialogAccepted()
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
 }
 
-void MainWindow::updatePreview(QByteArray pdfBuffer)
+void MainWindow::previewReady()
 {
-    if (!d_previewer->updatePreview(pdfBuffer)) {
-        return;
-    }
-
     if (d_exportPdfPending) {
         QTimer::singleShot(0, this, &MainWindow::exportPdf);
         d_exportPdfPending = false;

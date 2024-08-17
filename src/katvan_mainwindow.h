@@ -66,7 +66,7 @@ private slots:
     void changeSpellCheckingDictionary();
     void toggleCursorMovementStyle();
     void editorSettingsDialogAccepted();
-    void updatePreview(QByteArray pdfBuffer);
+    void previewReady();
     void compilationStatusChanged();
 
 private:
