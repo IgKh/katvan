@@ -34,6 +34,7 @@
 #include <QScreen>
 #include <QScrollBar>
 #include <QScroller>
+#include <QTimer>
 
 namespace katvan {
 
@@ -51,6 +52,11 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
 
     connect(screen(), &QScreen::logicalDotsPerInchChanged, this, &PreviewerView::dpiChanged);
     dpiChanged();
+
+    d_debounceTimer = new QTimer(this);
+    d_debounceTimer->setSingleShot(true);
+    d_debounceTimer->setInterval(100);
+    d_debounceTimer->callOnTimeout(this, &PreviewerView::invalidateAllRenderCache);
 
     verticalScrollBar()->setSingleStep(20);
     horizontalScrollBar()->setSingleStep(20);
@@ -100,11 +106,33 @@ qreal PreviewerView::effectiveZoom(int page) const
 
 void PreviewerView::setPages(QList<typstdriver::PreviewPageData> pages)
 {
+    bool hadPages = !d_pages.isEmpty();
     d_pages = pages;
 
-    // XXX don't actually have to discard the entire render cache here;
-    // we could only invalidate pages that actually changed
-    resetAllCalculations();
+    resetAllCalculations(false);
+
+    if (pages.isEmpty()) {
+        // Reset before loading a new document - discard the entire cache.
+        d_renderCache.clear();
+    }
+    else if (hadPages) {
+        // In case of new content in an already open preview - invalidate
+        // only pages that have actually changed
+        QList<int> keys = d_renderCache.keys();
+        for (int key : keys) {
+            if (key >= pages.size()) {
+                d_renderCache.remove(key);
+            }
+            else {
+                CachedPage* page = d_renderCache.object(key);
+                if (page->fingerprint != pages[key].fingerprint) {
+                    page->invalidated = true;
+                }
+            }
+        }
+    }
+
+    viewport()->update();
 }
 
 void PreviewerView::setZoomMode(ZoomMode mode)
@@ -119,9 +147,10 @@ void PreviewerView::setZoomMode(ZoomMode mode)
     resetAllCalculations();
 }
 
-void PreviewerView::setZoomFactor(qreal factor)
+void PreviewerView::setCustomZoomFactor(qreal factor)
 {
-    if (d_zoomMode == ZoomMode::Custom && factor != d_zoomFactor) {
+    if (d_zoomMode != ZoomMode::Custom || factor != d_zoomFactor) {
+        d_zoomMode = ZoomMode::Custom;
         d_zoomFactor = factor;
 
         resetAllCalculations();
@@ -134,6 +163,11 @@ void PreviewerView::resizeEvent(QResizeEvent* event)
 
     if (d_zoomMode != ZoomMode::Custom) {
         resetAllCalculations();
+    }
+    else {
+        updatePageGeometries();
+        updateScrollbars();
+        viewport()->update();
     }
 }
 
@@ -168,11 +202,11 @@ void PreviewerView::paintEvent(QPaintEvent* event)
 
         painter.fillRect(pageGeometry, Qt::white);
 
-        QImage* renderedPage = d_renderCache.object(i);
+        CachedPage* renderedPage = d_renderCache.object(i);
         if (renderedPage != nullptr) {
-            painter.drawImage(pageGeometry, *renderedPage);
+            painter.drawImage(pageGeometry, renderedPage->image);
         }
-        else {
+        if (renderedPage == nullptr || renderedPage->invalidated) {
             d_driver->renderPage(i, d_pointSize * effectiveZoom(i) * devicePixelRatio());
         }
     }
@@ -186,7 +220,11 @@ void PreviewerView::scrollContentsBy(int dx, int dy)
 
 void PreviewerView::pageRendered(int page, QImage image)
 {
-    d_renderCache.insert(page, new QImage(image));
+    if (page >= d_pages.size()) {
+        return;
+    }
+
+    d_renderCache.insert(page, new CachedPage { d_pages[page].fingerprint, image });
     viewport()->update();
 }
 
@@ -214,13 +252,30 @@ void PreviewerView::scrollerStateChanged()
     }
 }
 
-void PreviewerView::resetAllCalculations()
+void PreviewerView::invalidateAllRenderCache()
+{
+    for (int page : d_renderCache.keys()) {
+        d_renderCache.object(page)->invalidated = true;
+    }
+    viewport()->update();
+}
+
+void PreviewerView::resetAllCalculations(bool invalidateRenderCache)
 {
     updatePageGeometries();
     updateScrollbars();
     updateCurrentPage();
-    d_renderCache.clear();
-    viewport()->update();
+
+    if (invalidateRenderCache) {
+        // If there wasn't a content change, but just a geometry change,
+        // keep the rendered pages but mark them for refresh. The idea
+        // is that until the pages are re-rendered we'll scale the
+        // existing bitmaps to the new size to avoid too much flicker,
+        // and then the sharper images will replace them. Do it via a
+        // debouncer to ensure that we don't re-render too much when e.g
+        // resizing the previewer pane.
+        d_debounceTimer->start();
+    }
 }
 
 void PreviewerView::updatePageGeometries()

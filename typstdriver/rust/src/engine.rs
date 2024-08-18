@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use typst::World;
 
 use crate::bridge::ffi;
@@ -72,6 +74,7 @@ impl<'a> EngineImpl<'a> {
                     page_num: page.number,
                     width_pts: page.frame.width().abs().to_pt(),
                     height_pts: page.frame.height().abs().to_pt(),
+                    fingerprint: hash_frame(&page.frame),
                 })
                 .collect();
 
@@ -150,13 +153,16 @@ impl<'a> EngineImpl<'a> {
         self.try_render_page(page, point_size).unwrap_or_default()
     }
 
-    pub fn export_pdf(&self, path: &str) -> String {
-        let document = self.result.as_ref().unwrap();
+    pub fn export_pdf(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let document = self.result.as_ref().ok_or("Invalid state")?;
         let data = typst_pdf::pdf(document, typst::foundations::Smart::Auto, None);
 
-        match std::fs::write(path, data) {
-            Ok(()) => String::new(),
-            Err(err) => err.to_string(),
-        }
+        std::fs::write(path, data).map_err(|err| err.into())
     }
+}
+
+fn hash_frame(frame: &typst::layout::Frame) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    frame.hash(&mut hasher);
+    hasher.finish()
 }

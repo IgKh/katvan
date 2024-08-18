@@ -60,7 +60,7 @@ public:
     void resetInputFile(const QString& sourceFileName);
 
 signals:
-    void previewReady(QList<typstdriver::PreviewPageData> pages);
+    void previewReady(QList<katvan::typstdriver::PreviewPageData> pages);
     void outputReady(const QStringList& output);
     void compilationStatusChanged();
     void pageRendered(int page, QImage renderedPage);

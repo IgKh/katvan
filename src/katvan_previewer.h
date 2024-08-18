@@ -47,7 +47,7 @@ public slots:
     void reset();
 
 private slots:
-    void updatePreview(QList<typstdriver::PreviewPageData> pages);
+    void updatePreview(QList<katvan::typstdriver::PreviewPageData> pages);
     void zoomIn();
     void zoomOut();
     void zoomOptionSelected(int index);

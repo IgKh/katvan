@@ -27,15 +27,12 @@
 QT_BEGIN_NAMESPACE
 class QPaintEvent;
 class QResizeEvent;
+class QTimer;
 QT_END_NAMESPACE
 
 namespace katvan {
 
 class TypstDriverWrapper;
-
-namespace typstdriver {
-struct PreviewPageData;
-}
 
 class PreviewerView : public QAbstractScrollArea {
     Q_OBJECT
@@ -64,9 +61,9 @@ signals:
     void currentPageChanged(int page);
 
 public slots:
-    void setPages(QList<typstdriver::PreviewPageData> pages);
-    void setZoomMode(ZoomMode mode);
-    void setZoomFactor(qreal zoom);
+    void setPages(QList<katvan::typstdriver::PreviewPageData> pages);
+    void setZoomMode(katvan::PreviewerView::ZoomMode mode);
+    void setCustomZoomFactor(qreal zoom);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -77,9 +74,10 @@ private slots:
     void pageRendered(int page, QImage image);
     void dpiChanged();
     void scrollerStateChanged();
+    void invalidateAllRenderCache();
 
 private:
-    void resetAllCalculations();
+    void resetAllCalculations(bool invalidateRenderCache = true);
     void updatePageGeometries();
     void updateCurrentPage();
     void updateScrollbars();
@@ -90,11 +88,23 @@ private:
     int d_currentPage;
 
     TypstDriverWrapper* d_driver;
+    QTimer* d_debounceTimer;
 
     QList<typstdriver::PreviewPageData> d_pages;
     QList<QRect> d_pageGeometries;
-    QCache<int, QImage> d_renderCache;
     QSize d_documentSize;
+
+    struct CachedPage {
+        CachedPage(quint64 fingerprint, QImage image)
+            : fingerprint(fingerprint)
+            , invalidated(false)
+            , image(std::move(image)) {}
+
+        quint64 fingerprint;
+        bool invalidated;
+        QImage image;
+    };
+    QCache<int, CachedPage> d_renderCache;
 };
 
 }

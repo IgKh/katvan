@@ -35,6 +35,7 @@ struct TYPSTDRIVER_EXPORT PreviewPageData
 {
     int pageNumber;
     QSizeF sizeInPoints;
+    quint64 fingerprint;
 };
 
 class TYPSTDRIVER_EXPORT Engine : public QObject
@@ -49,7 +50,7 @@ public:
 
 signals:
     void initialized();
-    void previewReady(QList<PreviewPageData> pages);
+    void previewReady(QList<katvan::typstdriver::PreviewPageData> pages);
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);
 

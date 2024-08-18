@@ -32,6 +32,7 @@ pub(crate) mod ffi {
         page_num: usize,
         width_pts: f64,
         height_pts: f64,
+        fingerprint: u64,
     }
 
     #[derive(Default)]
@@ -78,7 +79,7 @@ pub(crate) mod ffi {
 
         fn render_page(&self, page: usize, point_size: f32) -> RenderedPage;
 
-        fn export_pdf(&self, path: &str) -> String;
+        fn export_pdf(&self, path: &str) -> Result<()>;
 
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,

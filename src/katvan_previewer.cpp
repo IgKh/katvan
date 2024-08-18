@@ -213,8 +213,7 @@ void Previewer::setZoom(QVariant zoomValue)
 
 void Previewer::setCustomZoom(qreal factor)
 {
-    d_view->setZoomMode(PreviewerView::ZoomMode::Custom);
-    d_view->setZoomFactor(factor);
+    d_view->setCustomZoomFactor(factor);
     d_zoomComboBox->setEditText(QString("%1%").arg(qRound(factor * 100)));
 }
 

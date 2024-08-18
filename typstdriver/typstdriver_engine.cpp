@@ -92,7 +92,8 @@ void Engine::compile(const QString& source)
         for (PreviewPageDataInternal& data : pages) {
             result.append(PreviewPageData {
                 static_cast<int>(data.page_num),
-                QSizeF(data.width_pts, data.height_pts)
+                QSizeF(data.width_pts, data.height_pts),
+                data.fingerprint
             });
         }
 
@@ -132,12 +133,12 @@ void Engine::exportToPdf(const QString& outputFile)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
-    rust::String error = d_ptr->engine.value()->export_pdf(qstringToRust(outputFile));
-    if (error.empty()) {
+    try {
+        d_ptr->engine.value()->export_pdf(qstringToRust(outputFile));
         Q_EMIT exportFinished(QString());
     }
-    else {
-        Q_EMIT exportFinished(QString::fromUtf8(error.data(), error.size()));
+    catch (rust::Error& e) {
+        Q_EMIT exportFinished(QString::fromUtf8(e.what(), -1));
     }
 }
 
