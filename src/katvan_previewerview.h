@@ -64,6 +64,7 @@ public slots:
     void setPages(QList<katvan::typstdriver::PreviewPageData> pages);
     void setZoomMode(katvan::PreviewerView::ZoomMode mode);
     void setCustomZoomFactor(qreal zoom);
+    void jumpTo(int page, QPointF pos);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -93,6 +94,7 @@ private:
     QList<typstdriver::PreviewPageData> d_pages;
     QList<QRect> d_pageGeometries;
     QSize d_documentSize;
+    QPointF d_lastJumpPoint;
 
     struct CachedPage {
         CachedPage(quint64 fingerprint, QImage image)

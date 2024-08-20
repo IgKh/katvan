@@ -1812,6 +1812,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b3061f8d268e8eec7481c9ab24540455cb4912983c49aae38fa6e8bf8ef4d9c"
 
 [[package]]
+name = "typst-ide"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3921e77003924e164f75a166a8d78a8f708479f43fa7e7cc7152f6bdf9558016"
+dependencies = [
+ "comemo",
+ "ecow",
+ "if_chain",
+ "log",
+ "serde",
+ "typst",
+ "unscanny",
+]
+
+[[package]]
 name = "typst-macros"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1910,6 +1925,7 @@ dependencies = [
  "time",
  "typst",
  "typst-assets",
+ "typst-ide",
  "typst-pdf",
  "typst-render",
 ]

@@ -65,6 +65,11 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
     QScroller::grabGesture(viewport(), QScroller::LeftMouseButtonGesture);
 
     QScroller* scroller = QScroller::scroller(viewport());
+    QScrollerProperties props = scroller->scrollerProperties();
+    props.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+    props.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+    scroller->setScrollerProperties(props);
+
     connect(scroller, &QScroller::stateChanged, this, &PreviewerView::scrollerStateChanged);
     scrollerStateChanged();
 }
@@ -157,6 +162,28 @@ void PreviewerView::setCustomZoomFactor(qreal factor)
     }
 }
 
+void PreviewerView::jumpTo(int page, QPointF pos)
+{
+    if (page < 0 || page >= d_pageGeometries.size()) {
+        return;
+    }
+
+    qreal zoom = effectiveZoom(page);
+    QPointF target = d_pageGeometries[page].topLeft() + d_pointSize * zoom * pos;
+
+    // Try to aim for placing the jump point just above the middle of the
+    // viewport
+    QScroller::scroller(viewport())->ensureVisible(
+        QRectF(target, target + QPointF(1, 1)),
+        0,
+        0.45 * viewport()->height());
+
+#ifdef DEBUG_JUMP_POINT
+    d_lastJumpPoint = target;
+    viewport()->update();
+#endif
+}
+
 void PreviewerView::resizeEvent(QResizeEvent* event)
 {
     QAbstractScrollArea::resizeEvent(event);
@@ -210,6 +237,12 @@ void PreviewerView::paintEvent(QPaintEvent* event)
             d_driver->renderPage(i, d_pointSize * effectiveZoom(i) * devicePixelRatio());
         }
     }
+
+#ifdef DEBUG_JUMP_POINT
+    if (!d_lastJumpPoint.isNull()) {
+        painter.fillRect(QRectF(d_lastJumpPoint.x() - 5, d_lastJumpPoint.y() - 5, 10, 10), Qt::blue);
+    }
+#endif
 }
 
 void PreviewerView::scrollContentsBy(int dx, int dy)

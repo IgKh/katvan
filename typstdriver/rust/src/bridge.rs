@@ -42,6 +42,14 @@ pub(crate) mod ffi {
         buffer: Vec<u8>,
     }
 
+    #[derive(Default)]
+    struct PreviewPosition {
+        valid: bool,
+        page: usize,
+        x_pts: f64,
+        y_pts: f64,
+    }
+
     unsafe extern "C++" {
         include!("typstdriver_logger_p.h");
 
@@ -80,6 +88,8 @@ pub(crate) mod ffi {
         fn render_page(&self, page: usize, point_size: f32) -> RenderedPage;
 
         fn export_pdf(&self, path: &str) -> Result<()>;
+
+        fn foward_search(&self, line: usize, column: usize) -> PreviewPosition;
 
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,

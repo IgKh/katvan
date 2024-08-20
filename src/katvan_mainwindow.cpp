@@ -70,6 +70,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::previewReady);
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
     connect(d_driver, &TypstDriverWrapper::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
+    connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
 
     readSettings();
     cursorPositionChanged();
@@ -101,6 +102,7 @@ void MainWindow::setupUI()
     connect(d_editorSettingsDialog, &QDialog::accepted, this, &MainWindow::editorSettingsDialogAccepted);
 
     d_previewer = new Previewer(d_driver);
+    connect(d_previewer, &Previewer::followCursorEnabled, this, &MainWindow::cursorPositionChanged);
 
     d_compilerOutput = new CompilerOutput();
     connect(d_compilerOutput, &CompilerOutput::goToPosition, d_editor, &Editor::goToBlock);
@@ -217,6 +219,9 @@ void MainWindow::setupActions()
 
     QAction* gotoLineAction = editMenu->addAction(tr("&Go to Line..."), this, &MainWindow::goToLine);
     gotoLineAction->setShortcut(Qt::CTRL | Qt::Key_G);
+
+    QAction* jumpToPreviewAction = editMenu->addAction(tr("&Jump to Preview"), this, &MainWindow::jumpToPreview);
+    jumpToPreviewAction->setShortcut(Qt::CTRL | Qt::Key_J);
 
     /*
      * View Menu
@@ -676,6 +681,12 @@ void MainWindow::goToLine()
     }
 }
 
+void MainWindow::jumpToPreview()
+{
+    QTextCursor cursor = d_editor->textCursor();
+    d_driver->forwardSearch(cursor.blockNumber(), cursor.positionInBlock());
+}
+
 void MainWindow::showTypstDocs()
 {
     QDesktopServices::openUrl(QUrl("https://typst.app/docs/"));
@@ -772,9 +783,16 @@ void MainWindow::changeSpellCheckingDictionary()
 void MainWindow::cursorPositionChanged()
 {
     QTextCursor cursor = d_editor->textCursor();
+    int line = cursor.blockNumber();
+    int column = cursor.positionInBlock();
+
     d_cursorPosButton->setText(tr("Line %1, Col %2")
-        .arg(cursor.blockNumber() + 1)
-        .arg(cursor.positionInBlock()));
+        .arg(line + 1)
+        .arg(column));
+
+    if (d_previewer->shouldFollowEditorCursor()) {
+        d_driver->forwardSearch(line, column);
+    }
 }
 
 void MainWindow::toggleCursorMovementStyle()

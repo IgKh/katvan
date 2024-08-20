@@ -159,6 +159,24 @@ impl<'a> EngineImpl<'a> {
 
         std::fs::write(path, data).map_err(|err| err.into())
     }
+
+    fn try_forward_search(&self, line: usize, column: usize) -> Option<ffi::PreviewPosition> {
+        let main = self.world.main();
+        let cursor = main.line_column_to_byte(line, column)?;
+
+        let pos = typst_ide::jump_from_cursor(self.result.as_ref()?, &main, cursor)?;
+
+        Some(ffi::PreviewPosition {
+            valid: true,
+            page: usize::from(pos.page) - 1,
+            x_pts: pos.point.x.to_pt(),
+            y_pts: pos.point.y.to_pt(),
+        })
+    }
+
+    pub fn foward_search(&self, line: usize, column: usize) -> ffi::PreviewPosition {
+        self.try_forward_search(line, column).unwrap_or_default()
+    }
 }
 
 fn hash_frame(frame: &typst::layout::Frame) -> u64 {

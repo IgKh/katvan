@@ -9,6 +9,7 @@
         <file>icons/data-error.svg</file>
         <file>icons/data-success.svg</file>
         <file>icons/data-warning.svg</file>
+        <file>icons/debug-execute-from-cursor.svg</file>
         <file>icons/document-new.svg</file>
         <file>icons/document-open.svg</file>
         <file>icons/document-save-as.svg</file>

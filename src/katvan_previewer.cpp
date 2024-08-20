@@ -32,6 +32,7 @@ static constexpr QLatin1StringView FIT_TO_PAGE("fit-page");
 static constexpr QLatin1StringView FIT_TO_WIDTH("fit-width");
 
 static constexpr QLatin1StringView SETTING_PREVIEW_ZOOM("preview/zoom");
+static constexpr QLatin1StringView SETTING_PREVIEW_FOLLOW_CURSOR("preview/follow-cursor");
 
 namespace katvan {
 
@@ -73,6 +74,12 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
 
     d_currentPageLabel = new QLabel();
 
+    d_followEditorCursorButton = new QToolButton();
+    d_followEditorCursorButton->setIcon(QIcon::fromTheme("debug-execute-from-cursor", QIcon(":/icons/debug-execute-from-cursor.svg")));
+    d_followEditorCursorButton->setToolTip(tr("Follow Editor Cursor"));
+    d_followEditorCursorButton->setCheckable(true);
+    connect(d_followEditorCursorButton, &QToolButton::toggled, this, &Previewer::followEditorCursorChanged);
+
     QHBoxLayout* toolLayout = new QHBoxLayout();
     toolLayout->setContentsMargins(
         style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
@@ -83,8 +90,8 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     toolLayout->addWidget(zoomOutButton);
     toolLayout->addWidget(d_zoomComboBox);
     toolLayout->addWidget(zoomInButton);
-    toolLayout->addStretch(1);
-    toolLayout->addWidget(d_currentPageLabel);
+    toolLayout->addWidget(d_currentPageLabel, 1, Qt::AlignCenter);
+    toolLayout->addWidget(d_followEditorCursorButton);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -96,6 +103,11 @@ Previewer::~Previewer()
 {
 }
 
+bool Previewer::shouldFollowEditorCursor() const
+{
+    return d_followEditorCursorButton->isChecked();
+}
+
 void Previewer::restoreSettings(const QSettings& settings)
 {
     QVariant zoomValue = settings.value(SETTING_PREVIEW_ZOOM, FIT_TO_WIDTH);
@@ -105,6 +117,9 @@ void Previewer::restoreSettings(const QSettings& settings)
     if (index >= 0) {
         d_zoomComboBox->setCurrentIndex(index);
     }
+
+    bool followCursor = settings.value(SETTING_PREVIEW_FOLLOW_CURSOR, false).toBool();
+    d_followEditorCursorButton->setChecked(followCursor);
 }
 
 void Previewer::saveSettings(QSettings& settings)
@@ -123,12 +138,18 @@ void Previewer::saveSettings(QSettings& settings)
     }
 
     settings.setValue(SETTING_PREVIEW_ZOOM, zoomValue);
+    settings.setValue(SETTING_PREVIEW_FOLLOW_CURSOR, d_followEditorCursorButton->isChecked());
 }
 
 void Previewer::reset()
 {
     d_view->setPages({});
     d_currentPageLabel->setText(QString());
+}
+
+void Previewer::jumpToPreview(int page, QPointF pos)
+{
+    d_view->jumpTo(page, pos);
 }
 
 void Previewer::updatePreview(QList<typstdriver::PreviewPageData> pages)
@@ -190,6 +211,13 @@ void Previewer::currentPageChanged(int page)
     QString pageCount = QString::number(d_view->pageCount());
 
     d_currentPageLabel->setText(tr("Page %1 of %2").arg(pageLabel, pageCount));
+}
+
+void Previewer::followEditorCursorChanged(bool checked)
+{
+    if (checked) {
+        Q_EMIT followCursorEnabled();
+    }
 }
 
 void Previewer::setZoom(QVariant zoomValue)

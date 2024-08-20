@@ -53,12 +53,14 @@ signals:
     void previewReady(QList<katvan::typstdriver::PreviewPageData> pages);
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);
+    void jumpToPreview(int page, QPointF pos);
 
 public slots:
     void init();
     void compile(const QString& source);
     void renderPage(int page, qreal pointSize);
     void exportToPdf(const QString& outputFile);
+    void forwardSearch(int line, int column);
 
 private:
     struct EnginePrivate;

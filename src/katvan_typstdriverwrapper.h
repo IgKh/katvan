@@ -65,11 +65,13 @@ signals:
     void compilationStatusChanged();
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);
+    void jumpToPreview(int page, QPointF pos);
 
 public slots:
     void updatePreview(const QString& source);
     void renderPage(int page, qreal pageSize);
     void exportToPdf(const QString& filePath);
+    void forwardSearch(int line, int column);
 
 private slots:
     void compilerOutputLogged(QStringList messages);

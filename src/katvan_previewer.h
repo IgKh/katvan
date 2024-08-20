@@ -26,6 +26,7 @@
 QT_BEGIN_NAMESPACE
 class QComboBox;
 class QLabel;
+class QToolButton;
 QT_END_NAMESPACE
 
 namespace katvan {
@@ -40,11 +41,17 @@ public:
     Previewer(TypstDriverWrapper* driver, QWidget* parent = nullptr);
     ~Previewer();
 
+    bool shouldFollowEditorCursor() const;
+
     void restoreSettings(const QSettings& settings);
     void saveSettings(QSettings& settings);
 
+signals:
+    void followCursorEnabled();
+
 public slots:
     void reset();
+    void jumpToPreview(int page, QPointF pos);
 
 private slots:
     void updatePreview(QList<katvan::typstdriver::PreviewPageData> pages);
@@ -53,6 +60,7 @@ private slots:
     void zoomOptionSelected(int index);
     void manualZoomEntered();
     void currentPageChanged(int page);
+    void followEditorCursorChanged(bool checked);
 
 private:
     void setZoom(QVariant value);
@@ -63,6 +71,7 @@ private:
 
     QComboBox* d_zoomComboBox;
     QLabel* d_currentPageLabel;
+    QToolButton* d_followEditorCursorButton;
 };
 
 }

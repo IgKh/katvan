@@ -59,6 +59,7 @@ private slots:
     bool saveFileAs();
     void exportPdf();
     void goToLine();
+    void jumpToPreview();
     void showTypstDocs();
     void showAbout();
 

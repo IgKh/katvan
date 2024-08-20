@@ -14,7 +14,10 @@ if(NOT Corrosion_FOUND)
     FetchContent_MakeAvailable(Corrosion)
 endif()
 
-corrosion_import_crate(MANIFEST_PATH rust/Cargo.toml)
+corrosion_import_crate(
+    MANIFEST_PATH rust/Cargo.toml
+    PROFILE ${KATVAN_CARGO_PROFILE}
+)
 
 corrosion_add_cxxbridge(typstdriver_ffi
     CRATE typstdriver_rs

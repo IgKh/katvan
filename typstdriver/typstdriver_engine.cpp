@@ -142,4 +142,14 @@ void Engine::exportToPdf(const QString& outputFile)
     }
 }
 
+void Engine::forwardSearch(int line, int column)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    PreviewPosition result = d_ptr->engine.value()->foward_search(static_cast<size_t>(line), static_cast<size_t>(column));
+    if (result.valid) {
+        Q_EMIT jumpToPreview(result.page, QPointF(result.x_pts, result.y_pts));
+    }
+}
+
 }

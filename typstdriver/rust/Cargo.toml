@@ -13,8 +13,13 @@ comemo = "0.4.0"
 typst = "0.11.1"
 typst-pdf = "0.11.1"
 typst-render = "0.11.1"
+typst-ide = "0.11.1"
 typst-assets = { version = "0.11.1", features=["fonts"] }
 
 fontdb = "0.16.2"
 lazy_static = "1.5"
 time = { version = "0.3", features=["local-offset"] }
+
+# Otherwise font loading in debug builds is WAY too slow
+[profile.dev.package.ttf-parser]
+opt-level = 3
