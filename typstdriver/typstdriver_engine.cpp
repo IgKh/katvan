@@ -152,4 +152,21 @@ void Engine::forwardSearch(int line, int column)
     }
 }
 
+void Engine::inverseSearch(int page, QPointF clickPoint)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    PreviewPosition pos {
+        true,
+        static_cast<size_t>(page),
+        clickPoint.x(),
+        clickPoint.y()
+    };
+
+    SourcePosition result = d_ptr->engine.value()->inverse_search(pos);
+    if (result.valid) {
+        Q_EMIT jumpToEditor(result.line, result.column);
+    }
+}
+
 }

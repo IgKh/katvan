@@ -33,7 +33,7 @@ use typst::{
 use crate::bridge::ffi;
 
 lazy_static::lazy_static! {
-    static ref MAIN_ID: FileId = FileId::new_fake(VirtualPath::new("MAIN"));
+    pub static ref MAIN_ID: FileId = FileId::new_fake(VirtualPath::new("MAIN"));
 }
 
 pub struct KatvanWorld<'a> {

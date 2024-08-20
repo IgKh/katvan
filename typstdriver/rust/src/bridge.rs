@@ -50,6 +50,13 @@ pub(crate) mod ffi {
         y_pts: f64,
     }
 
+    #[derive(Default)]
+    struct SourcePosition {
+        valid: bool,
+        line: usize,
+        column: usize,
+    }
+
     unsafe extern "C++" {
         include!("typstdriver_logger_p.h");
 
@@ -90,6 +97,8 @@ pub(crate) mod ffi {
         fn export_pdf(&self, path: &str) -> Result<()>;
 
         fn foward_search(&self, line: usize, column: usize) -> PreviewPosition;
+
+        fn inverse_search(&self, pos: &PreviewPosition) -> SourcePosition;
 
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,

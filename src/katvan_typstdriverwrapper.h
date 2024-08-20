@@ -66,12 +66,14 @@ signals:
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);
     void jumpToPreview(int page, QPointF pos);
+    void jumpToEditor(int line, int column);
 
 public slots:
     void updatePreview(const QString& source);
     void renderPage(int page, qreal pageSize);
     void exportToPdf(const QString& filePath);
     void forwardSearch(int line, int column);
+    void inverseSearch(int page, QPointF clickPoint);
 
 private slots:
     void compilerOutputLogged(QStringList messages);

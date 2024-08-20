@@ -17,10 +17,11 @@
  */
 use std::hash::{DefaultHasher, Hash, Hasher};
 
+use typst::layout::{Abs, Point};
 use typst::World;
 
 use crate::bridge::ffi;
-use crate::world::KatvanWorld;
+use crate::world::{KatvanWorld, MAIN_ID};
 
 pub struct EngineImpl<'a> {
     logger: &'a ffi::LoggerProxy,
@@ -176,6 +177,30 @@ impl<'a> EngineImpl<'a> {
 
     pub fn foward_search(&self, line: usize, column: usize) -> ffi::PreviewPosition {
         self.try_forward_search(line, column).unwrap_or_default()
+    }
+
+    fn try_inverse_search(&self, pos: &ffi::PreviewPosition) -> Option<ffi::SourcePosition> {
+        let document = self.result.as_ref()?;
+        let frame = &document.pages.get(pos.page)?.frame;
+        let click = Point::new(Abs::pt(pos.x_pts), Abs::pt(pos.y_pts));
+
+        let jump = typst_ide::jump_from_click(&self.world, document, frame, click)?;
+        match jump {
+            typst_ide::Jump::Source(id, cursor) if id == *MAIN_ID => {
+                let source = self.world.main();
+
+                Some(ffi::SourcePosition {
+                    valid: true,
+                    line: source.byte_to_line(cursor)?,
+                    column: source.byte_to_column(cursor)?,
+                })
+            }
+            _ => None,
+        }
+    }
+
+    pub fn inverse_search(&self, pos: &ffi::PreviewPosition) -> ffi::SourcePosition {
+        self.try_inverse_search(pos).unwrap_or_default()
     }
 }
 

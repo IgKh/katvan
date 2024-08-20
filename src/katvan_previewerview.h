@@ -25,6 +25,7 @@
 #include <QList>
 
 QT_BEGIN_NAMESPACE
+class QMouseEvent;
 class QPaintEvent;
 class QResizeEvent;
 class QTimer;
@@ -69,6 +70,8 @@ public slots:
 protected:
     void resizeEvent(QResizeEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
     void scrollContentsBy(int dx, int dy) override;
 
 private slots:
@@ -94,6 +97,7 @@ private:
     QList<typstdriver::PreviewPageData> d_pages;
     QList<QRect> d_pageGeometries;
     QSize d_documentSize;
+    bool d_scrollerGestureUngrabbed;
     QPointF d_lastJumpPoint;
 
     struct CachedPage {

@@ -71,6 +71,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
     connect(d_driver, &TypstDriverWrapper::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
+    connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
 
     readSettings();
     cursorPositionChanged();

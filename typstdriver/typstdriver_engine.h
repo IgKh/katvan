@@ -54,6 +54,7 @@ signals:
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);
     void jumpToPreview(int page, QPointF pos);
+    void jumpToEditor(int line, int column);
 
 public slots:
     void init();
@@ -61,6 +62,7 @@ public slots:
     void renderPage(int page, qreal pointSize);
     void exportToPdf(const QString& outputFile);
     void forwardSearch(int line, int column);
+    void inverseSearch(int page, QPointF pos);
 
 private:
     struct EnginePrivate;

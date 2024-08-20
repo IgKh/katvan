@@ -28,6 +28,7 @@
 #include "katvan_previewerview.h"
 #include "katvan_typstdriverwrapper.h"
 
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QPalette>
@@ -47,7 +48,10 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
     , d_zoomFactor(1.0)
     , d_currentPage(0)
     , d_driver(driver)
+    , d_scrollerGestureUngrabbed(false)
 {
+    viewport()->setMouseTracking(true);
+
     connect(driver, &TypstDriverWrapper::pageRendered, this, &PreviewerView::pageRendered);
 
     connect(screen(), &QScreen::logicalDotsPerInchChanged, this, &PreviewerView::dpiChanged);
@@ -245,6 +249,51 @@ void PreviewerView::paintEvent(QPaintEvent* event)
 #endif
 }
 
+void PreviewerView::mouseMoveEvent(QMouseEvent* event)
+{
+    if (event->modifiers() == Qt::ControlModifier) {
+        d_scrollerGestureUngrabbed = true;
+        QScroller::ungrabGesture(viewport());
+
+        if (viewport()->cursor().shape() != Qt::ArrowCursor) {
+            viewport()->setCursor(Qt::ArrowCursor);
+        }
+    }
+    else if (d_scrollerGestureUngrabbed) {
+        d_scrollerGestureUngrabbed = false;
+        QScroller::grabGesture(viewport(), QScroller::LeftMouseButtonGesture);
+        scrollerStateChanged();
+    }
+}
+
+void PreviewerView::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (event->modifiers() != Qt::ControlModifier || event->button() != Qt::LeftButton) {
+        return;
+    }
+
+    QPoint click {
+        horizontalScrollBar()->value() + event->pos().x(),
+        verticalScrollBar()->value() + event->pos().y()
+    };
+
+    int page = -1;
+    for (qsizetype i = 0; i < d_pageGeometries.size(); i++) {
+        if (d_pageGeometries[i].contains(click)) {
+            page = i;
+            break;
+        }
+    }
+    if (page < 0) {
+        return;
+    }
+
+    double zoom = effectiveZoom(page);
+    QPoint posInPage = click - d_pageGeometries[page].topLeft();
+    QPointF posInPts = posInPage.toPointF() / (d_pointSize * zoom * devicePixelRatio());
+    d_driver->inverseSearch(page, posInPts);
+}
+
 void PreviewerView::scrollContentsBy(int dx, int dy)
 {
     QAbstractScrollArea::scrollContentsBy(dx, dy);
@@ -271,6 +320,10 @@ void PreviewerView::dpiChanged()
 
 void PreviewerView::scrollerStateChanged()
 {
+    if (d_scrollerGestureUngrabbed) {
+        return;
+    }
+
     QScroller::State state = QScroller::scroller(viewport())->state();
 
     if (state == QScroller::Inactive || state == QScroller::Scrolling) {

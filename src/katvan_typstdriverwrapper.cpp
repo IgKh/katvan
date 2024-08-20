@@ -88,6 +88,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::pageRendered, this, &TypstDriverWrapper::pageRenderComplete);
     connect(d_engine, &typstdriver::Engine::exportFinished, this, &TypstDriverWrapper::exportFinished);
     connect(d_engine, &typstdriver::Engine::jumpToPreview, this, &TypstDriverWrapper::jumpToPreview);
+    connect(d_engine, &typstdriver::Engine::jumpToEditor, this, &TypstDriverWrapper::jumpToEditor);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
     QMetaObject::invokeMethod(d_engine, "init");
@@ -129,6 +130,11 @@ void TypstDriverWrapper::exportToPdf(const QString& filePath)
 void TypstDriverWrapper::forwardSearch(int line, int column)
 {
     QMetaObject::invokeMethod(d_engine, "forwardSearch", line, column);
+}
+
+void TypstDriverWrapper::inverseSearch(int page, QPointF clickPoint)
+{
+    QMetaObject::invokeMethod(d_engine, "inverseSearch", page, clickPoint);
 }
 
 void TypstDriverWrapper::compilerOutputLogged(QStringList messages)
