@@ -110,7 +110,11 @@ jobs:
           workspaces: |
             typstdriver/rust
 
-      - name: Run Clazy analysis
+      - name: Run Clazy
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clazy
           cmake --build build -j
+
+      - name: Run clippy
+        run: |
+          cargo clippy --no-deps --manifest-path typstdriver/rust/Cargo.toml --target-dir build/cargo/build
