@@ -39,6 +39,7 @@ public:
     void restoreRecents(const QSettings& settings);
 
     void addRecent(const QString& filePath);
+    void removeFile(const QString& filePath);
 
 private slots:
     void clear();

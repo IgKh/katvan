@@ -65,6 +65,15 @@ void RecentFiles::addRecent(const QString& filePath)
     saveRecents();
 }
 
+void RecentFiles::removeFile(const QString& filePath)
+{
+    if (d_fileList.contains(filePath)) {
+        d_fileList.removeAll(filePath);
+        rebuildMenu();
+        saveRecents();
+    }
+}
+
 void RecentFiles::clear()
 {
     d_fileList.clear();

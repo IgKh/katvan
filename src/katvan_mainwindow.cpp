@@ -544,6 +544,16 @@ void MainWindow::openNamedFile(const QString& fileName)
     }
 
     QFileInfo info(fileName);
+    if (!info.exists()) {
+        QMessageBox::warning(
+            this,
+            QCoreApplication::applicationName(),
+            tr("The file %1 no longer exists").arg(fileName));
+
+        d_recentFiles->removeFile(fileName);
+        return;
+    }
+
     if (info.canonicalFilePath() == d_currentFileName) {
         return;
     }
