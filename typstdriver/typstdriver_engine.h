@@ -62,7 +62,7 @@ public slots:
     void renderPage(int page, qreal pointSize);
     void exportToPdf(const QString& outputFile);
     void forwardSearch(int line, int column);
-    void inverseSearch(int page, QPointF pos);
+    void inverseSearch(int page, QPointF clickPoint);
 
 private:
     struct EnginePrivate;

@@ -301,6 +301,16 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
             return QLatin1Char('>');
         }
     }
+    else if (openBracket == QLatin1Char('*')) {
+        if (isInContent && state != State::CONTENT_STRONG_EMPHASIS) {
+            return QLatin1Char('*');
+        }
+    }
+    else if (openBracket == QLatin1Char('_')) {
+        if (isInContent && state != State::CONTENT_EMPHASIS) {
+            return QLatin1Char('_');
+        }
+    }
     return std::nullopt;
 }
 

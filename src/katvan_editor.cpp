@@ -51,12 +51,14 @@ Q_GLOBAL_STATIC(QRegularExpression, MODELINE_REGEX, QStringLiteral("((kate|katva
 
 Q_GLOBAL_STATIC(QSet<QString>, OPENING_BRACKETS, {
     QStringLiteral("("), QStringLiteral("{"),  QStringLiteral("["),
-    QStringLiteral("$"), QStringLiteral("\""), QStringLiteral("<")
+    QStringLiteral("$"), QStringLiteral("\""), QStringLiteral("<"),
+    QStringLiteral("*"), QStringLiteral("_")
 })
 
 Q_GLOBAL_STATIC(QSet<QString>, CLOSING_BRACKETS, {
     QStringLiteral(")"), QStringLiteral("}"),  QStringLiteral("]"),
-    QStringLiteral("$"), QStringLiteral("\""), QStringLiteral(">")
+    QStringLiteral("$"), QStringLiteral("\""), QStringLiteral(">"),
+    QStringLiteral("*"), QStringLiteral("_")
 })
 
 Q_GLOBAL_STATIC(QSet<QString>, DEDENTING_CLOSING_BRACKETS, {
@@ -580,7 +582,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
     }
     if (OPENING_BRACKETS->contains(event->text())) {
         QTextCursor cursor = textCursor();
-        if (cursor.hasSelection() || cursor.atBlockEnd() || isSpace(cursor.block().text().at(cursor.positionInBlock()))) {
+        if (cursor.hasSelection() || cursor.atBlockEnd() || !cursor.block().text().at(cursor.positionInBlock()).isLetterOrNumber()) {
             auto closingBracket = d_codeModel->getMatchingCloseBracket(textCursor(), event->text().at(0));
             if (closingBracket) {
                 insertSurroundingMarks(event->text(), QString(closingBracket.value()));
