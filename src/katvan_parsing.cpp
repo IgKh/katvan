@@ -676,6 +676,14 @@ void Parser::parse()
                 pushState(ParserState::Kind::STRING_LITERAL);
                 continue;
             }
+            else if (match(m::SymbolSequence(QStringLiteral("```")))) {
+                pushState(ParserState::Kind::CONTENT_RAW_BLOCK);
+                continue;
+            }
+            else if (match(m::Symbol(QLatin1Char('`')))) {
+                pushState(ParserState::Kind::CONTENT_RAW);
+                continue;
+            }
             else if (match(m::Keyword(*CODE_KEYWORDS))) {
                 instantState(ParserState::Kind::CODE_KEYWORD);
                 continue;

@@ -720,6 +720,19 @@ TEST(HiglightingParserTests, MathInCode) {
     ));
 }
 
+TEST(HiglightingParserTests, RawContentInCode) {
+    auto markers = highlightText(QStringLiteral(
+        "#par(\"foo\" + `bar` + ```baz\n"
+        "  bong```"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  4 },
+        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,   5,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::RAW,             13,  5 },
+        HiglightingMarker{ HiglightingMarker::Kind::RAW,             21, 16 }
+    ));
+}
+
 static QList<ContentSegment> extractContent(QStringView text)
 {
     ContentWordsListener listener;
