@@ -276,7 +276,8 @@ Q_GLOBAL_STATIC(QStringList, GET_MATCHING_CLOSE_BRACKET_TEST_DOC, {
     /* 2 */ "#while 1 > 2",
     /* 3 */ "$\"AB\" = ln(1 + x)$",
     /* 4 */ "// a comment",
-    /* 5 */ "`raw content`"
+    /* 5 */ "`raw content`",
+    /* 6 */ "#par $ x = #rect $"
 })
 
 class CodeModel_GetMatchingCloseBracketTests : public ::testing::Test {
@@ -328,6 +329,9 @@ TEST_F(CodeModel_GetMatchingCloseBracketTests, Parentheses)
 
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('(')), ::testing::Eq(std::nullopt));
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('(')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 4),  QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 16), QLatin1Char('(')), ::testing::Eq(QLatin1Char(')')));
 }
 
 TEST_F(CodeModel_GetMatchingCloseBracketTests, CurlyBrackets)
@@ -356,6 +360,9 @@ TEST_F(CodeModel_GetMatchingCloseBracketTests, CurlyBrackets)
 
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('{')), ::testing::Eq(std::nullopt));
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('{')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 4),  QLatin1Char('{')), ::testing::Eq(std::nullopt));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 16), QLatin1Char('{')), ::testing::Eq(std::nullopt));
 }
 
 TEST_F(CodeModel_GetMatchingCloseBracketTests, SquareBrackets)
@@ -384,6 +391,9 @@ TEST_F(CodeModel_GetMatchingCloseBracketTests, SquareBrackets)
 
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 10), QLatin1Char('[')), ::testing::Eq(std::nullopt));
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(5, 12), QLatin1Char('[')), ::testing::Eq(std::nullopt));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 4),  QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 16), QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
 }
 
 TEST_F(CodeModel_GetMatchingCloseBracketTests, MathDelimiters)

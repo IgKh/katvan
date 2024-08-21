@@ -70,6 +70,7 @@ public:
 
     void initializeState(const parsing::ParserState& state, size_t endMarker) override;
     void finalizeState(const parsing::ParserState& state, size_t endMarker, bool implicit) override;
+    void handleInstantState(const parsing::ParserState& state, size_t endMarker) override;
 
 private:
     StateSpanList d_spans;
@@ -105,6 +106,10 @@ public:
 private:
     // Find the inner most state span still in effect at the given global position
     std::optional<StateSpan> spanAtPosition(QTextBlock block, int globalPos) const;
+
+    // Find the relevant "current" state for the cursor to consider which brackets
+    // can be auto-inserted.
+    parsing::ParserState::Kind getStateForBracketInsertion(QTextCursor cursor) const;
 
     QTextDocument* d_document;
 };

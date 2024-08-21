@@ -147,6 +147,10 @@ public:
         Q_UNUSED(implicit);
     }
 
+    virtual void handleInstantState(const ParserState& state, size_t endMarker) {
+        finalizeState(state, endMarker, false);
+    }
+
     virtual void handleLooseToken(const Token& t, const ParserState& state) {
         Q_UNUSED(t);
         Q_UNUSED(state);

@@ -917,7 +917,7 @@ void Parser::instantState(ParserState::Kind stateKind)
 {
     ParserState state { stateKind, d_startMarker };
     for (auto& listener : d_listeners) {
-        listener.get().finalizeState(state, d_endMarker, false);
+        listener.get().handleInstantState(state, d_endMarker);
     }
 }
 

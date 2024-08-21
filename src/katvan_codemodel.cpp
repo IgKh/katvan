@@ -73,13 +73,27 @@ void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t
             continue;
         }
 
-        // If the state kind differs, it means it is an "instant" state
         if (it->state == state.kind) {
             it->endPos = d_basePos + static_cast<int>(endMarker);
             it->implicitlyClosed = implicit;
         }
         break;
     }
+}
+
+void StateSpansListener::handleInstantState(const parsing::ParserState& state, size_t endMarker)
+{
+    if (state.kind != State::CODE_VARIABLE_NAME && state.kind != State::CODE_FUNCTION_NAME) {
+        return;
+    }
+
+    d_spans.elements().append(StateSpan {
+        g_spanIdCounter++,
+        state.kind,
+        d_basePos + static_cast<int>(state.startPos),
+        d_basePos + static_cast<int>(endMarker),
+        true
+    });
 }
 
 static std::optional<int> findSpanEndPosition(unsigned long spanId, QTextBlock fromBlock)
@@ -230,22 +244,28 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
     return block;
 }
 
-std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const
+parsing::ParserState::Kind CodeModel::getStateForBracketInsertion(QTextCursor cursor) const
 {
-    State state = State::CONTENT;
-    auto span = spanAtPosition(cursor.block(), cursor.position());
-    if (span) {
-        state = span->state;
-    }
-    else if (cursor.atBlockEnd() && !cursor.atBlockStart()) {
-        // If we are at end of the line, the parser may have already implicitly
-        // closed block scoped states, so we might have fallen back to a generic
-        // content state.
-        span = spanAtPosition(cursor.block(), cursor.position() - 1);
+    // First, there might be an interesting state that the parser may have
+    // already implicitly closed; e.g. block scoped states closed by reaching
+    // end of line, or certain "instant" states. These take precedence.
+    if (!cursor.atBlockStart()) {
+        auto span = spanAtPosition(cursor.block(), cursor.position() - 1);
         if (span && span->implicitlyClosed) {
-            state = span->state;
+            return span->state;
         }
     }
+
+    auto span = spanAtPosition(cursor.block(), cursor.position());
+    if (span) {
+        return span->state;
+    }
+    return State::CONTENT;
+}
+
+std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const
+{
+    State state = getStateForBracketInsertion(cursor);
 
     QChar prevChar;
     if (!cursor.atBlockStart()) {
@@ -255,6 +275,9 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
     bool isInCode = state == State::CODE_BLOCK
                     || state == State::CODE_ARGUMENTS
                     || state == State::CODE_LINE;
+
+    bool isCodeFunctionCall = state == State::CODE_VARIABLE_NAME  // Possibly part of a function call
+                                || state == State::CODE_FUNCTION_NAME; // Definitely part of a function call
 
     bool isInMath = state == State::MATH
                     || state == State::MATH_ARGUMENTS;
@@ -269,7 +292,7 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
                     || state == State::CONTENT_RAW_BLOCK;
 
     if (openBracket == QLatin1Char('(')) {
-        if (isInCode || isInMath || (isInContent && prevChar == QLatin1Char('#'))) {
+        if (isInCode || isCodeFunctionCall || isInMath || (isInContent && prevChar == QLatin1Char('#'))) {
             return QLatin1Char(')');
         }
     }
@@ -279,7 +302,7 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
         }
     }
     else if (openBracket == QLatin1Char('[')) {
-        if (isInCode || ((isInContent || isInMath) && prevChar == QLatin1Char('#'))) {
+        if (isInCode || isCodeFunctionCall || ((isInContent || isInMath) && prevChar == QLatin1Char('#'))) {
             return QLatin1Char(']');
         }
     }
