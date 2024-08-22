@@ -17,6 +17,7 @@ endif()
 corrosion_import_crate(
     MANIFEST_PATH rust/Cargo.toml
     PROFILE ${KATVAN_CARGO_PROFILE}
+    FROZEN
 )
 
 corrosion_add_cxxbridge(typstdriver_ffi

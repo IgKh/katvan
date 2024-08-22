@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 jobs:
   prepare:
@@ -55,11 +56,13 @@ jobs:
         with:
           version: 6.7.*
           arch: linux_gcc_64
-          modules: 'qtpdf'
           cache: true
 
       - name: Install additional packages
-        run: sudo apt install -y libhunspell-dev g++-10 libfuse2
+        run: sudo apt install -y libhunspell-dev libarchive-dev g++-10 libfuse2
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install AppImage tools
         uses: miurahr/install-linuxdeploy-action@v1
@@ -67,7 +70,7 @@ jobs:
           plugins: qt appimage
 
       - name: Configure
-        run: cmake -S . -B build -DKATVAN_DISABLE_PORTABLE=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+        run: cmake -S . -B build -DKATVAN_DISABLE_PORTABLE=ON -DAPPIMAGE_INSTALL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
         env:
           CXX: g++-10
 
@@ -80,16 +83,17 @@ jobs:
       - name: Generate AppImage
         run: |
           linuxdeploy-x86_64.AppImage --appdir build/AppDir --plugin qt --output appimage
-          mv Katvan-x86_64.AppImage Katvan-${{ needs.prepare.outputs.katvan_version }}-linux-x86_64.AppImage
         env:
           EXTRA_QT_MODULES: waylandcompositor;svg
           EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so;libqwayland-egl.so
+          LINUXDEPLOY_OUTPUT_VERSION: ${{ needs.prepare.outputs.katvan_version }}
+          LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*x86_64.AppImage.zsync
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
           name: AppImage
-          path: Katvan-${{ needs.prepare.outputs.katvan_version }}-linux-x86_64.AppImage
+          path: Katvan-${{ needs.prepare.outputs.katvan_version }}-x86_64.AppImage*
           if-no-files-found: error
 
   build-windows-zip:
@@ -104,16 +108,13 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.7.*
-          modules: 'qtpdf'
           cache: true
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '53bef8994c541b6561884a8395ea35715ece75db'
 
-      - name: Install dependencies
-        run: vcpkg install hunspell pkgconf
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Configure
         run: cmake -S . -B build -DKATVAN_PORTABLE_BUILD=ON -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
@@ -124,15 +125,18 @@ jobs:
       - name: Create distribution
         run: |
           mkdir Katvan
-          cp build\src\Release\katvan.exe Katvan
-          cp build\src\Release\*.dll Katvan
+          cp build\Release\katvan.exe Katvan
+          cp build\Release\*.dll Katvan
+          rm Katvan\gmock.dll
           windeployqt --release `
             --translations en,he `
-            --skip-plugin-types generic,imageformats,networkinformation,tls `
+            --skip-plugin-types generic,imageformats,networkinformation `
+            --exclude-plugins qcertonlybackend,qopensslbackend `
             --no-system-d3d-compiler `
+            --no-system-dxc-compiler `
             --no-opengl-sw `
             --no-compiler-runtime `
-            Katvan\katvan.exe
+            Katvan\katvan.exe Katvan\typstdriver.dll
           mkdir Katvan\hunspell
           7z a katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip Katvan\*
 
@@ -144,6 +148,7 @@ jobs:
           if-no-files-found: error
 
   create-release:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: [create-source-tarball, build-linux-appimage, build-windows-zip]
     permissions:
