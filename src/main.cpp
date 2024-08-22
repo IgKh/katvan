@@ -19,6 +19,8 @@
 #include "katvan_spellchecker.h"
 #include "katvan_version.h"
 
+#include "typstdriver_packagemanager.h"
+
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QLibraryInfo>
@@ -34,6 +36,7 @@ void setupPortableMode()
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsPath);
 
     katvan::SpellChecker::setPersonalDictionaryLocation(settingsPath + "/Katvan");
+    katvan::typstdriver::PackageManager::setDownloadCacheLocation(settingsPath + "/Katvan/cache");
 }
 
 int main(int argc, char** argv)

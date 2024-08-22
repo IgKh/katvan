@@ -43,6 +43,8 @@ public:
         ARCHIVE_ERROR,
     };
 
+    static void setDownloadCacheLocation(const QString& dirPath);
+
     PackageManager(Logger* logger, QObject* parent = nullptr);
 
     Error error() const { return d_error; }
@@ -58,6 +60,8 @@ private:
     bool downloadFile(const QString& url, const QString& targetPath);
 
     bool extractArchive(const QString& archivePath, const QDir& targetDir);
+
+    static QString s_downloadCacheLocation;
 
     Error d_error;
     QString d_errorMessage;

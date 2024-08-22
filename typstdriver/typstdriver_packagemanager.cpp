@@ -33,6 +33,13 @@
 
 namespace katvan::typstdriver {
 
+QString PackageManager::s_downloadCacheLocation;
+
+void PackageManager::setDownloadCacheLocation(const QString& dirPath)
+{
+    s_downloadCacheLocation = dirPath;
+}
+
 PackageManager::PackageManager(Logger* logger, QObject* parent)
     : QObject(parent)
     , d_error(Error::SUCCESS)
@@ -56,7 +63,12 @@ QString PackageManager::getPackageLocalPath(const QString& packageNamespace, con
 
 QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QString& version)
 {
-    QDir cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/typst/preview";
+    QString cacheBase = s_downloadCacheLocation;
+    if (cacheBase.isEmpty()) {
+        cacheBase = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    }
+
+    QDir cacheDir = cacheBase + "/typst/preview";
     if (!cacheDir.exists()) {
         cacheDir.mkpath(".");
     }
