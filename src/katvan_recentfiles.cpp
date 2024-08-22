@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_recentfiles.h"
+#include "katvan_utils.h"
 
 #include <QMenu>
 #include <QSettings>
@@ -86,7 +87,8 @@ void RecentFiles::rebuildMenu()
     d_menu->clear();
 
     for (QString& filePath : d_fileList) {
-        d_menu->addAction(filePath, this, [this, filePath]() {
+        QString label = utils::formatFilePath(filePath);
+        d_menu->addAction(label, this, [this, filePath]() {
             Q_EMIT fileSelected(filePath);
         });
     }

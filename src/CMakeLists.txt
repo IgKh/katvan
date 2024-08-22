@@ -32,6 +32,7 @@ set(SOURCES
     katvan_searchbar.cpp
     katvan_spellchecker.cpp
     katvan_typstdriverwrapper.cpp
+    katvan_utils.cpp
 )
 
 set(MAIN_SOURCES
@@ -76,8 +77,8 @@ set_target_properties(katvan PROPERTIES
     MACOSX_BUNDLE ON
 )
 
-qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly)
-qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_he.ts)
+qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly -no-obsolete -locations relative)
+qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_he.ts OPTIONS -no-obsolete -locations relative)
 
 qt_add_resources(katvan "translations"
     PREFIX "/i18n"

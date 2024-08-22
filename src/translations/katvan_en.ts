@@ -4,7 +4,7 @@
 <context>
     <name>katvan::Editor</name>
     <message numerus="yes">
-        <location filename="../katvan_editor.cpp" line="661"/>
+        <location filename="../katvan_editor.cpp" line="+680"/>
         <source>%n Suggestion(s)</source>
         <translation>
             <numerusform>One Suggestion</numerusform>
@@ -15,7 +15,7 @@
 <context>
     <name>katvan::SearchBar</name>
     <message numerus="yes">
-        <location filename="../katvan_searchbar.cpp" line="389"/>
+        <location filename="../katvan_searchbar.cpp" line="+389"/>
         <source>%n replacements were performed</source>
         <translation>
             <numerusform>One replacement was performed</numerusform>

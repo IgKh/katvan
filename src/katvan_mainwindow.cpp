@@ -25,6 +25,7 @@
 #include "katvan_searchbar.h"
 #include "katvan_spellchecker.h"
 #include "katvan_typstdriverwrapper.h"
+#include "katvan_utils.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -341,7 +342,7 @@ void MainWindow::loadFile(const QString& fileName)
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Loading file %1 failed: %2").arg(fileName, file.errorString()));
+            tr("Loading file %1 failed: %2").arg(utils::formatFilePath(fileName), file.errorString()));
 
         return;
     }
@@ -351,7 +352,7 @@ void MainWindow::loadFile(const QString& fileName)
     d_previewer->reset();
 
     setCurrentFile(fileName);
-    statusBar()->showMessage(tr("Loaded %1").arg(d_currentFileName));
+    statusBar()->showMessage(tr("Loaded %1").arg(utils::formatFilePath(d_currentFileName)));
 }
 
 bool MainWindow::maybeSave()
@@ -548,7 +549,7 @@ void MainWindow::openNamedFile(const QString& fileName)
         QMessageBox::warning(
             this,
             QCoreApplication::applicationName(),
-            tr("The file %1 no longer exists").arg(fileName));
+            tr("The file %1 no longer exists").arg(utils::formatFilePath(fileName)));
 
         d_recentFiles->removeFile(fileName);
         return;
@@ -574,7 +575,7 @@ bool MainWindow::saveFile()
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Opening file %1 for saving failed: %2").arg(d_currentFileName, file.errorString()));
+            tr("Opening file %1 for saving failed: %2").arg(utils::formatFilePath(d_currentFileName), file.errorString()));
 
         return false;
     }
@@ -587,14 +588,14 @@ bool MainWindow::saveFile()
         QMessageBox::critical(
             this,
             QCoreApplication::applicationName(),
-            tr("Saving file %1 failed: %2").arg(d_currentFileName, file.errorString()));
+            tr("Saving file %1 failed: %2").arg(utils::formatFilePath(d_currentFileName), file.errorString()));
 
         return false;
     }
 
     d_editor->document()->setModified(false);
     d_editor->checkForModelines();
-    statusBar()->showMessage(tr("Saved %1").arg(d_currentFileName));
+    statusBar()->showMessage(tr("Saved %1").arg(utils::formatFilePath(d_currentFileName)));
 
     return true;
 }
@@ -662,7 +663,7 @@ void MainWindow::exportPdf()
             QMessageBox::critical(
                 this,
                 QCoreApplication::applicationName(),
-                tr("Failed exporting PDF to %1: %2").arg(targetFileName, errorMessage));
+                tr("Failed exporting PDF to %1: %2").arg(utils::formatFilePath(targetFileName), errorMessage));
         }
     };
 
