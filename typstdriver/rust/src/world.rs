@@ -22,6 +22,7 @@ use std::{
 };
 
 use comemo::Prehashed;
+use time::{format_description::well_known::Iso8601, OffsetDateTime};
 use typst::{
     diag::{EcoString, FileError, FileResult, PackageError},
     foundations::Bytes,
@@ -43,7 +44,7 @@ pub struct KatvanWorld<'a> {
     library: Prehashed<Library>,
     fonts: FontManager,
     source: Source,
-    now: Option<time::OffsetDateTime>,
+    now: Option<OffsetDateTime>,
 }
 
 impl<'a> KatvanWorld<'a> {
@@ -58,13 +59,13 @@ impl<'a> KatvanWorld<'a> {
             library: Prehashed::new(Library::default()),
             fonts,
             source,
-            now: time::OffsetDateTime::now_local().ok(),
+            now: None,
         }
     }
 
-    pub fn reset_source(&mut self, text: &str) {
+    pub fn reset_source(&mut self, text: &str, now: &str) {
         self.source.replace(text);
-        self.now = time::OffsetDateTime::now_local().ok();
+        self.now = OffsetDateTime::parse(now, &Iso8601::PARSING).ok();
     }
 
     fn check_package_manager_error(&self, pkg: &PackageSpec) -> Result<(), PackageError> {

@@ -42,8 +42,8 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn compile(&mut self, source: &str) -> Vec<ffi::PreviewPageDataInternal> {
-        self.world.reset_source(source);
+    pub fn compile(&mut self, source: &str, now: &str) -> Vec<ffi::PreviewPageDataInternal> {
+        self.world.reset_source(source, now);
 
         self.logger.log_one("compiling ...");
 

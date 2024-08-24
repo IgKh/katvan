@@ -20,7 +20,9 @@
 
 #include "typstdriver_ffi/bridge.h"
 
+#include <QDateTime>
 #include <QFileInfo>
+#include <QTimeZone>
 
 #include <optional>
 
@@ -85,7 +87,9 @@ void Engine::compile(const QString& source)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
-    rust::Vec<PreviewPageDataInternal> pages = d_ptr->engine.value()->compile(qstringToRust(source));
+    QString now = QDateTime::currentDateTime(QTimeZone::systemTimeZone()).toString(Qt::ISODate);
+
+    rust::Vec<PreviewPageDataInternal> pages = d_ptr->engine.value()->compile(qstringToRust(source), qstringToRust(now));
     if (!pages.empty()) {
         QList<PreviewPageData> result;
         result.reserve(pages.size());
