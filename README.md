@@ -17,7 +17,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 
 ## Features
 
-Not a whole lot so far, but for now we have:
+Starting to get there:
 - Reasonably good RTL editing
     - Mostly thanks to Qt's excellent Rich Text Framework
     - But also specific additional functionality, for example:
@@ -28,16 +28,15 @@ Not a whole lot so far, but for now we have:
 - Syntax highlighting
 - Syntax-aware spell checking
 - Typical code editor niceties - auto indentation, bracket insertion, etc.
+- Forward and inverse search
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
 - Supported on Linux and Windows 10/11
 
-[^1]: Previews are currently rendered by running the entire file through the _Typst_ CLI after each change. It is plenty fast at least for smaller documents, so good enough for now.
+[^1]: Previews are currently rendered by running the entire file through the _Typst_ compiler after each change. It is plenty fast at least for smaller documents, so good enough for now.
 
 ## Installation
 
-:warning: **IMPORTANT UPCOMING CHANGE**: Starting from the upcoming 0.7.0 release, Katvan will directly embed the Typst compiler. This will require having a Rust toolchain to build from source.
-
-For all existing releases, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details.
+For **versions 0.6.0 and prior** only: in addition to Katvan itself, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details. _This is not required for the latest release_.
 
 ### Linux
 
@@ -47,7 +46,7 @@ There is also an [AUR package](https://aur.archlinux.org/packages/katvan) for Ar
 
 ### Windows
 
-A build for 64-bit Windows 10/11 is available from the project releases page. Note that this is a portable build, which will store settings and the personal dictionary file in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
+A build for 64-bit Windows 10/11 is available from the project releases page. Note that this is a portable build, which will store settings, the personal dictionary file and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
 
 This build does not include spell checking dictionaries. You'll need to download hunsepll dictionaries for any desired languages (as a pair of `.dic` and `.aff` files), and save them to the `hunspell` sub-directory next to the main executable file. See the hunspell [README](https://github.com/hunspell/hunspell?tab=readme-ov-file#dictionaries) page for locations to get dictionaries from.
 
@@ -85,7 +84,4 @@ Contributions aren't really expected. Issues and PRs in Github are open to creat
 
 ## Roadmap
 
-A few things I'd like and may happen at some point, in no particular order:
-
-- Ability to view BiDi control characters
-- Forward/inverse search between editor and preview
+See the dedicated [ROADMAP.md](ROADMAP.md) file.
