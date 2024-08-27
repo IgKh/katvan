@@ -270,8 +270,7 @@ TEST(TokenizerTests, CodeNumberBacktracking) {
         TokenMatcher{ TokenType::WORD,         QStringLiteral("b") },
         TokenMatcher{ TokenType::WHITESPACE,   QStringLiteral(" ") },
         TokenMatcher{ TokenType::CODE_NUMBER,  QStringLiteral("12") },
-        TokenMatcher{ TokenType::WORD,         QStringLiteral("e") },
-        TokenMatcher{ TokenType::SYMBOL,       QStringLiteral("-") }
+        TokenMatcher{ TokenType::WORD,         QStringLiteral("e-") }
     }));
 }
 
@@ -640,7 +639,8 @@ TEST(HiglightingParserTests, CodeExpressions) {
         "#emoji.face \\\n"
         "#\"hello\".len().a\n"
         "#(40em.abs.inches(), 12%)\n"
-        "#40em.abs.inches()"));
+        "#40em.abs.inches()\n"
+        "#this-and-that_"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  5 },
@@ -654,7 +654,8 @@ TEST(HiglightingParserTests, CodeExpressions) {
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  67,  3 },
         HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  72,  5 },
         HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   78,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   82,  6 }
+        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   82,  6 },
+        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   91, 15 }
     ));
 }
 

@@ -127,16 +127,18 @@ Token Tokenizer::readWord()
     size_t start = d_pos;
     size_t len = 0;
 
-    // readWord() also matches code mode identifiers, so we eat any
-    // underscores, as long as they are not the leading character
+    // readWord() also matches code mode identifiers, so we eat any underscores
+    // and hypens, as long as they are not the leading character
     while (!atEnd() && (d_text[d_pos].isLetterOrNumber()
                         || d_text[d_pos].isMark()
-                        || d_text[d_pos] == QLatin1Char('_'))) {
+                        || d_text[d_pos] == QLatin1Char('_')
+                        || d_text[d_pos] == QLatin1Char('-'))) {
         d_pos++;
         len++;
     }
 
-    // No trailing underscores, though
+    // No trailing underscores, though (actually, they are allowed in
+    // identifiers, but catching it at this level messes up empahsis markers)
     while (len > 0 && d_text[start + len - 1] == QLatin1Char('_')) {
         d_pos--;
         len--;
@@ -689,7 +691,7 @@ void Parser::parse()
                 continue;
             }
             else if (match(m::All(
-                m::FullWord(),
+                m::CodeIdentifier(),
                 m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
             ))) {
                 instantState(ParserState::Kind::CODE_FUNCTION_NAME);
@@ -715,7 +717,7 @@ void Parser::parse()
         }
         else if (state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN) {
             if (match(m::All(
-                m::FullWord(),
+                m::CodeIdentifier(),
                 m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
             ))) {
                 instantState(ParserState::Kind::CODE_FUNCTION_NAME);
@@ -728,7 +730,7 @@ void Parser::parse()
                 }
                 continue;
             }
-            else if (match(m::FullWord())) {
+            else if (match(m::CodeIdentifier())) {
                 instantState(ParserState::Kind::CODE_VARIABLE_NAME);
                 if (!match(m::Symbol(QLatin1Char('.')))) {
                     popState();
@@ -820,7 +822,7 @@ bool Parser::handleCodeStart()
     }
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
-        m::FullWord(),
+        m::CodeIdentifier(),
         m::Peek(m::Any(m::Symbol(QLatin1Char('(')), m::Symbol(QLatin1Char('['))))
     ))) {
         // Function call expression - followed by either a normal argument list
@@ -850,7 +852,7 @@ bool Parser::handleCodeStart()
     }
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
-        m::FullWord()
+        m::CodeIdentifier()
     ))) {
         instantState(ParserState::Kind::CODE_VARIABLE_NAME);
         if (match(m::Symbol(QLatin1Char('.')))) {

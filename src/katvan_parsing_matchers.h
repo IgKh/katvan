@@ -249,6 +249,13 @@ auto FullWord() {
     return OneOrMore(TokenType(parsing::TokenType::WORD));
 }
 
+auto CodeIdentifier() {
+    return All(
+        FullWord(),
+        ZeroOrMore(Symbol(QLatin1Char('_')))
+    );
+}
+
 // A number literal in code, with possible trailing units
 auto FullCodeNumber() {
     return All(
