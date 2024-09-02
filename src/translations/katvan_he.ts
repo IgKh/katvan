@@ -4,7 +4,7 @@
 <context>
     <name>katvan::Editor</name>
     <message>
-        <location filename="../katvan_editor.cpp" line="+189"/>
+        <location filename="../katvan_editor.cpp" line="+187"/>
         <source>Inline &amp;Math</source>
         <translation>קטע &amp;מתמטיקה מוטבע</translation>
     </message>
@@ -49,7 +49,7 @@
         <translation>דריסה שמאל לימין</translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+116"/>
         <source>Calculating Suggestions...</source>
         <translation>בודק הצעות איות...</translation>
     </message>
@@ -64,7 +64,7 @@
         <translation>הפוך את כיוון הטקסט</translation>
     </message>
     <message>
-        <location line="+368"/>
+        <location line="+401"/>
         <source>No Suggestions Available</source>
         <translation>אין הצעות איות</translation>
     </message>
@@ -120,7 +120,12 @@
         <translation>הצגת &amp;מספרי שורות:</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="+6"/>
+        <source>Automatic Indentation:</source>
+        <translation>הזחה אוטומטית:</translation>
+    </message>
+    <message>
+        <location line="-19"/>
         <source>&amp;Indent Width:</source>
         <translation>רוחב &amp;הזחה:</translation>
     </message>
@@ -135,12 +140,7 @@
         <translation>תצוגה</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>Auotmatic Indentation:</source>
-        <translation>הזחה אוטומטית:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+15"/>
         <source>Indent with:</source>
         <translation>הזח באמצעות:</translation>
     </message>
@@ -174,7 +174,7 @@
 <context>
     <name>katvan::MainWindow</name>
     <message>
-        <location filename="../katvan_mainwindow.cpp" line="+114"/>
+        <location filename="../katvan_mainwindow.cpp" line="+115"/>
         <source>Preview</source>
         <translation>תצוגה מקדימה</translation>
     </message>
@@ -274,12 +274,12 @@
         <translation>מצב הידור</translation>
     </message>
     <message>
-        <location line="+280"/>
+        <location line="+281"/>
         <source>The file %1 no longer exists</source>
         <translation>הקובץ %1 אינו קיים יותר</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+115"/>
         <source>Failed exporting PDF to %1: %2</source>
         <translation>ייצוא כ-PDF לתוך %1 נכשל: %2</translation>
     </message>
@@ -305,7 +305,7 @@
         <translation>כשלון</translation>
     </message>
     <message>
-        <location line="-648"/>
+        <location line="-650"/>
         <source>&amp;Find...</source>
         <translation>&amp;חיפוש...</translation>
     </message>
@@ -340,13 +340,13 @@
         <translation>&amp;אודות...</translation>
     </message>
     <message>
-        <location line="+493"/>
+        <location line="+495"/>
         <location line="+8"/>
         <source>None</source>
         <translation>ללא</translation>
     </message>
     <message>
-        <location line="-469"/>
+        <location line="-471"/>
         <source>Spell checking dictionary</source>
         <translation>מילון בדיקת איות</translation>
     </message>
@@ -362,12 +362,12 @@
     </message>
     <message>
         <location line="+63"/>
-        <location line="+522"/>
+        <location line="+524"/>
         <source>Logical</source>
         <translation>לוגי</translation>
     </message>
     <message>
-        <location line="-521"/>
+        <location line="-523"/>
         <source>Cursor movement style</source>
         <translation>סגנון תנועת סמן</translation>
     </message>
@@ -388,7 +388,7 @@ Do you want to save your changes?</source>
         <translation>בקובץ %1 בוצעו שינויים. האם ברצונך לשמור אותם?</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+86"/>
         <source>Unsaved changes were found for the file %1. Would you like to recover these changes?</source>
         <translation>בקובץ %1 ישנם שינויים שלא נשמרו. האם ברצונך לשחזר שינויים אלו?</translation>
     </message>
@@ -413,17 +413,17 @@ Do you want to save your changes?</source>
         <translation>שינויים אלה נעשו ב-%2 (%3).</translation>
     </message>
     <message>
-        <location line="+255"/>
+        <location line="+256"/>
         <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Contains icons taken from the &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt; icon theme.&lt;/p&gt;</source>
         <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל צלמיות שנלקחו מן סט הצלמיות &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-338"/>
+        <location line="-340"/>
         <source>Untitled</source>
         <translation>ללא שם</translation>
     </message>
     <message>
-        <location line="+151"/>
+        <location line="+152"/>
         <source>Open Document</source>
         <translation>פתיחת מסמך</translation>
     </message>
@@ -464,7 +464,7 @@ To export the document, please correct them.</source>
         <translation>במסמך %1 יש שגיאות. על מנת לייצא את המסמך, עליך לתקנן.</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Export to PDF</source>
         <translation>ייצוא כ-PDF</translation>
     </message>

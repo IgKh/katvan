@@ -362,7 +362,7 @@ void EditorSettingsDialog::setupUI()
     QVBoxLayout* indentationLayout = new QVBoxLayout(indentationGroup);
 
     QFormLayout* indentationTopLayout = new QFormLayout();
-    indentationTopLayout->addRow(tr("Auotmatic Indentation:"), d_indentMode);
+    indentationTopLayout->addRow(tr("Automatic Indentation:"), d_indentMode);
 
     QGridLayout* indentationStyleLayout = new QGridLayout();
     indentationStyleLayout->setColumnStretch(0, 3);
