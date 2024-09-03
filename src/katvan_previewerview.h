@@ -82,9 +82,10 @@ private slots:
 
 private:
     void resetAllCalculations(bool invalidateRenderCache = true);
+    QSize calculatePageGeometries();
+    void updateScrollbars(QSize documentSize, bool forceVerticalScrollBar);
     void updatePageGeometries();
     void updateCurrentPage();
-    void updateScrollbars();
 
     ZoomMode d_zoomMode;
     qreal d_zoomFactor;
@@ -92,11 +93,10 @@ private:
     int d_currentPage;
 
     TypstDriverWrapper* d_driver;
-    QTimer* d_debounceTimer;
+    QTimer* d_invalidationTimer;
 
     QList<typstdriver::PreviewPageData> d_pages;
     QList<QRect> d_pageGeometries;
-    QSize d_documentSize;
     bool d_scrollerGestureUngrabbed;
     QPointF d_lastJumpPoint;
 

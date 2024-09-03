@@ -53,18 +53,16 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
     viewport()->setMouseTracking(true);
 
     connect(driver, &TypstDriverWrapper::pageRendered, this, &PreviewerView::pageRendered);
-
     connect(screen(), &QScreen::logicalDotsPerInchChanged, this, &PreviewerView::dpiChanged);
-    dpiChanged();
-
-    d_debounceTimer = new QTimer(this);
-    d_debounceTimer->setSingleShot(true);
-    d_debounceTimer->setInterval(100);
-    d_debounceTimer->callOnTimeout(this, &PreviewerView::invalidateAllRenderCache);
 
     verticalScrollBar()->setSingleStep(20);
     horizontalScrollBar()->setSingleStep(20);
-    updateScrollbars();
+    dpiChanged();
+
+    d_invalidationTimer = new QTimer(this);
+    d_invalidationTimer->setSingleShot(true);
+    d_invalidationTimer->setInterval(100);
+    d_invalidationTimer->callOnTimeout(this, &PreviewerView::invalidateAllRenderCache);
 
     QScroller::grabGesture(viewport(), QScroller::LeftMouseButtonGesture);
 
@@ -179,7 +177,7 @@ void PreviewerView::jumpTo(int page, QPointF pos)
     // viewport
     QScroller::scroller(viewport())->ensureVisible(
         QRectF(target, target + QPointF(1, 1)),
-        0,
+        0.45 * viewport()->width(),
         0.45 * viewport()->height());
 
 #ifdef DEBUG_JUMP_POINT
@@ -197,7 +195,6 @@ void PreviewerView::resizeEvent(QResizeEvent* event)
     }
     else {
         updatePageGeometries();
-        updateScrollbars();
         viewport()->update();
     }
 }
@@ -238,7 +235,7 @@ void PreviewerView::paintEvent(QPaintEvent* event)
             painter.drawImage(pageGeometry, renderedPage->image);
         }
         if (renderedPage == nullptr || renderedPage->invalidated) {
-            d_driver->renderPage(i, d_pointSize * effectiveZoom(i) * devicePixelRatio());
+            d_driver->renderPage(i, d_pointSize * effectiveZoom(i));
         }
     }
 
@@ -290,7 +287,7 @@ void PreviewerView::mouseReleaseEvent(QMouseEvent* event)
 
     double zoom = effectiveZoom(page);
     QPoint posInPage = click - d_pageGeometries[page].topLeft();
-    QPointF posInPts = posInPage.toPointF() / (d_pointSize * zoom * devicePixelRatio());
+    QPointF posInPts = posInPage.toPointF() / (d_pointSize * zoom);
     d_driver->inverseSearch(page, posInPts);
 }
 
@@ -313,7 +310,7 @@ void PreviewerView::pageRendered(int page, QImage image)
 void PreviewerView::dpiChanged()
 {
     // A point is 1/72th of an inch
-    d_pointSize = screen()->logicalDotsPerInch() / 72.0;
+    d_pointSize = screen()->logicalDotsPerInch() * devicePixelRatio() / 72.0;
 
     updatePageGeometries();
 }
@@ -349,7 +346,6 @@ void PreviewerView::invalidateAllRenderCache()
 void PreviewerView::resetAllCalculations(bool invalidateRenderCache)
 {
     updatePageGeometries();
-    updateScrollbars();
     updateCurrentPage();
 
     if (invalidateRenderCache) {
@@ -360,14 +356,14 @@ void PreviewerView::resetAllCalculations(bool invalidateRenderCache)
         // and then the sharper images will replace them. Do it via a
         // debouncer to ensure that we don't re-render too much when e.g
         // resizing the previewer pane.
-        d_debounceTimer->start();
+        d_invalidationTimer->start();
     }
 }
 
-void PreviewerView::updatePageGeometries()
+QSize PreviewerView::calculatePageGeometries()
 {
     qsizetype pageCount = d_pages.size();
-    int totalWidth = DOCUMENT_MARGINS.left();
+    int totalWidth = DOCUMENT_MARGINS.left() + DOCUMENT_MARGINS.right();
 
     d_pageGeometries.resize(pageCount);
     for (int i = 0; i < pageCount; i++) {
@@ -398,7 +394,42 @@ void PreviewerView::updatePageGeometries()
     }
 
     topY += DOCUMENT_MARGINS.bottom();
-    d_documentSize = QSize(totalWidth, topY);
+    return QSize(totalWidth, topY);
+}
+
+void PreviewerView::updateScrollbars(QSize documentSize, bool forceVerticalScrollBar)
+{
+    int verticalMax = documentSize.height() - viewport()->height();
+    if (verticalMax <= 0 && forceVerticalScrollBar) {
+        verticalMax = 1;
+    }
+
+    horizontalScrollBar()->setRange(0, documentSize.width() - viewport()->width());
+    horizontalScrollBar()->setPageStep(viewport()->width());
+    verticalScrollBar()->setRange(0, verticalMax);
+    verticalScrollBar()->setPageStep(viewport()->height());
+}
+
+void PreviewerView::updatePageGeometries()
+{
+    QSize newDocumentSize = calculatePageGeometries();
+    bool forceVerticalScrollBar = false;
+
+    if (d_zoomMode != ZoomMode::Custom) {
+        if (verticalScrollBar()->isVisible() && newDocumentSize.height() <= viewport()->height()) {
+            // Vertical scroll bar was needed, but not anymore. If increasing
+            // the viewport width by that of a scroll bar would cause the
+            // document to lengthen such that a scroll bar would again be
+            // needed, it would lead us to a resize loop, so just force the
+            // scroll bar to keep being visible.
+
+            qreal factor = (viewport()->width() + verticalScrollBar()->width()) / qreal(viewport()->width());
+            if (qRound(newDocumentSize.height() * factor) > viewport()->height()) {
+                forceVerticalScrollBar = true;
+            }
+        }
+    }
+    updateScrollbars(newDocumentSize, forceVerticalScrollBar);
 }
 
 void PreviewerView::updateCurrentPage()
@@ -425,14 +456,6 @@ void PreviewerView::updateCurrentPage()
         d_currentPage = currentPage;
         Q_EMIT currentPageChanged(currentPage);
     }
-}
-
-void PreviewerView::updateScrollbars()
-{
-    horizontalScrollBar()->setRange(0, d_documentSize.width() - viewport()->width());
-    horizontalScrollBar()->setPageStep(viewport()->width());
-    verticalScrollBar()->setRange(0, d_documentSize.height() - viewport()->height());
-    verticalScrollBar()->setPageStep(viewport()->height());
 }
 
 }
