@@ -1,4 +1,20 @@
 find_package(Qt6 REQUIRED COMPONENTS Gui Network)
+
+if(APPLE)
+    find_program(HOMEBREW_EXECUTABLE brew)
+    if(HOMEBREW_EXECUTABLE)
+        execute_process(
+            COMMAND ${HOMEBREW_EXECUTABLE} --prefix libarchive
+            OUTPUT_VARIABLE _LibArchive_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        if(_LibArchive_PREFIX)
+            message(STATUS "LibArchive found as Homebrew keg at ${_LibArchive_PREFIX}")
+            set(LibArchive_INCLUDE_DIR "${_LibArchive_PREFIX}/include")
+        endif()
+    endif()
+endif()
 find_package(LibArchive REQUIRED)
 
 find_package(Corrosion QUIET)

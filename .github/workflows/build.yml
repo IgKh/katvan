@@ -80,6 +80,42 @@ jobs:
       - name: Run tests
         run: ctest --output-on-failure --test-dir build
 
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.5.*
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          brew install googletest hunspell libarchive
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: 'build'
+          cache-targets: 'false'
+          workspaces: |
+            typstdriver/rust
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Run tests
+        run: ctest --output-on-failure --test-dir build
 
   analyse:
     runs-on: ubuntu-latest
