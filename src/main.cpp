@@ -41,6 +41,10 @@ void setupPortableMode()
 
 int main(int argc, char** argv)
 {
+#ifdef Q_OS_MACOS
+    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
+#endif
+
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("Katvan");
     QCoreApplication::setApplicationName("Katvan");

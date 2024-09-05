@@ -46,6 +46,12 @@ if(WIN32)
     list(APPEND MAIN_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/katvan.rc)
 endif()
 
+if(APPLE)
+    set(macos_icon "${PROJECT_SOURCE_DIR}/assets/katvan.icns")
+    set_source_files_properties(${macos_icon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    list(APPEND MAIN_SOURCES ${macos_icon})
+endif()
+
 add_library(libkatvan STATIC ${SOURCES})
 
 target_include_directories(libkatvan PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
@@ -75,6 +81,8 @@ endif()
 set_target_properties(katvan PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
+    MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/assets/Info.plist.in
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 
 qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly -no-obsolete -locations relative)
