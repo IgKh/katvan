@@ -31,6 +31,10 @@
         "keyword": "#d73a49"
     },
     "editor-colors": {
+        "background": "#ffffff",
+        "foreground": "#1f1c1b",
+        "gutter": "#f0f0f0",
+        "current-line": "#f8f7f6",
         "spelling-error": "#ff0000",
         "matching-bracket": "#ffff00"
     }

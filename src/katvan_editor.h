@@ -90,6 +90,7 @@ private slots:
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
+    void handlePaletteChange();
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
     void updateExtraSelections();
@@ -110,6 +111,8 @@ private:
     EditorSettings d_fileMode;
     EditorSettings d_effectiveSettings;
     EditorTheme d_theme;
+
+    bool d_inPaletteChange;
 
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;

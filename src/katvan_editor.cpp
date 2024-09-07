@@ -24,6 +24,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QTextBlock>
@@ -88,6 +89,7 @@ private:
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
     , d_theme(EditorTheme::defaultTheme())
+    , d_inPaletteChange(false)
     , d_pendingSuggestionsPosition(-1)
 {
     setAcceptRichText(false);
@@ -130,6 +132,8 @@ Editor::Editor(QWidget* parent)
     connect(this, &QTextEdit::textChanged, [this]() {
         d_debounceTimer->start();
     });
+
+    QTimer::singleShot(0, this, &Editor::handlePaletteChange);
 }
 
 void Editor::applySettings(const EditorSettings& settings)
@@ -252,13 +256,23 @@ void Editor::checkForModelines()
     applyEffectiveSettings();
 }
 
+void Editor::handlePaletteChange()
+{
+    QScopedValueRollback rollback{ d_inPaletteChange, true };
+
+    d_theme = EditorTheme::defaultTheme();
+    setPalette(d_theme.adjustPalette(palette()));
+    forceRehighlighting();
+    updateExtraSelections();
+}
+
 bool Editor::event(QEvent* event)
 {
     if (event->type() == QEvent::PaletteChange)
     {
-        d_theme = EditorTheme::defaultTheme();
-        forceRehighlighting();
-        updateExtraSelections();
+        if (!d_inPaletteChange) {
+            handlePaletteChange();
+        }
     }
 #ifdef Q_OS_LINUX
     else if (event->type() == QEvent::ShortcutOverride) {
@@ -787,7 +801,7 @@ void Editor::updateExtraSelections()
     // Current Line
     //
     QTextEdit::ExtraSelection currentLine;
-    currentLine.format.setBackground(palette().color(QPalette::AlternateBase));
+    currentLine.format.setBackground(d_theme.editorColor(EditorTheme::EditorColor::CURRENT_LINE));
     currentLine.format.setProperty(QTextFormat::FullWidthSelection, true);
     currentLine.cursor = cursor;
     extraSelections.append(currentLine);
@@ -832,8 +846,8 @@ QTextBlock Editor::getFirstVisibleBlock()
 
 void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
 {
-    QColor bgColor = palette().color(QPalette::Active, QPalette::Window);
-    QColor fgColor = palette().color(QPalette::Active, QPalette::WindowText);
+    QColor bgColor = d_theme.editorColor(EditorTheme::EditorColor::GUTTER);
+    QColor fgColor = d_theme.editorColor(EditorTheme::EditorColor::FOREGROUND);
 
     QPainter painter(gutter);
     painter.fillRect(event->rect(), bgColor);

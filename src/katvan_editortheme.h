@@ -21,6 +21,7 @@
 
 #include <QColor>
 #include <QHash>
+#include <QPalette>
 #include <QString>
 #include <QTextCharFormat>
 
@@ -30,6 +31,10 @@ class EditorTheme
 {
 public:
     enum class EditorColor {
+        BACKGROUND,
+        FOREGROUND,
+        GUTTER,
+        CURRENT_LINE,
         SPELLING_ERROR,
         MATCHING_BRACKET
     };
@@ -39,6 +44,8 @@ public:
     static EditorTheme& defaultTheme();
 
     EditorTheme() {};
+
+    QPalette adjustPalette(QPalette original) const;
 
     QTextCharFormat highlightingFormat(parsing::HiglightingMarker::Kind marker) const { return d_highlightingFormats[marker]; }
     QColor editorColor(EditorColor color) const { return d_editorColors[color]; }

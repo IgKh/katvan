@@ -121,6 +121,10 @@ static void readHighlightingFormats(const QJsonObject& obj,
 static void readEditorColors(const QJsonObject& obj,
                              QHash<EditorTheme::EditorColor, QColor>& editorColors)
 {
+    editorColors[EditorTheme::EditorColor::BACKGROUND] = readColor(obj.value("background"));
+    editorColors[EditorTheme::EditorColor::FOREGROUND] = readColor(obj.value("foreground"));
+    editorColors[EditorTheme::EditorColor::GUTTER] = readColor(obj.value("gutter"));
+    editorColors[EditorTheme::EditorColor::CURRENT_LINE] = readColor(obj.value("current-line"));
     editorColors[EditorTheme::EditorColor::SPELLING_ERROR] = readColor(obj.value("spelling-error"));
     editorColors[EditorTheme::EditorColor::MATCHING_BRACKET] = readColor(obj.value("matching-bracket"));
 }
@@ -138,6 +142,13 @@ EditorTheme::EditorTheme(const QString& themeJsonFile)
 
     readHighlightingFormats(obj.value("highlighting-formats").toObject(), d_highlightingFormats);
     readEditorColors(obj.value("editor-colors").toObject(), d_editorColors);
+}
+
+QPalette EditorTheme::adjustPalette(QPalette original) const
+{
+    original.setColor(QPalette::Base, editorColor(EditorColor::BACKGROUND));
+    original.setColor(QPalette::Text, editorColor(EditorColor::FOREGROUND));
+    return original;
 }
 
 }
