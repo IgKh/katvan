@@ -24,9 +24,9 @@
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
+class QAction;
 class QComboBox;
 class QLabel;
-class QToolButton;
 QT_END_NAMESPACE
 
 namespace katvan {
@@ -71,7 +71,7 @@ private:
 
     QComboBox* d_zoomComboBox;
     QLabel* d_currentPageLabel;
-    QToolButton* d_followEditorCursorButton;
+    QAction* d_followEditorCursorAction;
 };
 
 }

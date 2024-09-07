@@ -25,7 +25,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QScrollBar>
-#include <QToolButton>
+#include <QToolBar>
 #include <QVBoxLayout>
 
 static constexpr QLatin1StringView FIT_TO_PAGE("fit-page");
@@ -62,40 +62,39 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     d_zoomComboBox->addItem("150%", "1.5");
     d_zoomComboBox->addItem("200%", "2.0");
 
-    QToolButton* zoomOutButton = new QToolButton();
-    zoomOutButton->setIcon(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")));
-    zoomOutButton->setToolTip(tr("Zoom Out Preview"));
-    connect(zoomOutButton, &QToolButton::clicked, this, &Previewer::zoomOut);
+    QAction* zoomOutAction = new QAction();
+    zoomOutAction->setIcon(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")));
+    zoomOutAction->setToolTip(tr("Zoom Out Preview"));
+    connect(zoomOutAction, &QAction::triggered, this, &Previewer::zoomOut);
 
-    QToolButton* zoomInButton = new QToolButton();
-    zoomInButton->setIcon(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")));
-    zoomInButton->setToolTip(tr("Zoom In Preview"));
-    connect(zoomInButton, &QToolButton::clicked, this, &Previewer::zoomIn);
+    QAction* zoomInAction = new QAction();
+    zoomInAction->setIcon(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")));
+    zoomInAction->setToolTip(tr("Zoom In Preview"));
+    connect(zoomInAction, &QAction::triggered, this, &Previewer::zoomIn);
 
     d_currentPageLabel = new QLabel();
+    d_currentPageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    d_currentPageLabel->setAlignment(Qt::AlignCenter);
 
-    d_followEditorCursorButton = new QToolButton();
-    d_followEditorCursorButton->setIcon(QIcon::fromTheme("debug-execute-from-cursor", QIcon(":/icons/debug-execute-from-cursor.svg")));
-    d_followEditorCursorButton->setToolTip(tr("Follow Editor Cursor"));
-    d_followEditorCursorButton->setCheckable(true);
-    connect(d_followEditorCursorButton, &QToolButton::toggled, this, &Previewer::followEditorCursorChanged);
+    d_followEditorCursorAction = new QAction();
+    d_followEditorCursorAction->setIcon(QIcon::fromTheme("debug-execute-from-cursor", QIcon(":/icons/debug-execute-from-cursor.svg")));
+    d_followEditorCursorAction->setToolTip(tr("Follow Editor Cursor"));
+    d_followEditorCursorAction->setCheckable(true);
+    connect(d_followEditorCursorAction, &QAction::toggled, this, &Previewer::followEditorCursorChanged);
 
-    QHBoxLayout* toolLayout = new QHBoxLayout();
-    toolLayout->setContentsMargins(
-        style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
-        style()->pixelMetric(QStyle::PM_LayoutTopMargin),
-        style()->pixelMetric(QStyle::PM_LayoutRightMargin),
-        0);
-
-    toolLayout->addWidget(zoomOutButton);
-    toolLayout->addWidget(d_zoomComboBox);
-    toolLayout->addWidget(zoomInButton);
-    toolLayout->addWidget(d_currentPageLabel, 1, Qt::AlignCenter);
-    toolLayout->addWidget(d_followEditorCursorButton);
+    QToolBar* toolBar = new QToolBar();
+    toolBar->setIconSize(QSize(22, 22));
+    toolBar->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+    toolBar->addAction(zoomOutAction);
+    toolBar->addWidget(d_zoomComboBox);
+    toolBar->addAction(zoomInAction);
+    toolBar->addWidget(d_currentPageLabel);
+    toolBar->addAction(d_followEditorCursorAction);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addLayout(toolLayout);
+    layout->setSpacing(0);
+    layout->addWidget(toolBar);
     layout->addWidget(d_view, 1);
 }
 
@@ -105,7 +104,7 @@ Previewer::~Previewer()
 
 bool Previewer::shouldFollowEditorCursor() const
 {
-    return d_followEditorCursorButton->isChecked();
+    return d_followEditorCursorAction->isChecked();
 }
 
 void Previewer::restoreSettings(const QSettings& settings)
@@ -119,7 +118,7 @@ void Previewer::restoreSettings(const QSettings& settings)
     }
 
     bool followCursor = settings.value(SETTING_PREVIEW_FOLLOW_CURSOR, false).toBool();
-    d_followEditorCursorButton->setChecked(followCursor);
+    d_followEditorCursorAction->setChecked(followCursor);
 }
 
 void Previewer::saveSettings(QSettings& settings)
@@ -138,7 +137,7 @@ void Previewer::saveSettings(QSettings& settings)
     }
 
     settings.setValue(SETTING_PREVIEW_ZOOM, zoomValue);
-    settings.setValue(SETTING_PREVIEW_FOLLOW_CURSOR, d_followEditorCursorButton->isChecked());
+    settings.setValue(SETTING_PREVIEW_FOLLOW_CURSOR, d_followEditorCursorAction->isChecked());
 }
 
 void Previewer::reset()
