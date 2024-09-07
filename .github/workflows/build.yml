@@ -31,9 +31,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: 'build'
-          cache-targets: 'false'
           workspaces: |
-            typstdriver/rust
+            typstdriver/rust -> ../../build/cargo/build
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
@@ -104,9 +103,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: 'build'
-          cache-targets: 'false'
           workspaces: |
-            typstdriver/rust
+            typstdriver/rust -> ../../build/cargo/build
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
@@ -142,9 +140,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: 'build'
-          cache-targets: 'false'
           workspaces: |
-            typstdriver/rust
+            typstdriver/rust -> ../../build/cargo/build
 
       - name: Run Clazy
         run: |
