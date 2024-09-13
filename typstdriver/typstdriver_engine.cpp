@@ -21,6 +21,7 @@
 #include "typstdriver_ffi/bridge.h"
 
 #include <QDateTime>
+#include <QDir>
 #include <QFileInfo>
 #include <QTimeZone>
 
@@ -54,8 +55,13 @@ struct Engine::EnginePrivate
 Engine::Engine(const QString& filePath, Logger* logger, PackageManager* packageManager, QObject* parent)
     : QObject(parent)
 {
-    QFileInfo info { filePath };
-    d_ptr.reset(new EnginePrivate(this, logger, packageManager, info.canonicalPath()));
+    QString rootPath;
+    if (!filePath.isEmpty()) {
+        QFileInfo info { filePath };
+        rootPath = info.dir().canonicalPath();
+    }
+
+    d_ptr.reset(new EnginePrivate(this, logger, packageManager, rootPath));
 }
 
 Engine::~Engine()
