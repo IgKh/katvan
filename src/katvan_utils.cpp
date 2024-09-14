@@ -35,4 +35,23 @@ QString formatFilePath(QString path)
     return path;
 }
 
+Qt::LayoutDirection naturalTextDirection(const QString& text)
+{
+    int count = 0;
+    for (QChar ch : text) {
+        if (count++ > 100) {
+            break;
+        }
+
+        QChar::Direction direction = ch.direction();
+        if (direction == QChar::DirR || direction == QChar::DirAL) {
+            return Qt::RightToLeft;
+        }
+        else if (direction == QChar::DirL) {
+            return Qt::LeftToRight;
+        }
+    }
+    return Qt::LayoutDirectionAuto;
+}
+
 }

@@ -23,4 +23,6 @@ namespace katvan::utils {
 
 QString formatFilePath(QString path);
 
+Qt::LayoutDirection naturalTextDirection(const QString& text);
+
 }

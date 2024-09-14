@@ -10,8 +10,8 @@ Legend:
 
 - [ ] :arrow_up: Make BiDi control characters visible in the editor with custom glyphs.
     - Using a patch that will hopefully be upstreamed to Qt, but that will happen no earlier than Qt 6.9.
-- [ ] :arrow_up: Make line direction overrides persistent by inserting the proper control character.
-- [ ] :arrow_up: Give blank lines the base direction of the previous line, rather than the application's default.
+- [X] :arrow_up: Make line direction overrides persistent by inserting the proper control character.
+- [X] :arrow_up: Give blank lines the base direction of the previous line, rather than the application's default.
     - To avoid the Logical cursor getting stuck between two RTL paragraphs when the system language is LTR
 - [ ] :arrow_right: Directionality markers on the line number gutters to improve orientation.
 
@@ -29,12 +29,15 @@ Legend:
 - [ ] :arrow_up: Make automatic backups configurable.
 - [ ] :arrow_up: Use regex capture groups in text find and replace.
 - [ ] :arrow_down: Outline pane.
+- [ ] :arrow_down: Code folding.
+- [ ] :arrow_down: Indentation guides.
 
 ## Platform Integrations
 
 - [ ] :arrow_right: macOS version.
 - [ ] :arrow_right: Flatpak package.
     - In Flathub, and with as much sandboxing as possible.
+- [ ] :arrow_right: Windows installer.
 
 ## Sandbox Readiness
 
