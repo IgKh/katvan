@@ -113,8 +113,8 @@ void Engine::compile(const QString& source)
 
 static void cleanupBuffer(void* buffer)
 {
-    unsigned char* buf = reinterpret_cast<unsigned char*>(buffer);
-    delete[] buf;
+    auto* buf = reinterpret_cast<rust::Vec<uint8_t>*>(buffer);
+    delete buf;
 }
 
 void Engine::renderPage(int page, qreal pointSize)
@@ -124,11 +124,10 @@ void Engine::renderPage(int page, qreal pointSize)
     RenderedPage result = d_ptr->engine.value()->render_page(page, pointSize);
 
     if (!result.buffer.empty()) {
-        unsigned char* buffer = new unsigned char[result.buffer.size()];
-        memcpy(buffer, result.buffer.data(), result.buffer.size());
+        rust::Vec<uint8_t>* buffer = new rust::Vec<uint8_t>(std::move(result.buffer));
 
         QImage image {
-            buffer,
+            buffer->data(),
             static_cast<int>(result.width_px),
             static_cast<int>(result.height_px),
             QImage::Format_RGBA8888_Premultiplied, // Per tiny-skia's documentation
