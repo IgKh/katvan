@@ -66,9 +66,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: 'build'
-          cache-targets: 'false'
           workspaces: |
-            typstdriver/rust
+            typstdriver/rust -> ../../build/x64/RelWithDebInfo/cargo/build
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"

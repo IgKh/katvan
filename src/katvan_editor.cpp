@@ -346,9 +346,9 @@ bool Editor::event(QEvent* event)
             handlePaletteChange();
         }
     }
+#if defined(Q_OS_LINUX)
     else if (event->type() == QEvent::ShortcutOverride) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
-#if defined(Q_OS_LINUX)
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) ||
             keyEvent->keyCombination() == QKeyCombination(Qt::ControlModifier, Qt::Key_Shift)) {
             if (keyEvent->nativeScanCode() == 50) {
@@ -361,15 +361,8 @@ bool Editor::event(QEvent* event)
                 d_pendingDirectionChange.reset();
             }
         }
-#elif defined(Q_OS_WIN)
-        if (keyEvent->key() == Qt::Key_Direction_L) {
-            d_pendingDirectionChange = Qt::LeftToRight;
-        }
-        else if (keyEvent->key() == Qt::Key_Direction_R) {
-            d_pendingDirectionChange = Qt::RightToLeft;
-        }
-#endif
     }
+#endif
     return QTextEdit::event(event);
 }
 
@@ -690,6 +683,17 @@ void Editor::keyPressEvent(QKeyEvent* event)
             }
         }
     }
+
+#ifdef Q_OS_WINDOWS
+    if (event->key() == Qt::Key_Direction_L) {
+        setTextBlockDirection(Qt::LeftToRight);
+        return;
+    }
+    if (event->key() == Qt::Key_Direction_R) {
+        setTextBlockDirection(Qt::RightToLeft);
+        return;
+    }
+#endif
 
     QTextEdit::keyPressEvent(event);
 }
