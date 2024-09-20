@@ -48,6 +48,7 @@ public:
     SpellChecker* spellChecker() const { return d_spellChecker; }
 
     void applySettings(const EditorSettings& settings);
+    void updateEditorTheme();
 
     QMenu* createInsertMenu();
 
@@ -94,7 +95,6 @@ private slots:
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
-    void handlePaletteChange();
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
     void updateExtraSelections();

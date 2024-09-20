@@ -84,6 +84,7 @@ private:
     void tryRecover(const QString& fileName, const QString& tmpFile);
 
     void closeEvent(QCloseEvent* event) override;
+    bool event(QEvent* event) override;
 
     QString d_currentFileName;
     QString d_currentFileShortName;

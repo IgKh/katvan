@@ -518,6 +518,15 @@ void MainWindow::closeEvent(QCloseEvent* event)
     }
 }
 
+bool MainWindow::event(QEvent* event)
+{
+    if (event->type() == QEvent::ThemeChange || event->type() == QEvent::ApplicationPaletteChange) {
+        d_editor->updateEditorTheme();
+    }
+
+    return QMainWindow::event(event);
+}
+
 void MainWindow::commitSession(QSessionManager& manager)
 {
     if (!d_editor->document()->isModified()) {

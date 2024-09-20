@@ -19,6 +19,7 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPalette>
@@ -142,6 +143,9 @@ EditorTheme::EditorTheme(const QString& themeJsonFile)
 
     readHighlightingFormats(obj.value("highlighting-formats").toObject(), d_highlightingFormats);
     readEditorColors(obj.value("editor-colors").toObject(), d_editorColors);
+
+    QFileInfo info(themeJsonFile);
+    d_name = info.baseName();
 }
 
 QPalette EditorTheme::adjustPalette(QPalette original) const

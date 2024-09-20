@@ -133,7 +133,7 @@ Editor::Editor(QWidget* parent)
         d_debounceTimer->start();
     });
 
-    QTimer::singleShot(0, this, &Editor::handlePaletteChange);
+    QTimer::singleShot(0, this, &Editor::updateEditorTheme);
 }
 
 void Editor::applySettings(const EditorSettings& settings)
@@ -170,6 +170,19 @@ void Editor::applyEffectiveSettings()
         d_leftLineNumberGutter->setVisible(lineNumberStyle == EditorSettings::LineNumberStyle::BOTH_SIDES);
     }
     updateLineNumberGutters();
+}
+
+void Editor::updateEditorTheme()
+{
+    EditorTheme& newTheme = EditorTheme::defaultTheme();
+    if (d_theme.name() == newTheme.name()) {
+        return;
+    }
+
+    d_theme = newTheme;
+    setPalette(d_theme.adjustPalette(window()->palette()));
+    forceRehighlighting();
+    updateExtraSelections();
 }
 
 QMenu* Editor::createInsertMenu()
@@ -328,26 +341,10 @@ void Editor::checkForModelines()
     applyEffectiveSettings();
 }
 
-void Editor::handlePaletteChange()
-{
-    QScopedValueRollback rollback{ d_inPaletteChange, true };
-
-    d_theme = EditorTheme::defaultTheme();
-    setPalette(d_theme.adjustPalette(palette()));
-    forceRehighlighting();
-    updateExtraSelections();
-}
-
 bool Editor::event(QEvent* event)
 {
-    if (event->type() == QEvent::PaletteChange)
-    {
-        if (!d_inPaletteChange) {
-            handlePaletteChange();
-        }
-    }
 #if defined(Q_OS_LINUX)
-    else if (event->type() == QEvent::ShortcutOverride) {
+    if (event->type() == QEvent::ShortcutOverride) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) ||
             keyEvent->keyCombination() == QKeyCombination(Qt::ControlModifier, Qt::Key_Shift)) {
