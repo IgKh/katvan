@@ -230,7 +230,7 @@ void Editor::ajustEditedBlocksDirection(int from, int charsRemoved, int charsAdd
 
     QTextBlock lastBlock = document()->findBlock(from + charsAdded + (charsRemoved > 0 ? 1 : 0));
     if (!lastBlock.isValid()) {
-        lastBlock = document()->end();
+        lastBlock = document()->lastBlock();
     }
 
     QTextCursor cursor { block };
@@ -684,7 +684,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
         }
     }
 
-#ifdef Q_OS_WINDOWS
+#if defined(Q_OS_WINDOWS)
     if (event->key() == Qt::Key_Direction_L) {
         setTextBlockDirection(Qt::LeftToRight);
         return;
@@ -692,6 +692,20 @@ void Editor::keyPressEvent(QKeyEvent* event)
     if (event->key() == Qt::Key_Direction_R) {
         setTextBlockDirection(Qt::RightToLeft);
         return;
+    }
+#elif defined(Q_OS_MAC)
+    if (event->keyCombination().keyboardModifiers() == (Qt::MetaModifier | Qt::ShiftModifier)) {
+        if (event->nativeVirtualKey() == 0x38) { // kVK_Shift
+            d_pendingDirectionChange = Qt::LeftToRight;
+            return;
+        }
+        else if (event->nativeVirtualKey() == 0x3C) { // kVK_RightShift
+            d_pendingDirectionChange = Qt::RightToLeft;
+            return;
+        }
+        else {
+            d_pendingDirectionChange.reset();
+        }
     }
 #endif
 
