@@ -47,6 +47,10 @@ if(WIN32)
 endif()
 
 if(APPLE)
+    list(APPEND SOURCES
+        katvan_utils_macos.mm
+    )
+
     set(macos_icon "${PROJECT_SOURCE_DIR}/assets/katvan.icns")
     set_source_files_properties(${macos_icon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     list(APPEND MAIN_SOURCES ${macos_icon})

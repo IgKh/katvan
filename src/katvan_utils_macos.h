@@ -23,11 +23,7 @@ QT_BEGIN_NAMESPACE
 class QWidget;
 QT_END_NAMESPACE
 
-namespace katvan::utils {
-
-QString formatFilePath(QString path);
-
-Qt::LayoutDirection naturalTextDirection(const QString& text);
+namespace katvan::utils::macos {
 
 QString showPdfExportDialog(QWidget* parent, const QString& sourceFilePath);
 

@@ -17,7 +17,13 @@
  */
 #include "katvan_utils.h"
 
+#if defined(Q_OS_MAC)
+#include "katvan_utils_macos.h"
+#endif
+
 #include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QGuiApplication>
 
 namespace katvan::utils {
@@ -52,6 +58,29 @@ Qt::LayoutDirection naturalTextDirection(const QString& text)
         }
     }
     return Qt::LayoutDirectionAuto;
+}
+
+QString showPdfExportDialog(QWidget* parent, const QString& sourceFilePath)
+{
+#if defined(Q_OS_MAC)
+    return macos::showPdfExportDialog(parent, sourceFilePath);
+#else
+    QFileDialog dialog(parent, QObject::tr("Export to PDF"));
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setNameFilter(QObject::tr("PDF files (*.pdf)"));
+    dialog.setDefaultSuffix("pdf");
+
+    if (!sourceFilePath.isEmpty()) {
+        QFileInfo info(sourceFilePath);
+        dialog.setDirectory(info.dir());
+        dialog.selectFile(info.baseName() + ".pdf");
+    }
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return QString();
+    }
+    return dialog.selectedFiles().at(0);
+#endif
 }
 
 }

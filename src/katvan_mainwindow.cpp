@@ -658,22 +658,10 @@ void MainWindow::exportPdf()
         return;
     }
 
-    QFileDialog dialog(this, tr("Export to PDF"));
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setNameFilter(tr("PDF files (*.pdf)"));
-    dialog.setDefaultSuffix("pdf");
-
-    if (!d_currentFileName.isEmpty()) {
-        QFileInfo info(d_currentFileName);
-        dialog.setDirectory(info.dir());
-        dialog.selectFile(info.baseName() + ".pdf");
-    }
-
-    if (dialog.exec() != QDialog::Accepted) {
+    QString targetFileName = utils::showPdfExportDialog(this, d_currentFileName);
+    if (targetFileName.isEmpty()) {
         return;
     }
-
-    QString targetFileName = dialog.selectedFiles().at(0);
 
     auto onComplete = [this, targetFileName](QString errorMessage) {
         qApp->restoreOverrideCursor();
