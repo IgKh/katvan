@@ -30,6 +30,7 @@ set(SOURCES
     katvan_previewerview.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
+    katvan_spellchecker_hunspell.cpp
     katvan_spellchecker.cpp
     katvan_typstdriverwrapper.cpp
     katvan_utils.cpp

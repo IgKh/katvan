@@ -35,7 +35,7 @@ void setupPortableMode()
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsPath);
 
-    katvan::SpellChecker::setPersonalDictionaryLocation(settingsPath + "/Katvan");
+    katvan::SpellChecker::instance()->setPersonalDictionaryLocation(settingsPath + "/Katvan");
     katvan::typstdriver::PackageManager::setDownloadCacheLocation(settingsPath + "/Katvan/cache");
 }
 

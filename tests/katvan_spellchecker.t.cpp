@@ -17,7 +17,7 @@
  */
 #include "katvan_testutils.h"
 
-#include "katvan_spellchecker.h"
+#include "katvan_spellchecker_hunspell.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -40,7 +40,8 @@ static QString getDictionaryPath(const char* name)
 }
 
 TEST(SpellCheckerTests, DetectDictionaries) {
-    QMap<QString, QString> result = SpellChecker::findDictionaries();
+    HunspellSpellChecker checker;
+    QMap<QString, QString> result = checker.findDictionaries();
     EXPECT_THAT(result.keys(), ::testing::IsSupersetOf({
         QStringLiteral("en_IL"),
         QStringLiteral("he_XX"),
@@ -51,7 +52,7 @@ TEST(SpellCheckerTests, DetectDictionaries) {
 }
 
 TEST(SpellCheckerTests, BasicEnglish) {
-    SpellChecker checker;
+    HunspellSpellChecker checker;
     QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
 
     checker.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
@@ -69,7 +70,7 @@ TEST(SpellCheckerTests, BasicEnglish) {
 }
 
 TEST(SpellCheckerTests, BasicHebrew) {
-    SpellChecker checker;
+    HunspellSpellChecker checker;
     QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
 
     checker.setCurrentDictionary("he_XX", getDictionaryPath("he_XX"));
@@ -86,10 +87,10 @@ TEST(SpellCheckerTests, BasicHebrew) {
 
 TEST(SpellCheckerTests, PersonalDict) {
     QTemporaryDir dir;
-    SpellChecker::setPersonalDictionaryLocation(dir.path());
 
-    SpellChecker checker1;
+    HunspellSpellChecker checker1;
     QSignalSpy spy1(&checker1, &SpellChecker::dictionaryChanged);
+    checker1.setPersonalDictionaryLocation(dir.path());
 
     checker1.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
     EXPECT_TRUE(spy1.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
@@ -107,7 +108,7 @@ TEST(SpellCheckerTests, PersonalDict) {
         std::make_pair(5, 3) // bar
     ));
 
-    SpellChecker checker2;
+    HunspellSpellChecker checker2;
     QSignalSpy spy2(&checker2, &SpellChecker::dictionaryChanged);
 
     checker2.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));

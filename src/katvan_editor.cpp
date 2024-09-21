@@ -27,7 +27,6 @@
 #include <QMenu>
 #include <QPainter>
 #include <QRegularExpression>
-#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QTextBlock>
@@ -88,16 +87,14 @@ private:
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
     , d_theme(EditorTheme::defaultTheme())
-    , d_inPaletteChange(false)
     , d_pendingSuggestionsPosition(-1)
 {
     setAcceptRichText(false);
 
-    d_spellChecker = new SpellChecker(this);
-    connect(d_spellChecker, &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
-    connect(d_spellChecker, &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
+    connect(SpellChecker::instance(), &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
+    connect(SpellChecker::instance(), &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
 
-    d_highlighter = new Highlighter(document(), d_spellChecker, d_theme);
+    d_highlighter = new Highlighter(document(), SpellChecker::instance(), d_theme);
     d_codeModel = new CodeModel(document(), this);
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
@@ -379,7 +376,7 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
 
         QAction* addToPersonalAction = new QAction(tr("Add to Personal Dictionary"));
         connect(addToPersonalAction, &QAction::triggered, this, [this, misspelledWord, cursor]() {
-            d_spellChecker->addToPersonalDictionary(misspelledWord);
+            SpellChecker::instance()->addToPersonalDictionary(misspelledWord);
             forceRehighlighting();
         });
 
@@ -397,7 +394,7 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         // signal will be instantly invoked as a direct connection.
         d_pendingSuggestionsWord = misspelledWord;
         d_pendingSuggestionsPosition = cursor.position();
-        d_spellChecker->requestSuggestions(misspelledWord, cursor.position());
+        SpellChecker::instance()->requestSuggestions(misspelledWord, cursor.position());
     }
     d_contextMenu->popup(event->globalPos());
 }
@@ -690,7 +687,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
         setTextBlockDirection(Qt::RightToLeft);
         return;
     }
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
     if (event->keyCombination().keyboardModifiers() == (Qt::MetaModifier | Qt::ShiftModifier)) {
         if (event->nativeVirtualKey() == 0x38) { // kVK_Shift
             d_pendingDirectionChange = Qt::LeftToRight;

@@ -753,8 +753,9 @@ void MainWindow::restoreSpellingDictionary(const QSettings& settings)
     QString dictName = settings.value(SETTING_SPELLING_DICT, QString()).toString();
     QString dictPath;
 
+    SpellChecker* checker = SpellChecker::instance();
     if (!dictName.isEmpty()) {
-        QMap<QString, QString> allDicts = SpellChecker::findDictionaries();
+        QMap<QString, QString> allDicts = checker->findDictionaries();
         if (!allDicts.contains(dictName)) {
             dictName.clear();
         }
@@ -763,13 +764,14 @@ void MainWindow::restoreSpellingDictionary(const QSettings& settings)
         }
     }
 
-    d_editor->spellChecker()->setCurrentDictionary(dictName, dictPath);
+    checker->setCurrentDictionary(dictName, dictPath);
     d_spellingButton->setText(dictName.isEmpty() ? tr("None") : dictName);
 }
 
 void MainWindow::changeSpellCheckingDictionary()
 {
-    QMap<QString, QString> dicts = SpellChecker::findDictionaries();
+    SpellChecker* checker = SpellChecker::instance();
+    QMap<QString, QString> dicts = checker->findDictionaries();
 
     QStringList dictNames = { "" };
     QStringList dictLabels = { tr("None") };
@@ -778,10 +780,10 @@ void MainWindow::changeSpellCheckingDictionary()
         dictNames.append(*kit);
         dictLabels.append(QString("%1 - %2").arg(
             *kit,
-            SpellChecker::dictionaryDisplayName(*kit)));
+            checker->dictionaryDisplayName(*kit)));
     }
 
-    QString currentDict = d_editor->spellChecker()->currentDictionaryName();
+    QString currentDict = checker->currentDictionaryName();
     int index = dictNames.indexOf(currentDict);
     if (index < 0) {
         index = 0;
@@ -801,7 +803,7 @@ void MainWindow::changeSpellCheckingDictionary()
     }
 
     QString selectedDictName = dictNames[dictLabels.indexOf(result)];
-    d_editor->spellChecker()->setCurrentDictionary(selectedDictName, dicts.value(selectedDictName));
+    checker->setCurrentDictionary(selectedDictName, dicts.value(selectedDictName));
     d_spellingButton->setText(selectedDictName.isEmpty() ? result : selectedDictName);
 
     QSettings settings;

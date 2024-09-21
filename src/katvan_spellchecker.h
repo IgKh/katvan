@@ -21,22 +21,11 @@
 #include <QList>
 #include <QMap>
 #include <QObject>
-#include <QSet>
 #include <QString>
 
-#include <map>
-#include <memory>
-
-QT_BEGIN_NAMESPACE
-class QFileSystemWatcher;
-class QThread;
-QT_END_NAMESPACE
-
-class Hunspell;
+#include <utility>
 
 namespace katvan {
-
-struct LoadedSpeller;
 
 class SpellChecker : public QObject
 {
@@ -46,16 +35,18 @@ public:
     SpellChecker(QObject* parent = nullptr);
     ~SpellChecker();
 
-    static QMap<QString, QString> findDictionaries();
-    static QString dictionaryDisplayName(const QString& dictName);
-    static void setPersonalDictionaryLocation(const QString& dirPath);
+    static SpellChecker* instance();
 
-    QString currentDictionaryName() const { return d_currentDictName; }
-    void setCurrentDictionary(const QString& dictName, const QString& dictAffFile);
+    virtual QMap<QString, QString> findDictionaries() = 0;
+    virtual QString dictionaryDisplayName(const QString& dictName);
+    virtual void setPersonalDictionaryLocation(const QString& dirPath);
 
-    QList<std::pair<size_t, size_t>> checkSpelling(const QString& text);
+    virtual QString currentDictionaryName() const { return d_currentDictName; }
+    virtual void setCurrentDictionary(const QString& dictName, const QString& dictPath);
 
-    void addToPersonalDictionary(const QString& word);
+    using MisspelledWordRanges = QList<std::pair<size_t, size_t>>;
+    virtual MisspelledWordRanges checkSpelling(const QString& text) = 0;
+    virtual void addToPersonalDictionary(const QString& word) = 0;
 
     void requestSuggestions(const QString& word, int position);
 
@@ -63,71 +54,15 @@ signals:
     void dictionaryChanged(const QString& dictName);
     void suggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
-private slots:
-    void personalDictionaryFileChanged();
-    void loaderWorkerDone(QString dictName, katvan::LoadedSpeller* speller);
-    void suggestionsWorkerDone(QString word, int position, QStringList suggestions);
+protected slots:
+    void suggestionsCalculated(const QString& word, int position, const QStringList& suggestions);
+
+protected:
+    virtual void requestSuggestionsImpl(const QString& word, int position) = 0;
 
 private:
-    void ensureWorkerThread();
-    bool checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word);
-    void flushPersonalDictionary();
-    void loadPersonalDictionary();
-
-    static QString s_personalDictionaryLocation;
-
     QString d_currentDictName;
     QCache<QString, QStringList> d_suggestionsCache;
-
-    QString d_personalDictionaryPath;
-    QSet<QString> d_personalDictionary;
-
-    QFileSystemWatcher* d_watcher;
-    QThread* d_workerThread;
-
-    std::map<QString, std::unique_ptr<LoadedSpeller>> d_spellers;
-};
-
-class DictionaryLoaderWorker : public QObject
-{
-    Q_OBJECT
-
-public:
-    DictionaryLoaderWorker(const QString& dictName, const QString& dictAffFile)
-        : d_dictName(dictName)
-        , d_dictAffFile(dictAffFile) {}
-
-public slots:
-    void process();
-
-signals:
-    void dictionaryLoaded(QString dictName, katvan::LoadedSpeller* speller);
-
-private:
-    QString d_dictName;
-    QString d_dictAffFile;
-};
-
-class SpellingSuggestionsWorker : public QObject
-{
-    Q_OBJECT
-
-public:
-    SpellingSuggestionsWorker(LoadedSpeller* speller, const QString& word, int position)
-        : d_speller(speller)
-        , d_word(word)
-        , d_pos(position) {}
-
-public slots:
-    void process();
-
-signals:
-    void suggestionsReady(QString word, int position, QStringList suggestions);
-
-private:
-    LoadedSpeller* d_speller;
-    QString d_word;
-    int d_pos;
 };
 
 }

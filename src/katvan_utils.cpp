@@ -17,7 +17,7 @@
  */
 #include "katvan_utils.h"
 
-#if defined(Q_OS_MAC)
+#if defined(Q_OS_MACOS)
 #include "katvan_utils_macos.h"
 #endif
 
@@ -62,7 +62,7 @@ Qt::LayoutDirection naturalTextDirection(const QString& text)
 
 QString showPdfExportDialog(QWidget* parent, const QString& sourceFilePath)
 {
-#if defined(Q_OS_MAC)
+#if defined(Q_OS_MACOS)
     return macos::showPdfExportDialog(parent, sourceFilePath);
 #else
     QFileDialog dialog(parent, QObject::tr("Export to PDF"));

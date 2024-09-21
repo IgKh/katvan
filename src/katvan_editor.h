@@ -33,7 +33,6 @@ QT_END_NAMESPACE
 namespace katvan {
 
 class Highlighter;
-class SpellChecker;
 class CodeModel;
 
 class Editor : public QTextEdit
@@ -44,8 +43,6 @@ class Editor : public QTextEdit
 
 public:
     Editor(QWidget* parent = nullptr);
-
-    SpellChecker* spellChecker() const { return d_spellChecker; }
 
     void applySettings(const EditorSettings& settings);
     void updateEditorTheme();
@@ -108,15 +105,12 @@ private:
 
     QTimer* d_debounceTimer;
     Highlighter* d_highlighter;
-    SpellChecker* d_spellChecker;
     CodeModel* d_codeModel;
 
     EditorSettings d_appSettings;
     EditorSettings d_fileMode;
     EditorSettings d_effectiveSettings;
     EditorTheme d_theme;
-
-    bool d_inPaletteChange;
 
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
