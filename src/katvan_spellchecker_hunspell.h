@@ -61,6 +61,7 @@ private:
     bool checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word);
     void flushPersonalDictionary();
     void loadPersonalDictionary();
+    void setPersonalDictionaryPath();
 
     void requestSuggestionsImpl(const QString& word, int position) override;
 

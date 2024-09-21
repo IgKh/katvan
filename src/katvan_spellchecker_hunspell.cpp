@@ -50,17 +50,10 @@ HunspellSpellChecker::HunspellSpellChecker(QObject* parent)
     d_workerThread = new QThread(this);
     d_workerThread->setObjectName("HunspellWorkerThread");
 
-    QString loc = s_personalDictionaryLocation;
-    if (loc.isEmpty()) {
-        loc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    }
-
-    d_personalDictionaryPath = loc + QDir::separator() + "/personal.dic";
-    loadPersonalDictionary();
-
     d_watcher = new QFileSystemWatcher(this);
-    d_watcher->addPath(d_personalDictionaryPath);
     connect(d_watcher, &QFileSystemWatcher::fileChanged, this, &HunspellSpellChecker::personalDictionaryFileChanged);
+
+    setPersonalDictionaryPath();
 }
 
 HunspellSpellChecker::~HunspellSpellChecker()
@@ -117,6 +110,7 @@ QMap<QString, QString> HunspellSpellChecker::findDictionaries()
 void HunspellSpellChecker::setPersonalDictionaryLocation(const QString& dirPath)
 {
     s_personalDictionaryLocation = dirPath;
+    setPersonalDictionaryPath();
 }
 
 void HunspellSpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictAffFile)
@@ -305,6 +299,23 @@ void HunspellSpellChecker::loadPersonalDictionary()
         }
         d_personalDictionary.insert(line.normalized(QString::NormalizationForm_D));
     }
+}
+
+void HunspellSpellChecker::setPersonalDictionaryPath()
+{
+    QString loc = s_personalDictionaryLocation;
+    if (loc.isEmpty()) {
+        loc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    }
+
+    d_personalDictionaryPath = loc + QDir::separator() + "/personal.dic";
+
+    loadPersonalDictionary();
+
+    for (const QString& file : d_watcher->files()) {
+        d_watcher->removePath(file);
+    }
+    d_watcher->addPath(d_personalDictionaryPath);
 }
 
 void HunspellSpellChecker::personalDictionaryFileChanged()
