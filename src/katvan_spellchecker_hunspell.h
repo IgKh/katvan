@@ -46,7 +46,7 @@ public:
     QMap<QString, QString> findDictionaries() override;
     void setPersonalDictionaryLocation(const QString& dirPath) override;
 
-    void setCurrentDictionary(const QString& dictName, const QString& dictAffFile);
+    void setCurrentDictionary(const QString& dictName, const QString& dictAffFile) override;
 
     MisspelledWordRanges checkSpelling(const QString& text) override;
 

@@ -13,9 +13,6 @@ else()
 endif()
 configure_file(katvan_version.h.in katvan_version.h @ONLY)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(hunspell REQUIRED IMPORTED_TARGET hunspell)
-
 set(SOURCES
     katvan_backuphandler.cpp
     katvan_codemodel.cpp
@@ -30,7 +27,6 @@ set(SOURCES
     katvan_previewerview.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
-    katvan_spellchecker_hunspell.cpp
     katvan_spellchecker.cpp
     katvan_typstdriverwrapper.cpp
     katvan_utils.cpp
@@ -49,6 +45,7 @@ endif()
 
 if(APPLE)
     list(APPEND SOURCES
+        katvan_spellchecker_macos.mm
         katvan_utils_macos.mm
     )
 
@@ -71,8 +68,15 @@ endif()
 target_link_libraries(libkatvan PUBLIC
     typstdriver
     Qt6::Widgets
-    PkgConfig::hunspell
 )
+
+if(NOT APPLE)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(hunspell REQUIRED IMPORTED_TARGET hunspell)
+
+    target_sources(libkatvan PRIVATE katvan_spellchecker_hunspell.cpp)
+    target_link_libraries(libkatvan PUBLIC PkgConfig::hunspell)
+endif()
 
 add_executable(katvan ${MAIN_SOURCES})
 target_link_libraries(katvan PRIVATE libkatvan)

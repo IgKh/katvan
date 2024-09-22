@@ -15,9 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "katvan_spellchecker_hunspell.h"
 #include "katvan_spellchecker.h"
 
+#ifdef Q_OS_MACOS
+#include "katvan_spellchecker_macos.h"
+#else
+#include "katvan_spellchecker_hunspell.h"
+#endif
+
+#include <QCoreApplication>
 #include <QLocale>
 
 namespace katvan {
@@ -38,7 +44,12 @@ SpellChecker* SpellChecker::instance()
 {
     static SpellChecker* checker = nullptr;
     if (!checker) {
+#ifdef Q_OS_MACOS
+        checker = new MacOsSpellChecker();
+#else
         checker = new HunspellSpellChecker();
+#endif
+        connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, checker, &QObject::deleteLater);
     }
     return checker;
 }

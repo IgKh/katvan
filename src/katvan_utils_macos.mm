@@ -54,10 +54,13 @@ QString showPdfExportDialog(QWidget* parent, const QString& sourceFilePath)
     loop->exec();
     delete loop;
 
+    QString result;
     if (ok) {
-        return QString::fromNSString([info.URL path]);
+        result = QString::fromNSString([info.URL path]);
     }
-    return QString();
+
+    [info release];
+    return result;
 }
 
 }

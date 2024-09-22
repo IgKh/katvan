@@ -12,10 +12,13 @@ add_executable(katvan_tests
     katvan_codemodel.t.cpp
     katvan_editorsettings.t.cpp
     katvan_parsing.t.cpp
-    katvan_spellchecker.t.cpp
     katvan_testutils.cpp
     main.cpp
 )
+
+if(NOT APPLE)
+    target_sources(katvan_tests PRIVATE katvan_spellchecker.t.cpp)
+endif()
 
 target_include_directories(katvan_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
