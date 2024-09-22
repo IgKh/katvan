@@ -46,7 +46,7 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
 
     d_zoomComboBox = new QComboBox();
     d_zoomComboBox->setEditable(true);
-    d_zoomComboBox->setValidator(new QIntValidator(1, 999));
+    d_zoomComboBox->setValidator(new QIntValidator(1, 999, this));
     d_zoomComboBox->setInsertPolicy(QComboBox::NoInsert);
 
     connect(d_zoomComboBox, &QComboBox::activated, this, &Previewer::zoomOptionSelected);
@@ -62,12 +62,12 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     d_zoomComboBox->addItem("150%", "1.5");
     d_zoomComboBox->addItem("200%", "2.0");
 
-    QAction* zoomOutAction = new QAction();
+    QAction* zoomOutAction = new QAction(this);
     zoomOutAction->setIcon(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")));
     zoomOutAction->setToolTip(tr("Zoom Out Preview"));
     connect(zoomOutAction, &QAction::triggered, this, &Previewer::zoomOut);
 
-    QAction* zoomInAction = new QAction();
+    QAction* zoomInAction = new QAction(this);
     zoomInAction->setIcon(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")));
     zoomInAction->setToolTip(tr("Zoom In Preview"));
     connect(zoomInAction, &QAction::triggered, this, &Previewer::zoomIn);
@@ -76,7 +76,7 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     d_currentPageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     d_currentPageLabel->setAlignment(Qt::AlignCenter);
 
-    d_followEditorCursorAction = new QAction();
+    d_followEditorCursorAction = new QAction(this);
     d_followEditorCursorAction->setIcon(QIcon::fromTheme("debug-execute-from-cursor", QIcon(":/icons/debug-execute-from-cursor.svg")));
     d_followEditorCursorAction->setToolTip(tr("Follow Editor Cursor"));
     d_followEditorCursorAction->setCheckable(true);

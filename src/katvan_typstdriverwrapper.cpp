@@ -51,6 +51,9 @@ TypstDriverWrapper::~TypstDriverWrapper()
         d_engine->deleteLater();
     }
 
+    d_packageManager->deleteLater();
+    d_compilerLogger->deleteLater();
+
     if (d_thread->isRunning()) {
         d_thread->quit();
         d_thread->wait();
