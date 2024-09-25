@@ -44,18 +44,31 @@ QString formatFilePath(QString path)
 Qt::LayoutDirection naturalTextDirection(const QString& text)
 {
     int count = 0;
-    for (QChar ch : text) {
+    const QChar* ptr = text.constData();
+    const QChar* end = ptr + text.length();
+
+    while (ptr < end) {
         if (count++ > 100) {
             break;
         }
 
-        QChar::Direction direction = ch.direction();
+        uint codepoint = ptr->unicode();
+        if (QChar::isHighSurrogate(codepoint) && ptr + 1 < end) {
+            ushort low = ptr[1].unicode();
+            if (QChar::isLowSurrogate(low)) {
+                codepoint = QChar::surrogateToUcs4(codepoint, low);
+                ptr++;
+            }
+        }
+
+        QChar::Direction direction = QChar::direction(codepoint);
         if (direction == QChar::DirR || direction == QChar::DirAL) {
             return Qt::RightToLeft;
         }
         else if (direction == QChar::DirL) {
             return Qt::LeftToRight;
         }
+        ptr++;
     }
     return Qt::LayoutDirectionAuto;
 }

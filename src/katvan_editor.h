@@ -70,8 +70,6 @@ private:
     void insertMark(QChar mark);
     void insertSurroundingMarks(QString before, QString after);
 
-    void autoAdjustTextBlockDirection(QTextCursor cursor);
-
     std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;
     QString getIndentString(QTextCursor cursor) const;
     void handleNewLine();
@@ -87,8 +85,6 @@ private:
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
 private slots:
-    void ajustEditedBlocksDirection(int from, int charsRemoved, int charsAdded);
-
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
