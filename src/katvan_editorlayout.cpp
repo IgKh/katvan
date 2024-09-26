@@ -169,6 +169,12 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
                 fmt.start = line.textStart();
                 fmt.length = line.textLength();
                 fmt.format = sel.format;
+
+                if (fmt.start + fmt.length == block.length() - 1) {
+                    // For the last line in a block, we must ensure that the
+                    // selection ends after the block
+                    fmt.length++;
+                }
                 formats.append(fmt);
             }
         }
