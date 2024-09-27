@@ -31,6 +31,25 @@ namespace katvan::utils {
 static constexpr QChar LRI_MARK = (ushort)0x2066;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
+QIcon themeIcon(const char* xdgIcon)
+{
+    QString fallbackPath = QLatin1String(":/icons/%1.svg").arg(QLatin1String(xdgIcon));
+    return QIcon::fromTheme(QLatin1String(xdgIcon), QIcon(fallbackPath));
+}
+
+QIcon themeIcon(const char* xdgIcon, const char* macIcon)
+{
+#if !defined(Q_OS_MACOS)
+    return themeIcon(xdgIcon);
+#else
+    QIcon icon = QIcon::fromTheme(QLatin1String(macIcon));
+    if (icon.isNull()) {
+        icon = themeIcon(xdgIcon);
+    }
+    return icon;
+#endif
+}
+
 QString formatFilePath(QString path)
 {
     path = QDir::toNativeSeparators(path);

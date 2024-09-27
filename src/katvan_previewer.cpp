@@ -18,6 +18,7 @@
 #include "katvan_previewer.h"
 #include "katvan_previewerview.h"
 #include "katvan_typstdriverwrapper.h"
+#include "katvan_utils.h"
 
 #include <QComboBox>
 #include <QHBoxLayout>
@@ -63,12 +64,12 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     d_zoomComboBox->addItem("200%", "2.0");
 
     QAction* zoomOutAction = new QAction(this);
-    zoomOutAction->setIcon(QIcon::fromTheme("zoom-out", QIcon(":/icons/zoom-out.svg")));
+    zoomOutAction->setIcon(utils::themeIcon("zoom-out", "minus.magnifyingglass"));
     zoomOutAction->setToolTip(tr("Zoom Out Preview"));
     connect(zoomOutAction, &QAction::triggered, this, &Previewer::zoomOut);
 
     QAction* zoomInAction = new QAction(this);
-    zoomInAction->setIcon(QIcon::fromTheme("zoom-in", QIcon(":/icons/zoom-in.svg")));
+    zoomInAction->setIcon(utils::themeIcon("zoom-in", "plus.magnifyingglass"));
     zoomInAction->setToolTip(tr("Zoom In Preview"));
     connect(zoomInAction, &QAction::triggered, this, &Previewer::zoomIn);
 
@@ -77,7 +78,7 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     d_currentPageLabel->setAlignment(Qt::AlignCenter);
 
     d_followEditorCursorAction = new QAction(this);
-    d_followEditorCursorAction->setIcon(QIcon::fromTheme("debug-execute-from-cursor", QIcon(":/icons/debug-execute-from-cursor.svg")));
+    d_followEditorCursorAction->setIcon(utils::themeIcon("debug-execute-from-cursor", "text.cursor"));
     d_followEditorCursorAction->setToolTip(tr("Follow Editor Cursor"));
     d_followEditorCursorAction->setCheckable(true);
     connect(d_followEditorCursorAction, &QAction::toggled, this, &Previewer::followEditorCursorChanged);

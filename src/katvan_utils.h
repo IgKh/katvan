@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QIcon>
 #include <QString>
 
 QT_BEGIN_NAMESPACE
@@ -24,6 +25,9 @@ class QWidget;
 QT_END_NAMESPACE
 
 namespace katvan::utils {
+
+QIcon themeIcon(const char* xdgIcon);
+QIcon themeIcon(const char* xdgIcon, const char* macIcon);
 
 QString formatFilePath(QString path);
 

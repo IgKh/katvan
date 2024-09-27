@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_searchbar.h"
+#include "katvan_utils.h"
 
 #include <QActionGroup>
 #include <QCoreApplication>
@@ -125,13 +126,13 @@ void SearchBar::setupUI()
     connect(d_replaceWith, &QLineEdit::returnPressed, this, &SearchBar::replaceNext);
 
     QToolButton* findNextButton = new QToolButton();
-    findNextButton->setIcon(QIcon::fromTheme("go-down", QIcon(":/icons/go-down.svg")));
+    findNextButton->setIcon(utils::themeIcon("go-down", "chevron.right"));
     findNextButton->setShortcut(QKeySequence::FindNext);
     findNextButton->setToolTip(processToolTip(tr("Go to next match (%1)"), QKeySequence::FindNext));
     connect(findNextButton, &QToolButton::clicked, this, &SearchBar::findNext);
 
     QToolButton* findPrevButton = new QToolButton();
-    findPrevButton->setIcon(QIcon::fromTheme("go-up", QIcon(":/icons/go-up.svg")));
+    findPrevButton->setIcon(utils::themeIcon("go-up", "chevron.left"));
     findPrevButton->setShortcut(QKeySequence::FindPrevious);
     findPrevButton->setToolTip(processToolTip(tr("Go to previous match (%1)"), QKeySequence::FindPrevious));
     connect(findPrevButton, &QToolButton::clicked, this, &SearchBar::findPrevious);
@@ -139,7 +140,7 @@ void SearchBar::setupUI()
     QToolButton* settingsButton = new QToolButton();
     settingsButton->setMenu(settingsMenu);
     settingsButton->setPopupMode(QToolButton::InstantPopup);
-    settingsButton->setIcon(QIcon::fromTheme("settings-configure", QIcon(":/icons/settings-configure.svg")));
+    settingsButton->setIcon(utils::themeIcon("settings-configure", "gear"));
     settingsButton->setToolTip(tr("Find settings"));
 
     QToolButton* replaceButton = new QToolButton();
@@ -153,14 +154,19 @@ void SearchBar::setupUI()
     connect(replaceAllButton, &QToolButton::clicked, this, &SearchBar::replaceAll);
 
     QToolButton* closeButton = new QToolButton();
-    closeButton->setIcon(QIcon::fromTheme("window-close", QIcon(":/icons/window-close.svg")));
+    closeButton->setIcon(utils::themeIcon("window-close", "xmark.circle"));
     closeButton->setToolTip(tr("Close search bar"));
     connect(closeButton, &QToolButton::clicked, this, &QWidget::hide);
 
     QHBoxLayout* findLayout = new QHBoxLayout();
     findLayout->addWidget(d_searchTerm, 1);
+#if defined(Q_OS_MACOS)
+    findLayout->addWidget(findPrevButton);
+    findLayout->addWidget(findNextButton);
+#else
     findLayout->addWidget(findNextButton);
     findLayout->addWidget(findPrevButton);
+#endif
     findLayout->addWidget(settingsButton);
 
     QHBoxLayout* replaceLayout = new QHBoxLayout();

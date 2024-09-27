@@ -98,7 +98,7 @@ void RecentFiles::rebuildMenu()
     }
 
     QAction* clearAction = d_menu->addAction(tr("Clear"), this, &RecentFiles::clear);
-    clearAction->setIcon(QIcon::fromTheme("edit-clear-history", QIcon(":/icons/edit-clear-history.svg")));
+    clearAction->setIcon(utils::themeIcon("edit-clear-history"));
     clearAction->setEnabled(!d_fileList.isEmpty());
 }
 

@@ -133,14 +133,14 @@ void MainWindow::setupActions()
     QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
 
     QAction* newFileAction = fileMenu->addAction(tr("&New"), this, &MainWindow::newFile);
-    newFileAction->setIcon(QIcon::fromTheme("document-new", QIcon(":/icons/document-new.svg")));
+    newFileAction->setIcon(utils::themeIcon("document-new"));
     newFileAction->setShortcut(QKeySequence::New);
     newFileAction->setMenuRole(QAction::NoRole);
 
     fileMenu->addSeparator();
 
     QAction* openFileAction = fileMenu->addAction(tr("&Open..."), this, &MainWindow::openFile);
-    openFileAction->setIcon(QIcon::fromTheme("document-open", QIcon(":/icons/document-open.svg")));
+    openFileAction->setIcon(utils::themeIcon("document-open"));
     openFileAction->setShortcut(QKeySequence::Open);
     openFileAction->setMenuRole(QAction::NoRole);
 
@@ -149,24 +149,24 @@ void MainWindow::setupActions()
     fileMenu->addSeparator();
 
     QAction* saveFileAction = fileMenu->addAction(tr("&Save"), this, &MainWindow::saveFile);
-    saveFileAction->setIcon(QIcon::fromTheme("document-save", QIcon(":/icons/document-save.svg")));
+    saveFileAction->setIcon(utils::themeIcon("document-save"));
     saveFileAction->setShortcut(QKeySequence::Save);
     saveFileAction->setMenuRole(QAction::NoRole);
     connect(d_editor->document(), &QTextDocument::modificationChanged, saveFileAction, &QAction::setEnabled);
 
     QAction* saveFileAsAction = fileMenu->addAction(tr("Save &As..."), this, &MainWindow::saveFileAs);
-    saveFileAsAction->setIcon(QIcon::fromTheme("document-save-as", QIcon(":/icons/document-save-as.svg")));
+    saveFileAsAction->setIcon(utils::themeIcon("document-save-as"));
     saveFileAsAction->setShortcut(QKeySequence::SaveAs);
     saveFileAsAction->setMenuRole(QAction::NoRole);
 
     QAction* exportPdfAction = fileMenu->addAction(tr("&Export PDF..."), this, &MainWindow::exportPdf);
-    exportPdfAction->setIcon(QIcon::fromTheme("document-send", QIcon(":/icons/document-send.svg")));
+    exportPdfAction->setIcon(utils::themeIcon("document-send"));
     exportPdfAction->setMenuRole(QAction::NoRole);
 
     fileMenu->addSeparator();
 
     QAction* quitAction = fileMenu->addAction(tr("&Quit"), qApp, &QCoreApplication::quit, Qt::QueuedConnection);
-    quitAction->setIcon(QIcon::fromTheme("application-exit", QIcon(":/icons/application-exit.svg")));
+    quitAction->setIcon(utils::themeIcon("application-exit"));
     quitAction->setShortcut(QKeySequence::Quit);
     quitAction->setMenuRole(QAction::QuitRole);
 
@@ -176,14 +176,14 @@ void MainWindow::setupActions()
     QMenu* editMenu = menuBar()->addMenu(tr("&Edit"));
 
     QAction* undoAction = editMenu->addAction(tr("&Undo"), d_editor, &QTextEdit::undo);
-    undoAction->setIcon(QIcon::fromTheme("edit-undo", QIcon(":/icons/edit-undo.svg")));
+    undoAction->setIcon(utils::themeIcon("edit-undo"));
     undoAction->setShortcut(QKeySequence::Undo);
     undoAction->setMenuRole(QAction::NoRole);
     undoAction->setEnabled(false);
     connect(d_editor, &QTextEdit::undoAvailable, undoAction, &QAction::setEnabled);
 
     QAction* redoAction = editMenu->addAction(tr("&Redo"), d_editor, &QTextEdit::redo);
-    redoAction->setIcon(QIcon::fromTheme("edit-redo",  QIcon(":/icons/edit-redo.svg")));
+    redoAction->setIcon(utils::themeIcon("edit-redo"));
     redoAction->setShortcut(QKeySequence::Redo);
     redoAction->setMenuRole(QAction::NoRole);
     redoAction->setEnabled(false);
@@ -192,21 +192,21 @@ void MainWindow::setupActions()
     editMenu->addSeparator();
 
     QAction* cutAction = editMenu->addAction(tr("Cu&t"), d_editor, &QTextEdit::cut);
-    cutAction->setIcon(QIcon::fromTheme("edit-cut", QIcon(":/icons/edit-cut.svg")));
+    cutAction->setIcon(utils::themeIcon("edit-cut"));
     cutAction->setShortcut(QKeySequence::Cut);
     cutAction->setMenuRole(QAction::NoRole);
     cutAction->setEnabled(false);
     connect(d_editor, &QTextEdit::copyAvailable, cutAction, &QAction::setEnabled);
 
     QAction* copyAction = editMenu->addAction(tr("&Copy"), d_editor, &QTextEdit::copy);
-    copyAction->setIcon(QIcon::fromTheme("edit-copy", QIcon(":/icons/edit-copy.svg")));
+    copyAction->setIcon(utils::themeIcon("edit-copy"));
     copyAction->setShortcut(QKeySequence::Copy);
     copyAction->setMenuRole(QAction::NoRole);
     copyAction->setEnabled(false);
     connect(d_editor, &QTextEdit::copyAvailable, copyAction, &QAction::setEnabled);
 
     QAction* pasteAction = editMenu->addAction(tr("&Paste"), d_editor, &QTextEdit::paste);
-    pasteAction->setIcon(QIcon::fromTheme("edit-paste", QIcon(":/icons/edit-paste.svg")));
+    pasteAction->setIcon(utils::themeIcon("edit-paste"));
     pasteAction->setShortcut(QKeySequence::Paste);
     pasteAction->setMenuRole(QAction::NoRole);
     pasteAction->setEnabled(d_editor->canPaste());
@@ -223,12 +223,12 @@ void MainWindow::setupActions()
     editMenu->addSeparator();
 
     QAction* findAction = editMenu->addAction(tr("&Find..."), d_searchBar, &SearchBar::ensureFindVisible);
-    findAction->setIcon(QIcon::fromTheme("edit-find", QIcon(":/icons/edit-find.svg")));
+    findAction->setIcon(utils::themeIcon("edit-find"));
     findAction->setShortcut(QKeySequence::Find);
     findAction->setMenuRole(QAction::NoRole);
 
     QAction* replaceAction = editMenu->addAction(tr("&Replace..."), d_searchBar, &SearchBar::ensureReplaceVisible);
-    replaceAction->setIcon(QIcon::fromTheme("edit-find-replace", QIcon(":/icons/edit-find-replace.svg")));
+    replaceAction->setIcon(utils::themeIcon("edit-find-replace"));
     replaceAction->setShortcut(QKeySequence::Replace);
     replaceAction->setMenuRole(QAction::NoRole);
 
@@ -259,7 +259,7 @@ void MainWindow::setupActions()
     QMenu* toolsMenu = menuBar()->addMenu(tr("&Tools"));
 
     QAction* spellingAction = toolsMenu->addAction(tr("&Spell Checking..."), this, &MainWindow::changeSpellCheckingDictionary);
-    spellingAction->setIcon(QIcon::fromTheme("tools-check-spelling", QIcon(":/icons/tools-check-spelling.svg")));
+    spellingAction->setIcon(utils::themeIcon("tools-check-spelling"));
     spellingAction->setMenuRole(QAction::NoRole);
 
     /*
@@ -268,13 +268,13 @@ void MainWindow::setupActions()
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
 
     QAction* docsAction = helpMenu->addAction(tr("Typst &Documentation..."), this, &MainWindow::showTypstDocs);
-    docsAction->setIcon(QIcon::fromTheme("help-contents", QIcon(":/icons/help-contents.svg")));
+    docsAction->setIcon(utils::themeIcon("help-contents"));
     docsAction->setMenuRole(QAction::NoRole);
 
     helpMenu->addSeparator();
 
     QAction* aboutAction = helpMenu->addAction(tr("&About..."), this, &MainWindow::showAbout);
-    aboutAction->setIcon(QIcon::fromTheme("help-about", QIcon(":/icons/help-about.svg")));
+    aboutAction->setIcon(utils::themeIcon("help-about"));
     aboutAction->setMenuRole(QAction::AboutRole);
 }
 
