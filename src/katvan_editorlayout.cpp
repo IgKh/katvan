@@ -53,10 +53,14 @@ namespace katvan {
  *
  * - Document margins are kept at their default and never change.
  *
+ * - Word wrapping is always used; a horizontal scrollbar is never visible.
+ *
  * - Override mode isn't used (it doesn't actually impact layout, but the document
  *   layout engine has to draw the cursor differently and slightly change the hit
  *   test logic).
  */
+
+constexpr int CURSOR_WIDTH = 1;
 
 EditorLayout::EditorLayout(QTextDocument* document)
     : QAbstractTextDocumentLayout(document)
@@ -130,15 +134,21 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
 
 void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::PaintContext& context)
 {
-    QTextBlock block = document()->begin();
-    if (context.clip.isValid()) {
-        qreal topY = qMax(context.clip.top(), document()->documentMargin());
-        block = findContainingBlock(topY);
+    QRectF clip = context.clip;
+    if (!clip.isValid()) {
+        clip = QRectF(QPointF(0, 0), documentSize());
     }
+
+    // Make sure that the right margin is NOT part of the clip rectangle, so
+    // that it won't be painted over by a FullWidthSelection
+    qreal maxX = document()->textWidth() - document()->documentMargin() + CURSOR_WIDTH;
+    clip.setRight(qMin(clip.right(), maxX));
+
+    QTextBlock block = findContainingBlock(clip.top());
 
     while (block.isValid()) {
         QTextLayout* layout = block.layout();
-        if (context.clip.isValid() && layout->position().y() > context.clip.bottom()) {
+        if (layout->position().y() > clip.bottom()) {
             break;
         }
 
@@ -179,11 +189,11 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
             }
         }
 
-        layout->draw(painter, QPointF(), formats, context.clip);
+        layout->draw(painter, QPointF(), formats, clip);
 
         if (block.contains(context.cursorPosition)) {
             painter->setPen(context.palette.color(QPalette::Text));
-            layout->drawCursor(painter, QPointF(), context.cursorPosition - block.position());
+            layout->drawCursor(painter, QPointF(), context.cursorPosition - block.position(), CURSOR_WIDTH);
         }
 
         block = block.next();
@@ -288,12 +298,12 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
 
         line.setLeadingIncluded(true);
         line.setLineWidth(availableWidth);
-        line.setPosition(QPointF(margin, lineHeight));
+        line.setPosition(QPointF(0, lineHeight));
 
         lineHeight += line.height();
     }
 
-    layout->setPosition(QPointF(0, topY));
+    layout->setPosition(QPointF(margin, topY));
     layout->endLayout();
 
     block.setLineCount(layout->lineCount());
@@ -301,6 +311,9 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
 
 QTextBlock EditorLayout::findContainingBlock(qreal y) const
 {
+    // Skip top margin
+    y = qMax(y, document()->documentMargin());
+
     // Binary search for the block whose bounding rect contains the given y
     int from = 0;
     int to = document()->blockCount();

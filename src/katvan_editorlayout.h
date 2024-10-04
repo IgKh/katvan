@@ -36,13 +36,13 @@ public:
     int hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) const override;
     void draw(QPainter* painter, const QAbstractTextDocumentLayout::PaintContext& context) override;
 
+    QTextBlock findContainingBlock(qreal y) const;
+
 protected:
     void documentChanged(int position, int charsRemoved, int charsAdded) override;
 
 private:
     void layoutBlock(QTextBlock& block, qreal topY);
-
-    QTextBlock findContainingBlock(qreal y) const;
     void recalculateDocumentSize();
 
     QSizeF d_documentSize;

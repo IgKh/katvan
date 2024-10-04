@@ -885,21 +885,23 @@ void Editor::updateExtraSelections()
 
 QTextBlock Editor::getFirstVisibleBlock()
 {
-    QTextDocument* doc = document();
+    EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
     QRect viewportGeometry = viewport()->geometry();
 
-    for (QTextBlock it = doc->firstBlock(); it.isValid(); it = it.next()) {
-        QRectF blockRect = doc->documentLayout()->blockBoundingRect(it);
+    // First, quickly find the first block that's even partly visible
+    qreal y = verticalScrollBar()->sliderPosition() - viewportGeometry.top();
+    QTextBlock block = layout->findContainingBlock(y);
 
-        // blockRect is in document coordinates, translate it to be relative to
-        // the viewport. Then we want the first block that starts after the current
-        // scrollbar position.
-        blockRect.translate(viewportGeometry.topLeft());
-        if (blockRect.y() > verticalScrollBar()->sliderPosition()) {
-            return it;
-        }
+    // We want the first fully visible block, so check if want we found meets
+    // that criteria (that is, starts after the current scrollbar position).
+    // If not, the next one certainly does.
+    QRectF blockRect = layout->blockBoundingRect(block);
+    blockRect.translate(viewportGeometry.topLeft());
+
+    if (blockRect.top() >= verticalScrollBar()->sliderPosition()) {
+        return block;
     }
-    return QTextBlock();
+    return block.next();
 }
 
 void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
