@@ -696,25 +696,38 @@ void Editor::popupInsertMenu()
     insertMenu->exec(globalPos);
 }
 
-QString Editor::misspelledWordAtCursor(QTextCursor cursor)
+std::tuple<int, int> Editor::misspelledRangeAtCursor(QTextCursor cursor)
 {
     if (cursor.isNull()) {
-        return QString();
+        return std::make_tuple(-1, 0);
     }
-    size_t pos = cursor.positionInBlock();
 
-    HighlighterStateBlockData* blockData = dynamic_cast<HighlighterStateBlockData*>(cursor.block().userData());
+    size_t pos = cursor.positionInBlock();
+    QTextBlock block = cursor.block();
+
+    HighlighterStateBlockData* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
     if (!blockData) {
-        return QString();
+        return std::make_tuple(-1, 0);
     }
 
     const auto& words = blockData->misspelledWords();
     for (const auto& w : words) {
         if (pos >= w.startPos && pos <= w.startPos + w.length) {
-            return cursor.block().text().sliced(w.startPos, w.length);
+            return std::make_tuple(block.position() + w.startPos, w.length);
         }
     }
-    return QString();
+    return std::make_tuple(-1, 0);
+}
+
+QString Editor::misspelledWordAtCursor(QTextCursor cursor)
+{
+    auto [pos, length] = misspelledRangeAtCursor(cursor);
+    if (pos < 0) {
+        return QString();
+    }
+
+    QTextBlock block = cursor.block();
+    return block.text().sliced(pos - block.position(), length);
 }
 
 void Editor::spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions)
@@ -737,7 +750,7 @@ void Editor::spellingSuggestionsReady(const QString& word, int position, const Q
         QMenu* suggestionsMenu = new QMenu(tr("%n Suggestion(s)", "", suggestions.size()));
         for (const QString& suggestion : suggestions) {
             suggestionsMenu->addAction(QString(suggestion), this, [this, position, suggestion]() {
-                changeWordAtPosition(position, suggestion);
+                changeMisspelledWordAtPosition(position, suggestion);
             });
         }
 
@@ -746,16 +759,18 @@ void Editor::spellingSuggestionsReady(const QString& word, int position, const Q
     }
 }
 
-void Editor::changeWordAtPosition(int position, const QString& into)
+void Editor::changeMisspelledWordAtPosition(int position, const QString& into)
 {
-    QTextBlock block = document()->findBlock(position);
-    if (!block.isValid()) {
+    QTextCursor cursor{ document() };
+    cursor.setPosition(position);
+
+    auto [startPos, length] = misspelledRangeAtCursor(cursor);
+    if (startPos < 0) {
         return;
     }
 
-    QTextCursor cursor{ document() };
-    cursor.setPosition(position);
-    cursor.select(QTextCursor::WordUnderCursor);
+    cursor.setPosition(startPos);
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, length);
     cursor.insertText(into);
 }
 

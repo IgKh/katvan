@@ -64,9 +64,10 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
 
 private:
+    std::tuple<int, int> misspelledRangeAtCursor(QTextCursor cursor);
     QString misspelledWordAtCursor(QTextCursor cursor);
 
-    void changeWordAtPosition(int position, const QString& into);
+    void changeMisspelledWordAtPosition(int position, const QString& into);
     void insertMark(QChar mark);
     void insertSurroundingMarks(QString before, QString after);
 

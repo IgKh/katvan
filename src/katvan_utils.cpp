@@ -40,6 +40,7 @@ QIcon themeIcon(const char* xdgIcon)
 QIcon themeIcon(const char* xdgIcon, const char* macIcon)
 {
 #if !defined(Q_OS_MACOS)
+    Q_UNUSED(macIcon)
     return themeIcon(xdgIcon);
 #else
     QIcon icon = QIcon::fromTheme(QLatin1String(macIcon));
