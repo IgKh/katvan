@@ -86,6 +86,7 @@ jobs:
         env:
           EXTRA_QT_MODULES: waylandcompositor;svg
           EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so;libqwayland-egl.so
+          DEPLOY_PLATFORM_THEMES: 1
           LINUXDEPLOY_OUTPUT_VERSION: ${{ needs.prepare.outputs.katvan_version }}
           LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*x86_64.AppImage.zsync
 
