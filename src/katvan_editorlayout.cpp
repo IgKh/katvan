@@ -70,9 +70,7 @@ EditorLayout::EditorLayout(QTextDocument* document)
 
 QSizeF EditorLayout::documentSize() const
 {
-    // Margin never changes for us...
-    qreal margin = document()->documentMargin();
-    return d_documentSize.grownBy(QMarginsF(margin, margin, margin, margin));
+    return d_documentSize;
 }
 
 int EditorLayout::pageCount() const
@@ -112,15 +110,16 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
 
     QTextBlock block = findContainingBlock(point.y());
     if (!block.isValid()) {
-        return -1;
+        block = document()->lastBlock();
     }
 
     QTextLayout* layout = block.layout( );
     QPointF blockPoint = point - layout->position();
 
-    for (int i = 0; i < layout->lineCount(); i++) {
+    int lineCount = layout->lineCount();
+    for (int i = 0; i < lineCount; i++) {
         QTextLine line = layout->lineAt(i);
-        if (!line.rect().contains(blockPoint)) {
+        if (!line.rect().contains(blockPoint) && i < lineCount - 1) {
             continue;
         }
 
@@ -343,22 +342,20 @@ void EditorLayout::recalculateDocumentSize()
     // correctness, but is somewhat inefficient. Try to find a way to maintain
     // the document's size incrementally. This is tricky because sometimes a
     // block's layout is already invalidated before documentChanged is called.
-    qreal height = 0;
-    qreal width = 0;
+    qreal height = 2 * document()->documentMargin();
 
     for (QTextBlock block = document()->begin(); block.isValid(); block = block.next()) {
         QTextLayout* layout = block.layout();
         for (int i = 0; i < layout->lineCount(); i++) {
             QTextLine line = layout->lineAt(i);
             height += line.height();
-            width = qMax(width, line.naturalTextWidth());
         }
     }
 
-    QSizeF newDocumentSize(width, height);
+    QSizeF newDocumentSize(document()->textWidth(), height);
     if (newDocumentSize != d_documentSize) {
         d_documentSize = newDocumentSize;
-        Q_EMIT documentSizeChanged(documentSize());
+        Q_EMIT documentSizeChanged(newDocumentSize);
     }
 }
 

@@ -713,7 +713,7 @@ std::tuple<int, int> Editor::misspelledRangeAtCursor(QTextCursor cursor)
     const auto& words = blockData->misspelledWords();
     for (const auto& w : words) {
         if (pos >= w.startPos && pos <= w.startPos + w.length) {
-            return std::make_tuple(block.position() + w.startPos, w.length);
+            return std::make_tuple(block.position() + static_cast<int>(w.startPos), static_cast<int>(w.length));
         }
     }
     return std::make_tuple(-1, 0);
