@@ -75,6 +75,8 @@ if(NOT APPLE)
 
     target_sources(libkatvan PRIVATE katvan_spellchecker_hunspell.cpp)
     target_link_libraries(libkatvan PUBLIC PkgConfig::hunspell)
+
+    list(APPEND SOURCES katvan_spellchecker_hunspell.cpp)
 endif()
 
 add_executable(katvan ${MAIN_SOURCES})
@@ -95,8 +97,8 @@ set_target_properties(katvan PROPERTIES
     XCODE_EMBED_FRAMEWORKS typstdriver
 )
 
-qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly -no-obsolete -locations relative)
-qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_he.ts OPTIONS -no-obsolete -locations relative)
+qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly -no-obsolete -locations none)
+qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_he.ts OPTIONS -no-obsolete -locations none)
 
 qt_add_resources(katvan "translations"
     PREFIX "/i18n"
