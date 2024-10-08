@@ -31,6 +31,21 @@ namespace katvan::utils {
 static constexpr QChar LRI_MARK = (ushort)0x2066;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
+QString getApplicationDir(bool& isInstalled)
+{
+#if defined(Q_OS_MACOS)
+    QString path = macos::getApplicationDir();
+    isInstalled = (
+        path == "/Applications" ||
+        path == QDir::homePath() + "/Applications");
+
+    return path;
+#else
+    isInstalled = false;
+    return QCoreApplication::applicationDirPath();
+#endif
+}
+
 QIcon themeIcon(const char* xdgIcon)
 {
     QString fallbackPath = QLatin1String(":/icons/%1.svg").arg(QLatin1String(xdgIcon));

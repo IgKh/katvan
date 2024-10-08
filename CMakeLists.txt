@@ -28,7 +28,11 @@ add_subdirectory(typstdriver)
 add_subdirectory(src)
 add_subdirectory(tests)
 
-if(UNIX)
+if(APPLE)
+    set_property(TARGET katvan PROPERTY INSTALL_RPATH "@executable_path/../Frameworks/")
+    install(TARGETS katvan DESTINATION ${CMAKE_BINARY_DIR}/dist)
+    install(TARGETS typstdriver DESTINATION ${CMAKE_BINARY_DIR}/dist/Katvan.app/Contents/Frameworks)
+elseif(UNIX)
     include(GNUInstallDirs)
 
     if(APPIMAGE_INSTALL)

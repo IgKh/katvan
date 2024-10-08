@@ -1,6 +1,6 @@
 find_package(Qt6 REQUIRED COMPONENTS Gui Network)
 
-if(APPLE)
+if(APPLE AND NOT LibArchive_INCLUDE_DIR)
     find_program(HOMEBREW_EXECUTABLE brew)
     if(HOMEBREW_EXECUTABLE)
         execute_process(
@@ -11,7 +11,7 @@ if(APPLE)
 
         if(_LibArchive_PREFIX)
             message(STATUS "LibArchive found as Homebrew keg at ${_LibArchive_PREFIX}")
-            set(LibArchive_INCLUDE_DIR "${_LibArchive_PREFIX}/include")
+            set(LibArchive_INCLUDE_DIR "${_LibArchive_PREFIX}/include" CACHE PATH "Location of libarchive headers")
         endif()
     endif()
 endif()
@@ -36,6 +36,11 @@ corrosion_import_crate(
     FROZEN
 )
 
+if(CMAKE_OSX_DEPLOYMENT_TARGET)
+    # Until fix merged upstream to Corrosion
+    corrosion_set_env_vars(typstdriver_rs MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+endif()
+
 corrosion_add_cxxbridge(typstdriver_ffi
     CRATE typstdriver_rs
     FILES bridge.rs
@@ -59,3 +64,7 @@ target_compile_definitions(typstdriver PUBLIC QT_RESTRICTED_CAST_FROM_ASCII QT_N
 
 target_link_libraries(typstdriver PRIVATE typstdriver_rs typstdriver_ffi)
 target_link_libraries(typstdriver PUBLIC Qt6::Gui Qt6::Network LibArchive::LibArchive)
+
+set_target_properties(typstdriver PROPERTIES
+    FRAMEWORK TRUE
+)

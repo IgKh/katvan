@@ -25,6 +25,8 @@ QT_END_NAMESPACE
 
 namespace katvan::utils::macos {
 
+QString getApplicationDir();
+
 QString showPdfExportDialog(QWidget* parent, const QString& sourceFilePath);
 
 }

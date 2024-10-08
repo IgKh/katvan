@@ -25,6 +25,13 @@
 
 namespace katvan::utils::macos {
 
+QString getApplicationDir()
+{
+    NSBundle* bundle = [NSBundle mainBundle];
+    NSString* path = [[bundle bundlePath] stringByDeletingLastPathComponent];
+    return QString::fromNSString(path);
+}
+
 QString showPdfExportDialog(QWidget* parent, const QString& sourceFilePath)
 {
     NSPDFPanel* dialog = [NSPDFPanel panel];

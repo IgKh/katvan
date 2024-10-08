@@ -46,6 +46,11 @@ QMap<QString, QString> MacOsSpellChecker::findDictionaries()
 
 void MacOsSpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictPath)
 {
+    if (dictName.isEmpty()) {
+        SpellChecker::setCurrentDictionary(dictName, dictPath);
+        return;
+    }
+
     NSSpellChecker* checker = [NSSpellChecker sharedSpellChecker];
 
     BOOL ok = [checker setLanguage: dictName.toNSString()];
@@ -58,10 +63,13 @@ void MacOsSpellChecker::setCurrentDictionary(const QString& dictName, const QStr
 
 SpellChecker::MisspelledWordRanges MacOsSpellChecker::checkSpelling(const QString& text)
 {
+    SpellChecker::MisspelledWordRanges result;
+    if (currentDictionaryName().isEmpty()) {
+        return result;
+    }
+
     NSSpellChecker* checker = [NSSpellChecker sharedSpellChecker];
     NSString* str = text.toNSString();
-
-    SpellChecker::MisspelledWordRanges result;
 
     NSUInteger start = 0;
     while (start < [str length]) {

@@ -93,7 +93,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install googletest hunspell libarchive
+          brew install googletest libarchive
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -106,7 +106,7 @@ jobs:
             typstdriver/rust -> ../../build/cargo/build
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
 
       - name: Build
         run: cmake --build build -j

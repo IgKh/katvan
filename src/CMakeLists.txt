@@ -42,9 +42,7 @@ if(WIN32)
     file(COPY ${PROJECT_SOURCE_DIR}/assets/katvan.ico DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     configure_file(${PROJECT_SOURCE_DIR}/assets/katvan.rc.in katvan.rc @ONLY)
     list(APPEND MAIN_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/katvan.rc)
-endif()
-
-if(APPLE)
+elseif(APPLE)
     list(APPEND SOURCES
         katvan_spellchecker_macos.mm
         katvan_utils_macos.mm
@@ -89,10 +87,12 @@ elseif(KATVAN_PORTABLE_BUILD)
 endif()
 
 set_target_properties(katvan PROPERTIES
+    OUTPUT_NAME $<IF:$<PLATFORM_ID:Darwin>,Katvan,katvan>
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
     MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/assets/Info.plist.in
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+    XCODE_EMBED_FRAMEWORKS typstdriver
 )
 
 qt_create_translation(QM_FILES ${SOURCES} ${MAIN_SOURCES} translations/katvan_en.ts OPTIONS -pluralonly -no-obsolete -locations relative)

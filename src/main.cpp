@@ -17,6 +17,7 @@
  */
 #include "katvan_mainwindow.h"
 #include "katvan_spellchecker.h"
+#include "katvan_utils.h"
 #include "katvan_version.h"
 
 #include "typstdriver_packagemanager.h"
@@ -29,7 +30,13 @@
 
 void setupPortableMode()
 {
-    QString settingsPath = QCoreApplication::applicationDirPath();
+    bool isInstalled;
+    QString settingsPath = katvan::utils::getApplicationDir(isInstalled);
+
+    if (isInstalled) {
+        qWarning() << "Application is considered installed at" << settingsPath << "- not enabling portable mode!";
+        return;
+    }
     qDebug() << "Running in portable mode, settings stored at" << settingsPath;
 
     QSettings::setDefaultFormat(QSettings::IniFormat);
