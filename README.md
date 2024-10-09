@@ -30,7 +30,7 @@ Starting to get there:
 - Typical code editor niceties - auto indentation, bracket insertion, etc.
 - Forward and inverse search
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
-- Supported on Linux and Windows 10/11
+- Supported on Linux and Windows 10/11. **Experimental** support for macOS 12 ("Monterey") and above.
 
 [^1]: Previews are currently rendered by running the entire file through the _Typst_ compiler after each change. It is plenty fast at least for smaller documents, so good enough for now.
 
@@ -50,6 +50,10 @@ A build for 64-bit Windows 10/11 is available from the project releases page. No
 
 This build does not include spell checking dictionaries. You'll need to download hunsepll dictionaries for any desired languages (as a pair of `.dic` and `.aff` files), and save them to the `hunspell` sub-directory next to the main executable file. See the hunspell [README](https://github.com/hunspell/hunspell?tab=readme-ov-file#dictionaries) page for locations to get dictionaries from.
 
+### macOS
+
+Due to various reasons, there are no pre-built binaries available for macOS. Users should compile from source on every machine they intend to run Katvan on; see instructions below. Note that the full Xcode installation is not required - the command line tools are sufficient. Katvan on macOS uses the system's spell checker, so no particular setup is required on that front.
+
 ### From Source
 
 To compile and install Katvan from source code, you'll need:
@@ -59,11 +63,11 @@ To compile and install Katvan from source code, you'll need:
 - CMake 3.19 or later
 - [Corrosion](https://github.com/corrosion-rs/corrosion) (optional, will be automatically downloaded if missing)
 - A working `pkg-config`
-- [hunspell](http://hunspell.github.io/)
+- [hunspell](http://hunspell.github.io/) (not required on macOS)
 - [libarchive](https://libarchive.org/)
 - [GoogleTest](https://google.github.io/googletest/) (optional, for running unit tests)
 
-Get those from your distribution repositories, vcpkg, or wherever.
+Get those from your distribution repositories, vcpkg, Homebrew, or wherever.
 
 To build, perform a usual CMake invocation. For example, on Linux this might look like:
 
@@ -74,9 +78,21 @@ To build, perform a usual CMake invocation. For example, on Linux this might loo
   sudo cmake --build build -t install
 ```
 
+For macOS, a build invocation will be something like:
+
+```bash
+  mkdir build
+  cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+  cmake --build build -t install -j
+```
+
+If all is successful, an application bundle will appear in the `build/dist` directory. It can be dragged to the `Applications` library to install, after which the build directory can be discarded (but not the installed dependencies).
+
 ## Contributing
 
-Contributions aren't really expected. Issues and PRs in Github are open to create, but please don't expect much. This exists to scratch my personal need, and made available in hope it is useful for others with similar needs.
+At this point in the project's life, code contributions are generally not accepted. This exists to meet my personal need with a well-defined goal in mind, and made available in hope it is useful for others with similar needs.
+
+Issues detailing bug reports and suggestions are welcome, but please don't expect much.
 
 ## License
 
