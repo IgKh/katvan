@@ -22,6 +22,8 @@
 
 #include <concepts>
 #include <functional>
+#include <span>
+#include <vector>
 
 namespace katvan::parsing {
 
@@ -74,21 +76,27 @@ private:
 class TokenStream
 {
 public:
-    TokenStream(QStringView text): d_tokenizer(text) {}
+    TokenStream(QStringView text): d_tokenizer(text), d_pos(0) {}
 
-    bool atEnd();
-    Token fetchToken();
-    void returnToken(const Token& token);
-    void returnTokens(QList<Token>& tokens);
+    bool atEnd() const;
+    size_t position() const { return d_pos; }
+
+    Token& fetchToken();
+    QStringView peekTokenText();
+    void rewindTo(size_t position);
+
+    std::span<Token> consumedTokens();
+    void releaseConsumedTokens();
 
 private:
     Tokenizer d_tokenizer;
-    QList<Token> d_tokenQueue;
+    std::vector<Token> d_tokenQueue;
+    size_t d_pos;
 };
 
 template <typename M>
-concept Matcher = requires(const M m, TokenStream& stream, QList<Token>& usedTokens) {
-    { m.tryMatch(stream, usedTokens) } -> std::same_as<bool>;
+concept Matcher = requires(const M m, TokenStream& stream) {
+    { m.tryMatch(stream) } -> std::same_as<bool>;
 };
 
 struct ParserState
@@ -173,17 +181,18 @@ private:
     template <Matcher M>
     bool match(const M& matcher)
     {
-        QList<Token> usedTokens;
-        if (!matcher.tryMatch(d_tokenStream, usedTokens)) {
-            d_tokenStream.returnTokens(usedTokens);
+        size_t pos = d_tokenStream.position();
+        if (!matcher.tryMatch(d_tokenStream)) {
+            d_tokenStream.rewindTo(pos);
             return false;
         }
 
-        updateMarkers(usedTokens);
+        updateMarkers(d_tokenStream.consumedTokens());
+        d_tokenStream.releaseConsumedTokens();
         return true;
     }
 
-    void updateMarkers(const QList<Token>& tokens);
+    void updateMarkers(std::span<const Token> tokens);
     void updateMarkers(const Token& token);
 
     void instantState(ParserState::Kind stateKind);

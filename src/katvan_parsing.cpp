@@ -327,31 +327,47 @@ Token Tokenizer::readLineEnd()
     return buildToken(TokenType::LINE_END, start, 1);
 }
 
-bool TokenStream::atEnd()
+bool TokenStream::atEnd() const
 {
-    return d_tokenizer.atEnd() && d_tokenQueue.isEmpty();
+    return d_tokenizer.atEnd() && d_pos == d_tokenQueue.size();
 }
 
-Token TokenStream::fetchToken()
+Token& TokenStream::fetchToken()
 {
-    if (!d_tokenQueue.isEmpty()) {
-        return d_tokenQueue.takeFirst();
+    // Since the parser backtracks *a lot*, constantly copying tokens in and out
+    // of the token queue is inefficient. Instead consumed tokens remain in the
+    // queue, and queue's position index demarcates the boundary between consumed
+    // and available tokens.
+
+    if (d_pos == d_tokenQueue.size()) {
+        d_tokenQueue.push_back(d_tokenizer.nextToken());
     }
-    return d_tokenizer.nextToken();
+    return d_tokenQueue[d_pos++];
 }
 
-void TokenStream::returnToken(const Token& token)
+QStringView TokenStream::peekTokenText()
 {
-    d_tokenQueue.prepend(token);
-    d_tokenQueue.first().discard = false;
-}
-
-void TokenStream::returnTokens(QList<Token>& tokens)
-{
-    while (!tokens.isEmpty()) {
-        d_tokenQueue.prepend(tokens.takeLast());
-        d_tokenQueue.first().discard = false;
+    if (d_pos == d_tokenQueue.size()) {
+        d_tokenQueue.push_back(d_tokenizer.nextToken());
     }
+    return d_tokenQueue[d_pos].text;
+}
+
+void TokenStream::rewindTo(size_t position)
+{
+    Q_ASSERT(position <= d_pos);
+    d_pos = position;
+}
+
+std::span<Token> TokenStream::consumedTokens()
+{
+    return std::span(d_tokenQueue.begin(), d_tokenQueue.begin() + d_pos);
+}
+
+void TokenStream::releaseConsumedTokens()
+{
+    d_tokenQueue.erase(d_tokenQueue.begin(), d_tokenQueue.begin() + d_pos);
+    d_pos = 0;
 }
 
 Parser::Parser(QStringView text, const QList<ParserState::Kind>& initialStates)
@@ -765,11 +781,12 @@ void Parser::parse()
         }
 
         // In any other case - just burn a token and continue
-        Token t = d_tokenStream.fetchToken();
+        const Token& t = d_tokenStream.fetchToken();
         updateMarkers(t);
         for (auto& listener : d_listeners) {
             listener.get().handleLooseToken(t, state);
         }
+        d_tokenStream.releaseConsumedTokens();
     }
 
     d_endMarker = d_text.size() - 1;
@@ -798,6 +815,12 @@ bool Parser::handleCommentStart()
 {
     namespace m = matchers;
 
+    // Short circuit - if next token is not a "/", there is no chance it will
+    // start a comment.
+    if (d_tokenStream.peekTokenText() != QLatin1Char('/')) {
+        return false;
+    }
+
     if (match(m::SymbolSequence(QStringLiteral("//")))) {
         pushState(ParserState::Kind::COMMENT_LINE);
         return true;
@@ -812,6 +835,12 @@ bool Parser::handleCommentStart()
 bool Parser::handleCodeStart()
 {
     namespace m = matchers;
+
+    // Short circuit - if next token is not a hash, there is no chance it will
+    // start a code block.
+    if (d_tokenStream.peekTokenText() != QLatin1Char('#')) {
+        return false;
+    }
 
     if (match(m::All(
         m::Symbol(QLatin1Char('#')),
@@ -884,7 +913,7 @@ bool Parser::handleCodeStart()
     return false;
 }
 
-void Parser::updateMarkers(const QList<Token>& tokens)
+void Parser::updateMarkers(std::span<const Token> tokens)
 {
     if (tokens.empty()) {
         return;
@@ -902,7 +931,7 @@ void Parser::updateMarkers(const QList<Token>& tokens)
     Q_ASSERT(startToken.type != TokenType::INVALID);
 
     d_startMarker = startToken.startPos;
-    d_endMarker = tokens.last().startPos + tokens.last().length - 1;
+    d_endMarker = tokens.back().startPos + tokens.back().length - 1;
 
     Q_ASSERT(d_startMarker <= d_endMarker);
 }

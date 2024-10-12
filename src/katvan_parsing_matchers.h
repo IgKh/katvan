@@ -54,10 +54,10 @@ class All
 public:
     All(Matchers ...matchers): d_matchers(matchers...) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
         return detail::tupleForEach(d_matchers, [&](Matcher auto&& m) {
-            return m.tryMatch(stream, usedTokens);
+            return m.tryMatch(stream);
         });
     }
 };
@@ -70,16 +70,15 @@ class Any
 public:
     Any(Matchers ...matchers): d_matchers(matchers...) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
         return !detail::tupleForEach(d_matchers, [&](Matcher auto&& m) {
-            QList<Token> nested;
-            if (m.tryMatch(stream, nested)) {
-                usedTokens.append(nested);
+            size_t pos = stream.position();
+            if (m.tryMatch(stream)) {
                 return false;
             }
             else {
-                stream.returnTokens(nested);
+                stream.rewindTo(pos);
                 return true;
             }
         });
@@ -94,15 +93,12 @@ class Optionally
 public:
     Optionally(const M& matcher): d_matcher(matcher) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
-        QList<Token> nested;
-        bool ok = d_matcher.tryMatch(stream, nested);
-        if (ok) {
-            usedTokens.append(nested);
-        }
-        else {
-            stream.returnTokens(nested);
+        size_t pos = stream.position();
+        bool ok = d_matcher.tryMatch(stream);
+        if (!ok) {
+            stream.rewindTo(pos);
         }
         return true;
     }
@@ -116,18 +112,17 @@ class OneOrMore
 public:
     OneOrMore(const M& matcher): d_matcher(matcher) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
-        if (!d_matcher.tryMatch(stream, usedTokens)) {
+        if (!d_matcher.tryMatch(stream)) {
             return false;
         }
         while (true) {
-            QList<Token> nested;
-            if (!d_matcher.tryMatch(stream, nested)) {
-                stream.returnTokens(nested);
+            size_t pos = stream.position();
+            if (!d_matcher.tryMatch(stream)) {
+                stream.rewindTo(pos);
                 break;
             }
-            usedTokens.append(nested);
         }
         return true;
     }
@@ -147,11 +142,11 @@ class Peek
 public:
     Peek(const M& matcher): d_matcher(matcher) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>&) const
+    bool tryMatch(TokenStream& stream) const
     {
-        QList<Token> nested;
-        bool matched = d_matcher.tryMatch(stream, nested);
-        stream.returnTokens(nested);
+        size_t pos = stream.position();
+        bool matched = d_matcher.tryMatch(stream);
+        stream.rewindTo(pos);
         return matched;
     }
 };
@@ -164,16 +159,14 @@ class Discard
 public:
     Discard(const M& matcher): d_matcher(matcher) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
-        QList<Token> nested;
-        bool matched = d_matcher.tryMatch(stream, nested);
+        bool matched = d_matcher.tryMatch(stream);
         if (matched) {
-            for (Token& token : nested) {
+            for (Token& token : stream.consumedTokens()) {
                 token.discard = true;
             }
         }
-        usedTokens.append(nested);
         return matched;
     }
 };
@@ -185,7 +178,7 @@ class Condition
 public:
     Condition(bool condition): d_condition(condition) {}
 
-    bool tryMatch(TokenStream&, QList<Token>&) const
+    bool tryMatch(TokenStream&) const
     {
         return d_condition;
     }
@@ -198,10 +191,9 @@ class TokenType
 public:
     TokenType(parsing::TokenType type): d_type(type) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
-        Token t = stream.fetchToken();
-        usedTokens.append(t);
+        const Token& t = stream.fetchToken();
         return t.type == d_type;
     }
 };
@@ -213,10 +205,9 @@ class Symbol
 public:
     Symbol(QChar symbol): d_symbol(symbol) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
-        Token t = stream.fetchToken();
-        usedTokens.append(t);
+        const Token& t = stream.fetchToken();
         return t.type == parsing::TokenType::SYMBOL && t.text == d_symbol;
     }
 };
@@ -228,11 +219,10 @@ class SymbolSequence
 public:
     SymbolSequence(QStringView symbols): d_symbols(symbols) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
         for (QChar ch : d_symbols) {
-            Token t = stream.fetchToken();
-            usedTokens.append(t);
+            const Token& t = stream.fetchToken();
 
             if (t.type != parsing::TokenType::SYMBOL || t.text != ch) {
                 return false;
@@ -292,18 +282,18 @@ class Keyword
 public:
     Keyword(const QSet<QString>& keywords): d_keywords(keywords) {}
 
-    bool tryMatch(TokenStream& stream, QList<Token>& usedTokens) const
+    bool tryMatch(TokenStream& stream) const
     {
-        QList<Token> nested;
-        bool ok = FullWord().tryMatch(stream, nested);
-
-        usedTokens.append(nested);
+        size_t startPos = stream.position();
+        bool ok = FullWord().tryMatch(stream);
         if (!ok) {
             return false;
         }
 
+        auto wordTokens = stream.consumedTokens().subspan(startPos);
+
         QString word;
-        for (const Token& t : std::as_const(nested)) {
+        for (const Token& t : wordTokens) {
             word.append(t.text);
         }
         return d_keywords.contains(word);
