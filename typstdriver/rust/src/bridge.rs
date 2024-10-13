@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+use std::pin::Pin;
+
 use crate::engine::EngineImpl;
 
 #[allow(clippy::needless_lifetimes)]
@@ -35,24 +37,19 @@ pub(crate) mod ffi {
         fingerprint: u64,
     }
 
-    #[derive(Default)]
     struct RenderedPage {
         width_px: u32,
         height_px: u32,
         buffer: Vec<u8>,
     }
 
-    #[derive(Default)]
     struct PreviewPosition {
-        valid: bool,
         page: usize,
         x_pts: f64,
         y_pts: f64,
     }
 
-    #[derive(Default)]
     struct SourcePosition {
-        valid: bool,
         line: usize,
         column: usize,
     }
@@ -78,7 +75,7 @@ pub(crate) mod ffi {
         type PackageManagerProxy;
 
         #[rust_name = "get_package_local_path"]
-        fn getPackageLocalPath(&self, package_namespace: &str, name: &str, version: &str)
+        fn getPackageLocalPath(self: Pin<&mut PackageManagerProxy>, package_namespace: &str, name: &str, version: &str)
             -> String;
 
         fn error(&self) -> PackageManagerError;
@@ -92,17 +89,17 @@ pub(crate) mod ffi {
 
         fn compile(&mut self, source: &str, now: &str) -> Vec<PreviewPageDataInternal>;
 
-        fn render_page(&self, page: usize, point_size: f32) -> RenderedPage;
+        fn render_page(&self, page: usize, point_size: f32) -> Result<RenderedPage>;
 
         fn export_pdf(&self, path: &str) -> Result<()>;
 
-        fn foward_search(&self, line: usize, column: usize) -> PreviewPosition;
+        fn foward_search(&self, line: usize, column: usize) -> Result<PreviewPosition>;
 
-        fn inverse_search(&self, pos: &PreviewPosition) -> SourcePosition;
+        fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,
-            package_manager: &'a PackageManagerProxy,
+            package_manager: Pin<&'a mut PackageManagerProxy>,
             root: &str,
         ) -> Box<EngineImpl<'a>>;
 
@@ -110,9 +107,11 @@ pub(crate) mod ffi {
     }
 }
 
+unsafe impl Send for ffi::PackageManagerProxy {}
+
 fn create_engine_impl<'a>(
     logger: &'a ffi::LoggerProxy,
-    package_manager: &'a ffi::PackageManagerProxy,
+    package_manager: Pin<&'a mut ffi::PackageManagerProxy>,
     root: &str,
 ) -> Box<EngineImpl<'a>> {
     Box::new(EngineImpl::new(logger, package_manager, root))

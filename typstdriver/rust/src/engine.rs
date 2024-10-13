@@ -16,7 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::pin::Pin;
 
+use anyhow::{Context, Result};
 use typst::layout::{Abs, Point};
 use typst::World;
 
@@ -32,7 +34,7 @@ pub struct EngineImpl<'a> {
 impl<'a> EngineImpl<'a> {
     pub fn new(
         logger: &'a ffi::LoggerProxy,
-        package_manager: &'a ffi::PackageManagerProxy,
+        package_manager: Pin<&'a mut ffi::PackageManagerProxy>,
         root: &str,
     ) -> Self {
         EngineImpl {
@@ -48,13 +50,12 @@ impl<'a> EngineImpl<'a> {
         self.logger.log_one("compiling ...");
 
         let start = std::time::Instant::now();
-        let mut tracer = typst::eval::Tracer::new();
-        let res = typst::compile(&self.world, &mut tracer);
+        let res = typst::compile(&self.world);
 
         let elapsed = format!("{:.2?}", start.elapsed());
-        let warnings = tracer.warnings();
+        let warnings = res.warnings;
 
-        if let Ok(doc) = res {
+        if let Ok(doc) = res.output {
             if warnings.is_empty() {
                 self.logger
                     .log_to_batch(&format!("compiled successfully in {elapsed}"));
@@ -82,7 +83,7 @@ impl<'a> EngineImpl<'a> {
             self.result = Some(doc);
             pages
         } else {
-            let errors = res.unwrap_err();
+            let errors = res.output.unwrap_err();
 
             self.logger
                 .log_to_batch(&format!("compiled with errors in {elapsed}"));
@@ -139,58 +140,73 @@ impl<'a> EngineImpl<'a> {
         format!("{}{}:{}:{}", package, file, line + 1, col)
     }
 
-    fn try_render_page(&self, page: usize, point_size: f32) -> Option<ffi::RenderedPage> {
-        let frame = &self.result.as_ref()?.pages.get(page)?.frame;
-        let pixmap = typst_render::render(frame, point_size, typst::visualize::Color::WHITE);
+    pub fn render_page(&self, page: usize, point_size: f32) -> Result<ffi::RenderedPage> {
+        let document = self.result.as_ref().context("Invalid state")?;
+        let page = document.pages.get(page).context("No such page")?;
+        let pixmap = typst_render::render(page, point_size);
 
-        Some(ffi::RenderedPage {
+        Ok(ffi::RenderedPage {
             width_px: pixmap.width(),
             height_px: pixmap.height(),
             buffer: pixmap.take(),
         })
     }
 
-    pub fn render_page(&self, page: usize, point_size: f32) -> ffi::RenderedPage {
-        self.try_render_page(page, point_size).unwrap_or_default()
+    pub fn export_pdf(&self, path: &str) -> Result<()> {
+        let document = self.result.as_ref().context("Invalid state")?;
+
+        let options = typst_pdf::PdfOptions {
+            ident: typst::foundations::Smart::Auto,
+            timestamp: None,
+            page_ranges: None,
+            standards: typst_pdf::PdfStandards::default(),
+        };
+
+        let result = typst_pdf::pdf(document, &options);
+        if let Ok(data) = result {
+            std::fs::write(path, data).map_err(|err| err.into())
+        } else {
+            // TODO: PDF generation now can return diagnostics just like
+            // compilation. Find a good way to display those.
+            Err(anyhow::anyhow!("PDF generation failed"))
+        }
     }
 
-    pub fn export_pdf(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let document = self.result.as_ref().ok_or("Invalid state")?;
-        let data = typst_pdf::pdf(document, typst::foundations::Smart::Auto, None);
+    pub fn foward_search(&self, line: usize, column: usize) -> Result<ffi::PreviewPosition> {
+        let document = self.result.as_ref().context("Invalid state")?;
+        let main = self.world.main_source();
 
-        std::fs::write(path, data).map_err(|err| err.into())
+        let cursor = main
+            .line_column_to_byte(line, column)
+            .context("No such position")?;
+
+        // TODO: There can be multiple positions returned since the same syntax
+        // node can appear in multiple places in the rendered document (e.g. a
+        // header can also appear in a TOC). According to the Typst Discord,
+        // the intention is to pick the match that is closest to the previewer's
+        // current scroll position. We should implement that too eventually, but
+        // for now just pick the first one.
+        let positions = typst_ide::jump_from_cursor(document, &main, cursor);
+
+        match positions.first() {
+            Some(pos) => Ok(ffi::PreviewPosition {
+                page: usize::from(pos.page) - 1,
+                x_pts: pos.point.x.to_pt(),
+                y_pts: pos.point.y.to_pt(),
+            }),
+            None => Err(anyhow::anyhow!("Position not found in preview")),
+        }
     }
 
-    fn try_forward_search(&self, line: usize, column: usize) -> Option<ffi::PreviewPosition> {
-        let main = self.world.main();
-        let cursor = main.line_column_to_byte(line, column)?;
-
-        let pos = typst_ide::jump_from_cursor(self.result.as_ref()?, &main, cursor)?;
-
-        Some(ffi::PreviewPosition {
-            valid: true,
-            page: usize::from(pos.page) - 1,
-            x_pts: pos.point.x.to_pt(),
-            y_pts: pos.point.y.to_pt(),
-        })
-    }
-
-    pub fn foward_search(&self, line: usize, column: usize) -> ffi::PreviewPosition {
-        self.try_forward_search(line, column).unwrap_or_default()
-    }
-
-    fn try_inverse_search(&self, pos: &ffi::PreviewPosition) -> Option<ffi::SourcePosition> {
-        let document = self.result.as_ref()?;
-        let frame = &document.pages.get(pos.page)?.frame;
-        let click = Point::new(Abs::pt(pos.x_pts), Abs::pt(pos.y_pts));
-
-        let jump = typst_ide::jump_from_click(&self.world, document, frame, click)?;
+    fn convert_jump_to_source_position(
+        &self,
+        jump: typst_ide::Jump,
+    ) -> Option<ffi::SourcePosition> {
         match jump {
             typst_ide::Jump::Source(id, cursor) if id == *MAIN_ID => {
-                let source = self.world.main();
+                let source = self.world.main_source();
 
                 Some(ffi::SourcePosition {
-                    valid: true,
                     line: source.byte_to_line(cursor)?,
                     column: source.byte_to_column(cursor)?,
                 })
@@ -199,8 +215,16 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn inverse_search(&self, pos: &ffi::PreviewPosition) -> ffi::SourcePosition {
-        self.try_inverse_search(pos).unwrap_or_default()
+    pub fn inverse_search(&self, pos: &ffi::PreviewPosition) -> Result<ffi::SourcePosition> {
+        let document = self.result.as_ref().context("Invalid state")?;
+        let page = document.pages.get(pos.page).context("Missing page")?;
+        let click = Point::new(Abs::pt(pos.x_pts), Abs::pt(pos.y_pts));
+
+        let jump = typst_ide::jump_from_click(&self.world, document, &page.frame, click)
+            .context("Inverse search failed")?;
+
+        self.convert_jump_to_source_position(jump)
+            .context("Jump target not applicable")
     }
 }
 

@@ -244,7 +244,7 @@ PackageManagerProxy::PackageManagerProxy(PackageManager& manager)
 rust::String PackageManagerProxy::getPackageLocalPath(
     rust::Str packageNamespace,
     rust::Str name,
-    rust::Str version) const
+    rust::Str version)
 {
     QString result = d_manager.getPackageLocalPath(
         QString::fromUtf8(packageNamespace.data(), packageNamespace.size()),

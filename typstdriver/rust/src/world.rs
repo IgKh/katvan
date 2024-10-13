@@ -15,21 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::{
-    cell::{OnceCell, RefCell},
-    collections::HashMap,
-    path::PathBuf,
-};
+use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 
-use comemo::Prehashed;
 use time::{format_description::well_known::Iso8601, OffsetDateTime};
 use typst::{
     diag::{EcoString, FileError, FileResult, PackageError},
     foundations::Bytes,
     syntax::{package::PackageSpec, FileId, Source, VirtualPath},
-    text::{Font, FontBook, FontInfo},
+    text::{Font, FontBook},
+    utils::LazyHash,
     Library,
 };
+use typst_kit::fonts::{FontSlot, Fonts};
 
 use crate::bridge::ffi;
 
@@ -39,25 +36,25 @@ lazy_static::lazy_static! {
 
 pub struct KatvanWorld<'a> {
     root: PathBuf,
-    package_manager: &'a ffi::PackageManagerProxy,
-    package_roots: RefCell<HashMap<PackageSpec, PathBuf>>,
-    library: Prehashed<Library>,
-    fonts: FontManager,
+    package_roots: Mutex<PackageRoots<'a>>,
+    library: LazyHash<Library>,
+    book: LazyHash<FontBook>,
+    fonts: Vec<FontSlot>,
     source: Source,
     now: Option<OffsetDateTime>,
 }
 
 impl<'a> KatvanWorld<'a> {
-    pub fn new(package_manager: &'a ffi::PackageManagerProxy, root: &str) -> Self {
-        let fonts = FontManager::new();
+    pub fn new(package_manager: Pin<&'a mut ffi::PackageManagerProxy>, root: &str) -> Self {
+        let fonts = Fonts::searcher().search();
         let source = Source::new(*MAIN_ID, String::new());
 
         KatvanWorld {
             root: PathBuf::from(root),
-            package_manager,
-            package_roots: RefCell::new(HashMap::new()),
-            library: Prehashed::new(Library::default()),
-            fonts,
+            package_roots: Mutex::new(PackageRoots::new(package_manager)),
+            library: LazyHash::new(Library::default()),
+            book: LazyHash::new(fonts.book),
+            fonts: fonts.fonts,
             source,
             now: None,
         }
@@ -68,45 +65,14 @@ impl<'a> KatvanWorld<'a> {
         self.now = OffsetDateTime::parse(now, &Iso8601::PARSING).ok();
     }
 
-    fn check_package_manager_error(&self, pkg: &PackageSpec) -> Result<(), PackageError> {
-        let error = self.package_manager.error();
-        let message = EcoString::from(self.package_manager.error_message());
-
-        match error {
-            ffi::PackageManagerError::Success => Ok(()),
-            ffi::PackageManagerError::NotFound => Err(PackageError::NotFound(pkg.clone())),
-            ffi::PackageManagerError::NetworkError => {
-                Err(PackageError::NetworkFailed(Some(message)))
-            }
-            ffi::PackageManagerError::IoError => Err(PackageError::Other(Some(message))),
-            ffi::PackageManagerError::ArchiveError => {
-                Err(PackageError::MalformedArchive(Some(message)))
-            }
-            _ => Err(PackageError::Other(Some(message))),
-        }
+    pub fn main_source(&self) -> Source {
+        self.source.clone()
     }
 
     fn get_package_root(&self, pkg: Option<&PackageSpec>) -> FileResult<PathBuf> {
         if let Some(pkg) = pkg {
-            let mut cache = self.package_roots.borrow_mut();
-
-            let root = match cache.get(pkg) {
-                Some(root) => root.clone(),
-                None => {
-                    let path = self.package_manager.get_package_local_path(
-                        &pkg.namespace,
-                        &pkg.name,
-                        &pkg.version.to_string(),
-                    );
-
-                    self.check_package_manager_error(pkg)?;
-
-                    let path = PathBuf::from(path);
-                    cache.insert(pkg.clone(), path.clone());
-                    path
-                }
-            };
-            Ok(root)
+            let mut roots = self.package_roots.lock().unwrap();
+            roots.get(pkg)
         } else {
             if self.root.as_os_str().is_empty() {
                 return Err(FileError::Other(Some(EcoString::from(
@@ -129,17 +95,17 @@ impl<'a> KatvanWorld<'a> {
 }
 
 impl<'a> typst::World for KatvanWorld<'a> {
-    fn library(&self) -> &Prehashed<Library> {
+    fn library(&self) -> &LazyHash<Library> {
         &self.library
     }
 
-    fn main(&self) -> Source {
-        self.source.clone()
+    fn main(&self) -> FileId {
+        *MAIN_ID
     }
 
     fn source(&self, id: FileId) -> FileResult<Source> {
         if id == *MAIN_ID {
-            return Ok(self.main());
+            return Ok(self.source.clone());
         }
 
         let bytes = self.get_file_content(id)?;
@@ -151,12 +117,12 @@ impl<'a> typst::World for KatvanWorld<'a> {
         self.get_file_content(id).map(Bytes::from)
     }
 
-    fn book(&self) -> &Prehashed<FontBook> {
-        &self.fonts.book
+    fn book(&self) -> &LazyHash<FontBook> {
+        &self.book
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts.font(index)
+        self.fonts.get(index).and_then(|slot| slot.get())
     }
 
     fn today(&self, offset: Option<i64>) -> Option<typst::foundations::Datetime> {
@@ -174,59 +140,54 @@ impl<'a> typst::World for KatvanWorld<'a> {
     }
 }
 
-struct FontFace {
-    id: fontdb::ID,
-    font: OnceCell<Option<Font>>,
+struct PackageRoots<'a> {
+    package_manager: Pin<&'a mut ffi::PackageManagerProxy>,
+    cache: HashMap<PackageSpec, PathBuf>,
 }
 
-struct FontManager {
-    db: fontdb::Database,
-    book: Prehashed<FontBook>,
-    faces: Vec<FontFace>,
-}
-
-impl FontManager {
-    fn new() -> Self {
-        let mut db = fontdb::Database::new();
-
-        db.load_system_fonts();
-        for data in typst_assets::fonts() {
-            db.load_font_data(data.into());
-        }
-
-        let mut book = FontBook::new();
-        let mut faces: Vec<FontFace> = Vec::new();
-
-        db.faces().for_each(|f| {
-            db.with_face_data(f.id, |data, index| {
-                let info = FontInfo::new(data, index);
-                if let Some(info) = info {
-                    book.push(info);
-                    faces.push(FontFace {
-                        id: f.id,
-                        font: OnceCell::new(),
-                    });
-                }
-            });
-        });
-
-        FontManager {
-            db,
-            book: Prehashed::new(book),
-            faces,
+impl<'a> PackageRoots<'a> {
+    fn new(package_manager: Pin<&'a mut ffi::PackageManagerProxy>) -> Self {
+        PackageRoots {
+            package_manager,
+            cache: HashMap::new(),
         }
     }
 
-    fn font(&self, index: usize) -> Option<Font> {
-        self.faces.get(index).and_then(|entry| {
-            entry
-                .font
-                .get_or_init(|| {
-                    self.db
-                        .with_face_data(entry.id, |data, index| Font::new(data.into(), index))
-                        .flatten()
-                })
-                .clone()
-        })
+    fn get(&mut self, pkg: &PackageSpec) -> FileResult<PathBuf> {
+        let root = match self.cache.get(pkg) {
+            Some(root) => root.clone(),
+            None => {
+                let path = self.package_manager.as_mut().get_package_local_path(
+                    &pkg.namespace,
+                    &pkg.name,
+                    &pkg.version.to_string(),
+                );
+
+                self.check_package_manager_error(pkg)?;
+
+                let path = PathBuf::from(path);
+                self.cache.insert(pkg.clone(), path.clone());
+                path
+            }
+        };
+        Ok(root)
+    }
+
+    fn check_package_manager_error(&self, pkg: &PackageSpec) -> Result<(), PackageError> {
+        let error = self.package_manager.error();
+        let message = EcoString::from(self.package_manager.error_message());
+
+        match error {
+            ffi::PackageManagerError::Success => Ok(()),
+            ffi::PackageManagerError::NotFound => Err(PackageError::NotFound(pkg.clone())),
+            ffi::PackageManagerError::NetworkError => {
+                Err(PackageError::NetworkFailed(Some(message)))
+            }
+            ffi::PackageManagerError::IoError => Err(PackageError::Other(Some(message))),
+            ffi::PackageManagerError::ArchiveError => {
+                Err(PackageError::MalformedArchive(Some(message)))
+            }
+            _ => Err(PackageError::Other(Some(message))),
+        }
     }
 }

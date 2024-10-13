@@ -33,7 +33,7 @@ public:
     rust::String getPackageLocalPath(
         rust::Str packageNamespace,
         rust::Str name,
-        rust::Str version) const;
+        rust::Str version);
 
     PackageManagerError error() const;
     rust::String errorMessage() const;

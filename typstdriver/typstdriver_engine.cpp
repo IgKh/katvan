@@ -121,9 +121,8 @@ void Engine::renderPage(int page, qreal pointSize)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
-    RenderedPage result = d_ptr->engine.value()->render_page(page, pointSize);
-
-    if (!result.buffer.empty()) {
+    try {
+        RenderedPage result = d_ptr->engine.value()->render_page(page, pointSize);
         rust::Vec<uint8_t>* buffer = new rust::Vec<uint8_t>(std::move(result.buffer));
 
         QImage image {
@@ -135,6 +134,9 @@ void Engine::renderPage(int page, qreal pointSize)
             buffer
         };
         Q_EMIT pageRendered(page, image);
+    }
+    catch (rust::Error& e) {
+        qWarning() << "Error rendering page" << page << ":" << e.what();
     }
 }
 
@@ -155,9 +157,11 @@ void Engine::forwardSearch(int line, int column)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
-    PreviewPosition result = d_ptr->engine.value()->foward_search(static_cast<size_t>(line), static_cast<size_t>(column));
-    if (result.valid) {
+    try {
+        PreviewPosition result = d_ptr->engine.value()->foward_search(static_cast<size_t>(line), static_cast<size_t>(column));
         Q_EMIT jumpToPreview(result.page, QPointF(result.x_pts, result.y_pts));
+    }
+    catch (rust::Error&) {
     }
 }
 
@@ -166,15 +170,16 @@ void Engine::inverseSearch(int page, QPointF clickPoint)
     Q_ASSERT(d_ptr->engine.has_value());
 
     PreviewPosition pos {
-        true,
         static_cast<size_t>(page),
         clickPoint.x(),
         clickPoint.y()
     };
 
-    SourcePosition result = d_ptr->engine.value()->inverse_search(pos);
-    if (result.valid) {
+    try {
+        SourcePosition result = d_ptr->engine.value()->inverse_search(pos);
         Q_EMIT jumpToEditor(result.line, result.column);
+    }
+    catch (rust::Error&) {
     }
 }
 
