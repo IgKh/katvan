@@ -30,7 +30,8 @@ Starting to get there:
 - Typical code editor niceties - auto indentation, bracket insertion, etc.
 - Forward and inverse search
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
-- Supported on Linux and Windows 10/11. **Experimental** support for macOS 12 ("Monterey") and above.
+- Supported on Linux and Windows 10/11.
+- **Experimental** support for macOS 12 ("Monterey") and above.
 
 [^1]: Previews are currently rendered by running the entire file through the _Typst_ compiler after each change. It is plenty fast at least for smaller documents, so good enough for now.
 
@@ -86,11 +87,11 @@ For macOS, a build invocation will be something like:
   cmake --build build -t install -j
 ```
 
-If all is successful, an application bundle will appear in the `build/dist` directory. It can be dragged to the `Applications` library to install, after which the build directory can be discarded (but not the installed dependencies).
+If all is successful, an application bundle will appear in the `build/dist` directory. It can be dragged to the `Applications` library for installation, after which the build directory can be discarded (but not the installed dependencies).
 
 ## Contributing
 
-At this point in the project's life, code contributions are generally not accepted. This exists to meet my personal need with a well-defined goal in mind, and made available in hope it is useful for others with similar needs.
+At this point in the project's life, code contributions are generally not accepted. This project exists to meet my personal need, and is currently rapidly evolving with a well-defined goal in mind. It is made available in hope that it is useful for others with similar needs.
 
 Issues detailing bug reports and suggestions are welcome, but please don't expect much.
 

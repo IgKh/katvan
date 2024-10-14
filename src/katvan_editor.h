@@ -82,7 +82,6 @@ private:
     QTextEdit::ExtraSelection makeBracketHighlight(int pos);
 
     int lineNumberGutterWidth();
-    QTextBlock getFirstVisibleBlock();
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
 private slots:

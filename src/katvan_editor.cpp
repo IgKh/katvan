@@ -883,87 +883,86 @@ void Editor::updateExtraSelections()
     setExtraSelections(extraSelections);
 }
 
-QTextBlock Editor::getFirstVisibleBlock()
-{
-    EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
-    QRect viewportGeometry = viewport()->geometry();
-
-    // First, quickly find the first block that's even partly visible
-    qreal y = verticalScrollBar()->sliderPosition() - viewportGeometry.top();
-    QTextBlock block = layout->findContainingBlock(y);
-
-    // We want the first fully visible block, so check if want we found meets
-    // that criteria (that is, starts after the current scrollbar position).
-    // If not, the next one certainly does.
-    QRectF blockRect = layout->blockBoundingRect(block);
-    blockRect.translate(viewportGeometry.topLeft());
-
-    if (blockRect.top() >= verticalScrollBar()->sliderPosition()) {
-        return block;
-    }
-    return block.next();
-}
-
 void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
 {
-    QColor bgColor = d_theme.editorColor(EditorTheme::EditorColor::GUTTER);
     QColor fgColor = d_theme.editorColor(EditorTheme::EditorColor::FOREGROUND);
+    QColor editorBgColor = d_theme.editorColor(EditorTheme::EditorColor::BACKGROUND);
+    QColor gutterBgColor = d_theme.editorColor(EditorTheme::EditorColor::GUTTER);
+    QBrush secondaryBgBrush(gutterBgColor, Qt::Dense6Pattern);
 
     QPainter painter(gutter);
-    painter.fillRect(event->rect(), bgColor);
+    painter.setClipRect(event->rect());
 
-    QTextBlock block = getFirstVisibleBlock();
-    int blockNumberUnderCursor = textCursor().blockNumber();
+    if (d_effectiveSettings.lineNumberStyle() == EditorSettings::LineNumberStyle::BOTH_SIDES) {
+        painter.fillRect(event->rect(), editorBgColor);
+        painter.fillRect(event->rect(), secondaryBgBrush);
+    }
+    else {
+        painter.fillRect(event->rect(), gutterBgColor);
+    }
+
+    // The visible part of the document, in document coordinates
+    QRect viewportGeometry = viewport()->geometry();
+    QRect documentVisibleRect = viewport()->geometry()
+        .translated(-viewportGeometry.topLeft())
+        .translated(horizontalScrollBar()->value(), verticalScrollBar()->value());
 
     QTextDocument* doc = document();
-    QRect viewportGeometry = viewport()->geometry();
+    int blockNumberUnderCursor = textCursor().blockNumber();
 
-    qreal additionalMargin;
+    EditorLayout* layout = qobject_cast<EditorLayout*>(doc->documentLayout());
+    QTextBlock block = layout->findContainingBlock(documentVisibleRect.top());
+
+    qreal additionalMargin = 0;
     if (block.blockNumber() == 0) {
         additionalMargin = doc->documentMargin() - 1 - verticalScrollBar()->sliderPosition();
     }
-    else {
-        // Getting the height of the visible part of the previous "non entirely visible" block
-        QTextBlock prevBlock = block.previous();
-        QRectF prevBlockRect = doc->documentLayout()->blockBoundingRect(prevBlock);
-        prevBlockRect.translate(0, -verticalScrollBar()->sliderPosition());
 
-        additionalMargin = prevBlockRect.intersected(viewportGeometry).height();
-    }
-
+    QRectF blockRect = layout->blockBoundingRect(block);
     qreal top = viewportGeometry.top() + additionalMargin;
-    qreal bottom = top + doc->documentLayout()->blockBoundingRect(block).height();
+    qreal bottom = top + blockRect.intersected(documentVisibleRect).height();
 
     while (block.isValid() && top <= event->rect().bottom()) {
-        if (block.isVisible() && bottom >= event->rect().top()) {
-            QString number = QString::number(block.blockNumber() + 1);
+        Qt::LayoutDirection blockDirection = block.layout()->textOption().textDirection();
 
-            painter.setPen(fgColor);
+        QBrush bgBrush;
+        int textFlags;
+        int textOffset;
+        if (gutter == d_leftLineNumberGutter) {
+            bgBrush = (blockDirection == Qt::RightToLeft) ? secondaryBgBrush : gutterBgColor;
+            textFlags = (layoutDirection() == Qt::RightToLeft) ? Qt::AlignLeft : Qt::AlignRight;
+            textOffset = -5;
+        }
+        else {
+            bgBrush = (blockDirection == Qt::RightToLeft) ? gutterBgColor : secondaryBgBrush;
+            textFlags = (layoutDirection() == Qt::RightToLeft) ? Qt::AlignRight : Qt::AlignLeft;
+            textOffset = 5;
+        }
+
+        if (d_effectiveSettings.lineNumberStyle() == EditorSettings::LineNumberStyle::BOTH_SIDES) {
+            QRect bgRect(0, top, gutter->width(), bottom - top);
+            painter.fillRect(bgRect, bgBrush);
+        }
+
+        // Draw the line number only if the block's top is visible
+        if (blockRect.top() >= documentVisibleRect.top()) {
+            QString number = QString::number(block.blockNumber() + 1);
 
             QFont f = gutter->font();
             if (block.blockNumber() == blockNumberUnderCursor) {
                 f.setWeight(QFont::ExtraBold);
             }
             painter.setFont(f);
+            painter.setPen(fgColor);
 
-            int textFlags;
-            int textOffset;
-            if (gutter == d_leftLineNumberGutter) {
-                textFlags = (layoutDirection() == Qt::RightToLeft) ? Qt::AlignLeft : Qt::AlignRight;
-                textOffset = -5;
-            }
-            else {
-                textFlags = (layoutDirection() == Qt::RightToLeft) ? Qt::AlignRight : Qt::AlignLeft;
-                textOffset = 5;
-            }
-
-            QRectF r(textOffset, top, gutter->width(), painter.fontMetrics().height());
-            painter.drawText(r, textFlags, number);
+            QRectF textRect(textOffset, top, gutter->width(), painter.fontMetrics().height());
+            painter.drawText(textRect, textFlags, number);
         }
 
         block = block.next();
+        blockRect = layout->blockBoundingRect(block);
         top = bottom;
-        bottom = top + doc->documentLayout()->blockBoundingRect(block).height();
+        bottom = top + blockRect.intersected(documentVisibleRect).height();
     }
 }
 
