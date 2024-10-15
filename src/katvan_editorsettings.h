@@ -17,16 +17,10 @@
  */
 #pragma once
 
-#include <QDialog>
+#include <QFont>
+#include <QString>
 
 #include <optional>
-
-QT_BEGIN_NAMESPACE
-class QComboBox;
-class QFontComboBox;
-class QRadioButton;
-class QSpinBox;
-QT_END_NAMESPACE
 
 namespace katvan {
 
@@ -72,6 +66,7 @@ public:
     int tabWidth() const;
 
     LineNumberStyle lineNumberStyle() const;
+    bool showControlChars() const;
 
     void setFontFamily(const QString& fontFamily) { d_fontFamily = fontFamily; }
     void setFontSize(int fontSize) { d_fontSize = fontSize; }
@@ -80,6 +75,7 @@ public:
     void setIndentWidth(int indentWidth) { d_indentWidth = indentWidth; }
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
     void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
+    void setShowControlChars(bool show) { d_showControlChars = show; }
 
     bool hasFontFamily() const { return d_fontFamily.has_value(); }
     bool hasFontSize() const { return d_fontSize.has_value(); }
@@ -88,6 +84,7 @@ public:
     bool hasIndentWidth() const { return d_indentWidth.has_value(); }
     bool hasTabWidth() const { return d_tabWidth.has_value(); }
     bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
+    bool hasShowControlChars() const { return d_showControlChars.has_value(); }
 
     void mergeSettings(const EditorSettings& other);
 
@@ -101,33 +98,7 @@ private:
     std::optional<int> d_indentWidth;
     std::optional<int> d_tabWidth;
     std::optional<LineNumberStyle> d_lineNumberStyle;
-};
-
-class EditorSettingsDialog : public QDialog
-{
-    Q_OBJECT
-
-public:
-    EditorSettingsDialog(QWidget* parent = nullptr);
-
-    EditorSettings settings() const;
-    void setSettings(const EditorSettings& settings);
-
-private slots:
-    void updateControlStates();
-    void updateFontSizes();
-
-private:
-    void setupUI();
-
-    QFontComboBox* d_editorFontComboBox;
-    QComboBox* d_editorFontSizeComboBox;
-    QComboBox* d_lineNumberStyle;
-    QComboBox* d_indentMode;
-    QRadioButton* d_indentWithSpaces;
-    QRadioButton* d_indentWithTabs;
-    QSpinBox* d_indentWidth;
-    QSpinBox* d_tabWidth;
+    std::optional<bool> d_showControlChars;
 };
 
 }

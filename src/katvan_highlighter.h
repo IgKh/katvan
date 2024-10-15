@@ -60,6 +60,10 @@ private:
         const parsing::HighlightingListener& listener,
         QList<QTextCharFormat>& charFormats);
 
+    void doShowControlChars(
+        const QString& text,
+        QList<QTextCharFormat>& charFormats);
+
     parsing::SegmentList doSpellChecking(
         const QString& text,
         const parsing::ContentWordsListener& listener,

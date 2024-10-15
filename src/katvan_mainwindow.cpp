@@ -23,6 +23,7 @@
 #include "katvan_previewer.h"
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
+#include "katvan_settingsdialog.h"
 #include "katvan_spellchecker.h"
 #include "katvan_typstdriverwrapper.h"
 #include "katvan_utils.h"

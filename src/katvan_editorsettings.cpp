@@ -18,17 +18,6 @@
 #include "katvan_editorsettings.h"
 
 #include <QApplication>
-#include <QButtonGroup>
-#include <QDialogButtonBox>
-#include <QFontComboBox>
-#include <QFontDatabase>
-#include <QFormLayout>
-#include <QGridLayout>
-#include <QGroupBox>
-#include <QLabel>
-#include <QSpinBox>
-#include <QRadioButton>
-#include <QVBoxLayout>
 
 namespace katvan {
 
@@ -124,6 +113,9 @@ void EditorSettings::parseModeLine(QString mode)
                 d_lineNumberStyle = EditorSettings::LineNumberStyle::NONE;
             }
         }
+        else if (variable == QStringLiteral("show-control-chars")) {
+            d_showControlChars = parseModeLineBool(rest);
+        }
     }
 }
 
@@ -177,6 +169,14 @@ QString EditorSettings::toModeLine() const
                 break;
         }
     }
+    if (d_showControlChars) {
+        if (d_showControlChars.value()) {
+            result += QStringLiteral("show-control-chars on; ");
+        }
+        else {
+            result += QStringLiteral("show-control-chars off; ");
+        }
+    }
 
     return result.trimmed();
 }
@@ -227,6 +227,11 @@ EditorSettings::LineNumberStyle EditorSettings::lineNumberStyle() const
     return d_lineNumberStyle.value_or(EditorSettings::LineNumberStyle::BOTH_SIDES);
 }
 
+bool EditorSettings::showControlChars() const
+{
+    return d_showControlChars.value_or(true);
+}
+
 void EditorSettings::mergeSettings(const EditorSettings& other)
 {
     if (other.d_fontFamily) {
@@ -250,187 +255,8 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
     if (other.d_lineNumberStyle) {
         d_lineNumberStyle = other.d_lineNumberStyle;
     }
-}
-
-EditorSettingsDialog::EditorSettingsDialog(QWidget* parent)
-    : QDialog(parent)
-{
-    setupUI();
-
-    updateFontSizes();
-}
-
-EditorSettings EditorSettingsDialog::settings() const
-{
-    EditorSettings settings;
-
-    settings.setFontFamily(d_editorFontComboBox->currentFont().family());
-    settings.setFontSize(d_editorFontSizeComboBox->currentText().toInt());
-    settings.setLineNumberStyle(d_lineNumberStyle->currentData().value<EditorSettings::LineNumberStyle>());
-    settings.setIndentMode(d_indentMode->currentData().value<EditorSettings::IndentMode>());
-
-    if (d_indentWithSpaces->isChecked()) {
-        settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
-    }
-    else {
-        settings.setIndentStyle(EditorSettings::IndentStyle::TABS);
-    }
-
-    settings.setIndentWidth(d_indentWidth->value());
-    settings.setTabWidth(d_tabWidth->value());
-
-    return settings;
-}
-
-void EditorSettingsDialog::setSettings(const EditorSettings& settings)
-{
-    QFont font = settings.font();
-    d_editorFontComboBox->setCurrentFont(font);
-    d_editorFontSizeComboBox->setCurrentText(QString::number(font.pointSize()));
-
-    QVariant lineNumberStyle = QVariant::fromValue(settings.lineNumberStyle());
-    d_lineNumberStyle->setCurrentIndex(d_lineNumberStyle->findData(lineNumberStyle));
-
-    QVariant indentMode = QVariant::fromValue(settings.indentMode());
-    d_indentMode->setCurrentIndex(d_indentMode->findData(indentMode));
-
-    if (settings.indentStyle() == EditorSettings::IndentStyle::SPACES) {
-        d_indentWithSpaces->setChecked(true);
-    }
-    else {
-        d_indentWithTabs->setChecked(true);
-    }
-
-    d_indentWidth->setValue(settings.indentWidth());
-    d_tabWidth->setValue(settings.tabWidth());
-
-    updateControlStates();
-}
-
-void EditorSettingsDialog::setupUI()
-{
-    setWindowTitle(tr("Editor Settings"));
-
-    d_editorFontComboBox = new QFontComboBox();
-    connect(d_editorFontComboBox, &QFontComboBox::currentFontChanged, this, &EditorSettingsDialog::updateFontSizes);
-
-    QLabel* editorFontLabel = new QLabel(tr("Editor &Font:"));
-    editorFontLabel->setBuddy(d_editorFontComboBox);
-
-    d_editorFontSizeComboBox = new QComboBox();
-
-    d_lineNumberStyle = new QComboBox();
-    d_lineNumberStyle->addItem(tr("On Both Sides"), QVariant::fromValue(EditorSettings::LineNumberStyle::BOTH_SIDES));
-    d_lineNumberStyle->addItem(tr("On Primary Side"), QVariant::fromValue(EditorSettings::LineNumberStyle::PRIMARY_ONLY));
-    d_lineNumberStyle->addItem(tr("Don't Show"), QVariant::fromValue(EditorSettings::LineNumberStyle::NONE));
-
-    d_indentMode = new QComboBox();
-    d_indentMode->addItem(tr("None"), QVariant::fromValue(EditorSettings::IndentMode::NONE));
-    d_indentMode->addItem(tr("Normal"), QVariant::fromValue(EditorSettings::IndentMode::NORMAL));
-    d_indentMode->addItem(tr("Smart"), QVariant::fromValue(EditorSettings::IndentMode::SMART));
-
-    d_indentWithSpaces = new QRadioButton(tr("&Spaces"));
-    d_indentWithTabs = new QRadioButton(tr("&Tabs"));
-
-    QButtonGroup* indentStyleBtnGroup = new QButtonGroup(this);
-    indentStyleBtnGroup->addButton(d_indentWithSpaces);
-    indentStyleBtnGroup->addButton(d_indentWithTabs);
-    connect(indentStyleBtnGroup, &QButtonGroup::buttonToggled, this, &EditorSettingsDialog::updateControlStates);
-
-    d_indentWidth = new QSpinBox();
-    d_indentWidth->setSuffix(tr(" characters"));
-
-    d_tabWidth = new QSpinBox();
-    d_tabWidth->setSuffix(tr(" characters"));
-
-    QLabel* indentWidthLabel = new QLabel(tr("&Indent Width:"));
-    indentWidthLabel->setBuddy(d_indentWidth);
-
-    QLabel* tabWidthLabel = new QLabel(tr("Tab &Display Width:"));
-    tabWidthLabel->setBuddy(d_tabWidth);
-
-    QHBoxLayout* editorFontLayout = new QHBoxLayout();
-    editorFontLayout->addWidget(d_editorFontComboBox, 1);
-    editorFontLayout->addWidget(d_editorFontSizeComboBox);
-
-    QGroupBox* appearanceGroup = new QGroupBox(tr("Appearance"));
-    QFormLayout* appearanceLayout = new QFormLayout(appearanceGroup);
-    appearanceLayout->addRow(editorFontLabel, editorFontLayout);
-    appearanceLayout->addRow(tr("Show &Line Numbers:"), d_lineNumberStyle);
-
-    QGroupBox* indentationGroup = new QGroupBox(tr("Indentation"));
-    QVBoxLayout* indentationLayout = new QVBoxLayout(indentationGroup);
-
-    QFormLayout* indentationTopLayout = new QFormLayout();
-    indentationTopLayout->addRow(tr("Automatic Indentation:"), d_indentMode);
-
-    QGridLayout* indentationStyleLayout = new QGridLayout();
-    indentationStyleLayout->setColumnStretch(0, 3);
-    indentationStyleLayout->setColumnStretch(3, 1);
-
-    indentationStyleLayout->addWidget(new QLabel(tr("Indent with:")), 0, 0);
-    indentationStyleLayout->addWidget(d_indentWithSpaces, 1, 0);
-    indentationStyleLayout->addWidget(d_indentWithTabs, 2, 0);
-
-    indentationStyleLayout->addWidget(indentWidthLabel, 1, 2);
-    indentationStyleLayout->addWidget(d_indentWidth, 1, 3);
-    indentationStyleLayout->addWidget(tabWidthLabel, 2, 2);
-    indentationStyleLayout->addWidget(d_tabWidth, 2, 3);
-
-    indentationLayout->addLayout(indentationTopLayout);
-    indentationLayout->addLayout(indentationStyleLayout);
-
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->addWidget(appearanceGroup);
-    mainLayout->addWidget(indentationGroup);
-    mainLayout->addWidget(buttonBox);
-}
-
-void EditorSettingsDialog::updateControlStates()
-{
-    d_indentWidth->setEnabled(!d_indentWithTabs->isChecked());
-}
-
-void EditorSettingsDialog::updateFontSizes()
-{
-    QString currentFamily = d_editorFontComboBox->currentFont().family();
-
-    QList<int> pointSizes = QFontDatabase::pointSizes(currentFamily);
-    if (pointSizes.isEmpty()) {
-        // Might be a style tucked into the family name
-        qsizetype pos = currentFamily.lastIndexOf(QLatin1Char(' '));
-        if (pos > 0) {
-            pointSizes = QFontDatabase::pointSizes(currentFamily.sliced(0, pos).trimmed());
-        }
-    }
-
-    if (pointSizes.isEmpty()) {
-        // If still empty, just use defaults
-        pointSizes = QFontDatabase::standardSizes();
-    }
-
-    QString currentSizeText = d_editorFontSizeComboBox->currentText();
-    int currentSizeNewIndex = -1;
-
-    QStringList values;
-    values.reserve(pointSizes.size());
-    for (int size : std::as_const(pointSizes)) {
-        values.append(QString::number(size));
-
-        if (values.last() == currentSizeText) {
-            currentSizeNewIndex = values.size() - 1;
-        }
-    }
-
-    d_editorFontSizeComboBox->clear();
-    d_editorFontSizeComboBox->addItems(values);
-
-    if (currentSizeNewIndex >= 0) {
-        d_editorFontSizeComboBox->setCurrentIndex(currentSizeNewIndex);
+    if (other.d_showControlChars) {
+        d_showControlChars = other.d_showControlChars;
     }
 }
 

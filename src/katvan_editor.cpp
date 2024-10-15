@@ -32,13 +32,6 @@
 
 namespace katvan {
 
-static constexpr QChar ALM_MARK = (ushort)0x061c;
-static constexpr QChar LRM_MARK = (ushort)0x200e;
-static constexpr QChar RLM_MARK = (ushort)0x200f;
-static constexpr QChar LRI_MARK = (ushort)0x2066;
-static constexpr QChar RLI_MARK = (ushort)0x2067;
-static constexpr QChar PDI_MARK = (ushort)0x2069;
-
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
 
@@ -153,6 +146,15 @@ void Editor::applyEffectiveSettings()
 
     QTextOption textOption = document()->defaultTextOption();
     textOption.setTabStopDistance(d_effectiveSettings.tabWidth() * fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+
+    QTextOption::Flags flags;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    if (d_effectiveSettings.showControlChars()) {
+        flags |= QTextOption::ShowDefaultIgnorables;
+    }
+#endif
+
+    textOption.setFlags(flags);
     document()->setDefaultTextOption(textOption);
 
     EditorSettings::LineNumberStyle lineNumberStyle = d_effectiveSettings.lineNumberStyle();
@@ -184,19 +186,19 @@ QMenu* Editor::createInsertMenu()
 {
     QMenu* menu = new QMenu();
 
-    menu->addAction(tr("Right-to-Left Mark"), this, [this]() { insertMark(RLM_MARK); });
-    menu->addAction(tr("Left-to-Right Mark"), this, [this]() { insertMark(LRM_MARK); });
-    menu->addAction(tr("Arabic Letter Mark"), this, [this]() { insertMark(ALM_MARK); });
+    menu->addAction(tr("Right-to-Left Mark"), this, [this]() { insertMark(utils::RLM_MARK); });
+    menu->addAction(tr("Left-to-Right Mark"), this, [this]() { insertMark(utils::LRM_MARK); });
+    menu->addAction(tr("Arabic Letter Mark"), this, [this]() { insertMark(utils::ALM_MARK); });
 
     menu->addSeparator();
 
-    menu->addAction(tr("Right-to-Left Isolate"), this, [this]() { insertSurroundingMarks(RLI_MARK, PDI_MARK); });
-    menu->addAction(tr("Left-to-Right Isolate"), this, [this]() { insertSurroundingMarks(LRI_MARK, PDI_MARK); });
+    menu->addAction(tr("Right-to-Left Isolate"), this, [this]() { insertSurroundingMarks(utils::RLI_MARK, utils::PDI_MARK); });
+    menu->addAction(tr("Left-to-Right Isolate"), this, [this]() { insertSurroundingMarks(utils::LRI_MARK, utils::PDI_MARK); });
 
     menu->addSeparator();
 
     QAction* insertInlineMathAction = menu->addAction(tr("Inline &Math"), this, [this]() {
-        insertSurroundingMarks(LRI_MARK + QStringLiteral("$"), QStringLiteral("$") + PDI_MARK);
+        insertSurroundingMarks(utils::LRI_MARK + QStringLiteral("$"), QStringLiteral("$") + utils::PDI_MARK);
     });
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
@@ -224,23 +226,23 @@ void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
     QString blockText = cursor.block().text();
 
     if (dir == Qt::RightToLeft) {
-        if (blockText.startsWith(LRM_MARK)) {
+        if (blockText.startsWith(utils::LRM_MARK)) {
             cursor.deleteChar();
             blockText = blockText.sliced(1);
         }
-        if (!blockText.startsWith(RLM_MARK)
-            && !blockText.startsWith(ALM_MARK)
+        if (!blockText.startsWith(utils::RLM_MARK)
+            && !blockText.startsWith(utils::ALM_MARK)
             && utils::naturalTextDirection(blockText) != dir) {
-            cursor.insertText(RLM_MARK);
+            cursor.insertText(utils::RLM_MARK);
         }
     }
     else if (dir == Qt::LeftToRight) {
-        if (blockText.startsWith(RLM_MARK) || blockText.startsWith(ALM_MARK)) {
+        if (blockText.startsWith(utils::RLM_MARK) || blockText.startsWith(utils::ALM_MARK)) {
             cursor.deleteChar();
             blockText = blockText.sliced(1);
         }
-        if (!blockText.startsWith(LRM_MARK) && utils::naturalTextDirection(blockText) != dir) {
-            cursor.insertText(LRM_MARK);
+        if (!blockText.startsWith(utils::LRM_MARK) && utils::naturalTextDirection(blockText) != dir) {
+            cursor.insertText(utils::LRM_MARK);
         }
     }
 
@@ -375,7 +377,7 @@ QString Editor::getIndentString(QTextCursor cursor) const
 
 static bool isSingleBidiMark(QChar ch)
 {
-    return ch == LRM_MARK || ch == RLM_MARK || ch == ALM_MARK;
+    return ch == utils::LRM_MARK || ch == utils::RLM_MARK || ch == utils::ALM_MARK;
 }
 
 static bool isSpace(QChar ch)

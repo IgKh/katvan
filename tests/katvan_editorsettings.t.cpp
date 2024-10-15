@@ -97,6 +97,29 @@ TEST(EditorSettingsTests, LineNumberStyle) {
     EXPECT_THAT(s6.hasLineNumberStyle(), ::testing::IsFalse());
 }
 
+TEST(EditorSettingsTests, ShowControlChars) {
+    EditorSettings s1 { "show-control-chars ON" };
+    EXPECT_THAT(s1.hasShowControlChars(), ::testing::IsTrue());
+    EXPECT_THAT(s1.showControlChars(), ::testing::IsTrue());
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("show-control-chars on;")));
+
+    EditorSettings s2 { "show-control-chars 1" };
+    EXPECT_THAT(s2.hasShowControlChars(), ::testing::IsTrue());
+    EXPECT_THAT(s2.showControlChars(), ::testing::IsTrue());
+    EXPECT_THAT(s2.toModeLine(), ::testing::Eq(QStringLiteral("show-control-chars on;")));
+
+    EditorSettings s3 { "show-control-chars false" };
+    EXPECT_THAT(s3.hasShowControlChars(), ::testing::IsTrue());
+    EXPECT_THAT(s3.showControlChars(), ::testing::IsFalse());
+    EXPECT_THAT(s3.toModeLine(), ::testing::Eq(QStringLiteral("show-control-chars off;")));
+
+    EditorSettings s4 { "show-control-chars foo" };
+    EXPECT_THAT(s4.hasShowControlChars(), ::testing::IsFalse());
+
+    EditorSettings s5 { "show-control-chars" };
+    EXPECT_THAT(s5.hasShowControlChars(), ::testing::IsFalse());
+}
+
 TEST(EditorSettingsTests, IndentMode) {
     EditorSettings s1 { "indent-mode none" };
     EXPECT_THAT(s1.hasIndentMode(), ::testing::IsTrue());

@@ -18,6 +18,7 @@
 #include "katvan_editortheme.h"
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
+#include "katvan_utils.h"
 
 #include <QTextDocument>
 
@@ -62,6 +63,7 @@ void Highlighter::highlightBlock(const QString& text)
     charFormats.resize(text.size());
 
     doSyntaxHighlighting(highlightingListener, charFormats);
+    doShowControlChars(text, charFormats);
 
     parsing::SegmentList misspelledWords;
     misspelledWords = doSpellChecking(text, contentListenger, charFormats);
@@ -88,6 +90,20 @@ void Highlighter::doSyntaxHighlighting(
     for (const auto& m : std::as_const(markers)) {
         for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
             charFormats[i].merge(d_theme.highlightingFormat(m.kind));
+        }
+    }
+}
+
+void Highlighter::doShowControlChars(
+    const QString& text,
+    QList<QTextCharFormat>& charFormats)
+{
+    QTextCharFormat controlCharFormat;
+    controlCharFormat.setFontFamilies(QStringList() << "Unifont");
+
+    for (qsizetype i = 0; i < text.size(); i++) {
+        if (utils::isBidiControlChar(text[i])) {
+            charFormats[i].merge(controlCharFormat);
         }
     }
 }

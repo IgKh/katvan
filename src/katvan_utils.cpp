@@ -28,8 +28,15 @@
 
 namespace katvan::utils {
 
-static constexpr QChar LRI_MARK = (ushort)0x2066;
-static constexpr QChar PDI_MARK = (ushort)0x2069;
+bool isBidiControlChar(QChar ch)
+{
+    return ch == ALM_MARK
+        || ch == LRM_MARK
+        || ch == RLM_MARK
+        || ch == LRI_MARK
+        || ch == RLI_MARK
+        || ch == PDI_MARK;
+}
 
 QString getApplicationDir(bool& isInstalled)
 {

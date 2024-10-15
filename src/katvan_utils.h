@@ -26,6 +26,15 @@ QT_END_NAMESPACE
 
 namespace katvan::utils {
 
+static constexpr QChar ALM_MARK = (ushort)0x061c;
+static constexpr QChar LRM_MARK = (ushort)0x200e;
+static constexpr QChar RLM_MARK = (ushort)0x200f;
+static constexpr QChar LRI_MARK = (ushort)0x2066;
+static constexpr QChar RLI_MARK = (ushort)0x2067;
+static constexpr QChar PDI_MARK = (ushort)0x2069;
+
+bool isBidiControlChar(QChar ch);
+
 QString getApplicationDir(bool& isInstalled);
 
 QIcon themeIcon(const char* xdgIcon);
