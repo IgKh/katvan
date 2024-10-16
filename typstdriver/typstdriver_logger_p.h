@@ -28,10 +28,9 @@ class LoggerProxy
 public:
     LoggerProxy(Logger& logger);
 
-    void logOne(rust::Str message) const;
-
-    void logToBatch(rust::Str message) const;
-    void releaseBatched() const;
+    void logNote(rust::Str message) const;
+    void logWarning(rust::Str message, rust::Str file, int64_t line, int64_t col, rust::Vec<rust::Str> hints) const;
+    void logError(rust::Str message, rust::Str file, int64_t line, int64_t col, rust::Vec<rust::Str> hints) const;
 
 private:
     Logger& d_logger;

@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_diagnosticsmodel.h"
 #include "katvan_typstdriverwrapper.h"
 
-#include "typstdriver_engine.h"
-#include "typstdriver_logger.h"
 #include "typstdriver_packagemanager.h"
 
 #include <QDebug>
@@ -37,9 +36,11 @@ TypstDriverWrapper::TypstDriverWrapper(QObject* parent)
     d_thread->setObjectName("TypstDriverThread");
     d_thread->start();
 
+    d_diagnosticsModel = new DiagnosticsModel(this);
+
     d_compilerLogger = new typstdriver::Logger();
     d_compilerLogger->moveToThread(d_thread);
-    connect(d_compilerLogger, &typstdriver::Logger::messagesLogged, this, &TypstDriverWrapper::compilerOutputLogged);
+    connect(d_compilerLogger, &typstdriver::Logger::diagnosticLogged, d_diagnosticsModel, &DiagnosticsModel::addDiagnostic);
 
     d_packageManager = new typstdriver::PackageManager(d_compilerLogger);
     d_packageManager->moveToThread(d_thread);
@@ -70,6 +71,8 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     d_status = Status::INITIALIZING;
     Q_EMIT compilationStatusChanged();
 
+    d_diagnosticsModel->setInputFileName(sourceFileName);
+
     if (d_engine != nullptr) {
         d_engine->deleteLater();
     }
@@ -87,6 +90,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         }
     };
 
+    connect(d_engine, &typstdriver::Engine::compilationFinished, this, &TypstDriverWrapper::compilationFinished);
     connect(d_engine, &typstdriver::Engine::previewReady, this, &TypstDriverWrapper::previewReady);
     connect(d_engine, &typstdriver::Engine::pageRendered, this, &TypstDriverWrapper::pageRenderComplete);
     connect(d_engine, &typstdriver::Engine::exportFinished, this, &TypstDriverWrapper::exportFinished);
@@ -111,7 +115,7 @@ void TypstDriverWrapper::updatePreview(const QString& source)
     d_status = Status::PROCESSING;
     Q_EMIT compilationStatusChanged();
 
-    d_compilerOutput.clear();
+    d_diagnosticsModel->clear();
     QMetaObject::invokeMethod(d_engine, "compile", source);
 }
 
@@ -140,28 +144,10 @@ void TypstDriverWrapper::inverseSearch(int page, QPointF clickPoint)
     QMetaObject::invokeMethod(d_engine, "inverseSearch", page, clickPoint);
 }
 
-void TypstDriverWrapper::compilerOutputLogged(QStringList messages)
+void TypstDriverWrapper::compilationFinished()
 {
-    for (const QString& message : messages) {
-        std::optional<Status> newStatus;
-        if (message.indexOf("compiled successfully") >= 0 ) {
-            newStatus = Status::SUCCESS;
-        }
-        else if (message.indexOf("compiled with warnings") >= 0) {
-            newStatus = Status::SUCCESS_WITH_WARNINGS;
-        }
-        else if (message.indexOf("compiled with errors") >= 0) {
-            newStatus = Status::FAILED;
-        }
-
-        if (newStatus) {
-            d_status = newStatus.value();
-            Q_EMIT compilationStatusChanged();
-        }
-    }
-
-    d_compilerOutput.append(std::move(messages));
-    Q_EMIT outputReady(d_compilerOutput);
+    d_status = d_diagnosticsModel->impliedStatus();
+    Q_EMIT compilationStatusChanged();
 }
 
 void TypstDriverWrapper::pageRenderComplete(int page, QImage renderedPage)

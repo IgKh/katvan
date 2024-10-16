@@ -23,7 +23,48 @@
 #include <QObject>
 #include <QString>
 
+#include <optional>
+
 namespace katvan::typstdriver {
+
+class TYPSTDRIVER_EXPORT Diagnostic
+{
+    Q_GADGET
+
+public:
+    enum class Kind {
+        NOTE,
+        WARNING,
+        ERROR
+    };
+    Q_ENUM(Kind);
+
+    struct Location {
+        int line;
+        int column;
+    };
+
+    Diagnostic() : d_kind(Kind::NOTE) {}
+
+    Kind kind() const { return d_kind; }
+    QString message() const { return d_message; }
+    QString file() const { return d_file; }
+    std::optional<Location> location() const { return d_location; }
+    QStringList hints() const { return d_hints; }
+
+    void setKind(Kind kind) { d_kind = kind; }
+    void setMessage(const QString& message) { d_message = message; }
+    void setFile(const QString& file) { d_file = file; }
+    void setLocation(Location location) { d_location = location; }
+    void setHints(const QStringList& hints) { d_hints = hints; }
+
+private:
+    Kind d_kind;
+    QString d_message;
+    QString d_file;
+    std::optional<Location> d_location;
+    QStringList d_hints;
+};
 
 class TYPSTDRIVER_EXPORT Logger : public QObject
 {
@@ -32,14 +73,11 @@ class TYPSTDRIVER_EXPORT Logger : public QObject
 public:
     Logger(QObject* parent = nullptr);
 
-    void logMessage(const QString& message, bool toBatch = false);
-    void releaseBatched();
+    void logNote(const QString& message);
+    void logDiagnostic(Diagnostic diagnostic);
 
 signals:
-    void messagesLogged(QStringList messages);
-
-private:
-    QStringList d_batchedMessages;
+    void diagnosticLogged(Diagnostic diagnostic);
 };
 
 }

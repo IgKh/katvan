@@ -17,6 +17,7 @@
  */
 #include "katvan_backuphandler.h"
 #include "katvan_compileroutput.h"
+#include "katvan_diagnosticsmodel.h"
 #include "katvan_editor.h"
 #include "katvan_editorsettings.h"
 #include "katvan_mainwindow.h"
@@ -69,9 +70,11 @@ MainWindow::MainWindow()
     setupActions();
     setupStatusBar();
 
+    d_compilerOutput->setModel(d_driver->diagnosticsModel());
+
     connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::previewReady);
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
-    connect(d_driver, &TypstDriverWrapper::outputReady, d_compilerOutput, &CompilerOutput::setOutputLines);
+    connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, d_compilerOutput, &CompilerOutput::adjustColumnWidths);
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
 
@@ -401,8 +404,6 @@ void MainWindow::setCurrentFile(const QString& fileName)
     if (fileName.isEmpty()) {
         d_currentFileName.clear();
         d_currentFileShortName = tr("Untitled");
-
-        d_compilerOutput->setInputFileShortName(QString());
     }
     else {
         QFileInfo info(fileName);
@@ -410,7 +411,6 @@ void MainWindow::setCurrentFile(const QString& fileName)
         d_currentFileShortName = info.fileName();
 
         d_recentFiles->addRecent(d_currentFileName);
-        d_compilerOutput->setInputFileShortName(d_currentFileShortName);
     }
 
     d_editor->checkForModelines();

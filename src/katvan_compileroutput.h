@@ -18,11 +18,11 @@
 #pragma once
 
 #include <QList>
-#include <QPlainTextEdit>
+#include <QTreeView>
 
 namespace katvan {
 
-class CompilerOutput : public QPlainTextEdit
+class CompilerOutput : public QTreeView
 {
     Q_OBJECT
 
@@ -30,19 +30,16 @@ public:
     CompilerOutput(QWidget* parent = nullptr);
 
 public slots:
-    void setInputFileShortName(const QString& fileName);
-    void setOutputLines(const QStringList& output);
+    void adjustColumnWidths();
 
 signals:
     void goToPosition(int blockNum, int charOffset);
 
 protected:
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
-private:
-    QString d_fileName;
-    bool d_cursorOverLink;
+private slots:
+    void itemActivated(const QModelIndex& index);
 };
 
 }

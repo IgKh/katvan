@@ -59,14 +59,14 @@ pub(crate) mod ffi {
 
         type LoggerProxy;
 
-        #[rust_name = "log_one"]
-        fn logOne(&self, message: &str);
+        #[rust_name = "log_note"]
+        fn logNote(&self, message: &str);
 
-        #[rust_name = "log_to_batch"]
-        fn logToBatch(&self, message: &str);
+        #[rust_name = "log_warning"]
+        fn logWarning(&self, message: &str, file: &str, line: i64, col: i64, hints: Vec<&str>);
 
-        #[rust_name = "release_batched"]
-        fn releaseBatched(&self);
+        #[rust_name = "log_error"]
+        fn logError(&self, message: &str, file: &str, line: i64, col: i64, hints: Vec<&str>);
     }
 
     unsafe extern "C++" {
@@ -75,8 +75,12 @@ pub(crate) mod ffi {
         type PackageManagerProxy;
 
         #[rust_name = "get_package_local_path"]
-        fn getPackageLocalPath(self: Pin<&mut PackageManagerProxy>, package_namespace: &str, name: &str, version: &str)
-            -> String;
+        fn getPackageLocalPath(
+            self: Pin<&mut PackageManagerProxy>,
+            package_namespace: &str,
+            name: &str,
+            version: &str,
+        ) -> String;
 
         fn error(&self) -> PackageManagerError;
 
@@ -93,7 +97,7 @@ pub(crate) mod ffi {
 
         fn export_pdf(&self, path: &str) -> Result<()>;
 
-        fn foward_search(&self, line: usize, column: usize) -> Result<PreviewPosition>;
+        fn foward_search(&self, line: usize, column: usize) -> Result<Vec<PreviewPosition>>;
 
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 

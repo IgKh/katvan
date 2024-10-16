@@ -118,7 +118,7 @@ QString PackageManager::getLocalPackagePath(const QString& packageNamespace, con
 
 bool PackageManager::downloadFile(const QString& url, const QString& targetPath)
 {
-    d_logger->logMessage(QStringLiteral("downloading %1 ...").arg(url));
+    d_logger->logNote(QStringLiteral("downloading %1 ...").arg(url));
 
     QFile file(targetPath);
     if (!file.open(QIODevice::WriteOnly)) {
@@ -153,7 +153,7 @@ bool PackageManager::downloadFile(const QString& url, const QString& targetPath)
         return false;
     }
 
-    d_logger->logMessage("download complete");
+    d_logger->logNote("download complete");
     return true;
 }
 

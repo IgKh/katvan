@@ -109,6 +109,7 @@ void Engine::compile(const QString& source)
 
         Q_EMIT previewReady(result);
     }
+    Q_EMIT compilationFinished();
 }
 
 static void cleanupBuffer(void* buffer)
@@ -158,8 +159,20 @@ void Engine::forwardSearch(int line, int column)
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        PreviewPosition result = d_ptr->engine.value()->foward_search(static_cast<size_t>(line), static_cast<size_t>(column));
-        Q_EMIT jumpToPreview(result.page, QPointF(result.x_pts, result.y_pts));
+        rust::Vec<PreviewPosition> result = d_ptr->engine.value()->foward_search(
+            static_cast<size_t>(line),
+            static_cast<size_t>(column));
+
+        // TODO: There can be multiple positions returned since the same syntax
+        // node can appear in multiple places in the rendered document (e.g. a
+        // header can also appear in a TOC). According to the Typst Discord,
+        // the intention is to pick the match that is closest to the previewer's
+        // current scroll position. We should implement that too eventually, but
+        // for now just pick the first one.
+        if (!result.empty()) {
+            const auto& pos = result.front();
+            Q_EMIT jumpToPreview(pos.page, QPointF(pos.x_pts, pos.y_pts));
+        }
     }
     catch (rust::Error&) {
     }

@@ -18,8 +18,6 @@
 #include "typstdriver_logger.h"
 #include "typstdriver_logger_p.h"
 
-#include <QTime>
-
 namespace katvan::typstdriver {
 
 Logger::Logger(QObject* parent)
@@ -27,33 +25,18 @@ Logger::Logger(QObject* parent)
 {
 }
 
-static QString withTimestamp(const QString& message)
+void Logger::logNote(const QString& message)
 {
-    return "[" + QTime::currentTime().toString(Qt::ISODateWithMs) + "] " + message;
+    Diagnostic diag;
+    diag.setKind(Diagnostic::Kind::NOTE);
+    diag.setMessage(message);
+
+    logDiagnostic(std::move(diag));
 }
 
-void Logger::logMessage(const QString& message, bool toBatch)
+void Logger::logDiagnostic(Diagnostic diagnostic)
 {
-    if (toBatch) {
-        if (d_batchedMessages.isEmpty()) {
-            d_batchedMessages.append(withTimestamp(message));
-        }
-        else {
-            d_batchedMessages.append(message);
-        }
-    }
-    else {
-        releaseBatched();
-        Q_EMIT messagesLogged({ withTimestamp(message) });
-    }
-}
-
-void Logger::releaseBatched()
-{
-    if (!d_batchedMessages.isEmpty()) {
-        Q_EMIT messagesLogged(d_batchedMessages);
-        d_batchedMessages.clear();
-    }
+    Q_EMIT diagnosticLogged(std::move(diagnostic));
 }
 
 LoggerProxy::LoggerProxy(Logger& logger)
@@ -61,19 +44,55 @@ LoggerProxy::LoggerProxy(Logger& logger)
 {
 }
 
-void LoggerProxy::logOne(rust::Str message) const
+void LoggerProxy::logNote(rust::Str message) const
 {
-    d_logger.logMessage(QString::fromUtf8(message.data(), message.size()), false);
+    d_logger.logNote(QString::fromUtf8(message.data(), message.size()));
 }
 
-void LoggerProxy::logToBatch(rust::Str message) const
+static Diagnostic makeDiagnostic(
+    Diagnostic::Kind kind,
+    rust::Str message,
+    rust::Str file,
+    int32_t line,
+    int32_t col,
+    rust::Vec<rust::Str> rustHints)
 {
-    d_logger.logMessage(QString::fromUtf8(message.data(), message.size()), true);
+    Diagnostic diag;
+    diag.setKind(kind);
+    diag.setMessage(QString::fromUtf8(message.data(), message.size()));
+    diag.setFile(QString::fromUtf8(file.data(), file.size()));
+
+    if (line >= 0) {
+        diag.setLocation(Diagnostic::Location { line, col });
+    }
+
+    QStringList hints;
+    for (const auto& str : rustHints) {
+        hints.append(QString::fromUtf8(str.data(), str.size()));
+    }
+    diag.setHints(hints);
+
+    return diag;
 }
 
-void LoggerProxy::releaseBatched() const
+void LoggerProxy::logWarning(
+    rust::Str message,
+    rust::Str file,
+    int64_t line,
+    int64_t col,
+    rust::Vec<rust::Str> hints) const
 {
-    d_logger.releaseBatched();
+    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::WARNING, message, file, line, col, hints));
+}
+
+void LoggerProxy::logError(
+    rust::Str message,
+    rust::Str file,
+    int64_t line,
+    int64_t col,
+    rust::Vec<rust::Str> hints) const
+{
+    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::ERROR, message, file, line, col, hints));
 }
 
 }

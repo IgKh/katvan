@@ -25,6 +25,23 @@ use typst::World;
 use crate::bridge::ffi;
 use crate::world::{KatvanWorld, MAIN_ID};
 
+#[derive(Debug)]
+struct DiagnosticLocation {
+    file: String,
+    line: i64,
+    column: i64,
+}
+
+impl Default for DiagnosticLocation {
+    fn default() -> Self {
+        Self {
+            file: String::new(),
+            line: -1,
+            column: 0,
+        }
+    }
+}
+
 pub struct EngineImpl<'a> {
     logger: &'a ffi::LoggerProxy,
     world: KatvanWorld<'a>,
@@ -47,8 +64,6 @@ impl<'a> EngineImpl<'a> {
     pub fn compile(&mut self, source: &str, now: &str) -> Vec<ffi::PreviewPageDataInternal> {
         self.world.reset_source(source, now);
 
-        self.logger.log_one("compiling ...");
-
         let start = std::time::Instant::now();
         let res = typst::compile(&self.world);
 
@@ -56,16 +71,15 @@ impl<'a> EngineImpl<'a> {
         let warnings = res.warnings;
 
         if let Ok(doc) = res.output {
+            self.log_diagnostics(&warnings);
+
             if warnings.is_empty() {
                 self.logger
-                    .log_to_batch(&format!("compiled successfully in {elapsed}"));
+                    .log_note(&format!("compiled successfully in {elapsed}"));
             } else {
                 self.logger
-                    .log_to_batch(&format!("compiled with warnings in {elapsed}"));
+                    .log_note(&format!("compiled with warnings in {elapsed}"));
             }
-
-            self.log_diagnostics(&warnings);
-            self.logger.release_batched();
 
             comemo::evict(5);
 
@@ -85,11 +99,10 @@ impl<'a> EngineImpl<'a> {
         } else {
             let errors = res.output.unwrap_err();
 
-            self.logger
-                .log_to_batch(&format!("compiled with errors in {elapsed}"));
             self.log_diagnostics(&errors);
             self.log_diagnostics(&warnings);
-            self.logger.release_batched();
+            self.logger
+                .log_note(&format!("compiled with errors in {elapsed}"));
 
             Vec::new()
         }
@@ -97,32 +110,40 @@ impl<'a> EngineImpl<'a> {
 
     fn log_diagnostics(&self, diagnostics: &[typst::diag::SourceDiagnostic]) {
         for diag in diagnostics {
-            let msg = format!(
-                "{}: {}: {}",
-                self.span_to_location(diag.span),
-                match diag.severity {
-                    typst::diag::Severity::Error => "error",
-                    typst::diag::Severity::Warning => "warning",
-                },
-                diag.message
-            );
-            self.logger.log_to_batch(&msg);
+            // Find first span (of the diagnostic itself, or the traceback to
+            // it) that is located in the main source.
+            let span = std::iter::once(diag.span)
+                .chain(diag.trace.iter().map(|t| t.span))
+                .filter(|span| span.id() == Some(*MAIN_ID))
+                .next()
+                .unwrap_or(diag.span);
 
-            for trace in &diag.trace {
-                let msg = format!("{}: note: {}", self.span_to_location(trace.span), trace.v);
-                self.logger.log_to_batch(&msg);
-            }
+            let location = self.span_to_location(span);
+            let hints = diag.hints.iter().map(|hint| hint.as_str()).collect();
 
-            for hint in &diag.hints {
-                self.logger.log_to_batch(&format!("hint: {hint}"));
-            }
+            match diag.severity {
+                typst::diag::Severity::Error => self.logger.log_error(
+                    &diag.message,
+                    &location.file,
+                    location.line,
+                    location.column,
+                    hints,
+                ),
+                typst::diag::Severity::Warning => self.logger.log_warning(
+                    &diag.message,
+                    &location.file,
+                    location.line,
+                    location.column,
+                    hints,
+                ),
+            };
         }
     }
 
-    fn span_to_location(&self, span: typst::syntax::Span) -> String {
+    fn span_to_location(&self, span: typst::syntax::Span) -> DiagnosticLocation {
         let id = match span.id() {
             Some(id) => id,
-            None => return String::new(),
+            None => return DiagnosticLocation::default(),
         };
 
         let source = self.world.source(id).unwrap();
@@ -137,7 +158,11 @@ impl<'a> EngineImpl<'a> {
         let line = source.byte_to_line(range.start).unwrap_or(0);
         let col = source.byte_to_column(range.start).unwrap_or(0);
 
-        format!("{}{}:{}:{}", package, file, line + 1, col)
+        DiagnosticLocation {
+            file: format!("{}{}", package, file),
+            line: (line + 1) as i64,
+            column: col as i64,
+        }
     }
 
     pub fn render_page(&self, page: usize, point_size: f32) -> Result<ffi::RenderedPage> {
@@ -172,7 +197,7 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn foward_search(&self, line: usize, column: usize) -> Result<ffi::PreviewPosition> {
+    pub fn foward_search(&self, line: usize, column: usize) -> Result<Vec<ffi::PreviewPosition>> {
         let document = self.result.as_ref().context("Invalid state")?;
         let main = self.world.main_source();
 
@@ -180,22 +205,17 @@ impl<'a> EngineImpl<'a> {
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
-        // TODO: There can be multiple positions returned since the same syntax
-        // node can appear in multiple places in the rendered document (e.g. a
-        // header can also appear in a TOC). According to the Typst Discord,
-        // the intention is to pick the match that is closest to the previewer's
-        // current scroll position. We should implement that too eventually, but
-        // for now just pick the first one.
         let positions = typst_ide::jump_from_cursor(document, &main, cursor);
 
-        match positions.first() {
-            Some(pos) => Ok(ffi::PreviewPosition {
+        let result = positions
+            .into_iter()
+            .map(|pos| ffi::PreviewPosition {
                 page: usize::from(pos.page) - 1,
                 x_pts: pos.point.x.to_pt(),
                 y_pts: pos.point.y.to_pt(),
-            }),
-            None => Err(anyhow::anyhow!("Position not found in preview")),
-        }
+            })
+            .collect();
+        Ok(result)
     }
 
     fn convert_jump_to_source_position(

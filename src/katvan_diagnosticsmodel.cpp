@@ -1,0 +1,170 @@
+/*
+ * This file is part of Katvan
+ * Copyright (c) 2024 Igor Khanin
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "katvan_diagnosticsmodel.h"
+
+#include <QFileInfo>
+#include <QIcon>
+
+namespace katvan {
+
+static constexpr QLatin1StringView MAIN_SOURCE = QLatin1StringView("MAIN");
+
+DiagnosticsModel::DiagnosticsModel(QObject* parent)
+    : QAbstractTableModel(parent)
+{
+}
+
+void DiagnosticsModel::setInputFileName(const QString& fileName)
+{
+    if (fileName.isEmpty()) {
+        d_shortFileName = "Untitled";
+    }
+    else {
+        d_shortFileName = QFileInfo(fileName).fileName();
+    }
+}
+
+TypstDriverWrapper::Status DiagnosticsModel::impliedStatus() const
+{
+    bool hasWarnings = false;
+
+    for (const auto& diagnostic : d_diagnostics) {
+        if (diagnostic.kind() == typstdriver::Diagnostic::Kind::ERROR) {
+            return TypstDriverWrapper::Status::FAILED;
+        }
+        else if (diagnostic.kind() == typstdriver::Diagnostic::Kind::WARNING) {
+            hasWarnings = true;
+        }
+    }
+
+    return hasWarnings
+        ? TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS
+        : TypstDriverWrapper::Status::SUCCESS;
+}
+
+std::optional<std::tuple<int, int>> DiagnosticsModel::getSourceLocation(const QModelIndex& index) const
+{
+    if (!index.isValid() || index.row() >= d_diagnostics.size()) {
+        return std::nullopt;
+    }
+
+    const auto& diagnostic = d_diagnostics[index.row()];
+    if (diagnostic.file() != MAIN_SOURCE) {
+        return std::nullopt;
+    }
+
+    const auto& location = diagnostic.location();
+    if (location) {
+        return std::make_tuple(location.value().line, location.value().column);
+    }
+    return std::nullopt;
+}
+
+int DiagnosticsModel::rowCount(const QModelIndex& parent) const
+{
+    if (parent.isValid()) {
+        return 0;
+    }
+    return d_diagnostics.size();
+}
+
+int DiagnosticsModel::columnCount(const QModelIndex& parent) const
+{
+    if (parent.isValid()) {
+        return 0;
+    }
+    return COLUMN_COUNT;
+}
+
+QVariant DiagnosticsModel::data(const QModelIndex& index, int role) const
+{
+    if (!index.isValid() || index.row() >= d_diagnostics.size()) {
+        return QVariant();
+    }
+
+    if (role == Qt::TextAlignmentRole) {
+        return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+
+    const auto& diagnostic = d_diagnostics[index.row()];
+
+    if (index.column() == COLUMN_SEVERITY) {
+        auto kind = diagnostic.kind();
+        if (role == Qt::DecorationRole) {
+            switch (kind) {
+                case typstdriver::Diagnostic::Kind::NOTE:
+                    return QIcon(":/icons/data-information.svg");
+                case typstdriver::Diagnostic::Kind::WARNING:
+                    return QIcon(":/icons/data-warning.svg");
+                case typstdriver::Diagnostic::Kind::ERROR:
+                    return QIcon(":/icons/data-error.svg");
+                default:
+                    return QVariant();
+            }
+        }
+        else if (role == Qt::AccessibleTextRole || role == Qt::ToolTipRole) {
+            switch (kind) {
+                case typstdriver::Diagnostic::Kind::NOTE:
+                    return tr("Note");
+                case typstdriver::Diagnostic::Kind::WARNING:
+                    return tr("Warning");
+                case typstdriver::Diagnostic::Kind::ERROR:
+                    return tr("Error");
+                default:
+                    return QVariant();
+            }
+        }
+    }
+    else if (index.column() == COLUMN_FILE && (role == Qt::DisplayRole || role == Qt::ToolTipRole)) {
+        QString fileName = diagnostic.file();
+        if (fileName == MAIN_SOURCE) {
+            return d_shortFileName;
+        }
+        return fileName;
+    }
+    else if (index.column() == COLUMN_SOURCE_LOCATION && role == Qt::DisplayRole) {
+        if (diagnostic.location()) {
+            auto location = diagnostic.location().value();
+            return QString("%1:%2").arg(location.line).arg(location.column);
+        }
+    }
+    else if (index.column() == COLUMN_MESSAGE && (role == Qt::DisplayRole || role == Qt::ToolTipRole)) {
+        QString message = diagnostic.message();
+        for (const QString& hint : diagnostic.hints()) {
+            message += QChar::LineFeed + QStringLiteral("Hint: ") + hint;
+        }
+        return message;
+    }
+    return QVariant();
+}
+
+void DiagnosticsModel::clear()
+{
+    beginResetModel();
+    d_diagnostics.clear();
+    endResetModel();
+}
+
+void DiagnosticsModel::addDiagnostic(const typstdriver::Diagnostic& diagnostic)
+{
+    beginInsertRows(QModelIndex(), d_diagnostics.size(), d_diagnostics.size());
+    d_diagnostics.append(diagnostic);
+    endInsertRows();
+}
+
+}

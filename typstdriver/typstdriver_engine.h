@@ -50,6 +50,7 @@ public:
 
 signals:
     void initialized();
+    void compilationFinished();
     void previewReady(QList<katvan::typstdriver::PreviewPageData> pages);
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);

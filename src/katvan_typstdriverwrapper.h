@@ -18,6 +18,7 @@
 #pragma once
 
 #include "typstdriver_engine.h"
+#include "typstdriver_logger.h"
 
 #include <QList>
 #include <QObject>
@@ -29,9 +30,9 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
+class DiagnosticsModel;
+
 namespace typstdriver {
-class Engine;
-class Logger;
 class PackageManager;
 }
 
@@ -56,12 +57,12 @@ public:
     static QString typstVersion();
 
     Status status() const { return d_status; }
+    DiagnosticsModel* diagnosticsModel() { return d_diagnosticsModel; }
 
     void resetInputFile(const QString& sourceFileName);
 
 signals:
     void previewReady(QList<katvan::typstdriver::PreviewPageData> pages);
-    void outputReady(const QStringList& output);
     void compilationStatusChanged();
     void pageRendered(int page, QImage renderedPage);
     void exportFinished(QString errorMessage);
@@ -76,7 +77,7 @@ public slots:
     void inverseSearch(int page, QPointF clickPoint);
 
 private slots:
-    void compilerOutputLogged(QStringList messages);
+    void compilationFinished();
     void pageRenderComplete(int page, QImage renderedPage);
 
 private:
@@ -84,10 +85,10 @@ private:
     typstdriver::Logger* d_compilerLogger;
     typstdriver::PackageManager* d_packageManager;
 
+    DiagnosticsModel* d_diagnosticsModel;
     QThread* d_thread;
 
     Status d_status;
-    QStringList d_compilerOutput;
     QString d_pendingSourceToCompile;
     QSet<int> d_pendingPagesToRender;
 };

@@ -16,93 +16,64 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_compileroutput.h"
+#include "katvan_diagnosticsmodel.h"
 
 #include <QFontDatabase>
-#include <QGuiApplication>
-#include <QMouseEvent>
-#include <QRegularExpression>
-
-// MAIN:89:13: error: unknown variable: abc
-Q_GLOBAL_STATIC(QRegularExpression, DIAGNOSTIC_MESSAGE_REGEX,
-                QStringLiteral("^MAIN:(\\d+):(\\d+):\\s+(.+)$"))
+#include <QHeaderView>
 
 namespace katvan {
 
 CompilerOutput::CompilerOutput(QWidget* parent)
-    : QPlainTextEdit(parent)
-    , d_cursorOverLink(false)
+    : QTreeView(parent)
 {
-    setReadOnly(true);
-    setMouseTracking(true);
+    setHeaderHidden(true);
+    setRootIsDecorated(false);
+    setAlternatingRowColors(true);
+    header()->setStretchLastSection(true);
+
     setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    setLayoutDirection(Qt::LeftToRight);
+
+    connect(this, &QTreeView::activated, this, &CompilerOutput::itemActivated);
 }
 
-void CompilerOutput::setInputFileShortName(const QString& fileName)
+void CompilerOutput::adjustColumnWidths()
 {
-    d_fileName = fileName;
+    int severityWidth = 22;
+    int locationWidth = fontMetrics().horizontalAdvance("0000:000");
+    int availableWidthForFileName = viewport()->width() - severityWidth - locationWidth;
+    int fileNameSizeHint = sizeHintForColumn(DiagnosticsModel::COLUMN_FILE);
+
+    // If there is enough space for fully accomodate the file name, give it that
+    // much width. Otherwise, give it 25% of the total width.
+    int fileNameWidth = (fileNameSizeHint <= availableWidthForFileName)
+        ? fileNameSizeHint
+        : qRound(viewport()->width() / 4.0);
+
+    setColumnWidth(DiagnosticsModel::COLUMN_SEVERITY, severityWidth);
+    setColumnWidth(DiagnosticsModel::COLUMN_FILE, fileNameWidth);
+    setColumnWidth(DiagnosticsModel::COLUMN_SOURCE_LOCATION, locationWidth);
 }
 
-void CompilerOutput::setOutputLines(const QStringList& output)
+void CompilerOutput::resizeEvent(QResizeEvent* event)
 {
-    clear();
-    QTextCursor cursor(document());
-
-    QTextCharFormat origFormat = cursor.charFormat();
-
-    for (const auto& line : output) {
-        QRegularExpressionMatch m = DIAGNOSTIC_MESSAGE_REGEX->match(line);
-        if (!m.hasMatch()) {
-            cursor.insertText(line);
-        }
-        else {
-            QString row = m.captured(1);
-            QString col = m.captured(2);
-
-            QString locator = QStringLiteral("%1:%2:%3").arg(
-                d_fileName.isEmpty() ? "Untitled" : d_fileName,
-                row,
-                col);
-
-            QTextCharFormat linkFormat = origFormat;
-            linkFormat.setAnchor(true);
-            linkFormat.setAnchorHref(QStringLiteral("%1:%2").arg(row, col));
-            linkFormat.setFontUnderline(true);
-
-            cursor.insertText(locator, linkFormat);
-            cursor.insertText(": " + m.captured(3), origFormat);
-        }
-        cursor.insertBlock();
-    }
+    QTreeView::resizeEvent(event);
+    adjustColumnWidths();
 }
 
-void CompilerOutput::mouseMoveEvent(QMouseEvent* event)
+void CompilerOutput::itemActivated(const QModelIndex& index)
 {
-    QPlainTextEdit::mouseMoveEvent(event);
-
-    QString anchor = anchorAt(event->pos());
-    if (!anchor.isEmpty() && !d_cursorOverLink) {
-        d_cursorOverLink = true;
-        qGuiApp->setOverrideCursor(Qt::PointingHandCursor);
-    }
-    else if (anchor.isEmpty() && d_cursorOverLink) {
-        d_cursorOverLink = false;
-        qGuiApp->restoreOverrideCursor();
-    }
-}
-
-void CompilerOutput::mouseReleaseEvent(QMouseEvent* event)
-{
-    QString anchor = anchorAt(event->pos());
-    if ((event->button() & Qt::LeftButton) && !anchor.isEmpty()) {
-        QStringList parts = anchor.split(QLatin1Char(':'));
-        Q_ASSERT(parts.size() == 2);
-
-        int block = parts[0].toInt() - 1;
-        int offset = parts[1].toInt();
-        Q_EMIT goToPosition(block, offset);
+    if (!index.isValid()) {
+        return;
     }
 
-    QPlainTextEdit::mouseReleaseEvent(event);
+    DiagnosticsModel* dmodel = qobject_cast<DiagnosticsModel*>(model());
+
+    auto result = dmodel->getSourceLocation(index);
+    if (result) {
+        const auto [line, column] = *result;
+        Q_EMIT goToPosition(line - 1, column);
+    }
 }
 
 }
