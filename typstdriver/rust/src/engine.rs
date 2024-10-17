@@ -177,7 +177,7 @@ impl<'a> EngineImpl<'a> {
         })
     }
 
-    pub fn export_pdf(&self, path: &str) -> Result<()> {
+    pub fn export_pdf(&self, path: &str) -> Result<bool> {
         let document = self.result.as_ref().context("Invalid state")?;
 
         let options = typst_pdf::PdfOptions {
@@ -187,13 +187,30 @@ impl<'a> EngineImpl<'a> {
             standards: typst_pdf::PdfStandards::default(),
         };
 
+        let start = std::time::Instant::now();
         let result = typst_pdf::pdf(document, &options);
+
+        let elapsed = format!("{:.2?}", start.elapsed());
+
         if let Ok(data) = result {
-            std::fs::write(path, data).map_err(|err| err.into())
+            match std::fs::write(path, data) {
+                Ok(_) => {
+                    self.logger.log_note(&format!("PDF exported successfully to {path} in {elapsed}"));
+                    Ok(true)
+                },
+                Err(err) => {
+                    self.logger.log_error(
+                        &format!("Unable to write to {path}: {err}"),
+                        "",
+                        -1,
+                        -1,
+                        Vec::new());
+                    Ok(false)
+                }
+            }
         } else {
-            // TODO: PDF generation now can return diagnostics just like
-            // compilation. Find a good way to display those.
-            Err(anyhow::anyhow!("PDF generation failed"))
+            self.log_diagnostics(&result.unwrap_err());
+            Ok(false)
         }
     }
 

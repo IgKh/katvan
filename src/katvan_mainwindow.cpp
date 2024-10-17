@@ -673,14 +673,11 @@ void MainWindow::exportPdf()
         return;
     }
 
-    auto onComplete = [this, targetFileName](QString errorMessage) {
+    auto onComplete = [this](bool ok) {
+        d_compilerOutput->adjustColumnWidths();
         qApp->restoreOverrideCursor();
-
-        if (!errorMessage.isEmpty()) {
-            QMessageBox::critical(
-                this,
-                QCoreApplication::applicationName(),
-                tr("Failed exporting PDF to %1: %2").arg(utils::formatFilePath(targetFileName), errorMessage));
+        if (!ok) {
+            d_compilerOutput->show();
         }
     };
 

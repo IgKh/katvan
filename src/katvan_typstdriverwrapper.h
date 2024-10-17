@@ -65,7 +65,7 @@ signals:
     void previewReady(QList<katvan::typstdriver::PreviewPageData> pages);
     void compilationStatusChanged();
     void pageRendered(int page, QImage renderedPage);
-    void exportFinished(QString errorMessage);
+    void exportFinished(bool success);
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
 

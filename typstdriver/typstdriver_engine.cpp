@@ -146,11 +146,11 @@ void Engine::exportToPdf(const QString& outputFile)
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        d_ptr->engine.value()->export_pdf(qstringToRust(outputFile));
-        Q_EMIT exportFinished(QString());
+        bool ok = d_ptr->engine.value()->export_pdf(qstringToRust(outputFile));
+        Q_EMIT exportFinished(ok);
     }
     catch (rust::Error& e) {
-        Q_EMIT exportFinished(QString::fromUtf8(e.what(), -1));
+        qWarning() << "Error exporting to PDF" << outputFile << ":" << e.what();
     }
 }
 

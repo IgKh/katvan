@@ -131,6 +131,7 @@ void TypstDriverWrapper::renderPage(int page, qreal pointSize)
 
 void TypstDriverWrapper::exportToPdf(const QString& filePath)
 {
+    d_diagnosticsModel->clear();
     QMetaObject::invokeMethod(d_engine, "exportToPdf", filePath);
 }
 
