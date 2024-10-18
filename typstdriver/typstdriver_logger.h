@@ -77,7 +77,7 @@ public:
     void logDiagnostic(Diagnostic diagnostic);
 
 signals:
-    void diagnosticLogged(Diagnostic diagnostic);
+    void diagnosticLogged(katvan::typstdriver::Diagnostic diagnostic);
 };
 
 }

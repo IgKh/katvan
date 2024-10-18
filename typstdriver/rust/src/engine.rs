@@ -114,8 +114,7 @@ impl<'a> EngineImpl<'a> {
             // it) that is located in the main source.
             let span = std::iter::once(diag.span)
                 .chain(diag.trace.iter().map(|t| t.span))
-                .filter(|span| span.id() == Some(*MAIN_ID))
-                .next()
+                .find(|span| span.id() == Some(*MAIN_ID))
                 .unwrap_or(diag.span);
 
             let location = self.span_to_location(span);

@@ -18,10 +18,26 @@
 #include "katvan_compileroutput.h"
 #include "katvan_diagnosticsmodel.h"
 
-#include <QFontDatabase>
 #include <QHeaderView>
+#include <QResizeEvent>
+#include <QStyledItemDelegate>
 
 namespace katvan {
+
+class DiagnosticsItemDelegate : public QStyledItemDelegate {
+public:
+    DiagnosticsItemDelegate(QObject *parent = nullptr)
+        : QStyledItemDelegate(parent) {}
+
+protected:
+    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override
+    {
+        QStyledItemDelegate::initStyleOption(option, index);
+
+        // Not interested in individual focus rects on columns
+        option->state &= ~QStyle::State_HasFocus;
+    }
+};
 
 CompilerOutput::CompilerOutput(QWidget* parent)
     : QTreeView(parent)
@@ -29,39 +45,82 @@ CompilerOutput::CompilerOutput(QWidget* parent)
     setHeaderHidden(true);
     setRootIsDecorated(false);
     setAlternatingRowColors(true);
-    header()->setStretchLastSection(true);
-
-    setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    setItemDelegate(new DiagnosticsItemDelegate(this));
     setLayoutDirection(Qt::LeftToRight);
+    setMouseTracking(true);
+    header()->setStretchLastSection(false);
 
-    connect(this, &QTreeView::activated, this, &CompilerOutput::itemActivated);
+    connect(this, &QTreeView::clicked, this, &CompilerOutput::indexClicked);
+}
+
+void CompilerOutput::setModel(QAbstractItemModel* model)
+{
+    Q_ASSERT(qobject_cast<DiagnosticsModel*>(model) != nullptr);
+
+    QTreeView::setModel(model);
+
+    header()->setSectionResizeMode(DiagnosticsModel::COLUMN_SEVERITY, QHeaderView::Fixed);
+    header()->setSectionResizeMode(DiagnosticsModel::COLUMN_MESSAGE, QHeaderView::Stretch);
+    header()->setSectionResizeMode(DiagnosticsModel::COLUMN_SOURCE_LOCATION, QHeaderView::Fixed);
 }
 
 void CompilerOutput::adjustColumnWidths()
 {
+    adjustColumnWidths(viewport()->size());
+}
+
+void CompilerOutput::adjustColumnWidths(QSize viewportSize)
+{
     int severityWidth = 22;
-    int locationWidth = fontMetrics().horizontalAdvance("0000:000");
-    int availableWidthForFileName = viewport()->width() - severityWidth - locationWidth;
-    int fileNameSizeHint = sizeHintForColumn(DiagnosticsModel::COLUMN_FILE);
+    int messageSizeHint = sizeHintForColumn(DiagnosticsModel::COLUMN_MESSAGE);
+    int locationSizeHint = sizeHintForColumn(DiagnosticsModel::COLUMN_SOURCE_LOCATION);
+    int availableWidthForLocation = viewportSize.width() - severityWidth - messageSizeHint;
 
     // If there is enough space for fully accomodate the file name, give it that
-    // much width. Otherwise, give it 25% of the total width.
-    int fileNameWidth = (fileNameSizeHint <= availableWidthForFileName)
-        ? fileNameSizeHint
-        : qRound(viewport()->width() / 4.0);
+    // much width. Otherwise, give it up to 25% of the total width.
+    int locationWidth = (locationSizeHint <= availableWidthForLocation)
+        ? locationSizeHint
+        : qMin(qRound(viewportSize.width() / 4.0), locationSizeHint);
 
     setColumnWidth(DiagnosticsModel::COLUMN_SEVERITY, severityWidth);
-    setColumnWidth(DiagnosticsModel::COLUMN_FILE, fileNameWidth);
     setColumnWidth(DiagnosticsModel::COLUMN_SOURCE_LOCATION, locationWidth);
 }
 
 void CompilerOutput::resizeEvent(QResizeEvent* event)
 {
+    if (!model()) {
+        return;
+    }
+
     QTreeView::resizeEvent(event);
-    adjustColumnWidths();
+    adjustColumnWidths(event->size());
 }
 
-void CompilerOutput::itemActivated(const QModelIndex& index)
+void CompilerOutput::mouseMoveEvent(QMouseEvent* event)
+{
+    QTreeView::mouseMoveEvent(event);
+
+    QModelIndex index = indexAt(event->pos());
+    if (index.isValid()) {
+        QVariant cursor = index.data(DiagnosticsModel::ROLE_MOUSE_CURSOR);
+        if (cursor.isValid()) {
+            setCursor(qvariant_cast<QCursor>(cursor));
+            return;
+        }
+    }
+    setCursor(Qt::ArrowCursor);
+}
+
+void CompilerOutput::keyPressEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Escape) {
+        clearSelection();
+        return;
+    }
+    QTreeView::keyPressEvent(event);
+}
+
+void CompilerOutput::indexClicked(const QModelIndex& index)
 {
     if (!index.isValid()) {
         return;

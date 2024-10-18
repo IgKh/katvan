@@ -74,7 +74,6 @@ MainWindow::MainWindow()
 
     connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::previewReady);
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
-    connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, d_compilerOutput, &CompilerOutput::adjustColumnWidths);
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
 
@@ -860,6 +859,7 @@ void MainWindow::compilationStatusChanged()
     if (status != TypstDriverWrapper::Status::PROCESSING) {
         d_compilingMovie->stop();
     }
+    d_compilerOutput->adjustColumnWidths();
 
     if (status == TypstDriverWrapper::Status::PROCESSING) {
         d_compilationStatusButton->setText(tr("Compiling..."));

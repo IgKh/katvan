@@ -22,6 +22,7 @@
 #include "typstdriver_logger.h"
 
 #include <QAbstractTableModel>
+#include <QFont>
 #include <QList>
 
 #include <optional>
@@ -36,10 +37,13 @@ class DiagnosticsModel : public QAbstractTableModel
 public:
     enum {
         COLUMN_SEVERITY = 0,
-        COLUMN_FILE,
-        COLUMN_SOURCE_LOCATION,
         COLUMN_MESSAGE,
+        COLUMN_SOURCE_LOCATION,
         COLUMN_COUNT
+    };
+
+    enum {
+        ROLE_MOUSE_CURSOR = Qt::UserRole + 1,
     };
 
     DiagnosticsModel(QObject* parent = nullptr);
@@ -55,9 +59,10 @@ public:
 
 public slots:
     void clear();
-    void addDiagnostic(const typstdriver::Diagnostic& diagnostic);
+    void addDiagnostic(const katvan::typstdriver::Diagnostic& diagnostic);
 
 private:
+    QFont d_font;
     QString d_shortFileName;
     QList<typstdriver::Diagnostic> d_diagnostics;
 };

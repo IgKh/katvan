@@ -29,17 +29,22 @@ class CompilerOutput : public QTreeView
 public:
     CompilerOutput(QWidget* parent = nullptr);
 
+    void setModel(QAbstractItemModel* model) override;
+
 public slots:
     void adjustColumnWidths();
+    void adjustColumnWidths(QSize viewportSize);
 
 signals:
     void goToPosition(int blockNum, int charOffset);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
-    void itemActivated(const QModelIndex& index);
+    void indexClicked(const QModelIndex& index);
 };
 
 }

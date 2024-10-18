@@ -17,7 +17,9 @@
  */
 #include "katvan_diagnosticsmodel.h"
 
+#include <QCursor>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QIcon>
 
 namespace katvan {
@@ -27,6 +29,7 @@ static constexpr QLatin1StringView MAIN_SOURCE = QLatin1StringView("MAIN");
 DiagnosticsModel::DiagnosticsModel(QObject* parent)
     : QAbstractTableModel(parent)
 {
+    d_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 }
 
 void DiagnosticsModel::setInputFileName(const QString& fileName)
@@ -103,6 +106,19 @@ QVariant DiagnosticsModel::data(const QModelIndex& index, int role) const
 
     const auto& diagnostic = d_diagnostics[index.row()];
 
+    if (role == Qt::FontRole) {
+        QFont font = d_font;
+        if (index.column() == COLUMN_SOURCE_LOCATION && diagnostic.file() == MAIN_SOURCE) {
+            font.setUnderline(true);
+        }
+        return font;
+    }
+    if (role == ROLE_MOUSE_CURSOR) {
+        if (index.column() == COLUMN_SOURCE_LOCATION && diagnostic.file() == MAIN_SOURCE) {
+            return QCursor(Qt::PointingHandCursor);
+        }
+    }
+
     if (index.column() == COLUMN_SEVERITY) {
         auto kind = diagnostic.kind();
         if (role == Qt::DecorationRole) {
@@ -130,25 +146,24 @@ QVariant DiagnosticsModel::data(const QModelIndex& index, int role) const
             }
         }
     }
-    else if (index.column() == COLUMN_FILE && (role == Qt::DisplayRole || role == Qt::ToolTipRole)) {
-        QString fileName = diagnostic.file();
-        if (fileName == MAIN_SOURCE) {
-            return d_shortFileName;
-        }
-        return fileName;
-    }
-    else if (index.column() == COLUMN_SOURCE_LOCATION && role == Qt::DisplayRole) {
-        if (diagnostic.location()) {
-            auto location = diagnostic.location().value();
-            return QString("%1:%2").arg(location.line).arg(location.column);
-        }
-    }
     else if (index.column() == COLUMN_MESSAGE && (role == Qt::DisplayRole || role == Qt::ToolTipRole)) {
         QString message = diagnostic.message();
         for (const QString& hint : diagnostic.hints()) {
             message += QChar::LineFeed + QStringLiteral("Hint: ") + hint;
         }
         return message;
+    }
+    else if (index.column() == COLUMN_SOURCE_LOCATION && (role == Qt::DisplayRole || role == Qt::ToolTipRole)) {
+        QString result = diagnostic.file();
+        if (result == MAIN_SOURCE) {
+            result = d_shortFileName;
+        }
+
+        if (diagnostic.location()) {
+            auto location = diagnostic.location().value();
+            result += QStringLiteral(" (%1:%2)").arg(location.line).arg(location.column);
+        }
+        return result;
     }
     return QVariant();
 }
