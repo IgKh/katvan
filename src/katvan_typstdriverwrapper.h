@@ -24,6 +24,8 @@
 #include <QObject>
 #include <QSet>
 
+#include <optional>
+
 QT_BEGIN_NAMESPACE
 class QThread;
 QT_END_NAMESPACE
@@ -70,7 +72,9 @@ signals:
     void jumpToEditor(int line, int column);
 
 public slots:
-    void updatePreview(const QString& source);
+    void setSource(const QString& text);
+    void applyContentEdit(int from, int to, QString text);
+    void updatePreview();
     void renderPage(int page, qreal pageSize);
     void exportToPdf(const QString& filePath);
     void forwardSearch(int line, int column);
@@ -81,6 +85,13 @@ private slots:
     void pageRenderComplete(int page, QImage renderedPage);
 
 private:
+    struct PendingEdit
+    {
+        int from;
+        int to;
+        QString text;
+    };
+
     typstdriver::Engine* d_engine;
     typstdriver::Logger* d_compilerLogger;
     typstdriver::PackageManager* d_packageManager;
@@ -89,7 +100,9 @@ private:
     QThread* d_thread;
 
     Status d_status;
-    QString d_pendingSourceToCompile;
+    std::optional<QString> d_pendingSource;
+    QList<PendingEdit> d_pendingEdits;
+    
     QSet<int> d_pendingPagesToRender;
 };
 

@@ -61,8 +61,16 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn compile(&mut self, source: &str, now: &str) -> Vec<ffi::PreviewPageDataInternal> {
-        self.world.reset_source(source, now);
+    pub fn set_source(&mut self, text: &str) {
+        self.world.set_source_text(text);
+    }
+
+    pub fn apply_content_edit(&mut self, from_utf16_idx: usize, to_utf16_idx: usize, text: &str) {
+        self.world.apply_edit(from_utf16_idx, to_utf16_idx, text);
+    }
+
+    pub fn compile(&mut self, now: &str) -> Vec<ffi::PreviewPageDataInternal> {
+        self.world.reset_current_date(now);
 
         let start = std::time::Instant::now();
         let res = typst::compile(&self.world);

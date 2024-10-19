@@ -76,7 +76,7 @@ void CompilerOutput::adjustColumnWidths(QSize viewportSize)
     int locationSizeHint = sizeHintForColumn(DiagnosticsModel::COLUMN_SOURCE_LOCATION);
     int availableWidthForLocation = viewportSize.width() - severityWidth - messageSizeHint;
 
-    // If there is enough space for fully accomodate the file name, give it that
+    // If there is enough space to fully accomodate the file name, give it that
     // much width. Otherwise, give it up to 25% of the total width.
     int locationWidth = (locationSizeHint <= availableWidthForLocation)
         ? locationSizeHint
@@ -92,8 +92,8 @@ void CompilerOutput::resizeEvent(QResizeEvent* event)
         return;
     }
 
-    QTreeView::resizeEvent(event);
     adjustColumnWidths(event->size());
+    QTreeView::resizeEvent(event);
 }
 
 void CompilerOutput::mouseMoveEvent(QMouseEvent* event)

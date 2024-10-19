@@ -89,13 +89,30 @@ void Engine::init()
     Q_EMIT initialized();
 }
 
-void Engine::compile(const QString& source)
+void Engine::setSource(const QString& text)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    d_ptr->engine.value()->set_source(qstringToRust(text));
+}
+
+void Engine::applyContentEdit(int from, int to, const QString& text)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    d_ptr->engine.value()->apply_content_edit(
+        static_cast<size_t>(from),
+        static_cast<size_t>(to),
+        qstringToRust(text));
+}
+
+void Engine::compile()
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
     QString now = QDateTime::currentDateTime(QTimeZone::systemTimeZone()).toString(Qt::ISODate);
 
-    rust::Vec<PreviewPageDataInternal> pages = d_ptr->engine.value()->compile(qstringToRust(source), qstringToRust(now));
+    rust::Vec<PreviewPageDataInternal> pages = d_ptr->engine.value()->compile(qstringToRust(now));
     if (!pages.empty()) {
         QList<PreviewPageData> result;
         result.reserve(pages.size());

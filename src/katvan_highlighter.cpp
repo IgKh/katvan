@@ -31,12 +31,9 @@ Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker, co
 {
 }
 
-void Highlighter::highlightBlock(const QString& text)
+static void getBlockInitialParams(QTextBlock block, StateSpanList& initialSpans, QList<parsing::ParserState::Kind>& initialStates)
 {
-    auto* prevBlockData = dynamic_cast<HighlighterStateBlockData*>(currentBlock().previous().userData());
-
-    StateSpanList initialSpans;
-    QList<parsing::ParserState::Kind> initialStates;
+    auto* prevBlockData = dynamic_cast<HighlighterStateBlockData*>(block.previous().userData());
     if (prevBlockData != nullptr) {
         for (const StateSpan& span : prevBlockData->stateSpans())
         {
@@ -47,6 +44,45 @@ void Highlighter::highlightBlock(const QString& text)
             initialStates.append(span.state);
         }
     }
+}
+
+void Highlighter::reparseBlock(QTextBlock block)
+{
+    // Workaround for QTBUG-130318. This method performs a "light" reparse
+    // starting from the given block, in order to update its' code spans for
+    // the code model, but without changing any formats (which would lead to
+    // markContentDirty being called, and editing updates being lost.
+
+    while (block.isValid()) {
+        StateSpanList initialSpans;
+        QList<parsing::ParserState::Kind> initialStates;
+        getBlockInitialParams(block, initialSpans, initialStates);
+
+        StateSpansListener spanListener(initialSpans, block.position());
+
+        QString text = block.text();
+        parsing::Parser parser(text, initialStates);
+
+        parser.addListener(spanListener, false);
+        parser.parse();
+
+        auto* blockData = new HighlighterStateBlockData(std::move(spanListener).spans(), parsing::SegmentList{});
+        block.setUserData(blockData);
+
+        // Do not update the user state here, we want a proper rehighlight to
+        // happen later if needed.
+        if (block.userState() == blockData->stateSpans().fingerprint()) {
+            break;
+        }
+        block = block.next();
+    }
+}
+
+void Highlighter::highlightBlock(const QString& text)
+{
+    StateSpanList initialSpans;
+    QList<parsing::ParserState::Kind> initialStates;
+    getBlockInitialParams(currentBlock(), initialSpans, initialStates);
 
     StateSpansListener spanListener(initialSpans, currentBlock().position());
     parsing::HighlightingListener highlightingListener;

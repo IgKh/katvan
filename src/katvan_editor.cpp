@@ -25,6 +25,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QTextBlock>
@@ -78,6 +79,7 @@ private:
 Editor::Editor(QWidget* parent)
     : QTextEdit(parent)
     , d_theme(EditorTheme::defaultTheme())
+    , d_suppressContentChangeHandling(false)
     , d_pendingSuggestionsPosition(-1)
 {
     document()->setDocumentLayout(new EditorLayout(document()));
@@ -92,6 +94,7 @@ Editor::Editor(QWidget* parent)
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);
 
+    connect(document(), &QTextDocument::contentsChange, this, &Editor::propagateDocumentEdit);
     connect(document(), &QTextDocument::blockCountChanged, this, &Editor::updateLineNumberGutterWidth);
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
@@ -113,13 +116,7 @@ Editor::Editor(QWidget* parent)
     d_debounceTimer = new QTimer(this);
     d_debounceTimer->setSingleShot(true);
     d_debounceTimer->setInterval(500);
-    d_debounceTimer->callOnTimeout(this, [this]() {
-        Q_EMIT contentModified(toPlainText());
-    });
-
-    connect(this, &QTextEdit::textChanged, [this]() {
-        d_debounceTimer->start();
-    });
+    d_debounceTimer->callOnTimeout(this, &Editor::contentModified);
 
     QTimer::singleShot(0, this, &Editor::updateEditorTheme);
 }
@@ -203,6 +200,17 @@ QMenu* Editor::createInsertMenu()
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
     return menu;
+}
+
+QString Editor::documentText() const
+{
+    return document()->toPlainText() + QChar::LineFeed;
+}
+
+void Editor::setDocumentText(const QString& text)
+{
+    QScopedValueRollback guard { d_suppressContentChangeHandling, true };
+    document()->setPlainText(text);
 }
 
 void Editor::toggleTextBlockDirection()
@@ -435,7 +443,7 @@ void Editor::handleNewLine()
         cursor.insertText(initialIndent);
 
         if (d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SMART) {
-            d_highlighter->rehighlightBlock(origBlock);
+            d_highlighter->reparseBlock(origBlock);
 
             if (d_codeModel->shouldIncreaseIndent(origPos)) {
                 cursorSkipWhite(cursor);
@@ -473,7 +481,7 @@ void Editor::handleClosingBracket(const QString& bracket)
     // Auto dedent
     if (wasAtLeadingWhitespace && d_effectiveSettings.indentMode() == EditorSettings::IndentMode::SMART)
     {
-        d_highlighter->rehighlightBlock(cursor.block());
+        d_highlighter->reparseBlock(cursor.block());
 
         QTextBlock indentBlock = d_codeModel->findMatchingIndentBlock(origPos);
         if (indentBlock != cursor.block())
@@ -687,6 +695,40 @@ void Editor::resizeEvent(QResizeEvent* event)
             d_rightLineNumberGutter->setGeometry(QRect(cr.right() - gutterWidth, cr.top(), gutterWidth, cr.height()));
         }
     }
+}
+
+void Editor::propagateDocumentEdit(int from, int charsRemoved, int charsAdded)
+{
+    if (d_suppressContentChangeHandling) {
+        return;
+    }
+
+    QTextBlock block = document()->findBlock(from);
+
+    // In Qt's internal reckoning all blocks always end with ParagraphSeparator
+    // or other such marker. Global character positions (like the from parameter
+    // here) take this into account, however QTextBlock::text() strips them away.
+    // To make sure that our and the Typst compiler's character positions are
+    // always in sync, we explcitly add a line feed in each place where a
+    // separator character would be in the document's internal buffer.
+    QString blockText = block.text().sliced(from - block.position()) + QChar::LineFeed;
+
+    QString editText;
+    while (block.isValid() && charsAdded > 0) {
+        if (blockText.size() > charsAdded) {
+            editText += blockText.left(charsAdded);
+            break;
+        }
+        else {
+            editText += blockText;
+            charsAdded -= blockText.size();
+            block = block.next();
+            blockText = block.text() + QChar::LineFeed;
+        }
+    }
+
+    Q_EMIT contentEdited(from, from + charsRemoved, editText);
+    d_debounceTimer->start();
 }
 
 void Editor::popupInsertMenu()

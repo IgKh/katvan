@@ -44,12 +44,15 @@ class Editor : public QTextEdit
 public:
     Editor(QWidget* parent = nullptr);
 
+    QString documentText() const;
+
     void applySettings(const EditorSettings& settings);
     void updateEditorTheme();
 
     QMenu* createInsertMenu();
 
 public slots:
+    void setDocumentText(const QString& text);
     void toggleTextBlockDirection();
     void setTextBlockDirection(Qt::LayoutDirection dir);
     void goToBlock(int blockNum, int charOffset);
@@ -88,12 +91,15 @@ private slots:
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
+    void propagateDocumentEdit(int from, int charsRemoved, int charsAdded);
+
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
     void updateExtraSelections();
 
 signals:
-    void contentModified(const QString& text);
+    void contentModified();
+    void contentEdited(int from, int to, QString text);
 
 private:
     QWidget* d_leftLineNumberGutter;
@@ -109,6 +115,7 @@ private:
     EditorTheme d_theme;
 
     QPointer<QMenu> d_contextMenu;
+    bool d_suppressContentChangeHandling;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
     int d_pendingSuggestionsPosition;

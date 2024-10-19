@@ -60,8 +60,20 @@ impl<'a> KatvanWorld<'a> {
         }
     }
 
-    pub fn reset_source(&mut self, text: &str, now: &str) {
+    pub fn set_source_text(&mut self, text: &str) {
         self.source.replace(text);
+    }
+
+    pub fn apply_edit(&mut self, from_utf16_idx: usize, to_utf16_idx: usize, text: &str) {
+        let from = self.source.utf16_to_byte(from_utf16_idx);
+        let to = self.source.utf16_to_byte(to_utf16_idx);
+
+        if let (Some(from), Some(to)) = (from, to) {
+            self.source.edit(from..to, text);
+        }
+    }
+
+    pub fn reset_current_date(&mut self, now: &str) {
         self.now = OffsetDateTime::parse(now, &Iso8601::PARSING).ok();
     }
 

@@ -91,7 +91,11 @@ pub(crate) mod ffi {
     extern "Rust" {
         type EngineImpl<'a>;
 
-        fn compile(&mut self, source: &str, now: &str) -> Vec<PreviewPageDataInternal>;
+        fn set_source(&mut self, text: &str);
+
+        fn apply_content_edit(&mut self, from_utf16_idx: usize, to_utf16_idx: usize, text: &str);
+
+        fn compile(&mut self, now: &str) -> Vec<PreviewPageDataInternal>;
 
         fn render_page(&self, page: usize, point_size: f32) -> Result<RenderedPage>;
 

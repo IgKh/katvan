@@ -64,7 +64,6 @@ MainWindow::MainWindow()
     connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
 
     d_driver = new TypstDriverWrapper(this);
-    d_backupHandler = new BackupHandler(this);
 
     setupUI();
     setupActions();
@@ -77,6 +76,9 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
 
+    d_backupHandler = new BackupHandler(d_editor, this);
+    connect(d_editor, &Editor::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
+
     readSettings();
     cursorPositionChanged();
 }
@@ -87,8 +89,8 @@ void MainWindow::setupUI()
     setWindowIcon(QIcon(":/assets/katvan.svg"));
 
     d_editor = new Editor();
+    connect(d_editor, &Editor::contentEdited, d_driver, &TypstDriverWrapper::applyContentEdit);
     connect(d_editor, &Editor::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
-    connect(d_editor, &Editor::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 
@@ -370,7 +372,7 @@ void MainWindow::loadFile(const QString& fileName)
     }
 
     QTextStream stream(&file);
-    d_editor->setPlainText(stream.readAll());
+    d_editor->setDocumentText(stream.readAll());
     d_previewer->reset();
 
     setCurrentFile(fileName);
@@ -422,6 +424,7 @@ void MainWindow::setCurrentFile(const QString& fileName)
     setWindowModified(false);
 
     d_driver->resetInputFile(fileName);
+    d_driver->setSource(d_editor->documentText());
 
     QString previousTmpFile = d_backupHandler->resetSourceFile(fileName);
     if (!previousTmpFile.isEmpty()) {
@@ -550,7 +553,7 @@ void MainWindow::newFile()
     if (!maybeSave()) {
         return;
     }
-    d_editor->clear();
+    d_editor->setDocumentText(QString());
     d_previewer->reset();
     setCurrentFile(QString());
 }
@@ -609,7 +612,7 @@ bool MainWindow::saveFile()
     }
 
     QTextStream stream(&file);
-    stream << d_editor->toPlainText();
+    stream << d_editor->documentText();
     stream.flush();
 
     if (stream.status() != QTextStream::Ok) {
@@ -661,7 +664,8 @@ void MainWindow::exportPdf()
                 tr("The document %1 has errors.\nTo export the document, please correct them.").arg(d_currentFileShortName));
         }
         else if (d_driver->status() == TypstDriverWrapper::Status::INITIALIZED) {
-            d_driver->updatePreview(d_editor->toPlainText());
+            d_driver->setSource(d_editor->documentText());
+            d_driver->updatePreview();
             d_exportPdfPending = true;
         }
         return;

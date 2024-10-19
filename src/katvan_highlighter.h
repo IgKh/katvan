@@ -52,6 +52,8 @@ class Highlighter : public QSyntaxHighlighter
 public:
     Highlighter(QTextDocument* document, SpellChecker* spellChecker, const EditorTheme& theme);
 
+    void reparseBlock(QTextBlock block);
+
 protected:
     void highlightBlock(const QString& text) override;
 

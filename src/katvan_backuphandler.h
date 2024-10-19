@@ -27,28 +27,31 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
+class Editor;
+
 class BackupHandler : public QObject
 {
     Q_OBJECT
 
 public:
-    BackupHandler(QObject* parent = nullptr);
+    BackupHandler(Editor* editor, QObject* parent = nullptr);
     ~BackupHandler();
 
     QString resetSourceFile(const QString& sourceFileName);
 
 public slots:
-    void editorContentChanged(const QString& content);
+    void editorContentChanged();
+
+private slots:
+    void saveContent();
 
 private:
-    void saveContent(const QString& content);
-
     QString d_sourceFile;
     QTemporaryFile* d_backupFile;
     qint64 d_lastSaveTimestamp;
 
+    Editor* d_editor;
     QTimer* d_timer;
-    QString d_pendingContent;
 };
 
 }

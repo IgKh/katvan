@@ -84,9 +84,24 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         d_status = Status::INITIALIZED;
         Q_EMIT compilationStatusChanged();
 
-        if (!d_pendingSourceToCompile.isEmpty()) {
-            updatePreview(d_pendingSourceToCompile);
-            d_pendingSourceToCompile.clear();
+        bool hasPending = false;
+        if (d_pendingSource) {
+            setSource(d_pendingSource.value());
+
+            d_pendingSource = std::nullopt;
+            hasPending = true;
+        }
+        if (!d_pendingEdits.isEmpty()) {
+            for (const auto& edit : d_pendingEdits) {
+                applyContentEdit(edit.from, edit.to, edit.text);
+            }
+
+            d_pendingEdits.clear();
+            hasPending = true;
+        }
+
+        if (hasPending) {
+            updatePreview();
         }
     };
 
@@ -101,14 +116,34 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     QMetaObject::invokeMethod(d_engine, "init");
 }
 
-void TypstDriverWrapper::updatePreview(const QString& source)
+void TypstDriverWrapper::setSource(const QString& text)
+{
+    if (d_status == Status::INITIALIZING) {
+        d_pendingEdits.clear();
+        d_pendingSource = text;
+        return;
+    }
+
+    QMetaObject::invokeMethod(d_engine, "setSource", text);
+}
+
+void TypstDriverWrapper::applyContentEdit(int from, int to, QString text)
+{
+    if (d_status == Status::INITIALIZING) {
+        d_pendingEdits.append(PendingEdit { from, to, text });
+        return;
+    }
+
+    QMetaObject::invokeMethod(d_engine, "applyContentEdit", from, to, text);
+}
+
+void TypstDriverWrapper::updatePreview()
 {
     if (d_status == Status::PROCESSING) {
         qDebug() << "Compiler already processing, skipping";
         return;
     }
     else if (d_status == Status::INITIALIZING) {
-        d_pendingSourceToCompile = source;
         return;
     }
 
@@ -116,7 +151,7 @@ void TypstDriverWrapper::updatePreview(const QString& source)
     Q_EMIT compilationStatusChanged();
 
     d_diagnosticsModel->clear();
-    QMetaObject::invokeMethod(d_engine, "compile", source);
+    QMetaObject::invokeMethod(d_engine, "compile");
 }
 
 void TypstDriverWrapper::renderPage(int page, qreal pointSize)
