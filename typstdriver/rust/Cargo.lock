@@ -552,9 +552,9 @@ dependencies = [
 
 [[package]]
 name = "hayagriva"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3de14f15f4243222e84000669030b3a2fe3a0c6755fd4e38e8a92de039ec21ef"
+checksum = "7a3635c2577f77499c9dc3dceeef2e64e6c146e711b1861507a0f15b20641348"
 dependencies = [
  "biblatex",
  "ciborium",
@@ -1820,9 +1820,9 @@ checksum = "6af6ae20167a9ece4bcb41af5b80f8a1f1df981f6391189ce00fd257af04126a"
 
 [[package]]
 name = "typst"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a78a89c72bf19e79ffabfda624a5b94b8e387f89b020cdcb75b8d3523b7316e"
+checksum = "87286a6b7e417426c425f35c42fb3d86e54ee99485b7eeb3662f4aeb569151c6"
 dependencies = [
  "arrayvec",
  "az",
@@ -1889,15 +1889,15 @@ dependencies = [
 
 [[package]]
 name = "typst-assets"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71c698edbfa8c49019246abe01c692d92f3d47e0b600da1ab4dbf1e8f3a7e53f"
+checksum = "4fe00da1b24da2c4a7da532fc33d0c3bd43a902ca4c408ee2c36eabe70f2f4ba"
 
 [[package]]
 name = "typst-ide"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f552cbf45baff9295a371411a2bd2b472cb4f9ab9422cc4ab7d1e0ab0e4386e9"
+checksum = "cd81e63dc5dfcd4f4923b5dc51d9ed1a97df04e5e0a6db63c5a0c6937967625e"
 dependencies = [
  "comemo",
  "ecow",
@@ -1910,9 +1910,9 @@ dependencies = [
 
 [[package]]
 name = "typst-kit"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70e37da380d860505789cb74575e8c0ca89ee420cea8756eba5f3000429f9f2c"
+checksum = "7fda042dab6dec486d97ed35fc88f5557e98cd6baf9e1cf0e4020f02b98529ca"
 dependencies = [
  "ecow",
  "fontdb",
@@ -1925,9 +1925,9 @@ dependencies = [
 
 [[package]]
 name = "typst-macros"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b117f23428036fdae1e777ede4c5a76601260c4ba20a460de0126907bf34302"
+checksum = "17b8b94b63e868e969e372929d6d3efb0d5f8cedad95a4f3aa460959f4544e0d"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -1937,9 +1937,9 @@ dependencies = [
 
 [[package]]
 name = "typst-pdf"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0589c1ac07515ebc4903b3fea7418626530c80b3a5630f5bede594eee86e36c5"
+checksum = "f8734aa2909d388486f58aba306711c6b916712bf09e11db05ca21ff5d712766"
 dependencies = [
  "arrayvec",
  "base64",
@@ -1965,9 +1965,9 @@ dependencies = [
 
 [[package]]
 name = "typst-render"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a6de11e5e145df94cacc6b38e9f05fd1ee94171c4740e29929e14b8e5cd411d"
+checksum = "4d70f981e0016722e9ec71ab087af057a29e622b604fcf471b0b453e2da2db04"
 dependencies = [
  "bytemuck",
  "comemo",
@@ -1985,9 +1985,9 @@ dependencies = [
 
 [[package]]
 name = "typst-syntax"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd92cccb773f9a9d1822b33efae3336a4c5b4d44dc28317a508d2fdfa3c0aa3c"
+checksum = "05b7be8b6ed6b2cb39ca495947d548a28d7db0ba244008e44c5a759120327693"
 dependencies = [
  "ecow",
  "once_cell",
@@ -2003,9 +2003,9 @@ dependencies = [
 
 [[package]]
 name = "typst-timing"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f77ee3feb57b317f40eff10c6cc7af6b760e31729fe7a1bab4f3578d49190ee9"
+checksum = "175e7755eca10fe7d5a37a54cff50fbdf1a1becd55f35330ab783f5317c9eb96"
 dependencies = [
  "parking_lot",
  "serde",
@@ -2015,9 +2015,9 @@ dependencies = [
 
 [[package]]
 name = "typst-utils"
-version = "0.12.0-rc1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7027f9854d07cf44ac532dff33b00b64376c64653904cdc7172c9eea51cfd458"
+checksum = "8f0305443ed97f0b658471487228f86bf835705e7525fbdcc671cebd864f7a40"
 dependencies = [
  "once_cell",
  "portable-atomic",
