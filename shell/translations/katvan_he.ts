@@ -13,18 +13,33 @@
     </message>
 </context>
 <context>
+    <name>katvan::DiagnosticsModel</name>
+    <message>
+        <source>Note</source>
+        <translation>הערה</translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation>אזהרה</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>שגיאה</translation>
+    </message>
+</context>
+<context>
     <name>katvan::Editor</name>
     <message>
-        <source>Inline &amp;Math</source>
-        <translation>קטע &amp;מתמטיקה מוטבע</translation>
+        <source>Right-to-Left Mark</source>
+        <translation>סמן יישור ימין לשמאל</translation>
     </message>
     <message>
         <source>Left-to-Right Mark</source>
-        <translation>סימן יישור שמאל לימין</translation>
+        <translation>סמן יישור שמאל לימין</translation>
     </message>
     <message>
-        <source>Right-to-Left Mark</source>
-        <translation>סימן יישור ימין לשמאל</translation>
+        <source>Arabic Letter Mark</source>
+        <translation>סמן יישור ערבית</translation>
     </message>
     <message>
         <source>Right-to-Left Isolate</source>
@@ -33,6 +48,10 @@
     <message>
         <source>Left-to-Right Isolate</source>
         <translation>סביבה מבודדת שמאל לימין</translation>
+    </message>
+    <message>
+        <source>Inline &amp;Math</source>
+        <translation>קטע &amp;מתמטיקה מוטבע</translation>
     </message>
     <message>
         <source>Calculating Suggestions...</source>
@@ -56,10 +75,6 @@
             <numerusform>הצעת איות אחת</numerusform>
             <numerusform>%n הצעות איות</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Arabic Letter Mark</source>
-        <translation>סימן תו ערבית</translation>
     </message>
 </context>
 <context>
@@ -135,6 +150,14 @@
     <message>
         <source>Indentation</source>
         <translation>הזחה</translation>
+    </message>
+    <message>
+        <source>Show Control Characters</source>
+        <translation>הצג תווי בקרה</translation>
+    </message>
+    <message>
+        <source>Requires Qt version 6.9 or above</source>
+        <translation>נדרשת גרסא 6.9 ומעלה של Qt</translation>
     </message>
 </context>
 <context>
@@ -233,10 +256,6 @@
     <message>
         <source>The file %1 no longer exists</source>
         <translation>הקובץ %1 אינו קיים יותר</translation>
-    </message>
-    <message>
-        <source>Failed exporting PDF to %1: %2</source>
-        <translation>ייצוא כ-PDF לתוך %1 נכשל: %2</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;Typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3; Typst %4)</source>

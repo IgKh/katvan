@@ -102,7 +102,7 @@ private:
     Status d_status;
     std::optional<QString> d_pendingSource;
     QList<PendingEdit> d_pendingEdits;
-    
+
     QSet<int> d_pendingPagesToRender;
 };
 

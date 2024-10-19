@@ -24,7 +24,7 @@ target_include_directories(katvan_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(katvan_tests PRIVATE
     GTest::gmock
     Qt6::Test
-    libkatvan
+    katvan_core
 )
 
 add_custom_target(test_dicts ALL

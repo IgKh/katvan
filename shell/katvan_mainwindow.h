@@ -31,11 +31,12 @@ namespace katvan
 
 class BackupHandler;
 class CompilerOutput;
-class Editor;
-class EditorSettingsDialog;
 class Previewer;
 class RecentFiles;
 class SearchBar;
+
+class Editor;
+class EditorSettingsDialog;
 class TypstDriverWrapper;
 
 class MainWindow : public QMainWindow

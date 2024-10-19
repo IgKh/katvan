@@ -20,7 +20,7 @@
 #include "katvan_editorlayout.h"
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
-#include "katvan_utils.h"
+#include "katvan_text_utils.h"
 
 #include <QMenu>
 #include <QPainter>

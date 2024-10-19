@@ -26,6 +26,10 @@
 #include <QStyle>
 #include <QStyleHints>
 
+QT_BEGIN_NAMESPACE
+extern int qInitResources_themes();
+QT_END_NAMESPACE
+
 namespace katvan {
 
 using HiglightingMarkerKind = parsing::HiglightingMarker::Kind;
@@ -132,6 +136,8 @@ static void readEditorColors(const QJsonObject& obj,
 
 EditorTheme::EditorTheme(const QString& themeJsonFile)
 {
+    qInitResources_themes();
+
     QFile file(themeJsonFile);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "Couldn't open theme file!" << file.errorString();

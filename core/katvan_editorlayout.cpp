@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_editorlayout.h"
-#include "katvan_utils.h"
+#include "katvan_text_utils.h"
 
 #include <QGuiApplication>
 #include <QPainter>

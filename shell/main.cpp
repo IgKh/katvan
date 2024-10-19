@@ -18,6 +18,7 @@
 #include "katvan_mainwindow.h"
 #include "katvan_spellchecker.h"
 #include "katvan_utils.h"
+
 #include "katvan_version.h"
 
 #include "typstdriver_packagemanager.h"

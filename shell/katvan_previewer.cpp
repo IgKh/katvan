@@ -16,9 +16,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_previewer.h"
+#include "katvan_utils.h"
+
 #include "katvan_previewerview.h"
 #include "katvan_typstdriverwrapper.h"
-#include "katvan_utils.h"
 
 #include <QComboBox>
 #include <QHBoxLayout>

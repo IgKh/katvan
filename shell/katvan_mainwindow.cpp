@@ -17,17 +17,18 @@
  */
 #include "katvan_backuphandler.h"
 #include "katvan_compileroutput.h"
-#include "katvan_diagnosticsmodel.h"
-#include "katvan_editor.h"
-#include "katvan_editorsettings.h"
 #include "katvan_mainwindow.h"
 #include "katvan_previewer.h"
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
 #include "katvan_settingsdialog.h"
+#include "katvan_utils.h"
+
+#include "katvan_diagnosticsmodel.h"
+#include "katvan_editor.h"
+#include "katvan_editorsettings.h"
 #include "katvan_spellchecker.h"
 #include "katvan_typstdriverwrapper.h"
-#include "katvan_utils.h"
 
 #include <QApplication>
 #include <QClipboard>
