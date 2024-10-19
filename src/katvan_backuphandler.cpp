@@ -68,11 +68,11 @@ QString BackupHandler::resetSourceFile(const QString& sourceFileName)
         d_backupFile = nullptr;
     }
 
+    d_sourceFile = sourceFileName;
     if (sourceFileName.isEmpty()) {
         return QString();
     }
 
-    d_sourceFile = sourceFileName;
     d_lastSaveTimestamp = QDateTime::currentSecsSinceEpoch();
 
     // Check if there is a left over settings key for the new file, indicating
@@ -82,7 +82,7 @@ QString BackupHandler::resetSourceFile(const QString& sourceFileName)
 
 void BackupHandler::editorContentChanged()
 {
-    if (d_backupFile == nullptr) {
+    if (d_sourceFile.isEmpty()) {
         return;
     }
 
