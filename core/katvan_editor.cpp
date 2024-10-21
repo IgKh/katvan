@@ -30,6 +30,7 @@
 #include <QShortcut>
 #include <QTextBlock>
 #include <QTimer>
+#include <QToolTip>
 
 namespace katvan {
 
@@ -295,10 +296,44 @@ void Editor::checkForModelines()
     applyEffectiveSettings();
 }
 
+void Editor::showToolTip(QPoint widgetPos, const QString& text)
+{
+    if (!d_pendingTooltipPos || d_pendingTooltipPos.value() != widgetPos) {
+        return;
+    }
+    d_pendingTooltipPos.reset();
+
+    QToolTip::showText(mapToGlobal(widgetPos), text, this);
+}
+
+void Editor::handleToolTipEvent(QHelpEvent* event)
+{
+    QPoint documentPoint = event->pos()
+        - viewport()->geometry().topLeft()
+        + QPoint(horizontalScrollBar()->value(), verticalScrollBar()->value());
+
+    int offset = document()->documentLayout()->hitTest(documentPoint, Qt::ExactHit);
+    if (offset >= 0) {
+        QTextCursor cursor(document());
+        cursor.setPosition(offset);
+
+        d_pendingTooltipPos = event->pos();
+        Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock(), event->pos());
+    }
+    else {
+        QToolTip::hideText();
+        event->ignore();
+    }
+}
+
 bool Editor::event(QEvent* event)
 {
+    if (event->type() == QEvent::ToolTip) {
+        QHelpEvent* helpEvent = static_cast<QHelpEvent*>(event);
+        handleToolTipEvent(helpEvent);
+    }
 #if defined(Q_OS_LINUX)
-    if (event->type() == QEvent::ShortcutOverride) {
+    else if (event->type() == QEvent::ShortcutOverride) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) ||
             keyEvent->keyCombination() == QKeyCombination(Qt::ControlModifier, Qt::Key_Shift)) {

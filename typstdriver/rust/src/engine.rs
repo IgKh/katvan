@@ -202,16 +202,18 @@ impl<'a> EngineImpl<'a> {
         if let Ok(data) = result {
             match std::fs::write(path, data) {
                 Ok(_) => {
-                    self.logger.log_note(&format!("PDF exported successfully to {path} in {elapsed}"));
+                    self.logger
+                        .log_note(&format!("PDF exported successfully to {path} in {elapsed}"));
                     Ok(true)
-                },
+                }
                 Err(err) => {
                     self.logger.log_error(
                         &format!("Unable to write to {path}: {err}"),
                         "",
                         -1,
                         -1,
-                        Vec::new());
+                        Vec::new(),
+                    );
                     Ok(false)
                 }
             }
@@ -270,10 +272,48 @@ impl<'a> EngineImpl<'a> {
         self.convert_jump_to_source_position(jump)
             .context("Jump target not applicable")
     }
+
+    pub fn get_tooltip(&self, line: usize, column: usize) -> Result<String> {
+        let main = self.world.main_source();
+        let cursor = main
+            .line_column_to_byte(line, column)
+            .context("No such position")?;
+
+        let tooltip = typst_ide::tooltip(
+            &self.world,
+            self.result.as_ref(),
+            &main,
+            cursor,
+            typst::syntax::Side::Before,
+        )
+        .context("No available tooltip")?;
+
+        match tooltip {
+            typst_ide::Tooltip::Text(val) => Ok(val.to_string()),
+            typst_ide::Tooltip::Code(val) => {
+                let escaped = html_escape(&val);
+                Ok(format!("<pre>{escaped}</pre>"))
+            }
+        }
+    }
 }
 
 fn hash_frame(frame: &typst::layout::Frame) -> u64 {
     let mut hasher = DefaultHasher::new();
     frame.hash(&mut hasher);
     hasher.finish()
+}
+
+fn html_escape(value: &str) -> String {
+    let mut result = String::new();
+    for ch in value.chars() {
+        match ch {
+            '<' => result.push_str("&lt;"),
+            '>' => result.push_str("&gt;"),
+            '&' => result.push_str("&amp;"),
+            '"' => result.push_str("&quot;"),
+            _ => result.push(ch),
+        }
+    }
+    result
 }

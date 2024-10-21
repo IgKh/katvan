@@ -106,10 +106,15 @@ QRectF EditorLayout::blockBoundingRect(const QTextBlock& block) const
 
 int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) const
 {
-    Q_UNUSED(accuracy)
+    if (accuracy == Qt::ExactHit && point.y() <= document()->documentMargin()) {
+        return -1;
+    }
 
     QTextBlock block = findContainingBlock(point.y());
     if (!block.isValid()) {
+        if (accuracy == Qt::ExactHit) {
+            return -1;
+        }
         block = document()->lastBlock();
     }
 
@@ -121,6 +126,10 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
         QTextLine line = layout->lineAt(i);
         if (!line.rect().contains(blockPoint) && i < lineCount - 1) {
             continue;
+        }
+
+        if (accuracy == Qt::ExactHit && !line.naturalTextRect().contains(blockPoint)) {
+            return -1;
         }
 
         int pos = line.xToCursor(point.x());

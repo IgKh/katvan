@@ -56,6 +56,7 @@ signals:
     void exportFinished(bool success);
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
+    void toolTipReady(QPoint pos, QString toolTip);
 
 public slots:
     void init();
@@ -66,6 +67,7 @@ public slots:
     void exportToPdf(const QString& outputFile);
     void forwardSearch(int line, int column);
     void inverseSearch(int page, QPointF clickPoint);
+    void requestToolTip(int line, int column, QPoint pos);
 
 private:
     struct EnginePrivate;

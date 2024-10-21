@@ -111,6 +111,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::exportFinished, this, &TypstDriverWrapper::exportFinished);
     connect(d_engine, &typstdriver::Engine::jumpToPreview, this, &TypstDriverWrapper::jumpToPreview);
     connect(d_engine, &typstdriver::Engine::jumpToEditor, this, &TypstDriverWrapper::jumpToEditor);
+    connect(d_engine, &typstdriver::Engine::toolTipReady, this, &TypstDriverWrapper::showEditorToolTip);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
     QMetaObject::invokeMethod(d_engine, "init");
@@ -178,6 +179,11 @@ void TypstDriverWrapper::forwardSearch(int line, int column)
 void TypstDriverWrapper::inverseSearch(int page, QPointF clickPoint)
 {
     QMetaObject::invokeMethod(d_engine, "inverseSearch", page, clickPoint);
+}
+
+void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
+{
+    QMetaObject::invokeMethod(d_engine, "requestToolTip", line, column, pos);
 }
 
 void TypstDriverWrapper::compilationFinished()

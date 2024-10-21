@@ -105,6 +105,8 @@ pub(crate) mod ffi {
 
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 
+        fn get_tooltip(&self, line: usize, column: usize) -> Result<String>;
+
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,
             package_manager: Pin<&'a mut PackageManagerProxy>,

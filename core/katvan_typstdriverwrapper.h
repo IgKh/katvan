@@ -70,6 +70,7 @@ signals:
     void exportFinished(bool success);
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
+    void showEditorToolTip(QPoint pos, QString toolTip);
 
 public slots:
     void setSource(const QString& text);
@@ -79,6 +80,7 @@ public slots:
     void exportToPdf(const QString& filePath);
     void forwardSearch(int line, int column);
     void inverseSearch(int page, QPointF clickPoint);
+    void requestToolTip(int line, int column, QPoint pos);
 
 private slots:
     void compilationFinished();

@@ -213,4 +213,19 @@ void Engine::inverseSearch(int page, QPointF clickPoint)
     }
 }
 
+void Engine::requestToolTip(int line, int column, QPoint pos)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        rust::String toolTip = d_ptr->engine.value()->get_tooltip(
+            static_cast<size_t>(line),
+            static_cast<size_t>(column));
+
+        Q_EMIT toolTipReady(pos, QString::fromUtf8(toolTip.data(), toolTip.size()));
+    }
+    catch (rust::Error&) {
+    }
+}
+
 }

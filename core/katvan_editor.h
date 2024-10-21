@@ -26,6 +26,7 @@
 #include <optional>
 
 QT_BEGIN_NAMESPACE
+class QHelpEvent;
 class QMenu;
 class QTimer;
 QT_END_NAMESPACE
@@ -58,6 +59,7 @@ public slots:
     void goToBlock(int blockNum, int charOffset);
     void forceRehighlighting();
     void checkForModelines();
+    void showToolTip(QPoint windowPos, const QString& text);
 
 protected:
     bool event(QEvent* event) override;
@@ -80,6 +82,8 @@ private:
     void handleClosingBracket(const QString& bracket);
     void unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter = QTextCursor());
 
+    void handleToolTipEvent(QHelpEvent* event);
+
     void applyEffectiveSettings();
 
     QTextEdit::ExtraSelection makeBracketHighlight(int pos);
@@ -100,6 +104,7 @@ private slots:
 signals:
     void contentModified();
     void contentEdited(int from, int to, QString text);
+    void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
 
 private:
     QWidget* d_leftLineNumberGutter;
@@ -119,6 +124,7 @@ private:
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
     int d_pendingSuggestionsPosition;
+    std::optional<QPoint> d_pendingTooltipPos;
 };
 
 }

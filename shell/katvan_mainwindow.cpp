@@ -76,6 +76,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
+    connect(d_driver, &TypstDriverWrapper::showEditorToolTip, d_editor, &Editor::showToolTip);
 
     d_backupHandler = new BackupHandler(d_editor, this);
     connect(d_editor, &Editor::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
@@ -92,6 +93,7 @@ void MainWindow::setupUI()
     d_editor = new Editor();
     connect(d_editor, &Editor::contentEdited, d_driver, &TypstDriverWrapper::applyContentEdit);
     connect(d_editor, &Editor::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
+    connect(d_editor, &Editor::toolTipRequested, d_driver, &TypstDriverWrapper::requestToolTip);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 
