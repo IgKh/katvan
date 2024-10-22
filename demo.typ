@@ -15,7 +15,7 @@ $ F_n = round(1 / sqrt(5) phi.alt^n), quad phi.alt = (1 + sqrt(5)) / 2 $
     else { fib(n - 1) + fib(n - 2) }
 )
 
-‏‎#count⁩ המספרים הראשונים בסדרה הם:
+⁦#count⁩ המספרים הראשונים בסדרה הם:
 
 #text(dir: ltr,
     align(center,
@@ -27,4 +27,3 @@ $ F_n = round(1 / sqrt(5) phi.alt^n), quad phi.alt = (1 + sqrt(5)) / 2 $
     )
 )
 
-בשורה הזו יש ⁦$שגיאה$⁩

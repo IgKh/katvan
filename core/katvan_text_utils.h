@@ -26,6 +26,7 @@ static constexpr QChar LRM_MARK = (ushort)0x200e;
 static constexpr QChar RLM_MARK = (ushort)0x200f;
 static constexpr QChar LRI_MARK = (ushort)0x2066;
 static constexpr QChar RLI_MARK = (ushort)0x2067;
+static constexpr QChar FSI_MARK = (ushort)0x2068;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
 bool isBidiControlChar(QChar ch);

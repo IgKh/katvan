@@ -26,6 +26,7 @@ bool isBidiControlChar(QChar ch)
         || ch == RLM_MARK
         || ch == LRI_MARK
         || ch == RLI_MARK
+        || ch == FSI_MARK
         || ch == PDI_MARK;
 }
 
@@ -35,9 +36,22 @@ Qt::LayoutDirection naturalTextDirection(const QString& text)
     const QChar* ptr = text.constData();
     const QChar* end = ptr + text.length();
 
+    int isolateLevel = 0;
+
     while (ptr < end) {
         if (count++ > 100) {
             break;
+        }
+
+        if (*ptr == LRI_MARK || *ptr == RLI_MARK || *ptr == FSI_MARK) {
+            isolateLevel++;
+            ptr++;
+            continue;
+        }
+        else if (*ptr == PDI_MARK) {
+            isolateLevel = qMax(0, isolateLevel - 1);
+            ptr++;
+            continue;
         }
 
         uint codepoint = ptr->unicode();
@@ -49,12 +63,14 @@ Qt::LayoutDirection naturalTextDirection(const QString& text)
             }
         }
 
-        QChar::Direction direction = QChar::direction(codepoint);
-        if (direction == QChar::DirR || direction == QChar::DirAL) {
-            return Qt::RightToLeft;
-        }
-        else if (direction == QChar::DirL) {
-            return Qt::LeftToRight;
+        if (isolateLevel == 0) {
+            QChar::Direction direction = QChar::direction(codepoint);
+            if (direction == QChar::DirR || direction == QChar::DirAL) {
+                return Qt::RightToLeft;
+            }
+            else if (direction == QChar::DirL) {
+                return Qt::LeftToRight;
+            }
         }
         ptr++;
     }
