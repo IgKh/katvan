@@ -174,11 +174,24 @@ void PreviewerView::jumpTo(int page, QPointF pos)
     QPointF target = d_pageGeometries[page].topLeft() + d_pointSize * zoom * pos;
 
     // Try to aim for placing the jump point just above the middle of the
-    // viewport
-    QScroller::scroller(viewport())->ensureVisible(
-        QRectF(target, target + QPointF(1, 1)),
-        0.45 * viewport()->width(),
-        0.45 * viewport()->height());
+    // viewport. Calculate the desired visibility rectangle ourselves, since
+    // QScroller doesn't know the total preview size and does stupid things
+    // because of it.
+    qreal xMargin = 0.45 * viewport()->width();
+    qreal yMargin = 0.45 * viewport()->height();
+
+    QRect marginedRect {
+        QPoint {
+            qMax(qRound(target.x() - xMargin), 0),
+            qMax(qRound(target.y() - yMargin), 0)
+        },
+        QPoint{
+            qMin(qRound(target.x() + xMargin), d_documentSize.width()),
+            qMin(qRound(target.y() + yMargin), d_documentSize.height())
+        },
+    };
+
+    QScroller::scroller(viewport())->ensureVisible(marginedRect, 0, 0);
 
 #ifdef DEBUG_JUMP_POINT
     d_lastJumpPoint = target;
@@ -360,7 +373,7 @@ void PreviewerView::resetAllCalculations(bool invalidateRenderCache)
     }
 }
 
-QSize PreviewerView::calculatePageGeometries()
+void PreviewerView::calculatePageGeometries()
 {
     qsizetype pageCount = d_pages.size();
     int totalWidth = DOCUMENT_MARGINS.left() + DOCUMENT_MARGINS.right();
@@ -394,7 +407,7 @@ QSize PreviewerView::calculatePageGeometries()
     }
 
     topY += DOCUMENT_MARGINS.bottom();
-    return QSize(totalWidth, topY);
+    d_documentSize = QSize(totalWidth, topY);
 }
 
 void PreviewerView::updateScrollbars(QSize documentSize, bool forceVerticalScrollBar)
@@ -412,11 +425,11 @@ void PreviewerView::updateScrollbars(QSize documentSize, bool forceVerticalScrol
 
 void PreviewerView::updatePageGeometries()
 {
-    QSize newDocumentSize = calculatePageGeometries();
+    calculatePageGeometries();
     bool forceVerticalScrollBar = false;
 
     if (d_zoomMode != ZoomMode::Custom) {
-        if (verticalScrollBar()->isVisible() && newDocumentSize.height() <= viewport()->height()) {
+        if (verticalScrollBar()->isVisible() && d_documentSize.height() <= viewport()->height()) {
             // Vertical scroll bar was needed, but not anymore. If increasing
             // the viewport width by that of a scroll bar would cause the
             // document to lengthen such that a scroll bar would again be
@@ -424,12 +437,12 @@ void PreviewerView::updatePageGeometries()
             // scroll bar to keep being visible.
 
             qreal factor = (viewport()->width() + verticalScrollBar()->width()) / qreal(viewport()->width());
-            if (qRound(newDocumentSize.height() * factor) > viewport()->height()) {
+            if (qRound(d_documentSize.height() * factor) > viewport()->height()) {
                 forceVerticalScrollBar = true;
             }
         }
     }
-    updateScrollbars(newDocumentSize, forceVerticalScrollBar);
+    updateScrollbars(d_documentSize, forceVerticalScrollBar);
 }
 
 void PreviewerView::updateCurrentPage()
