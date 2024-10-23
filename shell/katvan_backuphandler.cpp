@@ -114,7 +114,7 @@ void BackupHandler::saveContent()
     }
 
     QTextStream stream(d_backupFile);
-    stream << d_editor->documentText();
+    stream << d_editor->toPlainText();
     stream.flush();
 
     d_backupFile->resize(d_backupFile->pos());

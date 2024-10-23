@@ -203,7 +203,7 @@ QMenu* Editor::createInsertMenu()
     return menu;
 }
 
-QString Editor::documentText() const
+QString Editor::documentTextForPreview() const
 {
     return document()->toPlainText() + QChar::LineFeed;
 }

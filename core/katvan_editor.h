@@ -45,7 +45,7 @@ class Editor : public QTextEdit
 public:
     Editor(QWidget* parent = nullptr);
 
-    QString documentText() const;
+    QString documentTextForPreview() const;
 
     void applySettings(const EditorSettings& settings);
     void updateEditorTheme();

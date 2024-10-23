@@ -427,7 +427,7 @@ void MainWindow::setCurrentFile(const QString& fileName)
     setWindowModified(false);
 
     d_driver->resetInputFile(fileName);
-    d_driver->setSource(d_editor->documentText());
+    d_driver->setSource(d_editor->documentTextForPreview());
 
     QString previousTmpFile = d_backupHandler->resetSourceFile(fileName);
     if (!previousTmpFile.isEmpty()) {
@@ -615,7 +615,7 @@ bool MainWindow::saveFile()
     }
 
     QTextStream stream(&file);
-    stream << d_editor->documentText();
+    stream << d_editor->toPlainText();
     stream.flush();
 
     if (stream.status() != QTextStream::Ok) {
@@ -667,7 +667,7 @@ void MainWindow::exportPdf()
                 tr("The document %1 has errors.\nTo export the document, please correct them.").arg(d_currentFileShortName));
         }
         else if (d_driver->status() == TypstDriverWrapper::Status::INITIALIZED) {
-            d_driver->setSource(d_editor->documentText());
+            d_driver->setSource(d_editor->documentTextForPreview());
             d_driver->updatePreview();
             d_exportPdfPending = true;
         }
