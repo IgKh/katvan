@@ -57,6 +57,7 @@ private:
     QRadioButton* d_indentWithTabs;
     QSpinBox* d_indentWidth;
     QSpinBox* d_tabWidth;
+    QSpinBox* d_backupInterval;
 };
 
 }

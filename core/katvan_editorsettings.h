@@ -29,6 +29,12 @@ class EditorSettings
     Q_GADGET
 
 public:
+    enum class ModeSource {
+        SETTINGS,
+        DOCUMENT,
+    };
+    Q_ENUM(ModeSource);
+
     enum class LineNumberStyle {
         BOTH_SIDES,
         PRIMARY_ONLY,
@@ -50,7 +56,9 @@ public:
     Q_ENUM(IndentStyle);
 
     EditorSettings() {}
-    explicit EditorSettings(const QString& mode) { parseModeLine(mode); }
+    explicit EditorSettings(const QString& mode, ModeSource source = ModeSource::DOCUMENT) {
+        parseModeLine(mode, source);
+    }
 
     bool operator==(const EditorSettings&) const = default;
 
@@ -68,6 +76,8 @@ public:
     LineNumberStyle lineNumberStyle() const;
     bool showControlChars() const;
 
+    int autoBackupInterval() const;
+
     void setFontFamily(const QString& fontFamily) { d_fontFamily = fontFamily; }
     void setFontSize(int fontSize) { d_fontSize = fontSize; }
     void setIndentMode(IndentMode indentMode) { d_indentMode = indentMode; }
@@ -76,6 +86,7 @@ public:
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
     void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
     void setShowControlChars(bool show) { d_showControlChars = show; }
+    void setAutoBackupInterval(int interval) { d_autoBackupInterval = interval; }
 
     bool hasFontFamily() const { return d_fontFamily.has_value(); }
     bool hasFontSize() const { return d_fontSize.has_value(); }
@@ -85,11 +96,12 @@ public:
     bool hasTabWidth() const { return d_tabWidth.has_value(); }
     bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
     bool hasShowControlChars() const { return d_showControlChars.has_value(); }
+    bool hasAutoBackupInterval() const { return d_autoBackupInterval.has_value(); }
 
     void mergeSettings(const EditorSettings& other);
 
 private:
-    void parseModeLine(QString mode);
+    void parseModeLine(QString mode, ModeSource source);
 
     std::optional<QString> d_fontFamily;
     std::optional<int> d_fontSize;
@@ -99,6 +111,7 @@ private:
     std::optional<int> d_tabWidth;
     std::optional<LineNumberStyle> d_lineNumberStyle;
     std::optional<bool> d_showControlChars;
+    std::optional<int> d_autoBackupInterval;
 };
 
 }

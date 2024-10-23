@@ -37,6 +37,7 @@ public:
     BackupHandler(Editor* editor, QObject* parent = nullptr);
     ~BackupHandler();
 
+    void setBackupInterval(int intervalSecs);
     QString resetSourceFile(const QString& sourceFileName);
 
 public slots:
@@ -46,6 +47,7 @@ private slots:
     void saveContent();
 
 private:
+    int d_backupIntervalSecs;
     QString d_sourceFile;
     QTemporaryFile* d_backupFile;
     qint64 d_lastSaveTimestamp;

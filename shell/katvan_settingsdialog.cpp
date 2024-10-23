@@ -60,6 +60,7 @@ EditorSettings EditorSettingsDialog::settings() const
 
     settings.setIndentWidth(d_indentWidth->value());
     settings.setTabWidth(d_tabWidth->value());
+    settings.setAutoBackupInterval(d_backupInterval->value());
 
     return settings;
 }
@@ -87,6 +88,7 @@ void EditorSettingsDialog::setSettings(const EditorSettings& settings)
 
     d_indentWidth->setValue(settings.indentWidth());
     d_tabWidth->setValue(settings.tabWidth());
+    d_backupInterval->setValue(settings.autoBackupInterval());
 
     updateControlStates();
 }
@@ -139,6 +141,11 @@ void EditorSettingsDialog::setupUI()
     QLabel* tabWidthLabel = new QLabel(tr("Tab &Display Width:"));
     tabWidthLabel->setBuddy(d_tabWidth);
 
+    d_backupInterval = new QSpinBox();
+    d_backupInterval->setSuffix(tr(" seconds"));
+    d_backupInterval->setSpecialValueText(tr("Disabled"));
+    d_backupInterval->setSingleStep(5);
+
     QHBoxLayout* editorFontLayout = new QHBoxLayout();
     editorFontLayout->addWidget(d_editorFontComboBox, 1);
     editorFontLayout->addWidget(d_editorFontSizeComboBox);
@@ -171,6 +178,11 @@ void EditorSettingsDialog::setupUI()
     indentationLayout->addLayout(indentationTopLayout);
     indentationLayout->addLayout(indentationStyleLayout);
 
+    QGroupBox* autoBackupGroup = new QGroupBox(tr("Automatically backup unsaved changes"));
+
+    QFormLayout* autoBackupLayout = new QFormLayout(autoBackupGroup);
+    autoBackupLayout->addRow(tr("Backup interval:"), d_backupInterval);
+
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -178,6 +190,7 @@ void EditorSettingsDialog::setupUI()
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(appearanceGroup);
     mainLayout->addWidget(indentationGroup);
+    mainLayout->addWidget(autoBackupGroup);
     mainLayout->addWidget(buttonBox);
 }
 

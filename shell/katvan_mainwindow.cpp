@@ -343,10 +343,12 @@ void MainWindow::readSettings()
 
     EditorSettings editorSettings;
     if (settings.contains(SETTING_EDITOR_MODE)) {
-        editorSettings = EditorSettings(settings.value(SETTING_EDITOR_MODE).toString());
+        QString mode = settings.value(SETTING_EDITOR_MODE).toString();
+        editorSettings = EditorSettings(mode, EditorSettings::ModeSource::SETTINGS);
     }
     d_editorSettingsDialog->setSettings(editorSettings);
     d_editor->applySettings(editorSettings);
+    d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
 
     d_recentFiles->restoreRecents(settings);
     d_previewer->restoreSettings(settings);
@@ -846,6 +848,7 @@ void MainWindow::editorSettingsDialogAccepted()
     EditorSettings editorSettings = d_editorSettingsDialog->settings();
 
     d_editor->applySettings(editorSettings);
+    d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
 
     QSettings settings;
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());

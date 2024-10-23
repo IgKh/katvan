@@ -36,7 +36,7 @@ static std::optional<bool> parseModeLineBool(const QString& value)
     return std::nullopt;
 }
 
-void EditorSettings::parseModeLine(QString mode)
+void EditorSettings::parseModeLine(QString mode, EditorSettings::ModeSource source)
 {
     // E.g. "katvan: font DejaVu Sans; font-size 12; replace-tabs on; indent-width 4;"
 
@@ -116,6 +116,13 @@ void EditorSettings::parseModeLine(QString mode)
         else if (variable == QStringLiteral("show-control-chars")) {
             d_showControlChars = parseModeLineBool(rest);
         }
+        else if (variable == QStringLiteral("backup-interval") && source == ModeSource::SETTINGS) {
+            bool ok = false;
+            int interval = rest.toInt(&ok);
+            if (ok && interval >= 0) {
+                d_autoBackupInterval = interval;
+            }
+        }
     }
 }
 
@@ -171,11 +178,14 @@ QString EditorSettings::toModeLine() const
     }
     if (d_showControlChars) {
         if (d_showControlChars.value()) {
-            result += QStringLiteral("show-control-chars on; ");
+            result += QLatin1String("show-control-chars on; ");
         }
         else {
-            result += QStringLiteral("show-control-chars off; ");
+            result += QLatin1String("show-control-chars off; ");
         }
+    }
+    if (d_autoBackupInterval) {
+        result += QLatin1String("backup-interval %1; ").arg(QString::number(d_autoBackupInterval.value()));
     }
 
     return result.trimmed();
@@ -230,6 +240,11 @@ EditorSettings::LineNumberStyle EditorSettings::lineNumberStyle() const
 bool EditorSettings::showControlChars() const
 {
     return d_showControlChars.value_or(true);
+}
+
+int EditorSettings::autoBackupInterval() const
+{
+    return d_autoBackupInterval.value_or(15);
 }
 
 void EditorSettings::mergeSettings(const EditorSettings& other)

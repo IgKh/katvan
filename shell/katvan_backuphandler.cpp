@@ -29,9 +29,6 @@ namespace katvan {
 
 static constexpr QLatin1StringView SETTING_PREFIX_TEMP_FILES = QLatin1StringView("compilertmp/");
 
-// XXX Make configurable
-static constexpr qint64 MAX_SECS_BETWEEN_BACKUPS = 15;
-
 static QString settingsKeyForFile(QString fileName)
 {
     fileName.replace(QDir::separator(), QLatin1Char('_'));
@@ -40,6 +37,7 @@ static QString settingsKeyForFile(QString fileName)
 
 BackupHandler::BackupHandler(Editor* editor, QObject* parent)
     : QObject(parent)
+    , d_backupIntervalSecs(0)
     , d_backupFile(nullptr)
     , d_lastSaveTimestamp(0)
     , d_editor(editor)
@@ -55,6 +53,11 @@ BackupHandler::~BackupHandler()
         QSettings settings;
         settings.remove(settingsKeyForFile(d_sourceFile));
     }
+}
+
+void BackupHandler::setBackupInterval(int intervalSecs)
+{
+    d_backupIntervalSecs = intervalSecs;
 }
 
 QString BackupHandler::resetSourceFile(const QString& sourceFileName)
@@ -83,14 +86,14 @@ QString BackupHandler::resetSourceFile(const QString& sourceFileName)
 
 void BackupHandler::editorContentChanged()
 {
-    if (d_sourceFile.isEmpty()) {
+    if (d_sourceFile.isEmpty() || d_backupIntervalSecs == 0) {
         return;
     }
 
     qint64 now = QDateTime::currentSecsSinceEpoch();
-    if (now < d_lastSaveTimestamp + MAX_SECS_BETWEEN_BACKUPS) {
+    if (now < d_lastSaveTimestamp + d_backupIntervalSecs) {
         if (!d_timer->isActive()) {
-            d_timer->start((d_lastSaveTimestamp + MAX_SECS_BETWEEN_BACKUPS - now) * 1000);
+            d_timer->start((d_lastSaveTimestamp + d_backupIntervalSecs - now) * 1000);
         }
         return;
     }

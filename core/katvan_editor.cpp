@@ -286,7 +286,7 @@ void Editor::checkForModelines()
     while (block.isValid() && block.blockNumber() < MAX_LINE_FOR_MODELINES) {
         QRegularExpressionMatch match = MODELINE_REGEX->match(block.text());
         if (match.hasMatch()) {
-            EditorSettings lineMode(match.captured());
+            EditorSettings lineMode(match.captured(), EditorSettings::ModeSource::DOCUMENT);
             mode.mergeSettings(lineMode);
         }
         block = block.next();

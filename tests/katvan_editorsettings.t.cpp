@@ -231,6 +231,16 @@ TEST(EditorSettingsTests, TabWidth) {
     EXPECT_THAT(s5.hasTabWidth(), ::testing::IsFalse());
 }
 
+TEST(EditorSettingsTests, AutoBackupInterval) {
+    EditorSettings s1 { "backup-interval 10", EditorSettings::ModeSource::SETTINGS };
+    EXPECT_THAT(s1.hasAutoBackupInterval(), ::testing::IsTrue());
+    EXPECT_THAT(s1.autoBackupInterval(), ::testing::Eq(10));
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("backup-interval 10;")));
+
+    EditorSettings s2 { "backup-interval 10", EditorSettings::ModeSource::DOCUMENT };
+    EXPECT_THAT(s2.hasAutoBackupInterval(), ::testing::IsFalse());
+}
+
 TEST(EditorSettingsTests, Mixed) {
     EditorSettings s { "katvan: font Arial Special; no-such-flag; replace-tabs on; replace-tabs off; tab-width     5; font-size 10; indent-mode normal;" };
     EXPECT_THAT(s.hasFontFamily(), ::testing::IsTrue());
