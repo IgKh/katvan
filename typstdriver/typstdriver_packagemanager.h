@@ -90,7 +90,7 @@ private:
     bool extractArchive(const QString& archivePath, const QDir& targetDir);
 
     static QString s_downloadCacheLocation;
-    static std::atomic<std::shared_ptr<PackageManagerSettings>> s_settings;
+    static std::shared_ptr<PackageManagerSettings> s_settings;
 
     Error d_error;
     QString d_errorMessage;

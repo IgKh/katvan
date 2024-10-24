@@ -37,7 +37,7 @@ static constexpr QLatin1StringView SETTING_ALLOW_PREVIEW_PACKAGES("compiler/allo
 namespace katvan::typstdriver {
 
 QString PackageManager::s_downloadCacheLocation;
-std::atomic<std::shared_ptr<PackageManagerSettings>> PackageManager::s_settings = std::make_shared<PackageManagerSettings>();
+std::shared_ptr<PackageManagerSettings> PackageManager::s_settings = std::make_shared<PackageManagerSettings>();
 
 PackageManagerSettings::PackageManagerSettings()
     : d_allowPreviewPackages(false)
@@ -56,7 +56,7 @@ void PackageManagerSettings::save(QSettings& settings)
 
 void PackageManager::applySettings(const PackageManagerSettings& settings)
 {
-    s_settings.store(std::make_shared<PackageManagerSettings>(settings));
+    std::atomic_store(&s_settings, std::make_shared<PackageManagerSettings>(settings));
 }
 
 void PackageManager::setDownloadCacheLocation(const QString& dirPath)
@@ -129,7 +129,7 @@ QString PackageManager::getPackageLocalPath(const QString& packageNamespace, con
 
 QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QString& version)
 {
-    if (!s_settings.load()->allowPreviewPackages()) {
+    if (!std::atomic_load(&s_settings)->allowPreviewPackages()) {
         d_error = Error::NOT_ALLOWED;
         d_errorMessage = "use of Typst Universe preview packages is disabled in application settings";
         return QString();
