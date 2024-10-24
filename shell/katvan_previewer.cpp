@@ -34,6 +34,7 @@ static constexpr QLatin1StringView FIT_TO_PAGE("fit-page");
 static constexpr QLatin1StringView FIT_TO_WIDTH("fit-width");
 
 static constexpr QLatin1StringView SETTING_PREVIEW_ZOOM("preview/zoom");
+static constexpr QLatin1StringView SETTING_PREVIEW_INVERT_COLORS("preview/invert-colors");
 static constexpr QLatin1StringView SETTING_PREVIEW_FOLLOW_CURSOR("preview/follow-cursor");
 
 namespace katvan {
@@ -78,6 +79,12 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     d_currentPageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     d_currentPageLabel->setAlignment(Qt::AlignCenter);
 
+    d_invertColorsAction = new QAction(this);
+    d_invertColorsAction->setIcon(utils::themeIcon("color-mode-invert-text", "circle.lefthalf.filled"));
+    d_invertColorsAction->setToolTip(tr("Invert Preview Colors"));
+    d_invertColorsAction->setCheckable(true);
+    connect(d_invertColorsAction, &QAction::toggled, d_view, &PreviewerView::setInvertColors);
+
     d_followEditorCursorAction = new QAction(this);
     d_followEditorCursorAction->setIcon(utils::themeIcon("debug-execute-from-cursor", "text.cursor"));
     d_followEditorCursorAction->setToolTip(tr("Follow Editor Cursor"));
@@ -91,6 +98,7 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     toolBar->addWidget(d_zoomComboBox);
     toolBar->addAction(zoomInAction);
     toolBar->addWidget(d_currentPageLabel);
+    toolBar->addAction(d_invertColorsAction);
     toolBar->addAction(d_followEditorCursorAction);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
@@ -119,6 +127,10 @@ void Previewer::restoreSettings(const QSettings& settings)
         d_zoomComboBox->setCurrentIndex(index);
     }
 
+    bool invertColors = settings.value(SETTING_PREVIEW_INVERT_COLORS, false).toBool();
+    d_invertColorsAction->setChecked(invertColors);
+    d_view->setInvertColors(invertColors);
+
     bool followCursor = settings.value(SETTING_PREVIEW_FOLLOW_CURSOR, false).toBool();
     d_followEditorCursorAction->setChecked(followCursor);
 }
@@ -139,6 +151,7 @@ void Previewer::saveSettings(QSettings& settings)
     }
 
     settings.setValue(SETTING_PREVIEW_ZOOM, zoomValue);
+    settings.setValue(SETTING_PREVIEW_INVERT_COLORS, d_invertColorsAction->isChecked());
     settings.setValue(SETTING_PREVIEW_FOLLOW_CURSOR, d_followEditorCursorAction->isChecked());
 }
 

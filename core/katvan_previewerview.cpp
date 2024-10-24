@@ -47,6 +47,7 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
     , d_zoomMode(ZoomMode::Custom)
     , d_zoomFactor(1.0)
     , d_currentPage(0)
+    , d_invertColors(false)
     , d_driver(driver)
     , d_scrollerGestureUngrabbed(false)
 {
@@ -164,6 +165,16 @@ void PreviewerView::setCustomZoomFactor(qreal factor)
     }
 }
 
+void PreviewerView::setInvertColors(bool value)
+{
+    if (d_invertColors == value) {
+        return;
+    }
+    d_invertColors = value;
+
+    invalidateAllRenderCache();
+}
+
 void PreviewerView::jumpTo(int page, QPointF pos)
 {
     if (page < 0 || page >= d_pageGeometries.size()) {
@@ -248,7 +259,7 @@ void PreviewerView::paintEvent(QPaintEvent* event)
             painter.drawImage(pageGeometry, renderedPage->image);
         }
         if (renderedPage == nullptr || renderedPage->invalidated) {
-            d_driver->renderPage(i, d_pointSize * effectiveZoom(i));
+            d_driver->renderPage(i, d_pointSize * effectiveZoom(i), d_invertColors);
         }
     }
 

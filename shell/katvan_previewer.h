@@ -71,6 +71,7 @@ private:
 
     QComboBox* d_zoomComboBox;
     QLabel* d_currentPageLabel;
+    QAction* d_invertColorsAction;
     QAction* d_followEditorCursorAction;
 };
 

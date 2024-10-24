@@ -65,6 +65,7 @@ public slots:
     void setPages(QList<katvan::typstdriver::PreviewPageData> pages);
     void setZoomMode(katvan::PreviewerView::ZoomMode mode);
     void setCustomZoomFactor(qreal zoom);
+    void setInvertColors(bool value);
     void jumpTo(int page, QPointF pos);
 
 protected:
@@ -91,6 +92,7 @@ private:
     qreal d_zoomFactor;
     qreal d_pointSize;
     int d_currentPage;
+    bool d_invertColors;
 
     TypstDriverWrapper* d_driver;
     QTimer* d_invalidationTimer;

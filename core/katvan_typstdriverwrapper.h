@@ -76,7 +76,7 @@ public slots:
     void setSource(const QString& text);
     void applyContentEdit(int from, int to, QString text);
     void updatePreview();
-    void renderPage(int page, qreal pageSize);
+    void renderPage(int page, qreal pageSize, bool invertColors);
     void exportToPdf(const QString& filePath);
     void forwardSearch(int line, int column);
     void inverseSearch(int page, QPointF clickPoint);
