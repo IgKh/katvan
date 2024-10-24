@@ -21,23 +21,89 @@
 #include "typstdriver_ffi/bridge.h"
 
 #include <QDir>
+#include <QDirIterator>
 #include <QEventLoop>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QSet>
+#include <QSettings>
 #include <QStandardPaths>
 
 #include <archive.h>
 #include <archive_entry.h>
 
-#include <memory>
+static constexpr QLatin1StringView SETTING_ALLOW_PREVIEW_PACKAGES("compiler/allow-preview-packages");
 
 namespace katvan::typstdriver {
 
 QString PackageManager::s_downloadCacheLocation;
+std::atomic<std::shared_ptr<PackageManagerSettings>> PackageManager::s_settings = std::make_shared<PackageManagerSettings>();
+
+PackageManagerSettings::PackageManagerSettings()
+    : d_allowPreviewPackages(false)
+{
+}
+
+PackageManagerSettings::PackageManagerSettings(const QSettings& settings)
+    : d_allowPreviewPackages(settings.value(SETTING_ALLOW_PREVIEW_PACKAGES, true).toBool())
+{
+}
+
+void PackageManagerSettings::save(QSettings& settings)
+{
+    settings.setValue(SETTING_ALLOW_PREVIEW_PACKAGES, d_allowPreviewPackages);
+}
+
+void PackageManager::applySettings(const PackageManagerSettings& settings)
+{
+    s_settings.store(std::make_shared<PackageManagerSettings>(settings));
+}
 
 void PackageManager::setDownloadCacheLocation(const QString& dirPath)
 {
     s_downloadCacheLocation = dirPath;
+}
+
+QString PackageManager::downloadCacheDirectory()
+{
+    QString location = s_downloadCacheLocation;
+    if (location.isEmpty()) {
+        location = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    }
+    return location + "/typst";
+}
+
+PackageManagerStatistics PackageManager::cacheStatistics()
+{
+    QString cacheDir = typstdriver::PackageManager::downloadCacheDirectory();
+    QDirIterator it {
+        cacheDir,
+        QDir::AllEntries | QDir::NoDotAndDotDot,
+        QDirIterator::Subdirectories
+    };
+
+    qsizetype totalSize = 0;
+    QSet<QString> distinctPackages;
+    QSet<QString> distinctPackageVersions;
+
+    while (it.hasNext()) {
+        QFileInfo info = it.nextFileInfo();
+        totalSize += info.size();
+
+        if (info.isDir()) {
+            QStringList parts = info.filePath().remove(cacheDir).split(QDir::separator(), Qt::SkipEmptyParts);
+            if (parts.length() == 3) {
+                distinctPackages.insert(parts[1]);
+                distinctPackageVersions.insert(parts[1] + ":" + parts[2]);
+            }
+        }
+    }
+
+    return PackageManagerStatistics {
+        totalSize,
+        distinctPackages.size(),
+        distinctPackageVersions.size()
+    };
 }
 
 PackageManager::PackageManager(Logger* logger, QObject* parent)
@@ -63,12 +129,13 @@ QString PackageManager::getPackageLocalPath(const QString& packageNamespace, con
 
 QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QString& version)
 {
-    QString cacheBase = s_downloadCacheLocation;
-    if (cacheBase.isEmpty()) {
-        cacheBase = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (!s_settings.load()->allowPreviewPackages()) {
+        d_error = Error::NOT_ALLOWED;
+        d_errorMessage = "use of Typst Universe preview packages is disabled in application settings";
+        return QString();
     }
 
-    QDir cacheDir = cacheBase + "/typst/preview";
+    QDir cacheDir = downloadCacheDirectory() + "/preview";
     if (!cacheDir.exists()) {
         cacheDir.mkpath(".");
     }
@@ -259,6 +326,7 @@ PackageManagerError PackageManagerProxy::error() const
 {
     switch (d_manager.error()) {
         case PackageManager::Error::SUCCESS: return PackageManagerError::Success;
+        case PackageManager::Error::NOT_ALLOWED: return PackageManagerError::NotAllowed;
         case PackageManager::Error::NOT_FOUND: return PackageManagerError::NotFound;
         case PackageManager::Error::NETWORK_ERROR: return PackageManagerError::NetworkError;
         case PackageManager::Error::IO_ERROR: return PackageManagerError::IoError;

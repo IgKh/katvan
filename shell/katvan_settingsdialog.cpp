@@ -19,6 +19,7 @@
 
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QFontComboBox>
 #include <QFontDatabase>
@@ -27,6 +28,8 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QLibraryInfo>
+#include <QLocale>
+#include <QPushButton>
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QRadioButton>
@@ -50,14 +53,26 @@ void SettingsDialog::setEditorSettings(const EditorSettings& settings)
     d_editorSettingsTab->setSettings(settings);
 }
 
+typstdriver::PackageManagerSettings SettingsDialog::packageManagerSettings() const
+{
+    return d_compilerSettingsTab->settings();
+}
+
+void SettingsDialog::setPackageManagerSettings(const typstdriver::PackageManagerSettings& settings)
+{
+    d_compilerSettingsTab->setSettings(settings);
+}
+
 void SettingsDialog::setupUI()
 {
     setWindowTitle(tr("Katvan Settings"));
 
     d_editorSettingsTab = new EditorSettingsTab();
+    d_compilerSettingsTab = new CompilerSettingsTab();
 
     QTabWidget* tabWidget = new QTabWidget();
-    tabWidget->addTab(d_editorSettingsTab, tr("Editor"));
+    tabWidget->addTab(d_editorSettingsTab, tr("&Editor"));
+    tabWidget->addTab(d_compilerSettingsTab, tr("&Compiler"));
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -211,15 +226,16 @@ void EditorSettingsTab::setupUI()
     indentationLayout->addLayout(indentationTopLayout);
     indentationLayout->addLayout(indentationStyleLayout);
 
-    QGroupBox* autoBackupGroup = new QGroupBox(tr("Automatically backup unsaved changes"));
+    QGroupBox* autoBackupGroup = new QGroupBox(tr("Automatically Backup Unsaved Changes"));
 
     QFormLayout* autoBackupLayout = new QFormLayout(autoBackupGroup);
-    autoBackupLayout->addRow(tr("Backup interval:"), d_backupInterval);
+    autoBackupLayout->addRow(tr("&Backup Interval:"), d_backupInterval);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(appearanceGroup);
     mainLayout->addWidget(indentationGroup);
     mainLayout->addWidget(autoBackupGroup);
+    mainLayout->addStretch(1);
 }
 
 void EditorSettingsTab::updateControlStates()
@@ -264,6 +280,82 @@ void EditorSettingsTab::updateFontSizes()
     if (currentSizeNewIndex >= 0) {
         d_editorFontSizeComboBox->setCurrentIndex(currentSizeNewIndex);
     }
+}
+
+CompilerSettingsTab::CompilerSettingsTab(QWidget* parent)
+    : QWidget(parent)
+{
+    setupUI();
+}
+
+void CompilerSettingsTab::setupUI()
+{
+    d_allowPreviewPackages = new QCheckBox(tr("&Allow preview packages"));
+
+    d_cacheSize = new QLabel();
+
+    QPushButton* browseCacheButton = new QPushButton(tr("&Browse..."));
+    browseCacheButton->setToolTip(tr("Show the download cache folder in a file browser"));
+    connect(browseCacheButton, &QPushButton::clicked, this, &CompilerSettingsTab::browseCache);
+
+    QGroupBox* universeGroup = new QGroupBox(tr("Typst Universe"));
+    QVBoxLayout* universeLayout = new QVBoxLayout(universeGroup);
+
+    universeLayout->addWidget(d_allowPreviewPackages);
+
+    QFormLayout* downloadCacheTopLayout = new QFormLayout();
+    downloadCacheTopLayout->addRow(tr("Cache size: "), d_cacheSize);
+
+    QHBoxLayout* downloadCacheButtonLayout = new QHBoxLayout();
+    downloadCacheButtonLayout->addStretch(1);
+    downloadCacheButtonLayout->addWidget(browseCacheButton);
+
+    QGroupBox* downloadCacheGroup = new QGroupBox(tr("Download Cache"));
+    QVBoxLayout* downloadCacheLayout = new QVBoxLayout(downloadCacheGroup);
+    downloadCacheLayout->addLayout(downloadCacheTopLayout);
+    downloadCacheLayout->addLayout(downloadCacheButtonLayout);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->addWidget(universeGroup);
+    mainLayout->addWidget(downloadCacheGroup);
+    mainLayout->addStretch(1);
+}
+
+typstdriver::PackageManagerSettings CompilerSettingsTab::settings() const
+{
+    typstdriver::PackageManagerSettings settings;
+    settings.setAllowPreviewPackages(d_allowPreviewPackages->isChecked());
+
+    return settings;
+}
+
+void CompilerSettingsTab::setSettings(const typstdriver::PackageManagerSettings& settings)
+{
+    d_allowPreviewPackages->setChecked(settings.allowPreviewPackages());
+}
+
+void CompilerSettingsTab::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    updateCacheSize();
+}
+
+void CompilerSettingsTab::updateCacheSize()
+{
+    auto stats = typstdriver::PackageManager::cacheStatistics();
+
+    QString text = tr("%2 distinct versions of %1 packages (total %3)").arg(
+        QString::number(stats.numPackages),
+        QString::number(stats.numPackageVersions),
+        QLocale().formattedDataSize(stats.totalSize));
+
+    d_cacheSize->setText(text);
+}
+
+void CompilerSettingsTab::browseCache()
+{
+    QUrl url = QUrl::fromLocalFile(typstdriver::PackageManager::downloadCacheDirectory());
+    QDesktopServices::openUrl(url);
 }
 
 }

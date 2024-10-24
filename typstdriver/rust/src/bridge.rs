@@ -24,6 +24,7 @@ use crate::engine::EngineImpl;
 pub(crate) mod ffi {
     enum PackageManagerError {
         Success,
+        NotAllowed,
         NotFound,
         NetworkError,
         IoError,
@@ -106,6 +107,8 @@ pub(crate) mod ffi {
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 
         fn get_tooltip(&self, line: usize, column: usize) -> Result<String>;
+
+        fn discard_lookup_caches(&mut self);
 
         unsafe fn create_engine_impl<'a>(
             logger: &'a LoggerProxy,

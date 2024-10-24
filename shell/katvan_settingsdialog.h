@@ -21,10 +21,13 @@
 
 #include "katvan_editorsettings.h"
 
+#include "typstdriver_packagemanager.h"
+
 QT_BEGIN_NAMESPACE
 class QCheckBox;
 class QComboBox;
 class QFontComboBox;
+class QLabel;
 class QRadioButton;
 class QSpinBox;
 QT_END_NAMESPACE
@@ -32,6 +35,7 @@ QT_END_NAMESPACE
 namespace katvan {
 
 class EditorSettingsTab;
+class CompilerSettingsTab;
 
 class SettingsDialog : public QDialog
 {
@@ -43,10 +47,14 @@ public:
     EditorSettings editorSettings() const;
     void setEditorSettings(const EditorSettings& settings);
 
+    typstdriver::PackageManagerSettings packageManagerSettings() const;
+    void setPackageManagerSettings(const typstdriver::PackageManagerSettings& settings);
+
 private:
     void setupUI();
 
     EditorSettingsTab* d_editorSettingsTab;
+    CompilerSettingsTab* d_compilerSettingsTab;
 };
 
 class EditorSettingsTab : public QWidget
@@ -76,6 +84,30 @@ private:
     QSpinBox* d_indentWidth;
     QSpinBox* d_tabWidth;
     QSpinBox* d_backupInterval;
+};
+
+class CompilerSettingsTab : public QWidget
+{
+    Q_OBJECT
+
+public:
+    CompilerSettingsTab(QWidget* parent = nullptr);
+
+    typstdriver::PackageManagerSettings settings() const;
+    void setSettings(const typstdriver::PackageManagerSettings& settings);
+
+private slots:
+    void updateCacheSize();
+    void browseCache();
+
+protected:
+    void showEvent(QShowEvent* event);
+
+private:
+    void setupUI();
+
+    QCheckBox* d_allowPreviewPackages;
+    QLabel* d_cacheSize;
 };
 
 }

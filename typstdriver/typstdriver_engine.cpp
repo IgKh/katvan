@@ -228,4 +228,10 @@ void Engine::requestToolTip(int line, int column, QPoint pos)
     }
 }
 
+void Engine::discardLookupCaches()
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+    d_ptr->engine.value()->discard_lookup_caches();
+}
+
 }

@@ -30,6 +30,8 @@
 #include "katvan_spellchecker.h"
 #include "katvan_typstdriverwrapper.h"
 
+#include "typstdriver_packagemanager.h"
+
 #include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
@@ -346,6 +348,7 @@ void MainWindow::readSettings()
     }
     d_editor->applySettings(editorSettings);
     d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
+    typstdriver::PackageManager::applySettings(typstdriver::PackageManagerSettings(settings));
 
     d_recentFiles->restoreRecents(settings);
     d_previewer->restoreSettings(settings);
@@ -843,22 +846,32 @@ void MainWindow::toggleCursorMovementStyle()
 void MainWindow::showSettingsDialog()
 {
     QSettings settings;
+
     QString mode = settings.value(SETTING_EDITOR_MODE).toString();
     EditorSettings editorSettings { mode, EditorSettings::ModeSource::SETTINGS };
 
     d_settingsDialog->setEditorSettings(editorSettings);
-    d_settingsDialog->show();
+    d_settingsDialog->setPackageManagerSettings(typstdriver::PackageManagerSettings(settings));
+    d_settingsDialog->open();
 }
 
 void MainWindow::settingsDialogAccepted()
 {
     EditorSettings editorSettings = d_settingsDialog->editorSettings();
+    typstdriver::PackageManagerSettings packageManagerSettings = d_settingsDialog->packageManagerSettings();
 
     d_editor->applySettings(editorSettings);
     d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
+    typstdriver::PackageManager::applySettings(packageManagerSettings);
+
+    if (!packageManagerSettings.allowPreviewPackages()) {
+        d_driver->discardLookupCaches();
+    }
+    d_driver->updatePreview();
 
     QSettings settings;
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
+    packageManagerSettings.save(settings);
 }
 
 void MainWindow::previewReady()

@@ -296,6 +296,10 @@ impl<'a> EngineImpl<'a> {
             }
         }
     }
+
+    pub fn discard_lookup_caches(&mut self) {
+        self.world.discard_package_roots_cache();
+    }
 }
 
 fn hash_frame(frame: &typst::layout::Frame) -> u64 {

@@ -81,6 +81,7 @@ public slots:
     void forwardSearch(int line, int column);
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
+    void discardLookupCaches();
 
 private slots:
     void compilationFinished();

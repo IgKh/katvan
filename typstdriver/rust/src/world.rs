@@ -77,6 +77,11 @@ impl<'a> KatvanWorld<'a> {
         self.now = OffsetDateTime::parse(now, &Iso8601::PARSING).ok();
     }
 
+    pub fn discard_package_roots_cache(&mut self) {
+        let mut roots = self.package_roots.lock().unwrap();
+        roots.cache.clear();
+    }
+
     pub fn main_source(&self) -> Source {
         self.source.clone()
     }
@@ -195,7 +200,6 @@ impl<'a> PackageRoots<'a> {
             ffi::PackageManagerError::NetworkError => {
                 Err(PackageError::NetworkFailed(Some(message)))
             }
-            ffi::PackageManagerError::IoError => Err(PackageError::Other(Some(message))),
             ffi::PackageManagerError::ArchiveError => {
                 Err(PackageError::MalformedArchive(Some(message)))
             }

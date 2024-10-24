@@ -23,12 +23,36 @@
 #include <QObject>
 #include <QString>
 
+#include <memory>
+
 QT_BEGIN_NAMESPACE
 class QDir;
 class QNetworkAccessManager;
+class QSettings;
 QT_END_NAMESPACE
 
 namespace katvan::typstdriver {
+
+class TYPSTDRIVER_EXPORT PackageManagerSettings {
+public:
+    PackageManagerSettings();
+    PackageManagerSettings(const QSettings& settings);
+
+    void save(QSettings& settings);
+
+    bool allowPreviewPackages() const { return d_allowPreviewPackages; }
+
+    void setAllowPreviewPackages(bool allow) { d_allowPreviewPackages = allow; }
+
+private:
+    bool d_allowPreviewPackages;
+};
+
+struct TYPSTDRIVER_EXPORT PackageManagerStatistics {
+    qsizetype totalSize;
+    qsizetype numPackages;
+    qsizetype numPackageVersions;
+};
 
 class TYPSTDRIVER_EXPORT PackageManager : public QObject
 {
@@ -37,13 +61,17 @@ class TYPSTDRIVER_EXPORT PackageManager : public QObject
 public:
     enum class Error {
         SUCCESS,
+        NOT_ALLOWED,
         NOT_FOUND,
         NETWORK_ERROR,
         IO_ERROR,
         ARCHIVE_ERROR,
     };
 
+    static void applySettings(const PackageManagerSettings& settings);
     static void setDownloadCacheLocation(const QString& dirPath);
+    static QString downloadCacheDirectory();
+    static PackageManagerStatistics cacheStatistics();
 
     PackageManager(Logger* logger, QObject* parent = nullptr);
 
@@ -62,6 +90,7 @@ private:
     bool extractArchive(const QString& archivePath, const QDir& targetDir);
 
     static QString s_downloadCacheLocation;
+    static std::atomic<std::shared_ptr<PackageManagerSettings>> s_settings;
 
     Error d_error;
     QString d_errorMessage;

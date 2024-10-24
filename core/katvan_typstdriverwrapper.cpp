@@ -186,6 +186,11 @@ void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
     QMetaObject::invokeMethod(d_engine, "requestToolTip", line, column, pos);
 }
 
+void TypstDriverWrapper::discardLookupCaches()
+{
+    QMetaObject::invokeMethod(d_engine, "discardLookupCaches");
+}
+
 void TypstDriverWrapper::compilationFinished()
 {
     d_status = d_diagnosticsModel->impliedStatus();
