@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_spellchecker_hunspell.h"
+#include "katvan_text_utils.h"
 
 #include <hunspell.hxx>
 
@@ -231,6 +232,12 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
         qsizetype pos = boundryFinder.position();
         if (boundryFinder.boundaryReasons() & QTextBoundaryFinder::EndOfItem) {
             QString word = text.sliced(prevPos, pos - prevPos);
+
+            // Rule WB4 of UAX #29 says that format characters aren't a word
+            // break boundry, but we still don't want to feed Hunspell with
+            // BiDi control characters.
+            word.removeIf(utils::isBidiControlChar);
+
             bool ok = checkWord(speller->speller, dictScript, word);
             if (!ok) {
                 result.append(std::make_pair<size_t, size_t>(prevPos, pos - prevPos));
