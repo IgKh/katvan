@@ -171,9 +171,9 @@ void TypstDriverWrapper::exportToPdf(const QString& filePath)
     QMetaObject::invokeMethod(d_engine, "exportToPdf", filePath);
 }
 
-void TypstDriverWrapper::forwardSearch(int line, int column)
+void TypstDriverWrapper::forwardSearch(int line, int column, int currentPreviewPage)
 {
-    QMetaObject::invokeMethod(d_engine, "forwardSearch", line, column);
+    QMetaObject::invokeMethod(d_engine, "forwardSearch", line, column, currentPreviewPage);
 }
 
 void TypstDriverWrapper::inverseSearch(int page, QPointF clickPoint)

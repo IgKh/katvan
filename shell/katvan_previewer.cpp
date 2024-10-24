@@ -112,6 +112,11 @@ Previewer::~Previewer()
 {
 }
 
+int Previewer::currentPage() const
+{
+    return d_view->currentPage();
+}
+
 bool Previewer::shouldFollowEditorCursor() const
 {
     return d_followEditorCursorAction->isChecked();
