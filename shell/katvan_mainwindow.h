@@ -36,7 +36,7 @@ class RecentFiles;
 class SearchBar;
 
 class Editor;
-class EditorSettingsDialog;
+class SettingsDialog;
 class TypstDriverWrapper;
 
 class MainWindow : public QMainWindow
@@ -67,7 +67,8 @@ private slots:
     void cursorPositionChanged();
     void changeSpellCheckingDictionary();
     void toggleCursorMovementStyle();
-    void editorSettingsDialogAccepted();
+    void showSettingsDialog();
+    void settingsDialogAccepted();
     void previewReady();
     void compilationStatusChanged();
 
@@ -100,7 +101,7 @@ private:
     Previewer* d_previewer;
     CompilerOutput* d_compilerOutput;
 
-    EditorSettingsDialog* d_editorSettingsDialog;
+    SettingsDialog* d_settingsDialog;
 
     QMovie* d_compilingMovie;
 

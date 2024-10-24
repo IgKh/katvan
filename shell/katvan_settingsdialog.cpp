@@ -28,20 +28,55 @@
 #include <QLabel>
 #include <QLibraryInfo>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QRadioButton>
 #include <QVBoxLayout>
 
 namespace katvan {
 
-EditorSettingsDialog::EditorSettingsDialog(QWidget* parent)
+SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent)
+{
+    setupUI();
+}
+
+EditorSettings SettingsDialog::editorSettings() const
+{
+    return d_editorSettingsTab->settings();
+}
+
+void SettingsDialog::setEditorSettings(const EditorSettings& settings)
+{
+    d_editorSettingsTab->setSettings(settings);
+}
+
+void SettingsDialog::setupUI()
+{
+    setWindowTitle(tr("Katvan Settings"));
+
+    d_editorSettingsTab = new EditorSettingsTab();
+
+    QTabWidget* tabWidget = new QTabWidget();
+    tabWidget->addTab(d_editorSettingsTab, tr("Editor"));
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->addWidget(tabWidget);
+    mainLayout->addWidget(buttonBox);
+}
+
+EditorSettingsTab::EditorSettingsTab(QWidget* parent)
+    : QWidget(parent)
 {
     setupUI();
 
     updateFontSizes();
 }
 
-EditorSettings EditorSettingsDialog::settings() const
+EditorSettings EditorSettingsTab::settings() const
 {
     EditorSettings settings;
 
@@ -65,7 +100,7 @@ EditorSettings EditorSettingsDialog::settings() const
     return settings;
 }
 
-void EditorSettingsDialog::setSettings(const EditorSettings& settings)
+void EditorSettingsTab::setSettings(const EditorSettings& settings)
 {
     QFont font = settings.font();
     d_editorFontComboBox->setCurrentFont(font);
@@ -93,12 +128,10 @@ void EditorSettingsDialog::setSettings(const EditorSettings& settings)
     updateControlStates();
 }
 
-void EditorSettingsDialog::setupUI()
+void EditorSettingsTab::setupUI()
 {
-    setWindowTitle(tr("Editor Settings"));
-
     d_editorFontComboBox = new QFontComboBox();
-    connect(d_editorFontComboBox, &QFontComboBox::currentFontChanged, this, &EditorSettingsDialog::updateFontSizes);
+    connect(d_editorFontComboBox, &QFontComboBox::currentFontChanged, this, &EditorSettingsTab::updateFontSizes);
 
     QLabel* editorFontLabel = new QLabel(tr("Editor &Font:"));
     editorFontLabel->setBuddy(d_editorFontComboBox);
@@ -127,7 +160,7 @@ void EditorSettingsDialog::setupUI()
     QButtonGroup* indentStyleBtnGroup = new QButtonGroup(this);
     indentStyleBtnGroup->addButton(d_indentWithSpaces);
     indentStyleBtnGroup->addButton(d_indentWithTabs);
-    connect(indentStyleBtnGroup, &QButtonGroup::buttonToggled, this, &EditorSettingsDialog::updateControlStates);
+    connect(indentStyleBtnGroup, &QButtonGroup::buttonToggled, this, &EditorSettingsTab::updateControlStates);
 
     d_indentWidth = new QSpinBox();
     d_indentWidth->setSuffix(tr(" characters"));
@@ -183,23 +216,18 @@ void EditorSettingsDialog::setupUI()
     QFormLayout* autoBackupLayout = new QFormLayout(autoBackupGroup);
     autoBackupLayout->addRow(tr("Backup interval:"), d_backupInterval);
 
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(appearanceGroup);
     mainLayout->addWidget(indentationGroup);
     mainLayout->addWidget(autoBackupGroup);
-    mainLayout->addWidget(buttonBox);
 }
 
-void EditorSettingsDialog::updateControlStates()
+void EditorSettingsTab::updateControlStates()
 {
     d_indentWidth->setEnabled(!d_indentWithTabs->isChecked());
 }
 
-void EditorSettingsDialog::updateFontSizes()
+void EditorSettingsTab::updateFontSizes()
 {
     QString currentFamily = d_editorFontComboBox->currentFont().family();
 

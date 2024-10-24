@@ -31,12 +31,30 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
-class EditorSettingsDialog : public QDialog
+class EditorSettingsTab;
+
+class SettingsDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    EditorSettingsDialog(QWidget* parent = nullptr);
+    SettingsDialog(QWidget* parent = nullptr);
+
+    EditorSettings editorSettings() const;
+    void setEditorSettings(const EditorSettings& settings);
+
+private:
+    void setupUI();
+
+    EditorSettingsTab* d_editorSettingsTab;
+};
+
+class EditorSettingsTab : public QWidget
+{
+    Q_OBJECT
+
+public:
+    EditorSettingsTab(QWidget* parent = nullptr);
 
     EditorSettings settings() const;
     void setSettings(const EditorSettings& settings);

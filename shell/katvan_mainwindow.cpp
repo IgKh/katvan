@@ -108,8 +108,8 @@ void MainWindow::setupUI()
 
     setCentralWidget(centralWidget);
 
-    d_editorSettingsDialog = new EditorSettingsDialog(this);
-    connect(d_editorSettingsDialog, &QDialog::accepted, this, &MainWindow::editorSettingsDialogAccepted);
+    d_settingsDialog = new SettingsDialog(this);
+    connect(d_settingsDialog, &QDialog::accepted, this, &MainWindow::settingsDialogAccepted);
 
     d_previewer = new Previewer(d_driver);
     connect(d_previewer, &Previewer::followCursorEnabled, this, &MainWindow::cursorPositionChanged);
@@ -253,11 +253,6 @@ void MainWindow::setupActions()
      */
     QMenu* viewMenu = menuBar()->addMenu(tr("&View"));
 
-    QAction* editorSettingsAction = viewMenu->addAction(tr("&Editor Settings..."), d_editorSettingsDialog, &QDialog::show);
-    editorSettingsAction->setMenuRole(QAction::PreferencesRole);
-
-    viewMenu->addSeparator();
-
     viewMenu->addAction(d_previewDock->toggleViewAction());
     viewMenu->addAction(d_compilerOutputDock->toggleViewAction());
 
@@ -266,7 +261,10 @@ void MainWindow::setupActions()
      */
     QMenu* toolsMenu = menuBar()->addMenu(tr("&Tools"));
 
-    QAction* spellingAction = toolsMenu->addAction(tr("&Spell Checking..."), this, &MainWindow::changeSpellCheckingDictionary);
+    QAction* settingsAction = toolsMenu->addAction(tr("&Settings..."), this, &MainWindow::showSettingsDialog);
+    settingsAction->setMenuRole(QAction::PreferencesRole);
+
+    QAction* spellingAction = toolsMenu->addAction(tr("Spell &Checking..."), this, &MainWindow::changeSpellCheckingDictionary);
     spellingAction->setIcon(utils::themeIcon("tools-check-spelling"));
     spellingAction->setMenuRole(QAction::NoRole);
 
@@ -346,7 +344,6 @@ void MainWindow::readSettings()
         QString mode = settings.value(SETTING_EDITOR_MODE).toString();
         editorSettings = EditorSettings(mode, EditorSettings::ModeSource::SETTINGS);
     }
-    d_editorSettingsDialog->setSettings(editorSettings);
     d_editor->applySettings(editorSettings);
     d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
 
@@ -843,9 +840,19 @@ void MainWindow::toggleCursorMovementStyle()
     }
 }
 
-void MainWindow::editorSettingsDialogAccepted()
+void MainWindow::showSettingsDialog()
 {
-    EditorSettings editorSettings = d_editorSettingsDialog->settings();
+    QSettings settings;
+    QString mode = settings.value(SETTING_EDITOR_MODE).toString();
+    EditorSettings editorSettings { mode, EditorSettings::ModeSource::SETTINGS };
+
+    d_settingsDialog->setEditorSettings(editorSettings);
+    d_settingsDialog->show();
+}
+
+void MainWindow::settingsDialogAccepted()
+{
+    EditorSettings editorSettings = d_settingsDialog->editorSettings();
 
     d_editor->applySettings(editorSettings);
     d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
