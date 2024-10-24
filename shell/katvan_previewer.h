@@ -41,6 +41,7 @@ public:
     Previewer(TypstDriverWrapper* driver, QWidget* parent = nullptr);
     ~Previewer();
 
+    int currentPage() const;
     bool shouldFollowEditorCursor() const;
 
     void restoreSettings(const QSettings& settings);

@@ -25,6 +25,7 @@
 #include <QFileInfo>
 #include <QTimeZone>
 
+#include <algorithm>
 #include <optional>
 
 namespace katvan::typstdriver {
@@ -171,7 +172,7 @@ void Engine::exportToPdf(const QString& outputFile)
     }
 }
 
-void Engine::forwardSearch(int line, int column)
+void Engine::forwardSearch(int line, int column, int currentPreviewPage)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
@@ -180,15 +181,20 @@ void Engine::forwardSearch(int line, int column)
             static_cast<size_t>(line),
             static_cast<size_t>(column));
 
-        // TODO: There can be multiple positions returned since the same syntax
-        // node can appear in multiple places in the rendered document (e.g. a
-        // header can also appear in a TOC). According to the Typst Discord,
-        // the intention is to pick the match that is closest to the previewer's
-        // current scroll position. We should implement that too eventually, but
-        // for now just pick the first one.
-        if (!result.empty()) {
-            const auto& pos = result.front();
-            Q_EMIT jumpToPreview(pos.page, QPointF(pos.x_pts, pos.y_pts));
+        // There can be multiple positions returned since the same syntax node
+        // can appear in multiple places in the rendered document (e.g. a header
+        // can also appear in a TOC). We should pick the one closest to the
+        // current scroll position of the previewer; this is a lame implementation
+        // of that.
+        auto comp = [currentPreviewPage](const PreviewPosition& lhs, const PreviewPosition& rhs) {
+            int lhsDistance = qAbs(static_cast<int>(lhs.page) - currentPreviewPage);
+            int rhsDistance = qAbs(static_cast<int>(rhs.page) - currentPreviewPage);
+            return lhsDistance < rhsDistance;
+        };
+
+        auto it = std::min_element(result.begin(), result.end(), comp);
+        if (it != result.end()) {
+            Q_EMIT jumpToPreview(it->page, QPointF(it->x_pts, it->y_pts));
         }
     }
     catch (rust::Error&) {

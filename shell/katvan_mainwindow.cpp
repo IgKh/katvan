@@ -718,7 +718,7 @@ void MainWindow::goToLine()
 void MainWindow::jumpToPreview()
 {
     QTextCursor cursor = d_editor->textCursor();
-    d_driver->forwardSearch(cursor.blockNumber(), cursor.positionInBlock());
+    d_driver->forwardSearch(cursor.blockNumber(), cursor.positionInBlock(), d_previewer->currentPage());
 }
 
 void MainWindow::showTypstDocs()
@@ -827,7 +827,7 @@ void MainWindow::cursorPositionChanged()
         .arg(column));
 
     if (d_previewer->shouldFollowEditorCursor()) {
-        d_driver->forwardSearch(line, column);
+        d_driver->forwardSearch(line, column, d_previewer->currentPage());
     }
 }
 
