@@ -234,6 +234,26 @@ void Engine::requestToolTip(int line, int column, QPoint pos)
     }
 }
 
+void Engine::requestCompletions(int line, int column)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        Completions result = d_ptr->engine.value()->get_completions(
+            static_cast<size_t>(line),
+            static_cast<size_t>(column));
+
+        QByteArray json { result.completions_json.data(), static_cast<qsizetype>(result.completions_json.size()) };
+
+        Q_EMIT completionsReady(result.from.line, result.from.column, json);
+    }
+    catch (rust::Error& e) {
+        // The completion manager is waiting for something, so even on failure
+        // send an empty reply.
+        Q_EMIT completionsReady(-1, -1, QByteArrayLiteral("[]"));
+    }
+}
+
 void Engine::discardLookupCaches()
 {
     Q_ASSERT(d_ptr->engine.has_value());

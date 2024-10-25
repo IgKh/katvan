@@ -33,8 +33,9 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
-class Highlighter;
 class CodeModel;
+class CompletionManager;
+class Highlighter;
 
 class Editor : public QTextEdit
 {
@@ -44,6 +45,8 @@ class Editor : public QTextEdit
 
 public:
     Editor(QWidget* parent = nullptr);
+
+    CompletionManager* completionManager() const { return d_completionManager; }
 
     QString documentTextForPreview() const;
 
@@ -113,6 +116,7 @@ private:
     QTimer* d_debounceTimer;
     Highlighter* d_highlighter;
     CodeModel* d_codeModel;
+    CompletionManager* d_completionManager;
 
     EditorSettings d_appSettings;
     EditorSettings d_fileMode;

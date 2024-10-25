@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_codemodel.h"
+#include "katvan_completionmanager.h"
 #include "katvan_editor.h"
 #include "katvan_editorlayout.h"
 #include "katvan_highlighter.h"
@@ -36,6 +37,7 @@ namespace katvan {
 
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
+static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::CTRL | Qt::Key_E);
 
 static constexpr int MAX_LINE_FOR_MODELINES = 10;
 
@@ -85,12 +87,14 @@ Editor::Editor(QWidget* parent)
 {
     document()->setDocumentLayout(new EditorLayout(document()));
     setAcceptRichText(false);
+    setMinimumSize(300, 100);
 
     connect(SpellChecker::instance(), &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
     connect(SpellChecker::instance(), &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
 
     d_highlighter = new Highlighter(document(), SpellChecker::instance(), d_theme);
     d_codeModel = new CodeModel(document(), this);
+    d_completionManager = new CompletionManager(this);
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);
@@ -113,6 +117,11 @@ Editor::Editor(QWidget* parent)
     insertPopup->setKey(INSERT_POPUP);
     insertPopup->setContext(Qt::WidgetShortcut);
     connect(insertPopup, &QShortcut::activated, this, &Editor::popupInsertMenu);
+
+    QShortcut* autocompletePrompt = new QShortcut(this);
+    autocompletePrompt->setKey(AUTOCOMPLETE_PROMPT);
+    autocompletePrompt->setContext(Qt::WidgetShortcut);
+    connect(autocompletePrompt, &QShortcut::activated, d_completionManager, &CompletionManager::startCompletion);
 
     d_debounceTimer = new QTimer(this);
     d_debounceTimer->setSingleShot(true);
@@ -567,6 +576,16 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
 
 void Editor::keyPressEvent(QKeyEvent* event)
 {
+    if (d_completionManager->isActive() && (
+        event->key() == Qt::Key_Return ||
+        event->key() == Qt::Key_Enter ||
+        event->key() == Qt::Key_Tab ||
+        event->key() == Qt::Key_Backtab
+    )) {
+        event->ignore();
+        return;
+    }
+
     if (event->key() == Qt::Key_Return) {
         handleNewLine();
         return;
@@ -694,6 +713,10 @@ void Editor::keyPressEvent(QKeyEvent* event)
 #endif
 
     QTextEdit::keyPressEvent(event);
+
+    if (d_completionManager->isActive()) {
+        d_completionManager->updateCompletionPrefix();
+    }
 }
 
 void Editor::keyReleaseEvent(QKeyEvent* event)

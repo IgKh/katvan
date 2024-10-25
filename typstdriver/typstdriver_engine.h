@@ -19,6 +19,7 @@
 
 #include "typstdriver_export.h"
 
+#include <QByteArray>
 #include <QImage>
 #include <QObject>
 #include <QSize>
@@ -57,6 +58,7 @@ signals:
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
     void toolTipReady(QPoint pos, QString toolTip);
+    void completionsReady(int line, int column, QByteArray completionsJson);
 
 public slots:
     void init();
@@ -68,6 +70,7 @@ public slots:
     void forwardSearch(int line, int column, int currentPreviewPage);
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
+    void requestCompletions(int line, int column);
     void discardLookupCaches();
 
 private:

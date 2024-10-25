@@ -55,6 +55,11 @@ pub(crate) mod ffi {
         column: usize,
     }
 
+    struct Completions {
+        from: SourcePosition,
+        completions_json: String,
+    }
+
     unsafe extern "C++" {
         include!("typstdriver_logger_p.h");
 
@@ -112,6 +117,8 @@ pub(crate) mod ffi {
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 
         fn get_tooltip(&self, line: usize, column: usize) -> Result<String>;
+
+        fn get_completions(&self, line: usize, column: usize) -> Result<Completions>;
 
         fn discard_lookup_caches(&mut self);
 

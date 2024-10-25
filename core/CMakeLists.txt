@@ -15,6 +15,7 @@ configure_file(katvan_version.h.in katvan_version.h @ONLY)
 
 set(SOURCES
     katvan_codemodel.cpp
+    katvan_completionmanager.cpp
     katvan_diagnosticsmodel.cpp
     katvan_editor.cpp
     katvan_editorlayout.cpp

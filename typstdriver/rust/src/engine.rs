@@ -309,6 +309,25 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
+    pub fn get_completions(&self, line: usize, column: usize) -> Result<ffi::Completions> {
+        let main = self.world.main_source();
+        let cursor = main
+            .line_column_to_byte(line, column)
+            .context("No such position")?;
+
+        let (start_crusor, completions) =
+            typst_ide::autocomplete(&self.world, self.result.as_ref(), &main, cursor, true)
+                .context("No available completions")?;
+
+        Ok(ffi::Completions {
+            from: ffi::SourcePosition {
+                line: main.byte_to_line(start_crusor).unwrap(),
+                column: main.byte_to_column(start_crusor).unwrap(),
+            },
+            completions_json: serde_json::to_string(&completions)?,
+        })
+    }
+
     pub fn discard_lookup_caches(&mut self) {
         self.world.discard_package_roots_cache();
     }
