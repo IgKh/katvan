@@ -173,15 +173,19 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn render_page(&self, page: usize, point_size: f32, invert_colors: bool) -> Result<ffi::RenderedPage> {
+    pub fn render_page(
+        &self,
+        page: usize,
+        point_size: f32,
+        invert_colors: bool,
+    ) -> Result<ffi::RenderedPage> {
         let document = self.result.as_ref().context("Invalid state")?;
         let page = document.pages.get(page).context("No such page")?;
 
         let pixmap = if invert_colors {
             let page = darkifier::invert_page_colors(page);
             typst_render::render(&page, point_size)
-        }
-        else {
+        } else {
             typst_render::render(page, point_size)
         };
 

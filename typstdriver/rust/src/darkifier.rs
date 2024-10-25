@@ -39,7 +39,7 @@ fn invert_frame_colors(frame: &Frame) -> Frame {
     let mut result = Frame::new(frame.size(), frame.kind());
 
     for (pos, item) in frame.items() {
-        result.push(pos.clone(), process_frame_item(item));
+        result.push(*pos, process_frame_item(item));
     }
     result
 }
@@ -48,7 +48,7 @@ fn process_frame_item(item: &FrameItem) -> FrameItem {
     match item {
         FrameItem::Group(group) => FrameItem::Group(GroupItem {
             frame: invert_frame_colors(&group.frame),
-            transform: group.transform.clone(),
+            transform: group.transform,
             clip_path: group.clip_path.clone(),
             label: group.label,
             parent: group.parent,
@@ -63,7 +63,7 @@ fn process_frame_item(item: &FrameItem) -> FrameItem {
             text: text.text.clone(),
             glyphs: text.glyphs.clone(),
         }),
-        FrameItem::Shape(shape, span) => FrameItem::Shape(process_shape(shape), span.clone()),
+        FrameItem::Shape(shape, span) => FrameItem::Shape(process_shape(shape), *span),
         _ => item.clone(),
     }
 }
@@ -129,16 +129,15 @@ fn process_gradient(gradient: &Gradient) -> Gradient {
 fn process_gradient_stops(stops: &[(Color, Ratio)]) -> Vec<(Color, Ratio)> {
     stops
         .iter()
-        .map(|(color, ratio)| (process_color(color), ratio.clone()))
+        .map(|(color, ratio)| (process_color(color), *ratio))
         .collect()
 }
 
 fn process_color(color: &Color) -> Color {
-    if let Color::Hsl(hsl) = color.to_hsl() {
-        let mut processed = hsl.clone();
-        processed.color.lightness = 1.0 - hsl.color.lightness;
-        Color::Hsl(processed)
+    if let Color::Hsl(mut hsl) = color.to_hsl() {
+        hsl.color.lightness = 1.0 - hsl.color.lightness;
+        Color::Hsl(hsl)
     } else {
-        color.clone()
+        *color
     }
 }

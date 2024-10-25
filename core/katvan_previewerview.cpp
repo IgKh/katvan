@@ -252,7 +252,7 @@ void PreviewerView::paintEvent(QPaintEvent* event)
         }
         paintedSomething = true;
 
-        painter.fillRect(pageGeometry, Qt::white);
+        painter.fillRect(pageGeometry, d_invertColors ? Qt::black : Qt::white);
 
         CachedPage* renderedPage = d_renderCache.object(i);
         if (renderedPage != nullptr) {
