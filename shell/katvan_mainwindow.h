@@ -79,6 +79,7 @@ private:
     void readSettings();
     void saveSettings();
 
+    void setIconTheme();
     void restoreSpellingDictionary(const QSettings& settings);
 
     bool maybeSave();

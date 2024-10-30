@@ -68,6 +68,7 @@ MainWindow::MainWindow()
 
     d_driver = new TypstDriverWrapper(this);
 
+    setIconTheme();
     setupUI();
     setupActions();
     setupStatusBar();
@@ -530,6 +531,7 @@ bool MainWindow::event(QEvent* event)
 {
     if (event->type() == QEvent::ThemeChange || event->type() == QEvent::ApplicationPaletteChange) {
         d_editor->updateEditorTheme();
+        setIconTheme();
     }
 
     return QMainWindow::event(event);
@@ -752,6 +754,17 @@ void MainWindow::showAbout()
     dlg.setIconPixmap(windowIcon().pixmap(QSize(128, 128)));
     dlg.setInformativeText(informativeText);
     dlg.exec();
+}
+
+void MainWindow::setIconTheme()
+{
+    QStringList paths;
+    if (EditorTheme::isAppInDarkMode()) {
+        paths.append(":/icons-dark");
+    }
+    paths.append(":/icons");
+
+    QIcon::setFallbackSearchPaths(paths);
 }
 
 void MainWindow::restoreSpellingDictionary(const QSettings& settings)

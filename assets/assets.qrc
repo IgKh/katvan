@@ -34,5 +34,31 @@
         <file>icons/window-close.svg</file>
         <file>icons/zoom-in.svg</file>
         <file>icons/zoom-out.svg</file>
+
+        <file>icons-dark/application-exit.svg</file>
+        <file>icons-dark/color-mode-invert-text.svg</file>
+        <file>icons-dark/debug-execute-from-cursor.svg</file>
+        <file>icons-dark/document-new.svg</file>
+        <file>icons-dark/document-open.svg</file>
+        <file>icons-dark/document-save-as.svg</file>
+        <file>icons-dark/document-save.svg</file>
+        <file>icons-dark/document-send.svg</file>
+        <file>icons-dark/edit-clear-history.svg</file>
+        <file>icons-dark/edit-copy.svg</file>
+        <file>icons-dark/edit-cut.svg</file>
+        <file>icons-dark/edit-find.svg</file>
+        <file>icons-dark/edit-find-replace.svg</file>
+        <file>icons-dark/edit-paste.svg</file>
+        <file>icons-dark/edit-redo.svg</file>
+        <file>icons-dark/edit-undo.svg</file>
+        <file>icons-dark/go-down.svg</file>
+        <file>icons-dark/go-up.svg</file>
+        <file>icons-dark/help-about.svg</file>
+        <file>icons-dark/help-contents.svg</file>
+        <file>icons-dark/settings-configure.svg</file>
+        <file>icons-dark/tools-check-spelling.svg</file>
+        <file>icons-dark/window-close.svg</file>
+        <file>icons-dark/zoom-in.svg</file>
+        <file>icons-dark/zoom-out.svg</file>
     </qresource>
 </RCC>

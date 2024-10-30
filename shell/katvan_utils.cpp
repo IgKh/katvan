@@ -47,8 +47,7 @@ QString getApplicationDir(bool& isInstalled)
 
 QIcon themeIcon(const char* xdgIcon)
 {
-    QString fallbackPath = QLatin1String(":/icons/%1.svg").arg(QLatin1String(xdgIcon));
-    return QIcon::fromTheme(QLatin1String(xdgIcon), QIcon(fallbackPath));
+    return QIcon::fromTheme(QLatin1String(xdgIcon));
 }
 
 QIcon themeIcon(const char* xdgIcon, const char* macIcon)
