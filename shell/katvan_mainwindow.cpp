@@ -24,6 +24,7 @@
 #include "katvan_settingsdialog.h"
 #include "katvan_utils.h"
 
+#include "katvan_completionmanager.h"
 #include "katvan_diagnosticsmodel.h"
 #include "katvan_editor.h"
 #include "katvan_editorsettings.h"
@@ -80,6 +81,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
     connect(d_driver, &TypstDriverWrapper::showEditorToolTip, d_editor, &Editor::showToolTip);
+    connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
 
     d_backupHandler = new BackupHandler(d_editor, this);
     connect(d_editor, &Editor::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
@@ -97,6 +99,7 @@ void MainWindow::setupUI()
     connect(d_editor, &Editor::contentEdited, d_driver, &TypstDriverWrapper::applyContentEdit);
     connect(d_editor, &Editor::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
     connect(d_editor, &Editor::toolTipRequested, d_driver, &TypstDriverWrapper::requestToolTip);
+    connect(d_editor->completionManager(), &CompletionManager::completionsRequested, d_driver, &TypstDriverWrapper::requestCompletions);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 

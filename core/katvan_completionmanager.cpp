@@ -19,8 +19,11 @@
 
 #include <QAbstractItemView>
 #include <QCompleter>
+#include <QFontDatabase>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QPainter>
+#include <QRegularExpression>
 #include <QScrollBar>
 #include <QTextBlock>
 #include <QTextEdit>
@@ -38,15 +41,23 @@
 
 namespace katvan {
 
+Q_GLOBAL_STATIC(QRegularExpression, APPLY_PLACEHOLDER_REGEX, QStringLiteral("\\${(\\S*)}"))
+
 enum CompletionModelRoles {
     COMPLETION_DETAIL_ROLE = Qt::UserRole + 1,
     COMPLETION_APPLY_ROLE,
 };
 
-CompletionListModel::CompletionListModel(const QList<QJsonObject>& suggestions, QObject* parent)
+CompletionListModel::CompletionListModel(QObject* parent)
     : QAbstractListModel(parent)
-    , d_suggestions(suggestions)
 {
+}
+
+void CompletionListModel::setSuggestions(const QList<QJsonObject>& suggestions)
+{
+    beginResetModel();
+    d_suggestions = suggestions;
+    endResetModel();
 }
 
 int CompletionListModel::rowCount(const QModelIndex& parent) const
@@ -66,13 +77,27 @@ QVariant CompletionListModel::data(const QModelIndex& index, int role) const
     const QJsonObject& obj = d_suggestions[index.row()];
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
-        // TODO Should the EditRole should be something more complex?
         return obj["label"].toString();
     }
     else if (role == Qt::DecorationRole) {
-        // TODO find a icon for each completion kind, and for symbols use a
-        // font icon
-        return QVariant();
+        if (obj["kind"].isString()) {
+            QString kind = obj["kind"].toString();
+            if (kind == "syntax") {
+                return QIcon::fromTheme("code-context");
+            }
+            else if (kind == "func") {
+                return QIcon::fromTheme("code-function");
+            }
+            else if (kind == "type") {
+                return QIcon::fromTheme("code-typedef");
+            }
+            else if (kind == "param" || kind == "constant") {
+                return QIcon::fromTheme("code-variable");
+            }
+        }
+        else if (obj["kind"].isObject()) {
+            // TODO Show symbol with a font icon
+        }
     }
     else if (role == COMPLETION_DETAIL_ROLE) {
         return obj["detail"].toString();
@@ -87,18 +112,100 @@ QVariant CompletionListModel::data(const QModelIndex& index, int role) const
     return QVariant();
 }
 
+CompletionSuggestionDelegate::CompletionSuggestionDelegate(QObject* parent)
+    : QAbstractItemDelegate(parent)
+    , d_labelFont(QFontDatabase::systemFont(QFontDatabase::FixedFont))
+{
+    d_labelFont.setWeight(QFont::DemiBold);
+}
+
+void CompletionSuggestionDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+    QString label = index.data(Qt::DisplayRole).toString();
+    QString detail = index.data(COMPLETION_DETAIL_ROLE).toString();
+    QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
+
+    painter->save();
+    painter->setClipRect(option.rect);
+
+    if (option.state & QStyle::State_Selected) {
+        QBrush bgBrush = option.palette.brush(QPalette::Normal, QPalette::Highlight);
+        painter->fillRect(option.rect, bgBrush);
+    }
+
+    int xOffset = option.rect.x();
+    if (!icon.isNull()) {
+        xOffset += option.decorationSize.width();
+    }
+
+    QFontMetrics labelMetrics { d_labelFont };
+
+    QRect labelRect {
+        QPoint { xOffset, option.rect.top() },
+        QSize { option.rect.width(), labelMetrics.height() }
+    };
+    QRect detailRect {
+        QPoint { xOffset, labelRect.bottom() },
+        QSize { labelRect.width(), option.rect.height() - labelRect.height() }
+    };
+
+    painter->setPen(option.palette.text().color());
+
+    if (!icon.isNull()) {
+        QRect iconRect { option.rect.topLeft(), option.decorationSize };
+
+        QPixmap pixmap = icon.pixmap(option.decorationSize, (option.state & QStyle::State_Selected) ? QIcon::Selected : QIcon::Normal);
+        painter->drawPixmap(iconRect, pixmap);
+    }
+
+    painter->setFont(d_labelFont);
+    painter->drawText(labelRect, label);
+
+    painter->setFont(option.font);
+    painter->drawText(detailRect, detail);
+
+    painter->restore();
+}
+
+QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+    QString label = index.data(Qt::DisplayRole).toString();
+    QString detail = index.data(COMPLETION_DETAIL_ROLE).toString();
+    QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
+
+    QFontMetrics labelMetrics { d_labelFont };
+    QFontMetrics detailMetrics = option.fontMetrics;
+
+    int width = labelMetrics.horizontalAdvance(label);
+    int height = labelMetrics.height();
+
+    for (QString line : detail.split(QChar::LineFeed)) {
+        width = qMax(width, detailMetrics.horizontalAdvance(line));
+        height += detailMetrics.height();
+    }
+
+    if (!icon.isNull()) {
+        width += option.decorationSize.width();
+        height = qMax(height, option.decorationSize.height());
+    }
+
+    return QSize(width, height);
+}
+
 CompletionManager::CompletionManager(QTextEdit* editor)
     : QObject(editor)
     , d_editor(editor)
     , d_completionsRequested(false)
 {
+    d_model = new CompletionListModel(this);
+
     d_completer = new QCompleter(this);
     d_completer->setWidget(d_editor);
-    d_completer->setWrapAround(false);
     d_completer->setCompletionMode(QCompleter::PopupCompletion);
     d_completer->setCaseSensitivity(Qt::CaseInsensitive);
 
-    // TODO need custom delegate to render detail string
+    d_completer->setModel(d_model);
+    d_completer->popup()->setItemDelegate(new CompletionSuggestionDelegate(this));
 
     connect(d_completer, qOverload<const QModelIndex&>(&QCompleter::activated), this, &CompletionManager::suggestionSelected);
 }
@@ -135,29 +242,28 @@ void CompletionManager::completionsReady(int line, int column, QByteArray comple
     for (const QJsonValue& value : doc.array()) {
         suggestions.append(value.toObject());
     }
-    d_completer->setModel(new CompletionListModel(suggestions));
+    d_model->setSuggestions(suggestions);
 
     QTextBlock block = d_editor->document()->findBlockByNumber(line);
+    d_suggestionsStartPosition = block.position() + column;
 
-    d_suggestionsStartCursor = QTextCursor(d_editor->document());
-    d_suggestionsStartCursor.setPosition(block.position() + column);
-
-    updateCompletionPrefix();
+    updateCompletionPrefix(true);
 }
 
-void CompletionManager::updateCompletionPrefix()
+void CompletionManager::updateCompletionPrefix(bool force)
 {
     QTextCursor currentCursor = d_editor->textCursor();
-    if (currentCursor.position() < d_suggestionsStartCursor.position()) {
+    if (currentCursor.position() < d_suggestionsStartPosition) {
         d_completer->popup()->hide();
         return;
     }
 
-    QTextCursor cursor = d_suggestionsStartCursor;
+    QTextCursor cursor { d_editor->document() };
+    cursor.setPosition(d_suggestionsStartPosition);
     cursor.setPosition(currentCursor.position(), QTextCursor::KeepAnchor);
 
     QString prefix = cursor.selectedText();
-    if (d_completer->completionPrefix() != prefix) {
+    if (d_completer->completionPrefix() != prefix || force) {
         d_completer->setCompletionPrefix(prefix);
         d_completer->popup()->setCurrentIndex(d_completer->completionModel()->index(0, 0));
     }
@@ -173,13 +279,49 @@ void CompletionManager::updateCompletionPrefix()
 void CompletionManager::suggestionSelected(const QModelIndex& index)
 {
     QString snippet = index.data(COMPLETION_APPLY_ROLE).toString();
+    if (snippet.isEmpty()) {
+        return;
+    }
 
-    // TODO snippet can have placeholders (named and unamed). Need to decide
-    // what to do with them, especially when there is more than one... Preedit
-    // area won't work for this.
+    QTextCursor cursor { d_editor->document() };
+    cursor.setPosition(d_suggestionsStartPosition);
+    cursor.setPosition(d_editor->textCursor().position(), QTextCursor::KeepAnchor);
 
-    d_suggestionsStartCursor.select(QTextCursor::WordUnderCursor);
-    d_suggestionsStartCursor.insertText(snippet);
+    int lastMatchEnd = 0;
+    int selectionStart = -1, selectionEnd = -1;
+
+    cursor.beginEditBlock();
+
+    auto it = APPLY_PLACEHOLDER_REGEX->globalMatch(snippet);
+    while (it.hasNext()) {
+        QRegularExpressionMatch m = it.next();
+
+        // First fill all non-placeholder text after the previous placeholder
+        cursor.insertText(snippet.sliced(lastMatchEnd, m.capturedStart(0) - lastMatchEnd));
+
+        if (selectionStart == -1) {
+            selectionStart = cursor.position();
+        }
+
+        QString placeholderName = m.captured(1);
+        if (!placeholderName.isEmpty()) {
+            cursor.insertText(placeholderName);
+        }
+
+        if (selectionEnd == -1) {
+            selectionEnd = cursor.position();
+        }
+        lastMatchEnd = m.capturedEnd(0);
+    }
+
+    cursor.insertText(snippet.sliced(lastMatchEnd));
+    cursor.endEditBlock();
+
+    if (selectionStart >= 0) {
+        cursor.setPosition(selectionStart);
+        cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
+    }
+    d_editor->setTextCursor(cursor);
 }
 
 }

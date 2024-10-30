@@ -20,6 +20,7 @@
 #include "typstdriver_export.h"
 #include "typstdriver_logger.h"
 
+#include <QMutex>
 #include <QObject>
 #include <QString>
 
@@ -91,6 +92,7 @@ private:
 
     static QString s_downloadCacheLocation;
     static std::shared_ptr<PackageManagerSettings> s_settings;
+    static QMutex s_settingsLock;
 
     Error d_error;
     QString d_errorMessage;

@@ -38,6 +38,7 @@ namespace katvan::typstdriver {
 
 QString PackageManager::s_downloadCacheLocation;
 std::shared_ptr<PackageManagerSettings> PackageManager::s_settings = std::make_shared<PackageManagerSettings>();
+QMutex PackageManager::s_settingsLock;
 
 PackageManagerSettings::PackageManagerSettings()
     : d_allowPreviewPackages(false)
@@ -56,7 +57,8 @@ void PackageManagerSettings::save(QSettings& settings)
 
 void PackageManager::applySettings(const PackageManagerSettings& settings)
 {
-    std::atomic_store(&s_settings, std::make_shared<PackageManagerSettings>(settings));
+    QMutexLocker locker { &s_settingsLock };
+    s_settings = std::make_shared<PackageManagerSettings>(settings);
 }
 
 void PackageManager::setDownloadCacheLocation(const QString& dirPath)
@@ -129,7 +131,13 @@ QString PackageManager::getPackageLocalPath(const QString& packageNamespace, con
 
 QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QString& version)
 {
-    if (!std::atomic_load(&s_settings)->allowPreviewPackages()) {
+    bool allowed = false;
+    {
+        QMutexLocker locker { &s_settingsLock };
+        allowed = s_settings->allowPreviewPackages();
+    }
+
+    if (!allowed) {
         d_error = Error::NOT_ALLOWED;
         d_errorMessage = "use of Typst Universe preview packages is disabled in application settings";
         return QString();

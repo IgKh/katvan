@@ -18,9 +18,10 @@
 #pragma once
 
 #include <QAbstractListModel>
+#include <QAbstractItemDelegate>
+#include <QFont>
 #include <QJsonObject>
 #include <QList>
-#include <QTextCursor>
 
 QT_BEGIN_NAMESPACE
 class QCompleter;
@@ -37,13 +38,29 @@ class CompletionListModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    CompletionListModel(const QList<QJsonObject>& suggestions, QObject* parent = nullptr);
+    CompletionListModel(QObject* parent = nullptr);
+
+    void setSuggestions(const QList<QJsonObject>& suggestions);
 
     int rowCount(const QModelIndex& parent) const override;
     QVariant data(const QModelIndex& index, int role) const override;
 
 private:
     QList<QJsonObject> d_suggestions;
+};
+
+class CompletionSuggestionDelegate : public QAbstractItemDelegate
+{
+    Q_OBJECT
+
+public:
+    CompletionSuggestionDelegate(QObject* parent = nullptr);
+
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+private:
+    QFont d_labelFont;
 };
 
 class CompletionManager : public QObject
@@ -58,7 +75,7 @@ public:
 public slots:
     void startCompletion();
     void completionsReady(int line, int column, QByteArray completionsJson);
-    void updateCompletionPrefix();
+    void updateCompletionPrefix(bool force = false);
 
 signals:
     void completionsRequested(int blockNumber, int charOffset);
@@ -69,9 +86,10 @@ private slots:
 private:
     QTextEdit* d_editor;
     QCompleter* d_completer;
+    CompletionListModel* d_model;
 
     bool d_completionsRequested;
-    QTextCursor d_suggestionsStartCursor;
+    int d_suggestionsStartPosition;
 };
 
 }
