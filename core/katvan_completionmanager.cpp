@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_completionmanager.h"
+#include "katvan_text_utils.h"
 
 #include <QAbstractItemView>
 #include <QCompleter>
@@ -47,6 +48,8 @@ enum CompletionModelRoles {
     COMPLETION_DETAIL_ROLE = Qt::UserRole + 1,
     COMPLETION_APPLY_ROLE,
 };
+
+constexpr int ICON_MARGIN_PX = 3;
 
 CompletionListModel::CompletionListModel(QObject* parent)
     : QAbstractListModel(parent)
@@ -96,7 +99,11 @@ QVariant CompletionListModel::data(const QModelIndex& index, int role) const
             }
         }
         else if (obj["kind"].isObject()) {
-            // TODO Show symbol with a font icon
+            QJsonObject kind = obj["kind"].toObject();
+            QString symbol = kind["symbol"].toString();
+            if (!symbol.isEmpty()) {
+                return utils::fontIcon(symbol[0]);
+            }
         }
     }
     else if (role == COMPLETION_DETAIL_ROLE) {
@@ -133,11 +140,7 @@ void CompletionSuggestionDelegate::paint(QPainter* painter, const QStyleOptionVi
         painter->fillRect(option.rect, bgBrush);
     }
 
-    int xOffset = option.rect.x();
-    if (!icon.isNull()) {
-        xOffset += option.decorationSize.width();
-    }
-
+    int xOffset = option.rect.x() + option.decorationSize.width() + ICON_MARGIN_PX;
     QFontMetrics labelMetrics { d_labelFont };
 
     QRect labelRect {
@@ -184,10 +187,8 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
         height += detailMetrics.height();
     }
 
-    if (!icon.isNull()) {
-        width += option.decorationSize.width();
-        height = qMax(height, option.decorationSize.height());
-    }
+    width += (option.decorationSize.width() + ICON_MARGIN_PX);
+    height = qMax(height, option.decorationSize.height());
 
     return QSize(width, height);
 }

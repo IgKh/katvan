@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QIcon>
 #include <QString>
 
 namespace katvan::utils {
@@ -32,5 +33,8 @@ static constexpr QChar PDI_MARK = (ushort)0x2069;
 bool isBidiControlChar(QChar ch);
 
 Qt::LayoutDirection naturalTextDirection(const QString& text);
+
+QIcon fontIcon(QChar ch);
+QIcon fontIcon(QChar ch, const QFont& font);
 
 }
