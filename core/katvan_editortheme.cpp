@@ -32,7 +32,7 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
-using HiglightingMarkerKind = parsing::HiglightingMarker::Kind;
+using HighlightingMarkerKind = parsing::HighlightingMarker::Kind;
 
 bool EditorTheme::isAppInDarkMode()
 {
@@ -101,26 +101,26 @@ static QTextCharFormat readTextFormat(const QJsonValue& val)
 }
 
 static void readHighlightingFormats(const QJsonObject& obj,
-                                    QHash<HiglightingMarkerKind, QTextCharFormat>& highlightingFormats)
+                                    QHash<HighlightingMarkerKind, QTextCharFormat>& highlightingFormats)
 {
-    highlightingFormats[HiglightingMarkerKind::COMMENT] = readTextFormat(obj.value("comment"));
-    highlightingFormats[HiglightingMarkerKind::STRING_LITERAL] = readTextFormat(obj.value("string-literal"));
-    highlightingFormats[HiglightingMarkerKind::NUMBER_LITERAL] = readTextFormat(obj.value("number-literal"));
-    highlightingFormats[HiglightingMarkerKind::ESCAPE] = readTextFormat(obj.value("escape"));
-    highlightingFormats[HiglightingMarkerKind::MATH_OPERATOR] = readTextFormat(obj.value("math-operator"));
-    highlightingFormats[HiglightingMarkerKind::MATH_DELIMITER] = readTextFormat(obj.value("math-delimiter"));
-    highlightingFormats[HiglightingMarkerKind::HEADING] = readTextFormat(obj.value("heading"));
-    highlightingFormats[HiglightingMarkerKind::EMPHASIS] = readTextFormat(obj.value("emphasis"));
-    highlightingFormats[HiglightingMarkerKind::STRONG_EMPHASIS] = readTextFormat(obj.value("strong-emphasis"));
-    highlightingFormats[HiglightingMarkerKind::URL] = readTextFormat(obj.value("url"));
-    highlightingFormats[HiglightingMarkerKind::RAW] = readTextFormat(obj.value("raw"));
-    highlightingFormats[HiglightingMarkerKind::LABEL] = readTextFormat(obj.value("label"));
-    highlightingFormats[HiglightingMarkerKind::REFERENCE] = readTextFormat(obj.value("reference"));
-    highlightingFormats[HiglightingMarkerKind::LIST_ENTRY] = readTextFormat(obj.value("list-entry"));
-    highlightingFormats[HiglightingMarkerKind::TERM] = readTextFormat(obj.value("list-term"));
-    highlightingFormats[HiglightingMarkerKind::VARIABLE_NAME] = readTextFormat(obj.value("variable"));
-    highlightingFormats[HiglightingMarkerKind::FUNCTION_NAME] = readTextFormat(obj.value("function"));
-    highlightingFormats[HiglightingMarkerKind::KEYWORD] = readTextFormat(obj.value("keyword"));
+    highlightingFormats[HighlightingMarkerKind::COMMENT] = readTextFormat(obj.value("comment"));
+    highlightingFormats[HighlightingMarkerKind::STRING_LITERAL] = readTextFormat(obj.value("string-literal"));
+    highlightingFormats[HighlightingMarkerKind::NUMBER_LITERAL] = readTextFormat(obj.value("number-literal"));
+    highlightingFormats[HighlightingMarkerKind::ESCAPE] = readTextFormat(obj.value("escape"));
+    highlightingFormats[HighlightingMarkerKind::MATH_OPERATOR] = readTextFormat(obj.value("math-operator"));
+    highlightingFormats[HighlightingMarkerKind::MATH_DELIMITER] = readTextFormat(obj.value("math-delimiter"));
+    highlightingFormats[HighlightingMarkerKind::HEADING] = readTextFormat(obj.value("heading"));
+    highlightingFormats[HighlightingMarkerKind::EMPHASIS] = readTextFormat(obj.value("emphasis"));
+    highlightingFormats[HighlightingMarkerKind::STRONG_EMPHASIS] = readTextFormat(obj.value("strong-emphasis"));
+    highlightingFormats[HighlightingMarkerKind::URL] = readTextFormat(obj.value("url"));
+    highlightingFormats[HighlightingMarkerKind::RAW] = readTextFormat(obj.value("raw"));
+    highlightingFormats[HighlightingMarkerKind::LABEL] = readTextFormat(obj.value("label"));
+    highlightingFormats[HighlightingMarkerKind::REFERENCE] = readTextFormat(obj.value("reference"));
+    highlightingFormats[HighlightingMarkerKind::LIST_ENTRY] = readTextFormat(obj.value("list-entry"));
+    highlightingFormats[HighlightingMarkerKind::TERM] = readTextFormat(obj.value("list-term"));
+    highlightingFormats[HighlightingMarkerKind::VARIABLE_NAME] = readTextFormat(obj.value("variable"));
+    highlightingFormats[HighlightingMarkerKind::FUNCTION_NAME] = readTextFormat(obj.value("function"));
+    highlightingFormats[HighlightingMarkerKind::KEYWORD] = readTextFormat(obj.value("keyword"));
 }
 
 static void readEditorColors(const QJsonObject& obj,

@@ -49,14 +49,14 @@ public:
 
     QPalette adjustPalette(QPalette original) const;
 
-    QTextCharFormat highlightingFormat(parsing::HiglightingMarker::Kind marker) const { return d_highlightingFormats[marker]; }
+    QTextCharFormat highlightingFormat(parsing::HighlightingMarker::Kind marker) const { return d_highlightingFormats[marker]; }
     QColor editorColor(EditorColor color) const { return d_editorColors[color]; }
 
 private:
     explicit EditorTheme(const QString& themeJsonFile);
 
     QString d_name;
-    QHash<parsing::HiglightingMarker::Kind, QTextCharFormat> d_highlightingFormats;
+    QHash<parsing::HighlightingMarker::Kind, QTextCharFormat> d_highlightingFormats;
     QHash<EditorColor, QColor> d_editorColors;
 };
 

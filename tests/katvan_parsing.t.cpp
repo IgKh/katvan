@@ -35,8 +35,8 @@ namespace katvan::parsing {
             << ", \"" << tokenText.data() << "\")";
     }
 
-    void PrintTo(const HiglightingMarker& marker, std::ostream* os) {
-        *os << "HiglightingMarker(" << static_cast<int>(marker.kind)
+    void PrintTo(const HighlightingMarker& marker, std::ostream* os) {
+        *os << "HighlightingMarker(" << static_cast<int>(marker.kind)
             << ", " << marker.startPos << ", " << marker.length << ")";
     }
 
@@ -286,7 +286,7 @@ TEST(TokenizerTests, NonLatinNumerals) {
     }));
 }
 
-static QList<HiglightingMarker> highlightText(QStringView text)
+static QList<HighlightingMarker> highlightText(QStringView text)
 {
     HighlightingListener listener;
     Parser parser(text);
@@ -298,82 +298,82 @@ static QList<HiglightingMarker> highlightText(QStringView text)
 TEST(HiglightingParserTests, LineComment) {
     auto markers = highlightText(QStringLiteral("a // comment line\nb"));
     EXPECT_THAT(markers, ::testing::ElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 2, 16 }
+        HighlightingMarker{ HighlightingMarker::Kind::COMMENT, 2, 16 }
     ));
 }
 
 TEST(HiglightingParserTests, BlockComment) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("a /* comment\ncomment\ncomment*/ b"));
     EXPECT_THAT(markers, ::testing::ElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT, 2, 28 }
+        HighlightingMarker{ HighlightingMarker::Kind::COMMENT, 2, 28 }
     ));
 
     markers = highlightText(QStringLiteral("/* aaa\naaa // aaaaaaa */\naaa*/ aaaa"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,          0, 24 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 28,  7 }
+        HighlightingMarker{ HighlightingMarker::Kind::COMMENT,          0, 24 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS, 28,  7 }
     ));
 }
 
 TEST(HiglightingParserTests, StringLiteral) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("\"not a literal\" $ \"yesliteral\" + 1$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 16,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 18, 12 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,  31,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 34,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER, 16,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL, 18, 12 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,  31,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER, 34,  1 }
 
     ));
 
     markers = highlightText(QStringLiteral("$ \"A /* $ \" */ $"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  0, 1 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  2, 9 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,  12, 1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,  13, 1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 15, 1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  0, 1 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,  2, 9 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,  12, 1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,  13, 1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER, 15, 1 }
     ));
 
     markers = highlightText(QStringLiteral("\"not a literal\" #foo(\"yesliteral\")"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  16,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 21, 12 }
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,  16,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL, 21, 12 }
     ));
 }
 
 TEST(HiglightingParserTests, Escapes) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("_\\$ \\_ foo _ \\ More: \"\\u{1f600}\""));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS,  0, 12 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,    1,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,    4,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,   22,  9 }
+        HighlightingMarker{ HighlightingMarker::Kind::EMPHASIS,  0, 12 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,    1,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,    4,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,   22,  9 }
     ));
 
     markers = highlightText(QStringLiteral("$ \\u{12} + \"a\\nb\" $"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  0, 1 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,          2, 6 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   9, 1 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 11, 6 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,         13, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, 18, 1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  0, 1 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,          2, 6 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,   9, 1 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL, 11, 6 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,         13, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER, 18, 1 }
     ));
 }
 
 TEST(HiglightingParserTests, Heading) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("=== this is a heading\nthis is not.\n \t= but this is"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING,  0, 22 },
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 37, 13 }
+        HighlightingMarker{ HighlightingMarker::Kind::HEADING,  0, 22 },
+        HighlightingMarker{ HighlightingMarker::Kind::HEADING, 37, 13 }
     ));
 
     markers = highlightText(QStringLiteral("a == not header\n=not header too"));
@@ -381,119 +381,119 @@ TEST(HiglightingParserTests, Heading) {
 }
 
 TEST(HiglightingParserTests, Emphasis) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("a *bold* _underline_ and _*nested*_"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 2, 6 },
-        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 9, 11 },
-        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 25, 10 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 26, 8 }
+        HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS, 2, 6 },
+        HighlightingMarker{ HighlightingMarker::Kind::EMPHASIS, 9, 11 },
+        HighlightingMarker{ HighlightingMarker::Kind::EMPHASIS, 25, 10 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS, 26, 8 }
     ));
 
     markers = highlightText(QStringLiteral("== for some reason, _emphasis\nextends_ headers"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING, 0, 46 },
-        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, 20, 18 }
+        HighlightingMarker{ HighlightingMarker::Kind::HEADING, 0, 46 },
+        HighlightingMarker{ HighlightingMarker::Kind::EMPHASIS, 20, 18 }
     ));
 
     markers = highlightText(QStringLiteral("*bold broken by paragraph break\n  \n*"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS,  0, 35 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 35,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS,  0, 35 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS, 35,  1 }
     ));
 }
 
 TEST(HiglightingParserTests, URL) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("This is from #footnote[https://foo.bar.com/there] here"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME, 13,  9 },
-        HiglightingMarker{ HiglightingMarker::Kind::URL,           23, 25 }
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME, 13,  9 },
+        HighlightingMarker{ HighlightingMarker::Kind::URL,           23, 25 }
     ));
 
     markers = highlightText(QStringLiteral("This is a url http://example.com but #link(\"https://this.isnt\")"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::URL,            14, 18 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  37,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, 43, 19 }
+        HighlightingMarker{ HighlightingMarker::Kind::URL,            14, 18 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,  37,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL, 43, 19 }
     ));
 
     markers = highlightText(QStringLiteral("ssh://not.a.real.server"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,         4, 19 }
+        HighlightingMarker{ HighlightingMarker::Kind::COMMENT,         4, 19 }
     ));
 }
 
 TEST(HiglightingParserTests, RawContent) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("`` `some $raw$ with _emph_` `raw with\nnewline`"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::RAW, 0, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::RAW, 3, 24 },
-        HiglightingMarker{ HiglightingMarker::Kind::RAW, 28, 18 }
+        HighlightingMarker{ HighlightingMarker::Kind::RAW, 0, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW, 3, 24 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW, 28, 18 }
     ));
 
     markers = highlightText(QStringLiteral("```some $raw$ with _emph_` ``` ```raw block with\nnewline```"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::RAW, 0, 30 },
-        HiglightingMarker{ HiglightingMarker::Kind::RAW, 31, 28 }
+        HighlightingMarker{ HighlightingMarker::Kind::RAW, 0, 30 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW, 31, 28 }
     ));
 }
 
 TEST(HiglightingParserTests, ReferenceAndLabel) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("@ref123 foo <a_label> <not a label> //<also_not_label"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 0,   7 },
-        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     12,  9 },
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,   36, 17 }
+        HighlightingMarker{ HighlightingMarker::Kind::REFERENCE, 0,   7 },
+        HighlightingMarker{ HighlightingMarker::Kind::LABEL,     12,  9 },
+        HighlightingMarker{ HighlightingMarker::Kind::COMMENT,   36, 17 }
     ));
 
     markers = highlightText(QStringLiteral("<label_with_trailing_>\n@a_reference_with_trailing__"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     0,  22 },
-        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 23, 28 }
+        HighlightingMarker{ HighlightingMarker::Kind::LABEL,     0,  22 },
+        HighlightingMarker{ HighlightingMarker::Kind::REFERENCE, 23, 28 }
     ));
 
     markers = highlightText(QStringLiteral("== The nature of @label\n_this is the <label>_"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING,   0 , 24 },
-        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 17,  6 },
-        HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS,  24, 21 },
-        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     37,  7 }
+        HighlightingMarker{ HighlightingMarker::Kind::HEADING,   0 , 24 },
+        HighlightingMarker{ HighlightingMarker::Kind::REFERENCE, 17,  6 },
+        HighlightingMarker{ HighlightingMarker::Kind::EMPHASIS,  24, 21 },
+        HighlightingMarker{ HighlightingMarker::Kind::LABEL,     37,  7 }
     ));
 
     markers = highlightText(QStringLiteral("<ref.a_b-d> And @label.a_b-c E"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::LABEL,     0 ,  11 },
-        HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, 16,  12 }
+        HighlightingMarker{ HighlightingMarker::Kind::LABEL,     0 ,  11 },
+        HighlightingMarker{ HighlightingMarker::Kind::REFERENCE, 16,  12 }
     ));
 }
 
 TEST(HiglightingParserTests, Lists) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("- - this\n- this\n\t- that"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  0, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  9, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 17, 2 }
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  0, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  9, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 17, 2 }
     ));
 
     markers = highlightText(QStringLiteral("+ - this\n+this\n\t+ that"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,  0, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 16, 2 }
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  0, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 16, 2 }
     ));
 
     markers = highlightText(QStringLiteral("/ This: That\n/Not This: Not that\n/Neither This"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, 0, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::TERM,       2, 4 }
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 0, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::TERM,       2, 4 }
     ));
 }
 
@@ -502,71 +502,71 @@ TEST(HiglightingParserTests, Lists) {
  */
 
 TEST(HiglightingParserTests, MathExpressions) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("$x^2$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    2,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   4,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,    2,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   4,  1 }
     ));
 
     markers = highlightText(QStringLiteral("$x &= 2 \\ &= 3$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    3,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    4,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,    8,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   10,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   11,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  14,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,    3,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,    4,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,    8,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,   10,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,   11,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  14,  1 }
     ));
 
     markers = highlightText(QStringLiteral("$#x$, $pi$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    1,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   3,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   6,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    7,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   9,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,    1,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   3,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   6,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,    7,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   9,  1 }
     ));
 
     markers = highlightText(QStringLiteral("$arrow.r.long$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    1,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    7,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,    9,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  13,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,    1,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,    7,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,    9,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  13,  1 }
     ));
 
     markers = highlightText(QStringLiteral("$floor(x)$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    1,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   9,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    1,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   9,  1 }
     ));
 
     markers = highlightText(QStringLiteral("$#rect(width: 1cm) + 1$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    1,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  14,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   19,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  22,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    1,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  14,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,   19,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  22,  1 }
     ));
 
     markers = highlightText(QStringLiteral("$/* comment */$"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,   0,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::COMMENT,          1, 13 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  14,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,   0,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::COMMENT,          1, 13 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  14,  1 }
     ));
 }
 
 TEST(HiglightingParserTests, SetRules) {
-    QList<HiglightingMarker> markers;
+    QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral(
         "#set heading(numbering: \"I.\")\n"
@@ -576,13 +576,13 @@ TEST(HiglightingParserTests, SetRules) {
         "= Introduction"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    5,  7 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  24,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         30,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   35,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  49, 21 },
-        HiglightingMarker{ HiglightingMarker::Kind::HEADING,         74, 14 }
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,          0,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    5,  7 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,  24,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         30,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   35,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,  49, 21 },
+        HighlightingMarker{ HighlightingMarker::Kind::HEADING,         74, 14 }
     ));
 
     markers = highlightText(QStringLiteral(
@@ -594,18 +594,18 @@ TEST(HiglightingParserTests, SetRules) {
         "#task(critical: false)[Work deadline]"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0, 4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    5, 4 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         26, 5 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         39, 3 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   43, 4 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         53, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY,      68, 2 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   70, 5 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   80, 5 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         96, 4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  115, 5 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,        131, 5 }
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,          0, 4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    5, 4 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         26, 5 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         39, 3 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   43, 4 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         53, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,      68, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   70, 5 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   80, 5 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         96, 4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,  115, 5 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,        131, 5 }
     ));
 }
 
@@ -619,17 +619,17 @@ TEST(HiglightingParserTests, ShowRules) {
         "]"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         25,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   30,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         46,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   51,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  62, 13 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,          79,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   82,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  103,  8 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,  121,  7 },
-        HiglightingMarker{ HiglightingMarker::Kind::ESCAPE,         131,  2 }
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,          0,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         25,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   30,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         46,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   51,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,  62, 13 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,          79,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   82,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,  103,  8 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,  121,  7 },
+        HighlightingMarker{ HighlightingMarker::Kind::ESCAPE,         131,  2 }
     ));
 }
 
@@ -643,19 +643,19 @@ TEST(HiglightingParserTests, CodeExpressions) {
         "#this-and-that_"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   15,  6 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   22,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  29,  8 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   38,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   44,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  48,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   57,  6 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  67,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  72,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   78,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   82,  6 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   91, 15 }
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    0,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   15,  6 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   22,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,  29,  8 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   38,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   44,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  48,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   57,  6 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  67,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  72,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   78,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   82,  6 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   91, 15 }
     ));
 }
 
@@ -669,9 +669,9 @@ TEST(HiglightingParserTests, Blocks) {
         "}"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          3,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         18,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, 27,  7 }
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,          3,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         18,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS, 27,  7 }
     ));
 }
 
@@ -686,16 +686,16 @@ TEST(HiglightingParserTests, Loops) {
         "}"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          0,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,          7,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,  10,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   20,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         39,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  48,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::KEYWORD,         50,  6 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  61,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  77,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL,  82,  1 }
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,          0,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,          7,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,  10,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   20,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         39,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  48,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         50,  6 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  61,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  77,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  82,  1 }
     ));
 }
 
@@ -708,16 +708,16 @@ TEST(HiglightingParserTests, MathInCode) {
         "))"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  6 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   15,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   49,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  58,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR,   60,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME,   61,  2 },
-        HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER,  63,  1 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   76,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   85,  3 },
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,   89,  3 }
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    0,  6 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   15,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   49,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  58,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR,   60,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME,   61,  2 },
+        HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER,  63,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   76,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   85,  3 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   89,  3 }
     ));
 }
 
@@ -727,10 +727,10 @@ TEST(HiglightingParserTests, RawContentInCode) {
         "  bong```"));
 
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME,    0,  4 },
-        HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL,   5,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::RAW,             13,  5 },
-        HiglightingMarker{ HiglightingMarker::Kind::RAW,             21, 16 }
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    0,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,   5,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW,             13,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW,             21, 16 }
     ));
 }
 

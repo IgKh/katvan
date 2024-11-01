@@ -210,7 +210,7 @@ private:
     size_t d_endMarker;
 };
 
-struct HiglightingMarker
+struct HighlightingMarker
 {
     enum class Kind {
         HEADING,
@@ -237,7 +237,7 @@ struct HiglightingMarker
     size_t startPos = 0;
     size_t length = 0;
 
-    bool operator==(const HiglightingMarker&) const = default;
+    bool operator==(const HighlightingMarker&) const = default;
 };
 
 /**
@@ -246,14 +246,14 @@ struct HiglightingMarker
 class HighlightingListener : public ParsingListener
 {
 public:
-    QList<HiglightingMarker> markers() const { return d_markers; }
+    QList<HighlightingMarker> markers() const { return d_markers; }
 
     void initializeState(const ParserState& state, size_t endMarker) override;
     void finalizeState(const ParserState& state, size_t endMarker, bool implicit) override;
     void handleLooseToken(const Token& t, const ParserState& state) override;
 
 private:
-    QList<HiglightingMarker> d_markers;
+    QList<HighlightingMarker> d_markers;
 };
 
 struct ContentSegment

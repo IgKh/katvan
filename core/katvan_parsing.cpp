@@ -979,7 +979,7 @@ void HighlightingListener::initializeState(const ParserState& state, size_t endM
 
     switch (state.kind) {
     case ParserState::Kind::CODE_LINE:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::KEYWORD, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::KEYWORD, start, length });
         break;
     }
 }
@@ -994,54 +994,54 @@ void HighlightingListener::finalizeState(const ParserState& state, size_t endMar
     switch (state.kind) {
     case ParserState::Kind::COMMENT_LINE:
     case ParserState::Kind::COMMENT_BLOCK:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::COMMENT, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::COMMENT, start, length });
         break;
     case ParserState::Kind::STRING_LITERAL:
     case ParserState::Kind::CODE_STRING_EXPRESSION:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRING_LITERAL, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL, start, length });
         break;
     case ParserState::Kind::MATH_DELIMITER:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::MATH_DELIMITER, endMarker, 1 });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::MATH_DELIMITER, endMarker, 1 });
         break;
     case ParserState::Kind::CONTENT_HEADING:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::HEADING, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::HEADING, start, length });
         break;
     case ParserState::Kind::CONTENT_EMPHASIS:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::EMPHASIS, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::EMPHASIS, start, length });
         break;
     case ParserState::Kind::CONTENT_STRONG_EMPHASIS:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::STRONG_EMPHASIS, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::STRONG_EMPHASIS, start, length });
         break;
     case ParserState::Kind::CONTENT_URL:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::URL, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::URL, start, length });
         break;
     case ParserState::Kind::CONTENT_RAW_BLOCK:
     case ParserState::Kind::CONTENT_RAW:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::RAW, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::RAW, start, length });
         break;
     case ParserState::Kind::CONTENT_LABEL:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::LABEL, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::LABEL, start, length });
         break;
     case ParserState::Kind::CONTENT_REFERENCE:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::REFERENCE, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::REFERENCE, start, length });
         break;
     case ParserState::Kind::CONTENT_LIST_ENTRY:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::LIST_ENTRY, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, start, length });
         break;
     case ParserState::Kind::CONTENT_TERM:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::TERM, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::TERM, start, length });
         break;
     case ParserState::Kind::CODE_VARIABLE_NAME:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::VARIABLE_NAME, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME, start, length });
         break;
     case ParserState::Kind::CODE_FUNCTION_NAME:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::FUNCTION_NAME, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME, start, length });
         break;
     case ParserState::Kind::CODE_KEYWORD:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::KEYWORD, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::KEYWORD, start, length });
         break;
     case ParserState::Kind::CODE_NUMERIC_LITERAL:
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::NUMBER_LITERAL, start, length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL, start, length });
         break;
     }
 }
@@ -1051,11 +1051,11 @@ void HighlightingListener::handleLooseToken(const Token& t, const ParserState& s
     if (t.type == TokenType::ESCAPE && (isContentHolderState(state)
             || state.kind == ParserState::Kind::MATH
             || state.kind == ParserState::Kind::STRING_LITERAL)) {
-        d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::ESCAPE, t.startPos, t.length });
+        d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::ESCAPE, t.startPos, t.length });
     }
     else if (t.type == TokenType::SYMBOL && state.kind == ParserState::Kind::MATH) {
         if (!MATH_NON_OPERATORS.contains(t.text)) {
-            d_markers.append(HiglightingMarker{ HiglightingMarker::Kind::MATH_OPERATOR, t.startPos, t.length });
+            d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::MATH_OPERATOR, t.startPos, t.length });
         }
     }
 }
