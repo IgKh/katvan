@@ -17,11 +17,13 @@
  */
 #pragma once
 
+#include <QList>
 #include <QTextCursor>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
 class QLineEdit;
+class QRegularExpression;
 class QTextEdit;
 QT_END_NAMESPACE
 
@@ -40,6 +42,7 @@ public slots:
     void resetSearchRange();
 
 private slots:
+    void updateTooltips();
     void checkTermIsValid();
     void findNext();
     void findPrevious();
@@ -50,8 +53,10 @@ private:
     void setupUI();
     void setReplaceLineVisible(bool visible);
     void ensureVisibleImpl();
+    QTextCursor findFromCursor(QTextCursor cursor, const QRegularExpression& regex, bool forward);
     QTextCursor findImpl(const QString& searchTerm, bool forward);
     void find(bool forward);
+    QString getReplacementText();
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
@@ -73,6 +78,7 @@ private:
     bool d_resultSettingInProgress;
 
     QTextCursor d_lastMatch;
+    QStringList d_lastMatchCaptures;
 };
 
 }

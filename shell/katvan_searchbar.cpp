@@ -28,6 +28,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
 #include <QTextBlock>
 #include <QTextEdit>
 #include <QToolButton>
@@ -72,7 +73,6 @@ static QString processToolTip(const QString& toolTipTemplate, const QKeySequence
     QString result = toolTipTemplate;
     result.remove(QLatin1StringView("(%1)"));
     return result.trimmed();
-
 }
 
 SearchBar::SearchBar(QTextEdit* editor, QWidget* parent)
@@ -103,6 +103,7 @@ void SearchBar::setupUI()
     d_regexMatchType = settingsMenu->addAction(tr("Regular Expression"));
     d_regexMatchType->setActionGroup(matchTypeGroup);
     d_regexMatchType->setCheckable(true);
+    connect(d_regexMatchType, &QAction::toggled, this, &SearchBar::updateTooltips);
 
     d_wholeWordsMatchType = settingsMenu->addAction(tr("Whole Words"));
     d_wholeWordsMatchType->setActionGroup(matchTypeGroup);
@@ -263,6 +264,16 @@ void SearchBar::resetSearchRange()
     }
 }
 
+void SearchBar::updateTooltips()
+{
+    if (d_regexMatchType->isChecked()) {
+        d_replaceWith->setToolTip(tr("When finding by a regular expression, you can use backreferences (e.g \\1) to use captured values"));
+    }
+    else {
+        d_replaceWith->setToolTip(QString());
+    }
+}
+
 void SearchBar::checkTermIsValid()
 {
     if (!d_searchTerm->hasAcceptableInput()) {
@@ -286,36 +297,70 @@ void SearchBar::findPrevious()
     find(false);
 }
 
+QTextCursor SearchBar::findFromCursor(QTextCursor cursor, const QRegularExpression& regex, bool forward)
+{
+    int pos = forward ? cursor.selectionEnd() : (cursor.selectionStart() - 1);
+    if (pos < 0) {
+        return QTextCursor();
+    }
+
+    QRegularExpressionMatch match;
+    QTextBlock block = d_editor->document()->findBlock(pos);
+    int offset = pos - block.position();
+
+    while (block.isValid()) {
+        QString text = block.text();
+        int idx = forward
+            ? text.indexOf(regex, offset, &match)
+            : text.lastIndexOf(regex, offset, &match);
+
+        if (idx >= 0) {
+            d_lastMatchCaptures = match.capturedTexts();
+
+            QTextCursor result { d_editor->document() };
+            result.setPosition(block.position() + idx);
+            result.setPosition(result.position() + match.capturedLength(0), QTextCursor::KeepAnchor);
+            return result;
+        }
+
+        if (forward) {
+            block = block.next();
+            offset = 0;
+        }
+        else {
+            block = block.previous();
+            offset = block.length() - 1;
+        }
+    }
+    return QTextCursor();
+}
+
 QTextCursor SearchBar::findImpl(const QString& searchTerm, bool forward)
 {
     QRegularExpression regex;
+    QRegularExpression::PatternOptions options = QRegularExpression::UseUnicodePropertiesOption;
+
     if (d_regexMatchType->isChecked()) {
         regex.setPattern(searchTerm);
-        regex.setPatternOptions(QRegularExpression::UseUnicodePropertiesOption);
     }
     else {
-        regex.setPattern(QRegularExpression::escape(searchTerm));
+        QString pattern = QRegularExpression::escape(searchTerm);
+        if (d_wholeWordsMatchType->isChecked()) {
+            pattern = "\\b" + pattern + "\\b";
+        }
+        regex.setPattern(pattern);
     }
 
-    QTextDocument::FindFlags flags;
-    if (!forward) {
-        flags |= QTextDocument::FindBackward;
+    if (!d_matchCase->isChecked()) {
+        options |= QRegularExpression::CaseInsensitiveOption;
     }
-    if (d_wholeWordsMatchType->isChecked()) {
-        flags |= QTextDocument::FindWholeWords;
-    }
-    if (d_matchCase->isChecked()) {
-        flags |= QTextDocument::FindCaseSensitively;
-    }
-
-    QTextDocument* document = d_editor->document();
-    QTextCursor cursor = d_editor->textCursor();
+    regex.setPatternOptions(options);
 
     auto isValidResult = [this](const QTextCursor& result) {
         return !result.isNull() && result >= d_searchRangeStart && result <= d_searchRangeEnd;
     };
 
-    QTextCursor found = document->find(regex, cursor, flags);
+    QTextCursor found = findFromCursor(d_editor->textCursor(), regex, forward);
     if (isValidResult(found)) {
         return found;
     }
@@ -323,7 +368,7 @@ QTextCursor SearchBar::findImpl(const QString& searchTerm, bool forward)
     // Maybe there is a match before the cursor
     QTextCursor edgeCursor = forward ? d_searchRangeStart : d_searchRangeEnd;
 
-    found = document->find(regex, edgeCursor, flags);
+    found = findFromCursor(edgeCursor, regex, forward);
     if (isValidResult(found)) {
         return found;
     }
@@ -343,23 +388,67 @@ void SearchBar::find(bool forward)
 
     QTextCursor found = findImpl(searchTerm, forward);
     if (!found.isNull()) {
-        d_resultSettingInProgress = true;
+        QScopedValueRollback scope { d_resultSettingInProgress, true };
         d_lastMatch = found;
         d_editor->setTextCursor(found);
-        d_resultSettingInProgress = false;
     }
     else {
         QMessageBox::warning(window(), QCoreApplication::applicationName(), tr("No matches found"));
     }
 }
 
+QString SearchBar::getReplacementText()
+{
+    QString text = d_replaceWith->text();
+    if (!d_regexMatchType->isChecked()) {
+        return text;
+    }
+
+    // Replace backreference markers with captured values
+    QString result;
+    result.reserve(text.size());
+
+    qsizetype i = 0;
+    while (i < text.size()) {
+        QChar ch = text[i];
+        if (ch == '\\') {
+            i++;
+            int num = 0;
+            bool ok = false;
+
+            while (i < text.size()) {
+                QChar next = text[i];
+                if (next.isDigit()) {
+                    ok = true;
+                    num = 10 * num + next.digitValue();
+                    i++;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if (ok) {
+                if (num < d_lastMatchCaptures.size()) {
+                    result.append(d_lastMatchCaptures[num]);
+                }
+            }
+            else {
+                result.append(ch);
+            }
+            continue;
+        }
+
+        result.append(ch);
+        i++;
+    }
+    return result;
+}
+
 void SearchBar::replaceNext()
 {
     if (!d_lastMatch.isNull()) {
-        d_lastMatch.beginEditBlock();
-        d_lastMatch.removeSelectedText();
-        d_lastMatch.insertText(d_replaceWith->text());
-        d_lastMatch.endEditBlock();
+        d_lastMatch.insertText(getReplacementText());
     }
     findNext();
 }
@@ -380,8 +469,7 @@ void SearchBar::replaceAll()
     while (!result.isNull()) {
         cursor.setPosition(result.selectionStart());
         cursor.setPosition(result.selectionEnd(), QTextCursor::KeepAnchor);
-        cursor.removeSelectedText();
-        cursor.insertText(d_replaceWith->text());
+        cursor.insertText(getReplacementText());
 
         replacementCount++;
         result = findImpl(searchTerm, true);
