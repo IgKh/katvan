@@ -99,6 +99,11 @@ public:
     // If none, returns the position's own block.
     QTextBlock findMatchingIndentBlock(int pos) const;
 
+    // For the given block, find a previous block that opens a span that is
+    // closed on the given one, and therefore should have the same indent
+    // level. If none, returns the position's own block.
+    QTextBlock findMatchingIndentBlock(QTextBlock block) const;
+
     // Find closing bracket character that should be automatically appended
     // if _openBracket_ is inserted at the given cursor's position.
     std::optional<QChar> getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const;

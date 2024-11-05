@@ -244,6 +244,24 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
     return block;
 }
 
+QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
+{
+    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    if (!blockData) {
+        return block;
+    }
+    Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
+
+    // Find the first relevant state span that intersects with the block
+    for (const StateSpan& span : blockData->stateSpans()) {
+        if (!isIndentingState(span.state)) {
+            continue;
+        }
+        return d_document->findBlock(span.startPos);
+    }
+    return block;
+}
+
 parsing::ParserState::Kind CodeModel::getStateForBracketInsertion(QTextCursor cursor) const
 {
     // First, there might be an interesting state that the parser may have

@@ -231,7 +231,7 @@ TEST(CodeModelTests, ShouldIncreaseIndent)
     EXPECT_FALSE(model.shouldIncreaseIndent(globalPos(*doc, 3, 7)));
 }
 
-TEST(CodeModelTests, FindMatchingIndentBlock)
+TEST(CodeModelTests, FindMatchingIndentBlockByPosition)
 {
     auto doc = buildDocument({
         /* 0 */ "#if 5 > 2 { pagebreak() }",
@@ -267,6 +267,30 @@ TEST(CodeModelTests, FindMatchingIndentBlock)
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(2));
 
     res = model.findMatchingIndentBlock(globalPos(*doc, 2, 4));
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
+}
+
+TEST(CodeModelTests, FindMatchingIndentBlockByBlock)
+{
+    auto doc = buildDocument({
+        /* 0 */ "#if 5 > 2 { pagebreak() }",
+        /* 1 */ "#while 1 < 2 [",
+        /* 2 */ "foo ]"
+    });
+
+    CodeModel model(doc.get());
+    QTextBlock res;
+
+    res = model.findMatchingIndentBlock(doc->end());
+    EXPECT_FALSE(res.isValid());
+
+    res = model.findMatchingIndentBlock(doc->findBlockByNumber(0));
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(0));
+
+    res = model.findMatchingIndentBlock(doc->findBlockByNumber(1));
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
+
+    res = model.findMatchingIndentBlock(doc->findBlockByNumber(2));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 

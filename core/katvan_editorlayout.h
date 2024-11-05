@@ -22,12 +22,14 @@
 
 namespace katvan {
 
+class CodeModel;
+
 class EditorLayout : public QAbstractTextDocumentLayout
 {
     Q_OBJECT
 
 public:
-    EditorLayout(QTextDocument* document);
+    EditorLayout(QTextDocument* document, CodeModel* codeModel);
 
     QSizeF documentSize() const override;
     int pageCount() const override;
@@ -44,6 +46,9 @@ protected:
 private:
     void layoutBlock(QTextBlock& block, qreal topY);
     void recalculateDocumentSize();
+    Qt::LayoutDirection getBlockDirection(const QTextBlock& block);
+
+    CodeModel* d_codeModel;
 
     QSizeF d_documentSize;
 };

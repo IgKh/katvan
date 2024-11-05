@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "katvan_codemodel.h"
 #include "katvan_editorlayout.h"
 #include "katvan_text_utils.h"
 
@@ -62,8 +63,9 @@ namespace katvan {
 
 constexpr int CURSOR_WIDTH = 1;
 
-EditorLayout::EditorLayout(QTextDocument* document)
+EditorLayout::EditorLayout(QTextDocument* document, CodeModel* codeModel)
     : QAbstractTextDocumentLayout(document)
+    , d_codeModel(codeModel)
     , d_documentSize(0, 0)
 {
 }
@@ -262,24 +264,6 @@ void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdde
     Q_EMIT update();
 }
 
-static Qt::LayoutDirection getBlockDirection(const QTextBlock& block)
-{
-    Qt::LayoutDirection dir = utils::naturalTextDirection(block.text());
-    if (dir == Qt::LayoutDirectionAuto) {
-        QTextBlock prevBlock = block.previous();
-        if (prevBlock.isValid()) {
-            dir = prevBlock.layout()->textOption().textDirection();
-        }
-    }
-    if (dir == Qt::LayoutDirectionAuto) {
-        dir = qGuiApp->inputMethod()->inputDirection();
-    }
-    if (dir == Qt::LayoutDirectionAuto) {
-        dir = qGuiApp->layoutDirection();
-    }
-    return dir;
-}
-
 void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
 {
     QTextLayout* layout = block.layout();
@@ -315,6 +299,31 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
     layout->endLayout();
 
     block.setLineCount(layout->lineCount());
+}
+
+Qt::LayoutDirection EditorLayout::getBlockDirection(const QTextBlock& block)
+{
+    Qt::LayoutDirection dir = utils::naturalTextDirection(block.text());
+    if (dir != Qt::LayoutDirectionAuto) {
+        return dir;
+    }
+
+    QTextBlock matchingBlock = d_codeModel->findMatchingIndentBlock(block);
+    if (matchingBlock != block) {
+        return matchingBlock.layout()->textOption().textDirection();
+    }
+
+    QTextBlock prevBlock = block.previous();
+    if (prevBlock.isValid()) {
+        return prevBlock.layout()->textOption().textDirection();
+    }
+
+    dir = qGuiApp->inputMethod()->inputDirection();
+    if (dir != Qt::LayoutDirectionAuto) {
+        return dir;
+    }
+
+    return qGuiApp->layoutDirection();
 }
 
 QTextBlock EditorLayout::findContainingBlock(qreal y) const

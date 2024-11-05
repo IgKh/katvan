@@ -85,7 +85,6 @@ Editor::Editor(QWidget* parent)
     , d_suppressContentChangeHandling(false)
     , d_pendingSuggestionsPosition(-1)
 {
-    document()->setDocumentLayout(new EditorLayout(document()));
     setAcceptRichText(false);
     setMinimumSize(300, 100);
 
@@ -95,6 +94,8 @@ Editor::Editor(QWidget* parent)
     d_highlighter = new Highlighter(document(), SpellChecker::instance(), d_theme);
     d_codeModel = new CodeModel(document(), this);
     d_completionManager = new CompletionManager(this);
+
+    document()->setDocumentLayout(new EditorLayout(document(), d_codeModel));
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);
