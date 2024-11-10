@@ -192,22 +192,26 @@ void Editor::updateEditorTheme()
 
 QMenu* Editor::createInsertMenu()
 {
+    QFont ccFont { "KatvanControl" };
+
     QMenu* menu = new QMenu();
 
-    menu->addAction(tr("Right-to-Left Mark"), this, [this]() { insertMark(utils::RLM_MARK); });
-    menu->addAction(tr("Left-to-Right Mark"), this, [this]() { insertMark(utils::LRM_MARK); });
-    menu->addAction(tr("Arabic Letter Mark"), this, [this]() { insertMark(utils::ALM_MARK); });
+    menu->addAction(utils::fontIcon(utils::LRI_MARK, ccFont), tr("Left-to-Right Isolate"), this, [this]() { insertSurroundingMarks(utils::LRI_MARK, utils::PDI_MARK); });
+    menu->addAction(utils::fontIcon(utils::RLI_MARK, ccFont), tr("Right-to-Left Isolate"), this, [this]() { insertSurroundingMarks(utils::RLI_MARK, utils::PDI_MARK); });
+    menu->addAction(utils::fontIcon(utils::FSI_MARK, ccFont), tr("First-Strong Isolate"), this, [this]() { insertSurroundingMarks(utils::FSI_MARK, utils::PDI_MARK); });
 
     menu->addSeparator();
 
-    menu->addAction(tr("Right-to-Left Isolate"), this, [this]() { insertSurroundingMarks(utils::RLI_MARK, utils::PDI_MARK); });
-    menu->addAction(tr("Left-to-Right Isolate"), this, [this]() { insertSurroundingMarks(utils::LRI_MARK, utils::PDI_MARK); });
+    menu->addAction(utils::fontIcon(utils::LRM_MARK, ccFont), tr("Left-to-Right Mark"), this, [this]() { insertMark(utils::LRM_MARK); });
+    menu->addAction(utils::fontIcon(utils::RLM_MARK, ccFont), tr("Right-to-Left Mark"), this, [this]() { insertMark(utils::RLM_MARK); });
+    menu->addAction(utils::fontIcon(utils::ALM_MARK, ccFont), tr("Arabic Letter Mark"), this, [this]() { insertMark(utils::ALM_MARK); });
 
     menu->addSeparator();
 
     QAction* insertInlineMathAction = menu->addAction(tr("Inline &Math"), this, [this]() {
         insertSurroundingMarks(utils::LRI_MARK + QStringLiteral("$"), QStringLiteral("$") + utils::PDI_MARK);
     });
+    insertInlineMathAction->setIcon(utils::fontIcon(QLatin1Char('$')));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
     return menu;

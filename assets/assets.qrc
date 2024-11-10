@@ -2,6 +2,7 @@
     <qresource prefix="/assets/">
         <file>katvan.svg</file>
         <file>spinner.gif</file>
+        <file>KatvanControl.otf</file>
     </qresource>
 
     <qresource prefix="/">

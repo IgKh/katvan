@@ -25,6 +25,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QFontDatabase>
 #include <QLibraryInfo>
 #include <QSettings>
 #include <QTranslator>
@@ -103,6 +104,11 @@ int main(int argc, char** argv)
     QTranslator qtTranslator;
     if (qtTranslator.load(locale, "qtbase", "_", QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
         QCoreApplication::installTranslator(&qtTranslator);
+    }
+
+    int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load control character font";
     }
 
     katvan::MainWindow wnd;
