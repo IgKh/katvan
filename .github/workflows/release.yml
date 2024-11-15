@@ -5,6 +5,10 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  attestations: write
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -35,6 +39,11 @@ jobs:
             --exclude-vcs \
             --exclude .github \
             --exclude dist *
+
+      - name: Create attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: dist/katvan-${{ needs.prepare.outputs.katvan_version }}-src.tar.gz
 
       - name: Upload tarball
         uses: actions/upload-artifact@v4
@@ -90,6 +99,11 @@ jobs:
           LINUXDEPLOY_OUTPUT_VERSION: ${{ needs.prepare.outputs.katvan_version }}
           LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*x86_64.AppImage.zsync
 
+      - name: Create attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: Katvan-${{ needs.prepare.outputs.katvan_version }}-x86_64.AppImage
+
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
@@ -141,6 +155,11 @@ jobs:
             Katvan\katvan.exe Katvan\typstdriver.dll
           mkdir Katvan\hunspell
           7z a katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip Katvan\*
+
+      - name: Create attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip
 
       - name: Upload distribution
         uses: actions/upload-artifact@v4
@@ -198,6 +217,11 @@ jobs:
             Invoke-WebRequest "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile vc_redist.x64.exe
           }
           makensis.exe /NOCD /DOUTFILE=..\katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe ..\assets\installer.nsi
+
+      - name: Create attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
