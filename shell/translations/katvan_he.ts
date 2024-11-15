@@ -13,6 +13,37 @@
     </message>
 </context>
 <context>
+    <name>katvan::CompilerSettingsTab</name>
+    <message>
+        <source>Typst Universe</source>
+        <translation>Typst Universe</translation>
+    </message>
+    <message>
+        <source>Cache size: </source>
+        <translation>גודל המטמון: </translation>
+    </message>
+    <message>
+        <source>&amp;Browse...</source>
+        <translation>&amp;סיור...</translation>
+    </message>
+    <message>
+        <source>&amp;Allow preview packages</source>
+        <translation>אפשר שימוש בחבילות &amp;חיצוניות</translation>
+    </message>
+    <message>
+        <source>Show the download cache folder in a file browser</source>
+        <translation>הצג את תקיית מטמון ההורדות בסייר קבצים</translation>
+    </message>
+    <message>
+        <source>Download Cache</source>
+        <translation>מטמון הורדות</translation>
+    </message>
+    <message>
+        <source>%2 distinct versions of %1 packages (total %3)</source>
+        <translation>%2 גרסאות שונות של %1 חבילות (סה&quot;כ %3)</translation>
+    </message>
+</context>
+<context>
     <name>katvan::DiagnosticsModel</name>
     <message>
         <source>Note</source>
@@ -76,12 +107,16 @@
             <numerusform>%n הצעות איות</numerusform>
         </translation>
     </message>
+    <message>
+        <source>First-Strong Isolate</source>
+        <translation>סביבה מבודדת נייטראלית</translation>
+    </message>
 </context>
 <context>
-    <name>katvan::EditorSettingsDialog</name>
+    <name>katvan::EditorSettingsTab</name>
     <message>
-        <source>Editor Settings</source>
-        <translation>הגדרות עורך</translation>
+        <source>Editor &amp;Font:</source>
+        <translation>&amp;גופן עורך:</translation>
     </message>
     <message>
         <source>On Both Sides</source>
@@ -96,40 +131,24 @@
         <translation>אל תציג</translation>
     </message>
     <message>
+        <source>Show Control Characters</source>
+        <translation>הצג תווי בקרה</translation>
+    </message>
+    <message>
+        <source>Requires Qt version 6.9 or above</source>
+        <translation>נדרשת גרסא 6.9 ומעלה של Qt</translation>
+    </message>
+    <message>
         <source>None</source>
         <translation>ללא</translation>
     </message>
     <message>
         <source>Normal</source>
-        <translation>רגילה</translation>
+        <translation>רגיל</translation>
     </message>
     <message>
         <source>Smart</source>
         <translation>חכמה</translation>
-    </message>
-    <message>
-        <source>Show &amp;Line Numbers:</source>
-        <translation>הצגת &amp;מספרי שורות:</translation>
-    </message>
-    <message>
-        <source>Automatic Indentation:</source>
-        <translation>הזחה אוטומטית:</translation>
-    </message>
-    <message>
-        <source>&amp;Indent Width:</source>
-        <translation>רוחב &amp;הזחה:</translation>
-    </message>
-    <message>
-        <source>Tab &amp;Display Width:</source>
-        <translation>רוחב &amp;טאב:</translation>
-    </message>
-    <message>
-        <source>Appearance</source>
-        <translation>תצוגה</translation>
-    </message>
-    <message>
-        <source>Indent with:</source>
-        <translation>הזח באמצעות:</translation>
     </message>
     <message>
         <source>&amp;Spaces</source>
@@ -140,24 +159,52 @@
         <translation>&amp;טאבים</translation>
     </message>
     <message>
-        <source>Editor &amp;Font:</source>
-        <translation>&amp;גופן עורך:</translation>
-    </message>
-    <message>
         <source> characters</source>
         <translation> תווים</translation>
+    </message>
+    <message>
+        <source>&amp;Indent Width:</source>
+        <translation>רוחב &amp;הזחה:</translation>
+    </message>
+    <message>
+        <source>Tab &amp;Display Width:</source>
+        <translation>רוחב &amp;טאב:</translation>
+    </message>
+    <message>
+        <source> seconds</source>
+        <translation> שניות</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>כבוי</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>תצוגה</translation>
+    </message>
+    <message>
+        <source>Show &amp;Line Numbers:</source>
+        <translation>הצגת &amp;מספרי שורות:</translation>
     </message>
     <message>
         <source>Indentation</source>
         <translation>הזחה</translation>
     </message>
     <message>
-        <source>Show Control Characters</source>
-        <translation>הצג תווי בקרה</translation>
+        <source>Automatic Indentation:</source>
+        <translation>הזחה אוטומטית:</translation>
     </message>
     <message>
-        <source>Requires Qt version 6.9 or above</source>
-        <translation>נדרשת גרסא 6.9 ומעלה של Qt</translation>
+        <source>Indent with:</source>
+        <translation>הזח באמצעות:</translation>
+    </message>
+    <message>
+        <source>Automatically Backup Unsaved Changes</source>
+        <translation>גיבוי אוטומטי של שינויים שלא נשמרו</translation>
+    </message>
+    <message>
+        <source>&amp;Backup Interval:</source>
+        <translation>תדירות ה&amp;גיבוי:</translation>
     </message>
 </context>
 <context>
@@ -286,10 +333,6 @@
         <translation>&amp;כלים</translation>
     </message>
     <message>
-        <source>&amp;Spell Checking...</source>
-        <translation>&amp;בדיקת איות...</translation>
-    </message>
-    <message>
         <source>&amp;Help</source>
         <translation>&amp;עזרה</translation>
     </message>
@@ -312,10 +355,6 @@
     <message>
         <source>&amp;Replace...</source>
         <translation>&amp;החלפה...</translation>
-    </message>
-    <message>
-        <source>&amp;Editor Settings...</source>
-        <translation>&amp;הגדרות עורך...</translation>
     </message>
     <message>
         <source>Logical</source>
@@ -427,6 +466,14 @@ To export the document, please correct them.</source>
         <source>Visual</source>
         <translation>ויזואלי</translation>
     </message>
+    <message>
+        <source>&amp;Settings...</source>
+        <translation>&amp;הגדרות...</translation>
+    </message>
+    <message>
+        <source>Spell &amp;Checking...</source>
+        <translation>&amp;בדיקת איות...</translation>
+    </message>
 </context>
 <context>
     <name>katvan::Previewer</name>
@@ -453,6 +500,10 @@ To export the document, please correct them.</source>
     <message>
         <source>Page %1 of %2</source>
         <translation>עמוד %1 מתוך %2</translation>
+    </message>
+    <message>
+        <source>Invert Preview Colors</source>
+        <translation>היפוך צבעי תצוגה מקדימה</translation>
     </message>
 </context>
 <context>
@@ -542,6 +593,25 @@ To export the document, please correct them.</source>
             <numerusform>בוצעה החלפה אחת</numerusform>
             <numerusform>בוצעו %n החלפות</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>When finding by a regular expression, you can use backreferences (e.g \1) to use captured values</source>
+        <translation>בעת חיפוש באמצעות ביטוי רגולרי, ניתן להשתמש במבטים לאחור (לדוגמא 1\) כדי לציין ערכים שנלכדו ע&quot;י הביטוי</translation>
+    </message>
+</context>
+<context>
+    <name>katvan::SettingsDialog</name>
+    <message>
+        <source>Katvan Settings</source>
+        <translation>הגדרות כתבן</translation>
+    </message>
+    <message>
+        <source>&amp;Editor</source>
+        <translation>&amp;עורך</translation>
+    </message>
+    <message>
+        <source>&amp;Compiler</source>
+        <translation>&amp;מהדר</translation>
     </message>
 </context>
 <context>
