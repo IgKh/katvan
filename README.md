@@ -17,23 +17,22 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 
 ## Features
 
-Starting to get there:
 - Reasonably good RTL editing
     - Mostly thanks to Qt's excellent Rich Text Framework
     - But also specific additional functionality, for example:
+      - Syntax-aware line directionality heuristc
       - Toggling between logical and visual cursor movement
       - Manually flipping paragraph direction (using both Windows style `Ctrl+RShift`/`LShift`, or Firefox style `Ctrl+Shift+X`)
       - Handy commands to insert BiDi control marks and isolates for when the algorithm doesn't quite lead to the right result (e.g. for inline math)
-- Live-ish previews[^1]
+- Live previews
 - Syntax highlighting
 - Syntax-aware spell checking
+- Autocomplete
 - Typical code editor niceties - auto indentation, bracket insertion, etc.
 - Forward and inverse search
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
 - Supported on Linux and Windows 10/11.
 - **Experimental** support for macOS 12 ("Monterey") and above.
-
-[^1]: Previews are currently rendered by running the entire file through the _Typst_ compiler after each change. It is plenty fast at least for smaller documents, so good enough for now.
 
 ## Installation
 
@@ -47,9 +46,9 @@ There is also an [AUR package](https://aur.archlinux.org/packages/katvan) for Ar
 
 ### Windows
 
-A build for 64-bit Windows 10/11 is available from the project releases page. Note that this is a portable build, which will store settings, the personal dictionary file and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
+Builds for 64-bit Windows 10/11 are available from the project releases page. There is a traditional installer, as well as a portable build. The portable build will store settings, the personal dictionary file and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
 
-This build does not include spell checking dictionaries. You'll need to download hunsepll dictionaries for any desired languages (as a pair of `.dic` and `.aff` files), and save them to the `hunspell` sub-directory next to the main executable file. See the hunspell [README](https://github.com/hunspell/hunspell?tab=readme-ov-file#dictionaries) page for locations to get dictionaries from.
+Neither build includes spell checking dictionaries. You'll need to download hunsepll dictionaries for any desired languages (as a pair of `.dic` and `.aff` files), and save them to the `hunspell` sub-directory next to the main executable file. See the hunspell [README](https://github.com/hunspell/hunspell?tab=readme-ov-file#dictionaries) page for locations to get dictionaries from.
 
 ### macOS
 

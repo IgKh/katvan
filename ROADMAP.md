@@ -13,12 +13,12 @@ Legend:
 - [X] :arrow_up: Make line direction overrides persistent by inserting the proper control character.
 - [X] :arrow_up: Give blank lines the base direction of the previous line, rather than the application's default.
     - To avoid the Logical cursor getting stuck between two RTL paragraphs when the system language is LTR
-- [ ] :arrow_right: Directionality markers on the line number gutters to improve orientation.
+- [X] :arrow_right: Directionality markers on the line number gutters to improve orientation.
 
 ## Typst Integration
 
 - [ ] :arrow_up: True live preview.
-- [ ] :arrow_up: Configuration panel for monitoring and pruning download cache.
+- [X] :arrow_up: Configuration panel for monitoring and pruning download cache.
 - [ ] :arrow_right: Highlight errors directly on the editor.
 - [ ] :arrow_right: Auto-complete.
 - [ ] :arrow_right: Compiler-assisted tool tips.
@@ -26,18 +26,19 @@ Legend:
 
 ## General Editing
 
-- [ ] :arrow_up: Make automatic backups configurable.
-- [ ] :arrow_up: Use regex capture groups in text find and replace.
+- [X] :arrow_up: Make automatic backups configurable.
+- [X] :arrow_up: Use regex capture groups in text find and replace.
 - [ ] :arrow_down: Outline pane.
 - [ ] :arrow_down: Code folding.
 - [ ] :arrow_down: Indentation guides.
+- [ ] :arrow_down: Symbol picker.
 
 ## Platform Integrations
 
 - [ ] :arrow_right: macOS version.
 - [ ] :arrow_right: Flatpak package.
     - In Flathub, and with as much sandboxing as possible.
-- [ ] :arrow_right: Windows installer.
+- [X] :arrow_right: Windows installer.
 
 ## Sandbox Readiness
 
