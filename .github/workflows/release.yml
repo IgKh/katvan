@@ -54,7 +54,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.7.*
+          version: 6.7.3
           arch: linux_gcc_64
           cache: true
 
@@ -108,7 +108,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.7.*
+          version: 6.7.3
           cache: true
 
       - name: Setup vcpkg
@@ -129,6 +129,7 @@ jobs:
           cp build\Release\katvan.exe Katvan
           cp build\Release\*.dll Katvan
           rm Katvan\gmock.dll
+          cp COPYING Katvan\LICENSE.txt
           windeployqt --release `
             --translations en,he `
             --skip-plugin-types generic,imageformats,networkinformation `
@@ -144,14 +145,71 @@ jobs:
       - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:
-          name: Windows
+          name: WindowsZip
           path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip
+          if-no-files-found: error
+
+  build-windows-installer:
+    runs-on: windows-2019
+    needs: [prepare]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.7.3
+          cache: true
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build -j --config Release
+
+      - name: Create distribution
+        run: |
+          mkdir Katvan
+          cp build\Release\katvan.exe Katvan
+          cp build\Release\*.dll Katvan
+          rm Katvan\gmock.dll
+          cp COPYING Katvan\LICENSE.txt
+          windeployqt --release `
+            --translations en,he `
+            --skip-plugin-types generic,imageformats,networkinformation `
+            --exclude-plugins qcertonlybackend,qopensslbackend `
+            --no-system-d3d-compiler `
+            --no-system-dxc-compiler `
+            --no-opengl-sw `
+            Katvan\katvan.exe Katvan\typstdriver.dll
+
+      - name: Create installer
+        working-directory: Katvan
+        run: |
+          if (-not (Test-Path vc_redist.x64.exe)) {
+            Invoke-WebRequest "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile vc_redist.x64.exe
+          }
+          makensis.exe /NOCD /DOUTFILE=..\katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe ..\assets\installer.nsi
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: WindowsInstaller
+          path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe
           if-no-files-found: error
 
   create-release:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    needs: [create-source-tarball, build-linux-appimage, build-windows-zip]
+    needs: [create-source-tarball, build-linux-appimage, build-windows-zip, build-windows-installer]
     permissions:
       contents: write
 
@@ -163,6 +221,6 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Create draft release
-        run: gh release create --draft --verify-tag ${{ github.ref_name }} tarball/* AppImage/* Windows/*
+        run: gh release create --draft --verify-tag ${{ github.ref_name }} tarball/* AppImage/* WindowsZip/* WindowsInstaller/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
