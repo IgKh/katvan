@@ -11,6 +11,8 @@ InstallDirRegKey HKLM "Software\Katvan" ""
 OutFile "${OUTFILE}"
 ShowInstDetails show
 
+SetCompressor /SOLID lzma
+
 !getdllversion "katvan.exe" katvanver_
 
 !define VERSION "${katvanver_1}.${katvanver_2}.${katvanver_3}"

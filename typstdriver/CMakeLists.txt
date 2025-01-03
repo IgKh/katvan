@@ -24,7 +24,7 @@ if(NOT Corrosion_FOUND)
     FetchContent_Declare(
         Corrosion
         GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
-        GIT_TAG v0.5
+        GIT_TAG v0.5.1
     )
 
     FetchContent_MakeAvailable(Corrosion)
