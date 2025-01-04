@@ -115,7 +115,7 @@ jobs:
         run: ctest --output-on-failure --test-dir build
 
   analyse:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout source code
@@ -129,6 +129,7 @@ jobs:
 
       - name: Install additional dependencies
         run: |
+          sudo add-apt-repository ppa:daschuer/clazy
           sudo apt-get update
           sudo apt-get install -y libgmock-dev libhunspell-dev libarchive-dev clazy
 
