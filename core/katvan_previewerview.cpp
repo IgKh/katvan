@@ -55,6 +55,7 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
 
     connect(driver, &TypstDriverWrapper::pageRendered, this, &PreviewerView::pageRendered);
     connect(screen(), &QScreen::logicalDotsPerInchChanged, this, &PreviewerView::dpiChanged);
+    connect(screen(), &QScreen::physicalDotsPerInchChanged, this, &PreviewerView::invalidateAllRenderCache);
 
     verticalScrollBar()->setSingleStep(20);
     horizontalScrollBar()->setSingleStep(20);
@@ -259,7 +260,7 @@ void PreviewerView::paintEvent(QPaintEvent* event)
             painter.drawImage(pageGeometry, renderedPage->image);
         }
         if (renderedPage == nullptr || renderedPage->invalidated) {
-            d_driver->renderPage(i, d_pointSize * effectiveZoom(i), d_invertColors);
+            d_driver->renderPage(i, d_pointSize * effectiveZoom(i) * devicePixelRatio(), d_invertColors);
         }
     }
 
@@ -327,6 +328,12 @@ void PreviewerView::pageRendered(int page, QImage image)
         return;
     }
 
+    // When asking to render a page we give typst-render a higher DPI that
+    // compensates for the gap between the page geometry in logical pixels
+    // and and the scaled display pixels. Tell Qt that so it won't re-scale
+    // the page image and introduce artifacts.
+    image.setDevicePixelRatio(devicePixelRatio());
+
     d_renderCache.insert(page, new CachedPage { d_pages[page].fingerprint, image });
     viewport()->update();
 }
@@ -334,7 +341,7 @@ void PreviewerView::pageRendered(int page, QImage image)
 void PreviewerView::dpiChanged()
 {
     // A point is 1/72th of an inch
-    d_pointSize = screen()->logicalDotsPerInch() * devicePixelRatio() / 72.0;
+    d_pointSize = screen()->logicalDotsPerInch() / 72.0;
 
     updatePageGeometries();
 }

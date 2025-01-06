@@ -150,10 +150,13 @@ void Editor::applyEffectiveSettings()
         return;
     }
 
-    setFont(d_effectiveSettings.font());
+    QFont font = d_effectiveSettings.font();
+    QFontMetricsF fontMetrics { font };
+
+    setFont(font);
 
     QTextOption textOption = document()->defaultTextOption();
-    textOption.setTabStopDistance(d_effectiveSettings.tabWidth() * fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+    textOption.setTabStopDistance(d_effectiveSettings.tabWidth() * fontMetrics.horizontalAdvance(QLatin1Char(' ')));
 
     QTextOption::Flags flags;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
