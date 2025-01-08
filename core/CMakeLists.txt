@@ -17,6 +17,7 @@ set(SOURCES
     katvan_codemodel.cpp
     katvan_completionmanager.cpp
     katvan_diagnosticsmodel.cpp
+    katvan_document.cpp
     katvan_editor.cpp
     katvan_editorlayout.cpp
     katvan_editorsettings.cpp

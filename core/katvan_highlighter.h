@@ -18,6 +18,7 @@
 #pragma once
 
 #include "katvan_codemodel.h"
+#include "katvan_document.h"
 #include "katvan_parsing.h"
 
 #include <QHash>
@@ -28,20 +29,31 @@ namespace katvan {
 class EditorTheme;
 class SpellChecker;
 
-class HighlighterStateBlockData : public QTextBlockUserData
+class StateSpansBlockData : public QTextBlockUserData
 {
 public:
-    HighlighterStateBlockData(
-        StateSpanList&& stateSpans,
-        parsing::SegmentList&& misspelledWords)
-        : d_stateSpans(std::move(stateSpans))
-        , d_misspelledWords(std::move(misspelledWords)) {}
+    static constexpr BlockDataKind DATA_KIND = BlockDataKind::STATE_SPANS;
+
+    StateSpansBlockData(StateSpanList&& stateSpans)
+        : d_stateSpans(std::move(stateSpans)) {}
 
     const StateSpanList& stateSpans() const { return d_stateSpans; }
-    const parsing::SegmentList& misspelledWords() const { return d_misspelledWords; }
 
 private:
     StateSpanList d_stateSpans;
+};
+
+class SpellingBlockData : public QTextBlockUserData
+{
+public:
+    static constexpr BlockDataKind DATA_KIND = BlockDataKind::SPELLING;
+
+    SpellingBlockData(parsing::SegmentList&& misspelledWords)
+        : d_misspelledWords(std::move(misspelledWords)) {}
+
+    const parsing::SegmentList& misspelledWords() const { return d_misspelledWords; }
+
+private:
     parsing::SegmentList d_misspelledWords;
 };
 
@@ -66,7 +78,7 @@ private:
         const QString& text,
         QList<QTextCharFormat>& charFormats);
 
-    parsing::SegmentList doSpellChecking(
+    void doSpellChecking(
         const QString& text,
         const parsing::ContentWordsListener& listener,
         QList<QTextCharFormat>& charFormats);

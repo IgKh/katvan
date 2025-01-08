@@ -106,7 +106,7 @@ static std::optional<int> findSpanEndPosition(unsigned long spanId, QTextBlock f
             return std::nullopt;
         }
 
-        auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+        auto* blockData = BlockData::get<StateSpansBlockData>(block);
         if (!blockData) {
             continue;
         }
@@ -141,7 +141,7 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
         return std::nullopt;
     }
 
-    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return std::nullopt;
     }
@@ -180,7 +180,7 @@ std::optional<StateSpan> CodeModel::spanAtPosition(QTextBlock block, int globalP
 {
     Q_ASSERT(d_document->findBlock(globalPos) == block);
 
-    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return std::nullopt;
     }
@@ -222,7 +222,7 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
         return block;
     }
 
-    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return block;
     }
@@ -246,7 +246,7 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
 
 QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
 {
-    auto* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return block;
     }

@@ -28,13 +28,13 @@
 QT_BEGIN_NAMESPACE
 class QHelpEvent;
 class QMenu;
-class QTimer;
 QT_END_NAMESPACE
 
 namespace katvan {
 
 class CodeModel;
 class CompletionManager;
+class Document;
 class Highlighter;
 
 class Editor : public QTextEdit
@@ -44,11 +44,9 @@ class Editor : public QTextEdit
     friend class LineNumberGutter;
 
 public:
-    Editor(QWidget* parent = nullptr);
+    Editor(Document* doc, QWidget* parent = nullptr);
 
     CompletionManager* completionManager() const { return d_completionManager; }
-
-    QString documentTextForPreview() const;
 
     void applySettings(const EditorSettings& settings);
     void updateEditorTheme();
@@ -56,7 +54,6 @@ public:
     QMenu* createInsertMenu();
 
 public slots:
-    void setDocumentText(const QString& text);
     void toggleTextBlockDirection();
     void setTextBlockDirection(Qt::LayoutDirection dir);
     void goToBlock(int blockNum, int charOffset);
@@ -98,22 +95,17 @@ private slots:
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
-    void propagateDocumentEdit(int from, int charsRemoved, int charsAdded);
-
     void updateLineNumberGutterWidth();
     void updateLineNumberGutters();
     void updateExtraSelections();
 
 signals:
-    void contentModified();
-    void contentEdited(int from, int to, QString text);
     void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
 
 private:
     QWidget* d_leftLineNumberGutter;
     QWidget* d_rightLineNumberGutter;
 
-    QTimer* d_debounceTimer;
     Highlighter* d_highlighter;
     CodeModel* d_codeModel;
     CompletionManager* d_completionManager;
@@ -124,7 +116,6 @@ private:
     EditorTheme d_theme;
 
     QPointer<QMenu> d_contextMenu;
-    bool d_suppressContentChangeHandling;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
     int d_pendingSuggestionsPosition;

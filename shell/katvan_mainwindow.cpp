@@ -26,6 +26,7 @@
 
 #include "katvan_completionmanager.h"
 #include "katvan_diagnosticsmodel.h"
+#include "katvan_document.h"
 #include "katvan_editor.h"
 #include "katvan_editorsettings.h"
 #include "katvan_spellchecker.h"
@@ -67,6 +68,7 @@ MainWindow::MainWindow()
     d_recentFiles = new RecentFiles(this);
     connect(d_recentFiles, &RecentFiles::fileSelected, this, &MainWindow::openNamedFile);
 
+    d_document = new Document(this);
     d_driver = new TypstDriverWrapper(this);
 
     setIconTheme();
@@ -76,6 +78,10 @@ MainWindow::MainWindow()
 
     d_compilerOutput->setModel(d_driver->diagnosticsModel());
 
+    connect(d_document, &Document::contentEdited, d_driver, &TypstDriverWrapper::applyContentEdit);
+    connect(d_document, &Document::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
+    connect(d_document, &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
+
     connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::previewReady);
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
@@ -84,7 +90,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
 
     d_backupHandler = new BackupHandler(d_editor, this);
-    connect(d_editor, &Editor::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
+    connect(d_document, &Document::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
 
     readSettings();
     cursorPositionChanged();
@@ -95,13 +101,10 @@ void MainWindow::setupUI()
     setWindowTitle(QString("%1[*]").arg(QCoreApplication::applicationName()));
     setWindowIcon(QIcon(":/assets/katvan.svg"));
 
-    d_editor = new Editor();
-    connect(d_editor, &Editor::contentEdited, d_driver, &TypstDriverWrapper::applyContentEdit);
-    connect(d_editor, &Editor::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
+    d_editor = new Editor(d_document);
     connect(d_editor, &Editor::toolTipRequested, d_driver, &TypstDriverWrapper::requestToolTip);
     connect(d_editor->completionManager(), &CompletionManager::completionsRequested, d_driver, &TypstDriverWrapper::requestCompletions);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
-    connect(d_editor->document(), &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
 
     d_searchBar = new SearchBar(d_editor);
     d_searchBar->setVisible(false);
@@ -166,7 +169,7 @@ void MainWindow::setupActions()
     saveFileAction->setIcon(utils::themeIcon("document-save"));
     saveFileAction->setShortcut(QKeySequence::Save);
     saveFileAction->setMenuRole(QAction::NoRole);
-    connect(d_editor->document(), &QTextDocument::modificationChanged, saveFileAction, &QAction::setEnabled);
+    connect(d_document, &QTextDocument::modificationChanged, saveFileAction, &QAction::setEnabled);
 
     QAction* saveFileAsAction = fileMenu->addAction(tr("Save &As..."), this, &MainWindow::saveFileAs);
     saveFileAsAction->setIcon(utils::themeIcon("document-save-as"));
@@ -381,7 +384,7 @@ void MainWindow::loadFile(const QString& fileName)
     }
 
     QTextStream stream(&file);
-    d_editor->setDocumentText(stream.readAll());
+    d_document->setDocumentText(stream.readAll());
     d_previewer->reset();
 
     setCurrentFile(fileName);
@@ -390,7 +393,7 @@ void MainWindow::loadFile(const QString& fileName)
 
 bool MainWindow::maybeSave()
 {
-    if (!d_editor->document()->isModified()) {
+    if (!d_document->isModified()) {
         return true;
     }
 
@@ -429,11 +432,11 @@ void MainWindow::setCurrentFile(const QString& fileName)
         QCoreApplication::applicationName(),
         d_currentFileShortName));
 
-    d_editor->document()->setModified(false);
+    d_document->setModified(false);
     setWindowModified(false);
 
     d_driver->resetInputFile(fileName);
-    d_driver->setSource(d_editor->documentTextForPreview());
+    d_driver->setSource(d_document->textForPreview());
 
     QString previousTmpFile = d_backupHandler->resetSourceFile(fileName);
     if (!previousTmpFile.isEmpty()) {
@@ -511,7 +514,7 @@ void MainWindow::tryRecover(const QString& fileName, const QString& tmpFile)
 
         QTextStream stream(&file);
 
-        QTextCursor cursor(d_editor->document());
+        QTextCursor cursor(d_document);
         cursor.select(QTextCursor::Document);
         cursor.insertText(stream.readAll());
     }
@@ -542,7 +545,7 @@ bool MainWindow::event(QEvent* event)
 
 void MainWindow::commitSession(QSessionManager& manager)
 {
-    if (!d_editor->document()->isModified()) {
+    if (!d_document->isModified()) {
         return;
     }
 
@@ -563,7 +566,7 @@ void MainWindow::newFile()
     if (!maybeSave()) {
         return;
     }
-    d_editor->setDocumentText(QString());
+    d_document->setDocumentText(QString());
     d_previewer->reset();
     setCurrentFile(QString());
 }
@@ -634,7 +637,7 @@ bool MainWindow::saveFile()
         return false;
     }
 
-    d_editor->document()->setModified(false);
+    d_document->setModified(false);
     d_editor->checkForModelines();
     statusBar()->showMessage(tr("Saved %1").arg(utils::formatFilePath(d_currentFileName)));
 
@@ -674,7 +677,7 @@ void MainWindow::exportPdf()
                 tr("The document %1 has errors.\nTo export the document, please correct them.").arg(d_currentFileShortName));
         }
         else if (d_driver->status() == TypstDriverWrapper::Status::INITIALIZED) {
-            d_driver->setSource(d_editor->documentTextForPreview());
+            d_driver->setSource(d_document->textForPreview());
             d_driver->updatePreview();
             d_exportPdfPending = true;
         }

@@ -35,6 +35,7 @@ class Previewer;
 class RecentFiles;
 class SearchBar;
 
+class Document;
 class Editor;
 class SettingsDialog;
 class TypstDriverWrapper;
@@ -93,6 +94,7 @@ private:
     QString d_currentFileShortName;
     bool d_exportPdfPending;
 
+    Document* d_document;
     RecentFiles* d_recentFiles;
     TypstDriverWrapper* d_driver;
     BackupHandler* d_backupHandler;

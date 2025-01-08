@@ -17,6 +17,7 @@
  */
 #include "katvan_codemodel.h"
 #include "katvan_completionmanager.h"
+#include "katvan_document.h"
 #include "katvan_editor.h"
 #include "katvan_editorlayout.h"
 #include "katvan_highlighter.h"
@@ -26,7 +27,6 @@
 #include <QMenu>
 #include <QPainter>
 #include <QRegularExpression>
-#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QTextBlock>
@@ -79,29 +79,28 @@ private:
     Editor *d_editor;
 };
 
-Editor::Editor(QWidget* parent)
+Editor::Editor(Document* doc, QWidget* parent)
     : QTextEdit(parent)
+    , d_codeModel(doc->codeModel())
     , d_theme(EditorTheme::defaultTheme())
-    , d_suppressContentChangeHandling(false)
     , d_pendingSuggestionsPosition(-1)
 {
     setAcceptRichText(false);
     setMinimumSize(300, 100);
 
+    setDocument(doc);
+    doc->setDocumentLayout(new EditorLayout(doc, d_codeModel));
+
     connect(SpellChecker::instance(), &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
     connect(SpellChecker::instance(), &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
 
-    d_highlighter = new Highlighter(document(), SpellChecker::instance(), d_theme);
-    d_codeModel = new CodeModel(document(), this);
+    d_highlighter = new Highlighter(doc, SpellChecker::instance(), d_theme);
     d_completionManager = new CompletionManager(this);
-
-    document()->setDocumentLayout(new EditorLayout(document(), d_codeModel));
 
     d_leftLineNumberGutter = new LineNumberGutter(this);
     d_rightLineNumberGutter = new LineNumberGutter(this);
 
-    connect(document(), &QTextDocument::contentsChange, this, &Editor::propagateDocumentEdit);
-    connect(document(), &QTextDocument::blockCountChanged, this, &Editor::updateLineNumberGutterWidth);
+    connect(doc, &QTextDocument::blockCountChanged, this, &Editor::updateLineNumberGutterWidth);
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateLineNumberGutters);
@@ -123,11 +122,6 @@ Editor::Editor(QWidget* parent)
     autocompletePrompt->setKey(AUTOCOMPLETE_PROMPT);
     autocompletePrompt->setContext(Qt::WidgetShortcut);
     connect(autocompletePrompt, &QShortcut::activated, d_completionManager, &CompletionManager::startCompletion);
-
-    d_debounceTimer = new QTimer(this);
-    d_debounceTimer->setSingleShot(true);
-    d_debounceTimer->setInterval(500);
-    d_debounceTimer->callOnTimeout(this, &Editor::contentModified);
 
     QTimer::singleShot(0, this, &Editor::updateEditorTheme);
 }
@@ -218,17 +212,6 @@ QMenu* Editor::createInsertMenu()
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
     return menu;
-}
-
-QString Editor::documentTextForPreview() const
-{
-    return document()->toPlainText() + QChar::LineFeed;
-}
-
-void Editor::setDocumentText(const QString& text)
-{
-    QScopedValueRollback guard { d_suppressContentChangeHandling, true };
-    document()->setPlainText(text);
 }
 
 void Editor::toggleTextBlockDirection()
@@ -763,40 +746,6 @@ void Editor::resizeEvent(QResizeEvent* event)
     }
 }
 
-void Editor::propagateDocumentEdit(int from, int charsRemoved, int charsAdded)
-{
-    if (d_suppressContentChangeHandling) {
-        return;
-    }
-
-    QTextBlock block = document()->findBlock(from);
-
-    // In Qt's internal reckoning all blocks always end with ParagraphSeparator
-    // or other such marker. Global character positions (like the from parameter
-    // here) take this into account, however QTextBlock::text() strips them away.
-    // To make sure that our and the Typst compiler's character positions are
-    // always in sync, we explcitly add a line feed in each place where a
-    // separator character would be in the document's internal buffer.
-    QString blockText = block.text().sliced(from - block.position()) + QChar::LineFeed;
-
-    QString editText;
-    while (block.isValid() && charsAdded > 0) {
-        if (blockText.size() > charsAdded) {
-            editText += blockText.left(charsAdded);
-            break;
-        }
-        else {
-            editText += blockText;
-            charsAdded -= blockText.size();
-            block = block.next();
-            blockText = block.text() + QChar::LineFeed;
-        }
-    }
-
-    Q_EMIT contentEdited(from, from + charsRemoved, editText);
-    d_debounceTimer->start();
-}
-
 void Editor::popupInsertMenu()
 {
     QMenu* insertMenu = createInsertMenu();
@@ -815,7 +764,7 @@ std::tuple<int, int> Editor::misspelledRangeAtCursor(QTextCursor cursor)
     size_t pos = cursor.positionInBlock();
     QTextBlock block = cursor.block();
 
-    HighlighterStateBlockData* blockData = dynamic_cast<HighlighterStateBlockData*>(block.userData());
+    SpellingBlockData* blockData = BlockData::get<SpellingBlockData>(block);
     if (!blockData) {
         return std::make_tuple(-1, 0);
     }

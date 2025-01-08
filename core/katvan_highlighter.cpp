@@ -33,7 +33,7 @@ Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker, co
 
 static void getBlockInitialParams(QTextBlock block, StateSpanList& initialSpans, QList<parsing::ParserState::Kind>& initialStates)
 {
-    auto* prevBlockData = dynamic_cast<HighlighterStateBlockData*>(block.previous().userData());
+    auto* prevBlockData = BlockData::get<StateSpansBlockData>(block.previous());
     if (prevBlockData != nullptr) {
         for (const StateSpan& span : prevBlockData->stateSpans())
         {
@@ -66,8 +66,8 @@ void Highlighter::reparseBlock(QTextBlock block)
         parser.addListener(spanListener, false);
         parser.parse();
 
-        auto* blockData = new HighlighterStateBlockData(std::move(spanListener).spans(), parsing::SegmentList{});
-        block.setUserData(blockData);
+        auto* blockData = new StateSpansBlockData(std::move(spanListener).spans());
+        BlockData::set<StateSpansBlockData>(block, blockData);
 
         // Do not update the user state here, we want a proper rehighlight to
         // happen later if needed.
@@ -100,9 +100,7 @@ void Highlighter::highlightBlock(const QString& text)
 
     doSyntaxHighlighting(highlightingListener, charFormats);
     doShowControlChars(text, charFormats);
-
-    parsing::SegmentList misspelledWords;
-    misspelledWords = doSpellChecking(text, contentListenger, charFormats);
+    doSpellChecking(text, contentListenger, charFormats);
 
     for (qsizetype i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
@@ -112,9 +110,9 @@ void Highlighter::highlightBlock(const QString& text)
     // the block's user data, set a hash of that as the block state. This is to
     // force re-highlighting of the next block if something changed - QSyntaxHighlighter
     // only tracks changes to the block state number.
-    auto* blockData = new HighlighterStateBlockData(std::move(spanListener).spans(), std::move(misspelledWords));
+    auto* blockData = new StateSpansBlockData(std::move(spanListener).spans());
+    BlockData::set<StateSpansBlockData>(currentBlock(), blockData);
     setCurrentBlockState(blockData->stateSpans().fingerprint());
-    setCurrentBlockUserData(blockData);
 }
 
 void Highlighter::doSyntaxHighlighting(
@@ -144,7 +142,7 @@ void Highlighter::doShowControlChars(
     }
 }
 
-parsing::SegmentList Highlighter::doSpellChecking(
+void Highlighter::doSpellChecking(
     const QString& text,
     const parsing::ContentWordsListener& listener,
     QList<QTextCharFormat>& charFormats)
@@ -156,7 +154,7 @@ parsing::SegmentList Highlighter::doSpellChecking(
 
     parsing::SegmentList result;
     if (d_spellChecker == nullptr) {
-        return result;
+        return;
     }
 
     auto segments = listener.segments();
@@ -171,7 +169,8 @@ parsing::SegmentList Highlighter::doSpellChecking(
             result.append(parsing::ContentSegment{ start, len });
         }
     }
-    return result;
+
+    BlockData::set<SpellingBlockData>(currentBlock(), new SpellingBlockData(std::move(result)));
 }
 
 }

@@ -82,8 +82,8 @@ class CodeModel : public QObject
     Q_OBJECT
 
 public:
-    CodeModel(QTextDocument* document, QObject* parent = nullptr)
-        : QObject(parent)
+    CodeModel(QTextDocument* document)
+        : QObject(document)
         , d_document(document) {}
 
     // If there is a delimiting bracket at the given global position,
