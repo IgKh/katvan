@@ -28,8 +28,10 @@ class QCheckBox;
 class QComboBox;
 class QFontComboBox;
 class QLabel;
+class QListView;
 class QRadioButton;
 class QSpinBox;
+class QStringListModel;
 QT_END_NAMESPACE
 
 namespace katvan {
@@ -49,6 +51,9 @@ public:
 
     typstdriver::PackageManagerSettings packageManagerSettings() const;
     void setPackageManagerSettings(const typstdriver::PackageManagerSettings& settings);
+
+    QStringList allowedPaths() const;
+    void setAllowedPaths(const QStringList& paths);
 
 private:
     void setupUI();
@@ -96,7 +101,13 @@ public:
     typstdriver::PackageManagerSettings settings() const;
     void setSettings(const typstdriver::PackageManagerSettings& settings);
 
+    QStringList allowedPaths() const;
+    void setAllowedPaths(const QStringList& paths);
+
 private slots:
+    void addAllowedPath();
+    void removeAllowedPath();
+    void currentAllowedPathChanged();
     void updateCacheSize();
     void browseCache();
 
@@ -107,6 +118,9 @@ private:
     void setupUI();
 
     QCheckBox* d_allowPreviewPackages;
+    QStringListModel* d_allowedPathsModel;
+    QListView* d_allowedPathsList;
+    QPushButton* d_removeAllowedPathButton;
     QLabel* d_cacheSize;
 };
 

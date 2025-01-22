@@ -34,6 +34,8 @@
         <file>icons/go-up.svg</file>
         <file>icons/help-about.svg</file>
         <file>icons/help-contents.svg</file>
+        <file>icons/list-add.svg</file>
+        <file>icons/list-remove.svg</file>
         <file>icons/settings-configure.svg</file>
         <file>icons/tools-check-spelling.svg</file>
         <file>icons/window-close.svg</file>
@@ -64,6 +66,8 @@
         <file>icons-dark/go-up.svg</file>
         <file>icons-dark/help-about.svg</file>
         <file>icons-dark/help-contents.svg</file>
+        <file>icons-dark/list-add.svg</file>
+        <file>icons-dark/list-remove.svg</file>
         <file>icons-dark/settings-configure.svg</file>
         <file>icons-dark/tools-check-spelling.svg</file>
         <file>icons-dark/window-close.svg</file>

@@ -254,6 +254,19 @@ void Engine::requestCompletions(int line, int column)
     }
 }
 
+void Engine::setAllowedPaths(const QStringList& allowedPaths)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    rust::Vec<rust::String> paths;
+    paths.reserve(allowedPaths.size());
+
+    for (const QString& path : allowedPaths) {
+        paths.push_back(qstringToRust(path));
+    }
+    d_ptr->engine.value()->set_allowed_paths(paths);
+}
+
 void Engine::discardLookupCaches()
 {
     Q_ASSERT(d_ptr->engine.has_value());

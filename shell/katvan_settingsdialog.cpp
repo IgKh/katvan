@@ -16,11 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_settingsdialog.h"
+#include "katvan_utils.h"
 
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
+#include <QFileDialog>
 #include <QFontComboBox>
 #include <QFontDatabase>
 #include <QFormLayout>
@@ -28,9 +30,11 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QLibraryInfo>
+#include <QListView>
 #include <QLocale>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QStringListModel>
 #include <QTabWidget>
 #include <QRadioButton>
 #include <QVBoxLayout>
@@ -61,6 +65,16 @@ typstdriver::PackageManagerSettings SettingsDialog::packageManagerSettings() con
 void SettingsDialog::setPackageManagerSettings(const typstdriver::PackageManagerSettings& settings)
 {
     d_compilerSettingsTab->setSettings(settings);
+}
+
+QStringList SettingsDialog::allowedPaths() const
+{
+    return d_compilerSettingsTab->allowedPaths();
+}
+
+void SettingsDialog::setAllowedPaths(const QStringList& paths)
+{
+    d_compilerSettingsTab->setAllowedPaths(paths);
 }
 
 void SettingsDialog::setupUI()
@@ -292,6 +306,23 @@ void CompilerSettingsTab::setupUI()
 {
     d_allowPreviewPackages = new QCheckBox(tr("&Allow preview packages"));
 
+    d_allowedPathsModel = new QStringListModel();
+
+    d_allowedPathsList = new QListView();
+    d_allowedPathsList->setModel(d_allowedPathsModel);
+    connect(d_allowedPathsList->selectionModel(), &QItemSelectionModel::currentChanged, this, &CompilerSettingsTab::currentAllowedPathChanged);
+
+    QPushButton* addAllowedPathButton = new QPushButton();
+    addAllowedPathButton->setIcon(utils::themeIcon("list-add"));
+    addAllowedPathButton->setToolTip(tr("Add an allowed path"));
+    connect(addAllowedPathButton, &QPushButton::clicked, this, &CompilerSettingsTab::addAllowedPath);
+
+    d_removeAllowedPathButton = new QPushButton();
+    d_removeAllowedPathButton->setIcon(utils::themeIcon("list-remove"));
+    d_removeAllowedPathButton->setToolTip(tr("Remove the selected path from the list"));
+    d_removeAllowedPathButton->setEnabled(false);
+    connect(d_removeAllowedPathButton, &QPushButton::clicked, this, &CompilerSettingsTab::removeAllowedPath);
+
     d_cacheSize = new QLabel();
 
     QPushButton* browseCacheButton = new QPushButton(tr("&Browse..."));
@@ -302,6 +333,18 @@ void CompilerSettingsTab::setupUI()
     QVBoxLayout* universeLayout = new QVBoxLayout(universeGroup);
 
     universeLayout->addWidget(d_allowPreviewPackages);
+
+    QGroupBox* allowedPathsGroup = new QGroupBox(tr("Allowed Paths"));
+    QVBoxLayout* allowedPathsLayout = new QVBoxLayout(allowedPathsGroup);
+
+    QHBoxLayout* allowedPathsButtonLayout = new QHBoxLayout();
+    allowedPathsButtonLayout->addStretch(1);
+    allowedPathsButtonLayout->addWidget(addAllowedPathButton);
+    allowedPathsButtonLayout->addWidget(d_removeAllowedPathButton);
+
+    allowedPathsLayout->addWidget(new QLabel(tr("Allow including resources also from the following directories and their subdirectories:")));
+    allowedPathsLayout->addWidget(d_allowedPathsList, 1);
+    allowedPathsLayout->addLayout(allowedPathsButtonLayout);
 
     QFormLayout* downloadCacheTopLayout = new QFormLayout();
     downloadCacheTopLayout->addRow(tr("Cache size: "), d_cacheSize);
@@ -317,8 +360,8 @@ void CompilerSettingsTab::setupUI()
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(universeGroup);
+    mainLayout->addWidget(allowedPathsGroup, 1);
     mainLayout->addWidget(downloadCacheGroup);
-    mainLayout->addStretch(1);
 }
 
 typstdriver::PackageManagerSettings CompilerSettingsTab::settings() const
@@ -334,10 +377,48 @@ void CompilerSettingsTab::setSettings(const typstdriver::PackageManagerSettings&
     d_allowPreviewPackages->setChecked(settings.allowPreviewPackages());
 }
 
+QStringList CompilerSettingsTab::allowedPaths() const
+{
+    return d_allowedPathsModel->stringList();
+}
+
+void CompilerSettingsTab::setAllowedPaths(const QStringList& paths)
+{
+    d_allowedPathsModel->setStringList(paths);
+}
+
 void CompilerSettingsTab::showEvent(QShowEvent* event)
 {
     QWidget::showEvent(event);
     updateCacheSize();
+}
+
+void CompilerSettingsTab::addAllowedPath()
+{
+    QString dirName = QFileDialog::getExistingDirectory(this);
+    if (dirName.isEmpty()) {
+        return;
+    }
+
+    QStringList values = d_allowedPathsModel->stringList();
+    if (!values.contains(dirName)) {
+        values.append(dirName);
+        d_allowedPathsModel->setStringList(values);
+    }
+}
+
+void CompilerSettingsTab::removeAllowedPath()
+{
+    QModelIndex current = d_allowedPathsList->currentIndex();
+    if (!current.isValid()) {
+        return;
+    }
+    d_allowedPathsModel->removeRow(current.row());
+}
+
+void CompilerSettingsTab::currentAllowedPathChanged()
+{
+    d_removeAllowedPathButton->setEnabled(d_allowedPathsList->currentIndex().isValid());
 }
 
 void CompilerSettingsTab::updateCacheSize()

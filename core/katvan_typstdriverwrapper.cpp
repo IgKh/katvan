@@ -84,6 +84,8 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         d_status = Status::INITIALIZED;
         Q_EMIT compilationStatusChanged();
 
+        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", d_allowedPaths);
+
         bool hasPending = false;
         if (d_pendingSource) {
             setSource(d_pendingSource.value());
@@ -190,6 +192,15 @@ void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
 void TypstDriverWrapper::requestCompletions(int line, int column)
 {
     QMetaObject::invokeMethod(d_engine, "requestCompletions", line, column);
+}
+
+void TypstDriverWrapper::setAllowedPaths(const QStringList& allowedPaths)
+{
+    d_allowedPaths = allowedPaths;
+
+    if (d_status != Status::INITIALIZING) {
+        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", allowedPaths);
+    }
 }
 
 void TypstDriverWrapper::discardLookupCaches()

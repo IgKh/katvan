@@ -71,6 +71,7 @@ public slots:
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column);
+    void setAllowedPaths(const QStringList& allowedPaths);
     void discardLookupCaches();
 
 private:

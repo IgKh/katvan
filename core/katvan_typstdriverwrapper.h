@@ -83,6 +83,7 @@ public slots:
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column);
+    void setAllowedPaths(const QStringList& allowedPaths);
     void discardLookupCaches();
 
 private slots:
@@ -105,6 +106,7 @@ private:
     QThread* d_thread;
 
     Status d_status;
+    QStringList d_allowedPaths;
     std::optional<QString> d_pendingSource;
     QList<PendingEdit> d_pendingEdits;
 

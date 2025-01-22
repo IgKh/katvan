@@ -120,6 +120,8 @@ pub(crate) mod ffi {
 
         fn get_completions(&self, line: usize, column: usize) -> Result<Completions>;
 
+        fn set_allowed_paths(&mut self, paths: Vec<String>);
+
         fn discard_lookup_caches(&mut self);
 
         unsafe fn create_engine_impl<'a>(

@@ -15,7 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
+use std::{
+    collections::HashMap,
+    path::{Component, Path, PathBuf},
+    pin::Pin,
+    sync::Mutex,
+};
 
 use time::{format_description::well_known::Iso8601, OffsetDateTime};
 use typst::{
@@ -37,6 +42,7 @@ lazy_static::lazy_static! {
 pub struct KatvanWorld<'a> {
     root: PathBuf,
     package_roots: Mutex<PackageRoots<'a>>,
+    allowed_paths: Vec<PathBuf>,
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Vec<FontSlot>,
@@ -52,6 +58,7 @@ impl<'a> KatvanWorld<'a> {
         KatvanWorld {
             root: PathBuf::from(root),
             package_roots: Mutex::new(PackageRoots::new(package_manager)),
+            allowed_paths: Vec::new(),
             library: LazyHash::new(Library::default()),
             book: LazyHash::new(fonts.book),
             fonts: fonts.fonts,
@@ -82,27 +89,49 @@ impl<'a> KatvanWorld<'a> {
         roots.cache.clear();
     }
 
+    pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
+        self.allowed_paths = paths
+            .into_iter()
+            .map(Into::into)
+            .filter(|p: &PathBuf| p.is_absolute())
+            .collect();
+    }
+
     pub fn main_source(&self) -> Source {
         self.source.clone()
     }
 
-    fn get_package_root(&self, pkg: Option<&PackageSpec>) -> FileResult<PathBuf> {
-        if let Some(pkg) = pkg {
-            let mut roots = self.package_roots.lock().unwrap();
-            roots.get(pkg)
-        } else {
-            if self.root.as_os_str().is_empty() {
-                return Err(FileError::Other(Some(EcoString::from(
-                    "unsaved files cannot include external files",
-                ))));
-            }
-            Ok(self.root.clone())
+    fn get_package_root(&self, pkg: &PackageSpec) -> FileResult<PathBuf> {
+        let mut roots = self.package_roots.lock().unwrap();
+        roots.get(pkg)
+    }
+
+    fn get_fs_file_path(&self, path: &VirtualPath) -> FileResult<PathBuf> {
+        if self.root.as_os_str().is_empty() {
+            return Err(FileError::Other(Some(EcoString::from(
+                "unsaved files cannot include external files",
+            ))));
         }
+
+        let path = join_and_normalize_path(&self.root, path.as_rootless_path());
+
+        let allowed_roots = std::iter::once(&self.root).chain(self.allowed_paths.iter());
+        for root in allowed_roots {
+            if path.starts_with(root) {
+                return Ok(path);
+            }
+        }
+        Err(FileError::AccessDenied)
     }
 
     fn get_file_content(&self, id: FileId) -> FileResult<Vec<u8>> {
-        let root = self.get_package_root(id.package())?;
-        let path = id.vpath().resolve(&root).ok_or(FileError::AccessDenied)?;
+        let path = match id.package() {
+            Some(pkg) => {
+                let root = self.get_package_root(pkg)?;
+                id.vpath().resolve(&root).ok_or(FileError::AccessDenied)?
+            }
+            None => self.get_fs_file_path(id.vpath())?,
+        };
 
         if path.is_dir() {
             return Err(FileError::IsDirectory);
@@ -206,4 +235,20 @@ impl<'a> PackageRoots<'a> {
             _ => Err(PackageError::Other(Some(message))),
         }
     }
+}
+
+fn join_and_normalize_path(base: &Path, path: &Path) -> PathBuf {
+    let mut result = base.to_path_buf();
+
+    for component in path.components() {
+        match component {
+            Component::CurDir | Component::Prefix(_) => {}
+            Component::ParentDir => {
+                result.pop();
+            }
+            _ => result.push(component),
+        }
+    }
+
+    result
 }

@@ -127,7 +127,7 @@ impl<'a> EngineImpl<'a> {
                 .unwrap_or(diag.span);
 
             let location = self.span_to_location(span);
-            let hints = diag.hints.iter().map(|hint| hint.as_str()).collect();
+            let hints = Self::get_diagnostic_hints(diag);
 
             match diag.severity {
                 typst::diag::Severity::Error => self.logger.log_error(
@@ -170,6 +170,18 @@ impl<'a> EngineImpl<'a> {
             file: format!("{}{}", package, file),
             line: (line + 1) as i64,
             column: col as i64,
+        }
+    }
+
+    fn get_diagnostic_hints(diag: &typst::diag::SourceDiagnostic) -> Vec<&str> {
+        // As per https://github.com/typst/typst/blob/0.12/crates/typst/src/diag.rs#L311
+        if diag.message.contains("(access denied)") {
+            vec![
+                "by default cannot read file outside of document's directory",
+                "additional allowed paths can be set in compiler settings",
+            ]
+        } else {
+            diag.hints.iter().map(|hint| hint.as_str()).collect()
         }
     }
 
@@ -326,6 +338,10 @@ impl<'a> EngineImpl<'a> {
             },
             completions_json: serde_json::to_string(&completions)?,
         })
+    }
+
+    pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
+        self.world.set_allowed_paths(paths);
     }
 
     pub fn discard_lookup_caches(&mut self) {
