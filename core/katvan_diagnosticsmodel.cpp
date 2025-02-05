@@ -148,7 +148,8 @@ QVariant DiagnosticsModel::data(const QModelIndex& index, int role) const
     }
     else if (index.column() == COLUMN_MESSAGE && (role == Qt::DisplayRole || role == Qt::ToolTipRole)) {
         QString message = diagnostic.message();
-        for (const QString& hint : diagnostic.hints()) {
+        QStringList hints = diagnostic.hints();
+        for (const QString& hint : std::as_const(hints)) {
             message += QChar::LineFeed + QStringLiteral("Hint: ") + hint;
         }
         return message;

@@ -319,7 +319,8 @@ void HunspellSpellChecker::setPersonalDictionaryPath()
 
     loadPersonalDictionary();
 
-    for (const QString& file : d_watcher->files()) {
+    const QStringList watchedFiles = d_watcher->files();
+    for (const QString& file : watchedFiles) {
         d_watcher->removePath(file);
     }
     d_watcher->addPath(d_personalDictionaryPath);

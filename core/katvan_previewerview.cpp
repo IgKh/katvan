@@ -127,7 +127,7 @@ void PreviewerView::setPages(QList<typstdriver::PreviewPageData> pages)
     else if (hadPages) {
         // In case of new content in an already open preview - invalidate
         // only pages that have actually changed
-        QList<int> keys = d_renderCache.keys();
+        const QList<int> keys = d_renderCache.keys();
         for (int key : keys) {
             if (key >= pages.size()) {
                 d_renderCache.remove(key);
@@ -368,7 +368,8 @@ void PreviewerView::scrollerStateChanged()
 
 void PreviewerView::invalidateAllRenderCache()
 {
-    for (int page : d_renderCache.keys()) {
+    const QList<int> pages = d_renderCache.keys();
+    for (int page : pages) {
         d_renderCache.object(page)->invalidated = true;
     }
     viewport()->update();

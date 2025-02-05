@@ -94,7 +94,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
             hasPending = true;
         }
         if (!d_pendingEdits.isEmpty()) {
-            for (const auto& edit : d_pendingEdits) {
+            for (const auto& edit : std::as_const(d_pendingEdits)) {
                 applyContentEdit(edit.from, edit.to, edit.text);
             }
 

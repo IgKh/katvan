@@ -39,8 +39,8 @@ enum class BlockDataKind
 
 template <typename T>
 concept BlockDataSection = requires {
-    std::derived_from<T, QTextBlockUserData>;
-    std::same_as<decltype(T::DATA_KIND), BlockDataKind>;
+    requires std::derived_from<T, QTextBlockUserData>;
+    requires std::same_as<decltype(T::DATA_KIND), const BlockDataKind>;
 };
 
 class BlockData : public QTextBlockUserData

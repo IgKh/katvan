@@ -174,7 +174,6 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
 {
     QString label = index.data(Qt::DisplayRole).toString();
     QString detail = index.data(COMPLETION_DETAIL_ROLE).toString();
-    QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
 
     QFontMetrics labelMetrics { d_labelFont };
     QFontMetrics detailMetrics = option.fontMetrics;
@@ -182,7 +181,8 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
     int width = labelMetrics.horizontalAdvance(label);
     int height = labelMetrics.height();
 
-    for (QString line : detail.split(QChar::LineFeed)) {
+    const QStringList lines = detail.split(QChar::LineFeed);
+    for (const QString& line : lines) {
         width = qMax(width, detailMetrics.horizontalAdvance(line));
         height += detailMetrics.height();
     }
@@ -239,8 +239,10 @@ void CompletionManager::completionsReady(int line, int column, QByteArray comple
         return;
     }
 
+    const QJsonArray completionsArray = doc.array();
+
     QList<QJsonObject> suggestions;
-    for (const QJsonValue& value : doc.array()) {
+    for (const QJsonValue& value : completionsArray) {
         suggestions.append(value.toObject());
     }
     d_model->setSuggestions(suggestions);
