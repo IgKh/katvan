@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(katvan LANGUAGES CXX VERSION "0.8.0")
+project(katvan LANGUAGES CXX VERSION "0.8.1")
 
 enable_testing()
 
