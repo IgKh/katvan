@@ -42,6 +42,22 @@
         <source>%2 distinct versions of %1 packages (total %3)</source>
         <translation>%2 גרסאות שונות של %1 חבילות (סה&quot;כ %3)</translation>
     </message>
+    <message>
+        <source>Add an allowed path</source>
+        <translation>הוספת נתיב מותר</translation>
+    </message>
+    <message>
+        <source>Remove the selected path from the list</source>
+        <translation>הסרת הנתיב המסומן מהרשימה</translation>
+    </message>
+    <message>
+        <source>Allowed Paths</source>
+        <translation>נתיבים מותרים</translation>
+    </message>
+    <message>
+        <source>Allow including resources also from the following directories and their subdirectories:</source>
+        <translation>אפשר הכללת משאבים גם מהנתיבים הבאים:</translation>
+    </message>
 </context>
 <context>
     <name>katvan::DiagnosticsModel</name>
