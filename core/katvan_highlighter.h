@@ -34,6 +34,8 @@ class StateSpansBlockData : public QTextBlockUserData
 public:
     static constexpr BlockDataKind DATA_KIND = BlockDataKind::STATE_SPANS;
 
+    StateSpansBlockData() {}
+
     StateSpansBlockData(StateSpanList&& stateSpans)
         : d_stateSpans(std::move(stateSpans)) {}
 

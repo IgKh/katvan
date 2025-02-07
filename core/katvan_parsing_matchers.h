@@ -255,11 +255,11 @@ auto FullCodeNumber() {
 }
 
 // Start of content line
-auto LineStartAnchor(bool enteredContentBlock) {
+auto LineStartAnchor(bool atContentStart) {
     return Any(
         TokenType(parsing::TokenType::BEGIN),
         TokenType(parsing::TokenType::LINE_END),
-        Condition(enteredContentBlock)
+        Condition(atContentStart)
     );
 }
 

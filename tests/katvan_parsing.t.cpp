@@ -477,23 +477,34 @@ TEST(HiglightingParserTests, ReferenceAndLabel) {
 TEST(HiglightingParserTests, Lists) {
     QList<HighlightingMarker> markers;
 
-    markers = highlightText(QStringLiteral("- - this\n- this\n\t- that"));
+    markers = highlightText(QStringLiteral("- A- this\n- this\n\t- that"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  0, 2 },
-        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  9, 2 },
-        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 17, 2 }
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 10, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 18, 2 }
     ));
 
-    markers = highlightText(QStringLiteral("+ - this\n+this\n\t+ that"));
+    markers = highlightText(QStringLiteral("+ B- this\n+this\n\t+ that"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  0, 2 },
-        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 16, 2 }
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 17, 2 }
     ));
 
     markers = highlightText(QStringLiteral("/ This: That\n/Not This: Not that\n/Neither This"));
     EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
         HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 0, 2 },
         HighlightingMarker{ HighlightingMarker::Kind::TERM,       2, 4 }
+    ));
+
+    // Typst 0.13: nested lists and headers in list items
+    markers = highlightText(QStringLiteral("- == this\n- - this\n- + that === but not this"));
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY,  0, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::HEADING,     2, 8 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 10, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 12, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 19, 2 },
+        HighlightingMarker{ HighlightingMarker::Kind::LIST_ENTRY, 21, 2 }
     ));
 }
 
@@ -763,7 +774,7 @@ TEST(ContentParserTests, Sanity)
         ContentSegment{  17,  3 }, // "\n  "
         ContentSegment{  22, 14 }, // " is a letter.\n"
         ContentSegment{  38,  1 }, // "\n"
-        ContentSegment{  52, 19 }, //  "= Some\theading \#!\n"
+        ContentSegment{  54, 16 }, // "Some\theading \#!"
         ContentSegment{  73,  4 }, // "Body"
         ContentSegment{  78,  5 }, // " text"
         ContentSegment{  84, 14 }, // " 12 with some "

@@ -31,6 +31,11 @@ Highlighter::Highlighter(QTextDocument* document, SpellChecker* spellChecker, co
 {
 }
 
+static bool isShebangLine(QTextBlock block)
+{
+    return block.blockNumber() == 0 && block.text().startsWith(QStringLiteral("#!"));
+}
+
 static void getBlockInitialParams(QTextBlock block, StateSpanList& initialSpans, QList<parsing::ParserState::Kind>& initialStates)
 {
     auto* prevBlockData = BlockData::get<StateSpansBlockData>(block.previous());
@@ -51,22 +56,30 @@ void Highlighter::reparseBlock(QTextBlock block)
     // Workaround for QTBUG-130318. This method performs a "light" reparse
     // starting from the given block, in order to update its' code spans for
     // the code model, but without changing any formats (which would lead to
-    // markContentDirty being called, and editing updates being lost.
+    // markContentDirty being called, and editing updates being lost).
 
     while (block.isValid()) {
-        StateSpanList initialSpans;
-        QList<parsing::ParserState::Kind> initialStates;
-        getBlockInitialParams(block, initialSpans, initialStates);
+        StateSpansBlockData* blockData = nullptr;
 
-        StateSpansListener spanListener(initialSpans, block.position());
+        if (isShebangLine(block)) {
+            blockData = new StateSpansBlockData();
+        }
+        else {
+            StateSpanList initialSpans;
+            QList<parsing::ParserState::Kind> initialStates;
+            getBlockInitialParams(block, initialSpans, initialStates);
 
-        QString text = block.text();
-        parsing::Parser parser(text, initialStates);
+            StateSpansListener spanListener(initialSpans, block.position());
 
-        parser.addListener(spanListener, false);
-        parser.parse();
+            QString text = block.text();
+            parsing::Parser parser(text, initialStates);
 
-        auto* blockData = new StateSpansBlockData(std::move(spanListener).spans());
+            parser.addListener(spanListener, false);
+            parser.parse();
+
+            blockData = new StateSpansBlockData(std::move(spanListener).spans());
+        }
+
         BlockData::set<StateSpansBlockData>(block, blockData);
 
         // Do not update the user state here, we want a proper rehighlight to
@@ -80,27 +93,40 @@ void Highlighter::reparseBlock(QTextBlock block)
 
 void Highlighter::highlightBlock(const QString& text)
 {
-    StateSpanList initialSpans;
-    QList<parsing::ParserState::Kind> initialStates;
-    getBlockInitialParams(currentBlock(), initialSpans, initialStates);
-
-    StateSpansListener spanListener(initialSpans, currentBlock().position());
-    parsing::HighlightingListener highlightingListener;
-    parsing::ContentWordsListener contentListenger;
-
-    parsing::Parser parser(text, initialStates);
-    parser.addListener(spanListener, false);
-    parser.addListener(highlightingListener, true);
-    parser.addListener(contentListenger, true);
-
-    parser.parse();
+    StateSpansBlockData* blockData = nullptr;
 
     QList<QTextCharFormat> charFormats;
     charFormats.resize(text.size());
 
-    doSyntaxHighlighting(highlightingListener, charFormats);
+    if (isShebangLine(currentBlock())) {
+        charFormats.fill(d_theme.highlightingFormat(parsing::HighlightingMarker::Kind::COMMENT));
+
+        BlockData::set<SpellingBlockData>(currentBlock(), nullptr);
+        blockData = new StateSpansBlockData();
+    }
+    else {
+        StateSpanList initialSpans;
+        QList<parsing::ParserState::Kind> initialStates;
+        getBlockInitialParams(currentBlock(), initialSpans, initialStates);
+
+        StateSpansListener spanListener(initialSpans, currentBlock().position());
+        parsing::HighlightingListener highlightingListener;
+        parsing::ContentWordsListener contentListenger;
+
+        parsing::Parser parser(text, initialStates);
+        parser.addListener(spanListener, false);
+        parser.addListener(highlightingListener, true);
+        parser.addListener(contentListenger, true);
+
+        parser.parse();
+
+        doSyntaxHighlighting(highlightingListener, charFormats);
+        doSpellChecking(text, contentListenger, charFormats);
+
+        blockData = new StateSpansBlockData(std::move(spanListener).spans());
+    }
+
     doShowControlChars(text, charFormats);
-    doSpellChecking(text, contentListenger, charFormats);
 
     for (qsizetype i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
@@ -110,7 +136,6 @@ void Highlighter::highlightBlock(const QString& text)
     // the block's user data, set a hash of that as the block state. This is to
     // force re-highlighting of the next block if something changed - QSyntaxHighlighter
     // only tracks changes to the block state number.
-    auto* blockData = new StateSpansBlockData(std::move(spanListener).spans());
     BlockData::set<StateSpansBlockData>(currentBlock(), blockData);
     setCurrentBlockState(blockData->stateSpans().fingerprint());
 }

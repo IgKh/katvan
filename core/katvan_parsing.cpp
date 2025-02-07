@@ -373,7 +373,7 @@ void TokenStream::releaseConsumedTokens()
 Parser::Parser(QStringView text, const QList<ParserState::Kind>& initialStates)
     : d_text(text)
     , d_tokenStream(text)
-    , d_enteredContentBlock(false)
+    , d_atContentStart(false)
     , d_startMarker(0)
     , d_endMarker(0)
 {
@@ -431,12 +431,15 @@ void Parser::parse()
 
         if (isBlockScopedState(state) && match(m::TokenType(TokenType::LINE_END))) {
             popState();
+            if (isContentHolderState(d_stateStack.last())) {
+                d_atContentStart = true;
+            }
             continue;
         }
 
         if (isContentHolderState(state)) {
-            bool enteredContentBlock = d_enteredContentBlock;
-            d_enteredContentBlock = false;
+            bool atContentStart = d_atContentStart;
+            d_atContentStart = false;
 
             if (handleCommentStart()) {
                 continue;
@@ -529,7 +532,7 @@ void Parser::parse()
             else if (match(m::All(
                 m::Discard(
                     m::All(
-                        m::LineStartAnchor(enteredContentBlock),
+                        m::LineStartAnchor(atContentStart),
                         m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE))
                     )
                 ),
@@ -542,7 +545,7 @@ void Parser::parse()
             else if (match(m::All(
                 m::Discard(
                     m::All(
-                        m::LineStartAnchor(enteredContentBlock),
+                        m::LineStartAnchor(atContentStart),
                         m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE))
                     )
                 ),
@@ -550,12 +553,13 @@ void Parser::parse()
                 m::OneOrMore(m::TokenType(TokenType::WHITESPACE))
             ))) {
                 instantState(ParserState::Kind::CONTENT_LIST_ENTRY);
+                d_atContentStart = true;
                 continue;
             }
             else if (match(m::All(
                 m::Discard(
                     m::All(
-                        m::LineStartAnchor(enteredContentBlock),
+                        m::LineStartAnchor(atContentStart),
                         m::ZeroOrMore(m::TokenType(TokenType::WHITESPACE))
                     )
                 ),
@@ -955,7 +959,7 @@ void Parser::instantState(ParserState::Kind stateKind)
 void Parser::pushState(ParserState::Kind stateKind)
 {
     if (stateKind == ParserState::Kind::CONTENT_BLOCK) {
-        d_enteredContentBlock = true;
+        d_atContentStart = true;
     }
 
     d_stateStack.append(ParserState{ stateKind, d_startMarker });

@@ -205,7 +205,7 @@ private:
     QList<std::reference_wrapper<ParsingListener>> d_finalizingListeners;
     ParserStateStack d_stateStack;
 
-    bool d_enteredContentBlock;
+    bool d_atContentStart;
     size_t d_startMarker;
     size_t d_endMarker;
 };
