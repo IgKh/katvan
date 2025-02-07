@@ -19,7 +19,7 @@ use std::{
     collections::HashMap,
     path::{Component, Path, PathBuf},
     pin::Pin,
-    sync::Mutex,
+    sync::{LazyLock, Mutex},
 };
 
 use time::{format_description::well_known::Iso8601, OffsetDateTime};
@@ -35,9 +35,9 @@ use typst_kit::fonts::{FontSlot, Fonts};
 
 use crate::bridge::ffi;
 
-lazy_static::lazy_static! {
-    pub static ref MAIN_ID: FileId = FileId::new_fake(VirtualPath::new("MAIN"));
-}
+pub static MAIN_ID: LazyLock<FileId> = LazyLock::new(|| {
+    FileId::new_fake(VirtualPath::new("MAIN"))
+});
 
 pub struct KatvanWorld<'a> {
     root: PathBuf,
