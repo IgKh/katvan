@@ -57,14 +57,13 @@ add_library(typstdriver SHARED
 include(GenerateExportHeader)
 generate_export_header(typstdriver)
 
-set_property(TARGET typstdriver PROPERTY CXX_VISIBILITY_PRESET hidden)
+set_target_properties(typstdriver PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    FRAMEWORK TRUE
+)
 
 target_include_directories(typstdriver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(typstdriver PUBLIC QT_RESTRICTED_CAST_FROM_ASCII QT_NO_EMIT)
 
 target_link_libraries(typstdriver PRIVATE typstdriver_rs typstdriver_ffi)
 target_link_libraries(typstdriver PUBLIC Qt6::Gui Qt6::Network LibArchive::LibArchive)
-
-set_target_properties(typstdriver PROPERTIES
-    FRAMEWORK TRUE
-)

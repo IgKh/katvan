@@ -19,7 +19,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::pin::Pin;
 
 use anyhow::{Context, Result};
-use typst::layout::{Abs, Point};
+use typst::layout::{Abs, PagedDocument, Point};
 use typst::World;
 
 use crate::bridge::ffi;
@@ -46,7 +46,7 @@ impl Default for DiagnosticLocation {
 pub struct EngineImpl<'a> {
     logger: &'a ffi::LoggerProxy,
     world: KatvanWorld<'a>,
-    result: Option<typst::model::Document>,
+    result: Option<PagedDocument>,
 }
 
 impl<'a> EngineImpl<'a> {
@@ -74,7 +74,7 @@ impl<'a> EngineImpl<'a> {
         self.world.reset_current_date(now);
 
         let start = std::time::Instant::now();
-        let res = typst::compile(&self.world);
+        let res = typst::compile::<PagedDocument>(&self.world);
 
         let elapsed = format!("{:.2?}", start.elapsed());
         let warnings = res.warnings;
@@ -273,7 +273,7 @@ impl<'a> EngineImpl<'a> {
         jump: typst_ide::Jump,
     ) -> Option<ffi::SourcePosition> {
         match jump {
-            typst_ide::Jump::Source(id, cursor) if id == *MAIN_ID => {
+            typst_ide::Jump::File(id, cursor) if id == *MAIN_ID => {
                 let source = self.world.main_source();
 
                 Some(ffi::SourcePosition {

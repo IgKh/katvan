@@ -160,7 +160,7 @@ impl<'a> typst::World for KatvanWorld<'a> {
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        self.get_file_content(id).map(Bytes::from)
+        self.get_file_content(id).map(Bytes::new)
     }
 
     fn book(&self) -> &LazyHash<FontBook> {
@@ -183,6 +183,12 @@ impl<'a> typst::World for KatvanWorld<'a> {
             }
         };
         Some(typst::foundations::Datetime::Date(in_offset.date()))
+    }
+}
+
+impl<'a> typst_ide::IdeWorld for KatvanWorld<'a> {
+    fn upcast(&self) -> &dyn typst::World {
+        self
     }
 }
 

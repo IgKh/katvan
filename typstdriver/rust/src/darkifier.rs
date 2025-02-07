@@ -31,6 +31,7 @@ pub fn invert_page_colors(page: &Page) -> Page {
         frame: invert_frame_colors(&page.frame),
         fill: Smart::Custom(page.fill_or_white().as_ref().map(process_paint)),
         numbering: page.numbering.clone(),
+        supplement: page.supplement.clone(),
         number: page.number,
     }
 }
@@ -49,7 +50,7 @@ fn process_frame_item(item: &FrameItem) -> FrameItem {
         FrameItem::Group(group) => FrameItem::Group(GroupItem {
             frame: invert_frame_colors(&group.frame),
             transform: group.transform,
-            clip_path: group.clip_path.clone(),
+            clip: group.clip.clone(),
             label: group.label,
             parent: group.parent,
         }),
