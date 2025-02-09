@@ -29,12 +29,15 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
+constexpr int FORMAT_BIDI_ISOLATE = QTextFormat::UserProperty + 1;
+
 class CodeModel;
 
 enum class BlockDataKind
 {
     STATE_SPANS = 0,
     SPELLING,
+    LAYOUT,
 };
 
 template <typename T>
@@ -51,7 +54,7 @@ public:
     }
 
     template <BlockDataSection T>
-    static T* get(QTextBlock block) {
+    static T* get(const QTextBlock& block) {
         BlockData* data = dynamic_cast<BlockData*>(block.userData());
         if (data == nullptr) {
             return nullptr;

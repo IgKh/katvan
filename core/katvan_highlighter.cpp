@@ -147,8 +147,15 @@ void Highlighter::doSyntaxHighlighting(
     auto markers = listener.markers();
 
     for (const auto& m : std::as_const(markers)) {
+        QTextCharFormat fmt = d_theme.highlightingFormat(m.kind);
+
+        // TODO extend to additional markers
+        if (m.kind == parsing::HighlightingMarker::Kind::REFERENCE) {
+            fmt.setProperty(FORMAT_BIDI_ISOLATE, Qt::LayoutDirectionAuto);
+        }
+
         for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
-            charFormats[i].merge(d_theme.highlightingFormat(m.kind));
+            charFormats[i].merge(fmt);
         }
     }
 }

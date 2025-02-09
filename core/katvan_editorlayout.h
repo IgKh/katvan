@@ -45,6 +45,7 @@ protected:
 
 private:
     void layoutBlock(QTextBlock& block, qreal topY);
+    void doBlockLayout(QTextLayout* layout, const QTextOption& option, qreal topY);
     void recalculateDocumentSize();
     Qt::LayoutDirection getBlockDirection(const QTextBlock& block);
 
