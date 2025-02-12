@@ -29,14 +29,13 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
-constexpr int FORMAT_BIDI_ISOLATE = QTextFormat::UserProperty + 1;
-
 class CodeModel;
 
 enum class BlockDataKind
 {
     STATE_SPANS = 0,
     SPELLING,
+    ISOLATES,
     LAYOUT,
 };
 

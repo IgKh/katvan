@@ -18,6 +18,7 @@
 #include "katvan_codemodel.h"
 #include "katvan_document.h"
 #include "katvan_editorlayout.h"
+#include "katvan_highlighter.h"
 #include "katvan_text_utils.h"
 
 #include <QGuiApplication>
@@ -31,7 +32,7 @@ namespace katvan {
 
 /**
  * This is the custom document layout engine for Katvan's editor component. It
- * exist in order to safely implement things like our custom line directionality
+ * exists in order to safely implement things like our custom line directionality
  * heuristic and auto-injection of BiDi isolates.
  *
  * It is similar in nature (but not in code!) to Qt's own QPlainTextDocumentLayout
@@ -42,8 +43,7 @@ namespace katvan {
  * Another significant difference is that blocks can have an additional QTextLayout
  * used for rendering only, so there can be some distinction between "edit" text and
  * "display" text. Text and formats for the latter are derived from the former with
- * custom logic. The main restriction that we maintain is that when calculated, both
- * layouts have the exact same bounding rectangle.
+ * custom logic.
  *
  * While in theory this layout class can be used with any QTextEdit, by making
  * assumptions specific to Katvan we can cut all sorts of corners. These assumptions
@@ -80,7 +80,7 @@ public:
     LayoutBlockData() : revision(-1) {}
 
     std::unique_ptr<QTextLayout> displayLayout;
-    QList<ushort> displayCharOffsets;
+    QList<ushort> displayOffsets;
     int revision;
 };
 
@@ -123,7 +123,7 @@ QSizeF EditorLayout::documentSize() const
 
 int EditorLayout::pageCount() const
 {
-    // Breaking source code to pages in meaningless
+    // Breaking source code to pages is meaningless
     return 1;
 }
 
@@ -141,11 +141,14 @@ QRectF EditorLayout::blockBoundingRect(const QTextBlock& block) const
         return QRectF();
     }
 
-    QTextLayout* layout = block.layout();
-    if (layout->lineCount() == 0) {
-        // Not layed out yet
+    auto* layoutData = BlockData::get<LayoutBlockData>(block);
+    if (layoutData == nullptr) {
         return QRectF();
     }
+
+    QTextLayout* layout = layoutData->displayLayout
+        ? layoutData->displayLayout.get()
+        : block.layout();
 
     QRectF rect = layout->boundingRect();
     rect.moveTopLeft(layout->position());
@@ -186,7 +189,7 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
 
         int pos = line.xToCursor(point.x());
         if (pos >= 0) {
-            return block.position() + adjustPosFromDisplay(layoutData->displayCharOffsets, pos);
+            return block.position() + adjustPosFromDisplay(layoutData->displayOffsets, pos);
         }
     }
     return -1;
@@ -228,15 +231,15 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
                 int end = qMin(sel.cursor.selectionEnd() - blockStart, blockEnd);
 
                 QTextLayout::FormatRange fmt;
-                fmt.start = adjustPosToDisplay(layoutData->displayCharOffsets, start);
-                fmt.length = adjustPosToDisplay(layoutData->displayCharOffsets, end) - fmt.start;
+                fmt.start = adjustPosToDisplay(layoutData->displayOffsets, start);
+                fmt.length = adjustPosToDisplay(layoutData->displayOffsets, end) - fmt.start;
                 fmt.format = sel.format;
                 formats.append(fmt);
             }
             else if (!sel.cursor.hasSelection()
                         && sel.format.boolProperty(QTextFormat::FullWidthSelection)
                         && block.contains(sel.cursor.position())) {
-                int posInBlock = adjustPosToDisplay(layoutData->displayCharOffsets, sel.cursor.position() - blockStart);
+                int posInBlock = adjustPosToDisplay(layoutData->displayOffsets, sel.cursor.position() - blockStart);
                 QTextLine line = layout->lineForTextPosition(posInBlock);
                 Q_ASSERT(line.isValid());
 
@@ -262,7 +265,7 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
             painter->setPen(context.palette.color(QPalette::Text));
             layout->drawCursor(painter,
                 QPointF(),
-                adjustPosToDisplay(layoutData->displayCharOffsets, cursorPosInBlock),
+                adjustPosToDisplay(layoutData->displayOffsets, cursorPosInBlock),
                 CURSOR_WIDTH);
         }
 
@@ -280,8 +283,8 @@ void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdde
 
     qreal y;
     if (startBlock.previous().isValid()) {
-        QTextLayout* prevLayout = startBlock.previous().layout();
-        y = prevLayout->position().y() + prevLayout->boundingRect().height();
+        QRectF prevBoundingRect = blockBoundingRect(startBlock.previous());
+        y = prevBoundingRect.y() + prevBoundingRect.height();
     }
     else {
         y = document()->documentMargin();
@@ -320,68 +323,31 @@ void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdde
         LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
         if (layoutData->displayLayout) {
             layoutData->displayLayout->setPosition(newPos);
+            y += layoutData->displayLayout->boundingRect().height();
         }
-
-        y += layout->boundingRect().height();
+        else {
+            y += layout->boundingRect().height();
+        }
     }
 
     recalculateDocumentSize();
     Q_EMIT update();
 }
 
-struct IsolateRange
-{
-    Qt::LayoutDirection dir;
-    int start;
-    int end;
-};
-
-static QList<IsolateRange> extractIsolateRanges(const QList<QTextLayout::FormatRange>& formats)
-{
-    // Create continuous ranges of text needing isolation from the character
-    // formats set by the highlighter.
-    QList<IsolateRange> isolates;
-    std::optional<IsolateRange> lastIsolate;
-
-    for (const QTextLayout::FormatRange& r : formats) {
-        if (r.format.hasProperty(FORMAT_BIDI_ISOLATE)) {
-            auto dir = qvariant_cast<Qt::LayoutDirection>(r.format.property(FORMAT_BIDI_ISOLATE));
-
-            if (lastIsolate && lastIsolate->dir == dir && r.start == (lastIsolate->end + 1)) {
-                lastIsolate->end = r.start + r.length - 1;
-            }
-            else {
-                if (lastIsolate) {
-                    isolates.append(*lastIsolate);
-                }
-                lastIsolate = IsolateRange { dir, r.start, r.start + r.length - 1 };
-            }
-        }
-        else if (lastIsolate) {
-            isolates.append(*lastIsolate);
-            lastIsolate = std::nullopt;
-        }
-    }
-
-    if (lastIsolate) {
-        isolates.append(*lastIsolate);
-    }
-    return isolates;
-}
-
 static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockData)
 {
     blockData->revision = block.revision();
 
-    QTextLayout* defaultLayout = block.layout();
-    QList<QTextLayout::FormatRange> formats = defaultLayout->formats();
-
-    const QList<IsolateRange> isolates = extractIsolateRanges(formats);
-    if (isolates.isEmpty()) {
-        blockData->displayCharOffsets.clear();
+    IsolatesBlockData* isolateData = BlockData::get<IsolatesBlockData>(block);
+    if (isolateData == nullptr /*|| isolateData->isolates().isEmpty()*/) {
+        blockData->displayOffsets.clear();
         blockData->displayLayout.reset();
         return;
     }
+
+    QTextLayout* defaultLayout = block.layout();
+    QList<QTextLayout::FormatRange> formats = defaultLayout->formats();
+    parsing::IsolateRangeList isolates = isolateData->isolates();
 
     // Inject Unicode BiDi control characters the block's text for the needed
     // isolate ranges, creating a different text that is used for shaping but
@@ -390,40 +356,37 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
     // we need to save an offset mapping.
     QString text = block.text();
 
-    auto& editOffsets = blockData->displayCharOffsets;
-    editOffsets.resize(text.size());
-    editOffsets.fill(0);
+    auto& offsets = blockData->displayOffsets;
+    offsets.resize(text.size());
+    offsets.fill(0);
 
     for (const auto& isolate : isolates) {
         QChar startChar;
         switch (isolate.dir) {
-            case Qt::LeftToRight: startChar = utils::LRI_MARK;
-            case Qt::RightToLeft: startChar = utils::RLI_MARK;
-            case Qt::LayoutDirectionAuto: startChar = utils::FSI_MARK;
+            case Qt::LeftToRight: startChar = utils::LRI_MARK; break;
+            case Qt::RightToLeft: startChar = utils::RLI_MARK; break;
+            case Qt::LayoutDirectionAuto: startChar = utils::FSI_MARK; break;
         }
 
-        text.insert(isolate.start + editOffsets[isolate.start], startChar);
-        text.insert(isolate.end + editOffsets[isolate.end] + 2, utils::PDI_MARK);
+        int start = static_cast<int>(isolate.startPos);
+        int end = static_cast<int>(isolate.endPos);
 
-        for (int i = isolate.start; i <= isolate.end; i++) {
-            editOffsets[i] += 1;
+        text.insert(start + offsets[start], startChar);
+        text.insert(end + offsets[end] + 2, utils::PDI_MARK);
+
+        for (int i = start; i <= end; i++) {
+            offsets[i] += 1;
         }
-        for (int i = isolate.end + 1; i < editOffsets.length(); i++) {
-            editOffsets[i] += 2;
+        for (int i = end + 1; i < offsets.length(); i++) {
+            offsets[i] += 2;
         }
     }
 
     // Patch format ranges to be be correct for adjusted text
     for (QTextLayout::FormatRange& r : formats) {
-        auto startOffset = editOffsets[r.start];
-        r.length += (editOffsets[r.start + r.length - 1] - startOffset);
+        auto startOffset = offsets[r.start];
+        r.length += (offsets[r.start + r.length - 1] - startOffset);
         r.start += startOffset;
-
-        // FIXME - we want to maintain the assumption that a block has the exact
-        // same bounding rect in both the default and display layouts. For that,
-        // the extra control characters injected must be invisible. Make sure that
-        // is the case even when control characters are displayed by overriding
-        // the font here...
     }
 
     blockData->displayLayout = std::make_unique<QTextLayout>(text);
@@ -449,7 +412,7 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
     block.setLineCount(defaultLayout->lineCount());
 
     // Calculating a display layout is expensive, only do it if content actually changed
-    if (block.revision() != blockData->revision) {
+    if (block.revision() != blockData->revision || block.revision() == 1) {
         buildDisplayLayout(block, blockData);
     }
 
@@ -551,11 +514,7 @@ void EditorLayout::recalculateDocumentSize()
     qreal height = 2 * document()->documentMargin();
 
     for (QTextBlock block = document()->begin(); block.isValid(); block = block.next()) {
-        QTextLayout* layout = block.layout();
-        for (int i = 0; i < layout->lineCount(); i++) {
-            QTextLine line = layout->lineAt(i);
-            height += line.height();
-        }
+        height += blockBoundingRect(block).height();
     }
 
     QSizeF newDocumentSize(document()->textWidth(), height);

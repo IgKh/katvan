@@ -59,6 +59,21 @@ private:
     parsing::SegmentList d_misspelledWords;
 };
 
+class IsolatesBlockData : public QTextBlockUserData
+{
+public:
+    static constexpr BlockDataKind DATA_KIND = BlockDataKind::ISOLATES;
+
+    IsolatesBlockData(parsing::IsolateRangeList&& ranges)
+        : d_ranges(std::move(ranges)) {}
+
+    const parsing::IsolateRangeList& isolates() const & { return d_ranges; }
+    parsing::IsolateRangeList isolates() const && { return d_ranges; }
+
+private:
+    parsing::IsolateRangeList d_ranges;
+};
+
 class Highlighter : public QSyntaxHighlighter
 {
     Q_OBJECT

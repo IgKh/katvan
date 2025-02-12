@@ -22,6 +22,7 @@
 
 #include <concepts>
 #include <functional>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -135,6 +136,7 @@ struct ParserState
 
     Kind kind = Kind::INVALID;
     size_t startPos = 0;
+    bool rolledOver = false; // State continues from previous parse
 };
 
 using ParserStateStack = QList<ParserState>;
@@ -279,6 +281,36 @@ public:
 private:
     SegmentList d_segments;
     Token d_prevToken;
+};
+
+struct IsolateRange
+{
+    Qt::LayoutDirection dir;
+    size_t startPos;
+    size_t endPos;
+
+    bool operator==(const IsolateRange&) const = default;
+};
+
+using IsolateRangeList = QList<IsolateRange>;
+
+/**
+ * Listener for determining text areas whose BiDi algorithm directionality
+ * should be isolated.
+ */
+class IsolatesListener : public ParsingListener
+{
+public:
+    IsolatesListener();
+
+    IsolateRangeList isolateRanges() const { return d_ranges; }
+
+    void initializeState(const ParserState& state, size_t endMarker) override;
+    void finalizeState(const ParserState& state, size_t endMarker, bool implicit) override;
+
+private:
+    IsolateRangeList d_ranges;
+    QList<std::optional<qsizetype>> d_codeSequenceRanges;
 };
 
 }

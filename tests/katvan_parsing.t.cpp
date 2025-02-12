@@ -43,6 +43,10 @@ namespace katvan::parsing {
     void PrintTo(const ContentSegment& segment, std::ostream* os) {
         *os << "ContentSegment(" << segment.startPos << ", " << segment.length << ")";
     }
+
+    void PrintTo(const IsolateRange& range, std::ostream* os) {
+        *os << "IsolateRange(" << range.dir << ", " << range.startPos << ", " << range.endPos << ")";
+    }
 }
 
 struct TokenMatcher {
@@ -779,5 +783,42 @@ TEST(ContentParserTests, Sanity)
         ContentSegment{  78,  5 }, // " text"
         ContentSegment{  84, 14 }, // " 12 with some "
         ContentSegment{ 110,  7 }  // " in it."
+    ));
+}
+
+static IsolateRangeList extractIsolates(QStringView text)
+{
+    IsolatesListener listener;
+    Parser parser(text);
+    parser.addListener(listener, false);
+    parser.parse();
+    return listener.isolateRanges();
+}
+
+TEST(IsolatesListenerTests, Basic)
+{
+    auto isolates = extractIsolates(QStringLiteral(
+        "Trying a @label and another @label in some $x + 1$ and #[content]"));
+
+    EXPECT_THAT(isolates, ::testing::UnorderedElementsAre(
+        IsolateRange { Qt::LayoutDirectionAuto,  9, 14 }, // @label
+        IsolateRange { Qt::LayoutDirectionAuto, 28, 33 }, // @label
+        IsolateRange { Qt::LeftToRight,         43, 49 }, // $x + 1$
+        IsolateRange { Qt::LayoutDirectionAuto, 57, 63 }  // content
+    ));
+}
+
+TEST(IsolatesListenerTests, Nesting)
+{
+    auto isolates = extractIsolates(QStringLiteral(
+        "#text(dir: ltr)[Size is #\"aa\".len and $#rect[A]$].fields()"));
+
+    EXPECT_THAT(isolates, ::testing::UnorderedElementsAre(
+        IsolateRange { Qt::LeftToRight,          0, 57 }, // Whole line is one long code expression
+        IsolateRange { Qt::LayoutDirectionAuto, 16, 47 }, // The big content block argument to text()
+        IsolateRange { Qt::LeftToRight,         24, 32 }, // #"aa".len
+        IsolateRange { Qt::LeftToRight,         38, 47 }, // Math block
+        IsolateRange { Qt::LeftToRight,         39, 46 }, // #rect[A]
+        IsolateRange { Qt::LayoutDirectionAuto, 45, 45 }  // A
     ));
 }

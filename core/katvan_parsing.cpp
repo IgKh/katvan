@@ -377,9 +377,9 @@ Parser::Parser(QStringView text, const QList<ParserState::Kind>& initialStates)
     , d_startMarker(0)
     , d_endMarker(0)
 {
-    d_stateStack.append(ParserState{ ParserState::Kind::CONTENT, 0 });
+    d_stateStack.append(ParserState{ ParserState::Kind::CONTENT, 0, true });
     for (ParserState::Kind state : initialStates) {
-        d_stateStack.append(ParserState{ state, 0 });
+        d_stateStack.append(ParserState{ state, 0, true });
     }
 }
 
@@ -1083,6 +1083,94 @@ void ContentWordsListener::handleLooseToken(const Token& t, const ParserState& s
         d_segments.append(ContentSegment{ t.startPos, t.length });
     }
     d_prevToken = t;
+}
+
+IsolatesListener::IsolatesListener()
+{
+    d_codeSequenceRanges.append(std::nullopt);
+}
+
+void IsolatesListener::initializeState(const ParserState& state, size_t endMarker)
+{
+    if (state.rolledOver) {
+        return;
+    }
+
+    if (state.kind == ParserState::Kind::CONTENT_BLOCK || state.kind == ParserState::Kind::MATH) {
+        d_codeSequenceRanges.append(std::nullopt);
+    }
+    else if (state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN) {
+        // For an expression chain, extend the current isolated code range on
+        // seeing the "." - this papers over a peculiarity of the parser
+        if (d_codeSequenceRanges.last()) {
+            auto& existingRange = d_ranges[*d_codeSequenceRanges.last()];
+            existingRange.endPos = endMarker;
+        }
+    }
+}
+
+void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker, bool implicit)
+{
+    Q_UNUSED(implicit);
+
+    // What do we want to isolate the directionality of? Ideally short and
+    // _continuous_ bits of text associated with a state that typically involves
+    // characters with weak or no directionality. Math, inline code, content bits
+    // marked by non-symmetric symbols (i.e references) and content blocks inline
+    // with any of the above.
+
+    if (state.rolledOver) {
+        return;
+    }
+
+    if (state.kind == ParserState::Kind::CONTENT_BLOCK || state.kind == ParserState::Kind::MATH) {
+        d_codeSequenceRanges.takeLast();
+    }
+
+    if (state.kind == ParserState::Kind::CONTENT_REFERENCE) {
+        d_ranges.append(IsolateRange{ Qt::LayoutDirectionAuto, state.startPos, endMarker });
+    }
+    else if (state.kind == ParserState::Kind::CONTENT_BLOCK) {
+        // Don't include the square brackets in the isolate
+        d_ranges.append(IsolateRange{ Qt::LayoutDirectionAuto, state.startPos + 1, endMarker - 1 });
+    }
+    else if (state.kind == ParserState::Kind::MATH) {
+        d_ranges.append(IsolateRange{ Qt::LeftToRight, state.startPos, endMarker });
+    }
+
+    bool isIsolatableCode = state.kind == ParserState::Kind::CODE_VARIABLE_NAME
+        || state.kind == ParserState::Kind::CODE_FUNCTION_NAME
+        || state.kind == ParserState::Kind::CODE_ARGUMENTS
+        || state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN
+        || state.kind == ParserState::Kind::CODE_NUMERIC_LITERAL
+        || state.kind == ParserState::Kind::CODE_STRING_EXPRESSION
+        || state.kind == ParserState::Kind::CONTENT_BLOCK;
+
+    if (isIsolatableCode) {
+        if (d_codeSequenceRanges.last()) {
+            auto& existingRange = d_ranges[*d_codeSequenceRanges.last()];
+
+            if (state.startPos == existingRange.endPos + 1) {
+                // Extends existing isolated code range
+                existingRange.endPos = endMarker;
+                return;
+            }
+            else if (existingRange.startPos <= endMarker && existingRange.endPos >= state.startPos) {
+                // Contained in existing isolated code range
+                existingRange.startPos = qMin(existingRange.startPos, state.startPos);
+                existingRange.endPos = qMax(existingRange.endPos, endMarker);
+                return;
+            }
+        }
+
+        // No existing isolated code range in this nesting level, or does not
+        // intersect. Start a new one, but not for content blocks as they have
+        // special handling above.
+        if (state.kind != ParserState::Kind::CONTENT_BLOCK) {
+            d_codeSequenceRanges.last() = d_ranges.size();
+            d_ranges.append(IsolateRange{ Qt::LeftToRight, state.startPos, endMarker });
+        }
+    }
 }
 
 }

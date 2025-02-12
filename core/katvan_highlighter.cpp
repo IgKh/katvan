@@ -101,7 +101,6 @@ void Highlighter::highlightBlock(const QString& text)
     if (isShebangLine(currentBlock())) {
         charFormats.fill(d_theme.highlightingFormat(parsing::HighlightingMarker::Kind::COMMENT));
 
-        BlockData::set<SpellingBlockData>(currentBlock(), nullptr);
         blockData = new StateSpansBlockData();
     }
     else {
@@ -112,16 +111,21 @@ void Highlighter::highlightBlock(const QString& text)
         StateSpansListener spanListener(initialSpans, currentBlock().position());
         parsing::HighlightingListener highlightingListener;
         parsing::ContentWordsListener contentListenger;
+        parsing::IsolatesListener isolatesListener;
 
         parsing::Parser parser(text, initialStates);
         parser.addListener(spanListener, false);
         parser.addListener(highlightingListener, true);
         parser.addListener(contentListenger, true);
+        parser.addListener(isolatesListener, false);
 
         parser.parse();
 
         doSyntaxHighlighting(highlightingListener, charFormats);
         doSpellChecking(text, contentListenger, charFormats);
+
+        BlockData::set<IsolatesBlockData>(currentBlock(),
+            new IsolatesBlockData(std::move(isolatesListener).isolateRanges()));
 
         blockData = new StateSpansBlockData(std::move(spanListener).spans());
     }
@@ -148,11 +152,6 @@ void Highlighter::doSyntaxHighlighting(
 
     for (const auto& m : std::as_const(markers)) {
         QTextCharFormat fmt = d_theme.highlightingFormat(m.kind);
-
-        // TODO extend to additional markers
-        if (m.kind == parsing::HighlightingMarker::Kind::REFERENCE) {
-            fmt.setProperty(FORMAT_BIDI_ISOLATE, Qt::LayoutDirectionAuto);
-        }
 
         for (size_t i = m.startPos; i < m.startPos + m.length; i++) {
             charFormats[i].merge(fmt);
