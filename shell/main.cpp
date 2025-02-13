@@ -55,6 +55,7 @@ int main(int argc, char** argv)
 #endif
 
     QApplication app(argc, argv);
+    QCoreApplication::setOrganizationDomain("katvan.app");
     QCoreApplication::setOrganizationName("Katvan");
     QCoreApplication::setApplicationName("Katvan");
 

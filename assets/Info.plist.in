@@ -5,7 +5,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleIdentifier</key>
-    <string>io.github.IgKh.katvan</string>
+    <string>app.katvan.editor</string>
     <key>CFBundleName</key>
     <string>Katvan</string>
     <key>CFBundleVersion</key>
