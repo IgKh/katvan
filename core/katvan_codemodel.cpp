@@ -44,12 +44,26 @@ bool operator<(const StateSpan& lhs, const StateSpan& rhs)
 
 constexpr inline size_t qHash(const StateSpan& span, size_t seed = 0) noexcept
 {
-    return qHashMulti(seed, span.spanId, span.state, span.startPos, span.endPos.value_or(0));
+    return qHashMulti(seed,
+        span.spanId,
+        span.state,
+        span.startPos,
+        span.endPos.value_or(0),
+        span.implicitlyClosed);
 }
 
 int StateSpanList::fingerprint() const
 {
-    return static_cast<int>(qHashRange(d_elements.begin(), d_elements.end()));
+    size_t elementsHash = qHashRange(d_elements.begin(), d_elements.end());
+
+    // The hash is a `size_t`, which is usually 64-bit. But block user state is
+    // an `int` which is often 32-bit even on 64-bit systems. Simply truncating
+    // can worsen collisions, as I'm aren't sure that qHash is a particularly
+    // high quality hash function. As a mitigation, we can take the remainder
+    // from the largest prime just under 2^32.
+    static constexpr size_t MAX_PRIME = 4294967231UL;
+
+    return static_cast<int>(elementsHash % MAX_PRIME);
 }
 
 void StateSpansListener::initializeState(const parsing::ParserState& state, size_t endMarker)
@@ -59,7 +73,7 @@ void StateSpansListener::initializeState(const parsing::ParserState& state, size
     d_spans.elements().append(StateSpan {
         g_spanIdCounter++,
         state.kind,
-        d_basePos + static_cast<int>(state.startPos),
+        static_cast<int>(state.startPos),
         std::nullopt,
         false
     });
@@ -74,7 +88,7 @@ void StateSpansListener::finalizeState(const parsing::ParserState& state, size_t
         }
 
         if (it->state == state.kind) {
-            it->endPos = d_basePos + static_cast<int>(endMarker);
+            it->endPos = static_cast<int>(endMarker);
             it->implicitlyClosed = implicit;
         }
         break;
@@ -90,8 +104,8 @@ void StateSpansListener::handleInstantState(const parsing::ParserState& state, s
     d_spans.elements().append(StateSpan {
         g_spanIdCounter++,
         state.kind,
-        d_basePos + static_cast<int>(state.startPos),
-        d_basePos + static_cast<int>(endMarker),
+        static_cast<int>(state.startPos),
+        static_cast<int>(endMarker),
         true
     });
 }
@@ -114,7 +128,7 @@ static std::optional<int> findSpanEndPosition(unsigned long spanId, QTextBlock f
         for (const StateSpan& span : blockData->stateSpans()) {
             if (span.spanId == spanId) {
                 if (span.endPos) {
-                    return span.endPos.value();
+                    return block.position() + span.endPos.value();
                 }
                 else {
                     break;
@@ -141,6 +155,8 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
         return std::nullopt;
     }
 
+    int posInBlock = pos - block.position();
+
     auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return std::nullopt;
@@ -148,19 +164,19 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
     Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
 
     for (const StateSpan& span : blockData->stateSpans()) {
-        if (span.startPos > pos) {
+        if (span.startPos > posInBlock) {
             break;
         }
         if (!isDelimitedState(span.state)) {
             continue;
         }
 
-        if (span.endPos == pos) {
-            return span.startPos;
+        if (span.endPos == posInBlock) {
+            return block.position() + span.startPos;
         }
-        else if (span.startPos == pos) {
+        else if (span.startPos == posInBlock) {
             if (span.endPos) {
-                return span.endPos.value();
+                return block.position() + span.endPos.value();
             }
             return findSpanEndPosition(span.spanId, block.next());
         }
@@ -180,6 +196,8 @@ std::optional<StateSpan> CodeModel::spanAtPosition(QTextBlock block, int globalP
 {
     Q_ASSERT(d_document->findBlock(globalPos) == block);
 
+    int posInBlock = globalPos - block.position();
+
     auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return std::nullopt;
@@ -188,7 +206,7 @@ std::optional<StateSpan> CodeModel::spanAtPosition(QTextBlock block, int globalP
 
     const auto& spans = blockData->stateSpans().elements();
     for (auto rit = spans.rbegin(); rit != spans.rend(); ++rit) {
-        if (rit->startPos < globalPos && (!rit->endPos.has_value() || rit->endPos.value() >= globalPos)) {
+        if (rit->startPos < posInBlock && (!rit->endPos.has_value() || rit->endPos.value() >= posInBlock)) {
             return *rit;
         }
     }
@@ -211,7 +229,7 @@ bool CodeModel::shouldIncreaseIndent(int pos) const
         return false;
     }
 
-    QTextBlock startBlock = d_document->findBlock(span->startPos);
+    QTextBlock startBlock = d_document->findBlock(block.position() + span->startPos);
     return startBlock == block;
 }
 
@@ -222,6 +240,8 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
         return block;
     }
 
+    int posInBlock = pos - block.position();
+
     auto* blockData = BlockData::get<StateSpansBlockData>(block);
     if (!blockData) {
         return block;
@@ -230,15 +250,15 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
 
     // Find a relevant state span that ends on pos exactly.
     for (const StateSpan& span : blockData->stateSpans()) {
-        if (span.startPos > pos) {
+        if (span.startPos > posInBlock) {
             break;
         }
         if (!isIndentingState(span.state)) {
             continue;
         }
 
-        if (span.endPos == pos) {
-            return d_document->findBlock(span.startPos);
+        if (span.endPos == posInBlock) {
+            return d_document->findBlock(block.position() + span.startPos);
         }
     }
     return block;
@@ -257,7 +277,7 @@ QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
         if (!isIndentingState(span.state)) {
             continue;
         }
-        return d_document->findBlock(span.startPos);
+        return d_document->findBlock(block.position() + span.startPos);
     }
     return block;
 }

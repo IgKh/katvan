@@ -62,8 +62,8 @@ private:
 class StateSpansListener : public parsing::ParsingListener
 {
 public:
-    StateSpansListener(const StateSpanList& initialSpans, int basePos)
-        : d_spans(initialSpans), d_basePos(basePos) {}
+    StateSpansListener(const StateSpanList& initialSpans)
+        : d_spans(initialSpans) {}
 
     const StateSpanList& spans() const & { return d_spans; }
     StateSpanList spans() const && { return d_spans; }
@@ -74,7 +74,6 @@ public:
 
 private:
     StateSpanList d_spans;
-    int d_basePos;
 };
 
 class CodeModel : public QObject

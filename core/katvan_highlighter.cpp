@@ -40,11 +40,14 @@ static void getBlockInitialParams(QTextBlock block, StateSpanList& initialSpans,
 {
     auto* prevBlockData = BlockData::get<StateSpansBlockData>(block.previous());
     if (prevBlockData != nullptr) {
-        for (const StateSpan& span : prevBlockData->stateSpans())
+        for (StateSpan span : prevBlockData->stateSpans())
         {
             if (span.endPos) {
                 continue;
             }
+
+            span.startPos -= block.previous().length();
+
             initialSpans.elements().append(span);
             initialStates.append(span.state);
         }
@@ -69,7 +72,7 @@ void Highlighter::reparseBlock(QTextBlock block)
             QList<parsing::ParserState::Kind> initialStates;
             getBlockInitialParams(block, initialSpans, initialStates);
 
-            StateSpansListener spanListener(initialSpans, block.position());
+            StateSpansListener spanListener(initialSpans);
 
             QString text = block.text();
             parsing::Parser parser(text, initialStates);
@@ -108,7 +111,7 @@ void Highlighter::highlightBlock(const QString& text)
         QList<parsing::ParserState::Kind> initialStates;
         getBlockInitialParams(currentBlock(), initialSpans, initialStates);
 
-        StateSpansListener spanListener(initialSpans, currentBlock().position());
+        StateSpansListener spanListener(initialSpans);
         parsing::HighlightingListener highlightingListener;
         parsing::ContentWordsListener contentListenger;
         parsing::IsolatesListener isolatesListener;
