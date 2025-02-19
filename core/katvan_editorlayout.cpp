@@ -70,18 +70,16 @@ namespace katvan {
  *   test logic).
  */
 
-constexpr int CURSOR_WIDTH = 1;
-
 class LayoutBlockData : public QTextBlockUserData
 {
 public:
     static constexpr BlockDataKind DATA_KIND = BlockDataKind::LAYOUT;
 
-    LayoutBlockData() : revision(-1) {}
+    LayoutBlockData() : textHash(qHash(QStringView())) {}
 
     std::unique_ptr<QTextLayout> displayLayout;
     QList<ushort> displayOffsets;
-    int revision;
+    size_t textHash;
 };
 
 static int adjustPosToDisplay(const QList<ushort>& displayOffsets, int pos)
@@ -112,6 +110,7 @@ static int adjustPosFromDisplay(const QList<ushort>& displayOffsets, int pos)
 EditorLayout::EditorLayout(QTextDocument* document, CodeModel* codeModel)
     : QAbstractTextDocumentLayout(document)
     , d_codeModel(codeModel)
+    , d_cursorWidth(1)
     , d_documentSize(0, 0)
 {
 }
@@ -204,7 +203,7 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
 
     // Make sure that the right margin is NOT part of the clip rectangle, so
     // that it won't be painted over by a FullWidthSelection
-    qreal maxX = document()->textWidth() - document()->documentMargin() + CURSOR_WIDTH;
+    qreal maxX = document()->textWidth() - document()->documentMargin() + d_cursorWidth;
     clip.setRight(qMin(clip.right(), maxX));
 
     QTextBlock block = findContainingBlock(clip.top());
@@ -266,7 +265,7 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
             layout->drawCursor(painter,
                 QPointF(),
                 adjustPosToDisplay(layoutData->displayOffsets, cursorPosInBlock),
-                CURSOR_WIDTH);
+                d_cursorWidth);
         }
 
         block = block.next();
@@ -336,10 +335,17 @@ void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdde
 
 static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockData)
 {
-    blockData->revision = block.revision();
+    QString text = block.text();
+    size_t newHash = qHash(text);
+
+    // Calculating a display layout is expensive, only do it if content actually changed
+    if (newHash == blockData->textHash) {
+        return;
+    }
+    blockData->textHash = newHash;
 
     IsolatesBlockData* isolateData = BlockData::get<IsolatesBlockData>(block);
-    if (isolateData == nullptr /*|| isolateData->isolates().isEmpty()*/) {
+    if (isolateData == nullptr || isolateData->isolates().isEmpty()) {
         blockData->displayOffsets.clear();
         blockData->displayLayout.reset();
         return;
@@ -354,11 +360,13 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
     // not edit purposes. This moves around positions of visible characters
     // relative to the editable block content stored in the QTextDocument, so
     // we need to save an offset mapping.
-    QString text = block.text();
 
     auto& offsets = blockData->displayOffsets;
     offsets.resize(text.size());
     offsets.fill(0);
+
+    QMap<int, int> isolatesStartingAt;
+    QMap<int, int> isolatesEndingAt;
 
     for (const auto& isolate : isolates) {
         QChar startChar;
@@ -380,6 +388,9 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
         for (int i = end + 1; i < offsets.length(); i++) {
             offsets[i] += 2;
         }
+
+        isolatesStartingAt[start]++;
+        isolatesEndingAt[end]++;
     }
 
     // Patch format ranges to be be correct for adjusted text
@@ -387,6 +398,32 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
         auto startOffset = offsets[r.start];
         r.length += (offsets[r.start + r.length - 1] - startOffset);
         r.start += startOffset;
+    }
+
+    // The Qt method QWidgetTextControlPrivate::rectForPosition directly
+    // uses the QTextLine objects from the default layout to determine cursor
+    // and selection rectangles position and height. It is essential that
+    // our display layout's lines have the same bounding rectangles - otherwise
+    // there are various visual glitches related to mouse selection.
+    //
+    // In theory, we only add invisible control characters which shouldn't affect
+    // text size, BUT - due to them being control chars most fonts will (rightfully)
+    // claim to not cover them. We must prevent Qt from falling back to another font
+    // that might claim coverage, and has a bigger ascent or descent height than
+    // any font used for visible characters. To achieve that, add a format
+    // for each control char we injected that prevents font merging.
+    QTextLayout::FormatRange r;
+    r.format.setFontStyleStrategy(QFont::NoFontMerging);
+
+    for (const auto& [pos, count] : isolatesStartingAt.asKeyValueRange()) {
+        r.start = pos + offsets[pos] - count;
+        r.length = count;
+        formats.append(r);
+    }
+    for (const auto& [pos, count] : isolatesEndingAt.asKeyValueRange()) {
+        r.start = pos + offsets[pos] + 1;
+        r.length = count;
+        formats.append(r);
     }
 
     blockData->displayLayout = std::make_unique<QTextLayout>(text);
@@ -411,10 +448,7 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
     doBlockLayout(defaultLayout, option, topY);
     block.setLineCount(defaultLayout->lineCount());
 
-    // Calculating a display layout is expensive, only do it if content actually changed
-    if (block.revision() != blockData->revision || block.revision() == 1) {
-        buildDisplayLayout(block, blockData);
-    }
+    buildDisplayLayout(block, blockData);
 
     QTextLayout* displayLayout = blockData->displayLayout.get();
     if (displayLayout != nullptr) {
@@ -422,6 +456,11 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
         displayLayout->setCursorMoveStyle(document()->defaultCursorMoveStyle());
 
         doBlockLayout(displayLayout, option, topY);
+
+        if (displayLayout->boundingRect() != defaultLayout->boundingRect()) {
+            qWarning() << "Block" << block.blockNumber() << "display bounding rect differs from default one!"
+                << displayLayout->boundingRect() << "vs" << defaultLayout->boundingRect();
+        }
     }
 }
 

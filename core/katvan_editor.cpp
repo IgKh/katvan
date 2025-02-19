@@ -206,7 +206,7 @@ QMenu* Editor::createInsertMenu()
     menu->addSeparator();
 
     QAction* insertInlineMathAction = menu->addAction(tr("Inline &Math"), this, [this]() {
-        insertSurroundingMarks(utils::LRI_MARK + QStringLiteral("$"), QStringLiteral("$") + utils::PDI_MARK);
+        insertSurroundingMarks(QStringLiteral("$"), QStringLiteral("$"));
     });
     insertInlineMathAction->setIcon(utils::fontIcon(QLatin1Char('$')));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);

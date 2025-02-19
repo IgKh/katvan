@@ -28,6 +28,10 @@ class EditorLayout : public QAbstractTextDocumentLayout
 {
     Q_OBJECT
 
+    // Undocumented property that QTextEdit (actually QWidgetTextControlPrivate)
+    // wants to exist on document layouts
+    Q_PROPERTY(int cursorWidth MEMBER d_cursorWidth)
+
 public:
     EditorLayout(QTextDocument* document, CodeModel* codeModel);
 
@@ -51,6 +55,7 @@ private:
 
     CodeModel* d_codeModel;
 
+    int d_cursorWidth;
     QSizeF d_documentSize;
 };
 
