@@ -140,7 +140,7 @@ impl<'a> KatvanWorld<'a> {
     }
 }
 
-impl<'a> typst::World for KatvanWorld<'a> {
+impl typst::World for KatvanWorld<'_> {
     fn library(&self) -> &LazyHash<Library> {
         &self.library
     }
@@ -186,7 +186,7 @@ impl<'a> typst::World for KatvanWorld<'a> {
     }
 }
 
-impl<'a> typst_ide::IdeWorld for KatvanWorld<'a> {
+impl typst_ide::IdeWorld for KatvanWorld<'_> {
     fn upcast(&self) -> &dyn typst::World {
         self
     }
