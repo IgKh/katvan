@@ -628,13 +628,13 @@ void Parser::parse()
             }
             else if (match(m::All(m::FullWord(), m::Peek(m::Symbol(QLatin1Char('(')))))) {
                 if (d_endMarker > d_startMarker) {
-                    instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+                    instantState(ParserState::Kind::MATH_FUNCTION_NAME);
                 }
                 continue;
             }
             else if (match(m::FullWord())) {
                 if (d_endMarker > d_startMarker) {
-                    instantState(ParserState::Kind::CODE_VARIABLE_NAME);
+                    instantState(ParserState::Kind::MATH_SYMBOL_NAME);
                     if (match(m::Symbol(QLatin1Char('.')))) {
                         pushState(ParserState::Kind::MATH_EXPRESSION_CHAIN);
                     }
@@ -644,12 +644,12 @@ void Parser::parse()
         }
         else if (state.kind == ParserState::Kind::MATH_EXPRESSION_CHAIN) {
             if (match(m::All(m::FullWord(), m::Peek(m::Symbol(QLatin1Char('(')))))) {
-                instantState(ParserState::Kind::CODE_FUNCTION_NAME);
+                instantState(ParserState::Kind::MATH_FUNCTION_NAME);
                 popState();
                 continue;
             }
             else if (match(m::FullWord())) {
-                instantState(ParserState::Kind::CODE_VARIABLE_NAME);
+                instantState(ParserState::Kind::MATH_SYMBOL_NAME);
                 if (!match(m::Symbol(QLatin1Char('.')))) {
                     popState();
                 }
@@ -1036,9 +1036,11 @@ void HighlightingListener::finalizeState(const ParserState& state, size_t endMar
         d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::TERM, start, length });
         break;
     case ParserState::Kind::CODE_VARIABLE_NAME:
+    case ParserState::Kind::MATH_SYMBOL_NAME:
         d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::VARIABLE_NAME, start, length });
         break;
     case ParserState::Kind::CODE_FUNCTION_NAME:
+    case ParserState::Kind::MATH_FUNCTION_NAME:
         d_markers.append(HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME, start, length });
         break;
     case ParserState::Kind::CODE_KEYWORD:
@@ -1087,7 +1089,19 @@ void ContentWordsListener::handleLooseToken(const Token& t, const ParserState& s
 
 IsolatesListener::IsolatesListener()
 {
-    d_codeSequenceRanges.append(std::nullopt);
+    d_codeSequenceRangesForLevel.append(QList<qsizetype>());
+}
+
+IsolateRangeList IsolatesListener::isolateRanges() const
+{
+    IsolateRangeList result = d_ranges;
+
+    auto it = std::remove_if(result.begin(), result.end(), [](const IsolateRange& range) {
+        return range.discard;
+    });
+    result.erase(it, result.end());
+
+    return result;
 }
 
 void IsolatesListener::initializeState(const ParserState& state, size_t endMarker)
@@ -1097,13 +1111,13 @@ void IsolatesListener::initializeState(const ParserState& state, size_t endMarke
     }
 
     if (state.kind == ParserState::Kind::CONTENT_BLOCK || state.kind == ParserState::Kind::MATH) {
-        d_codeSequenceRanges.append(std::nullopt);
+        d_codeSequenceRangesForLevel.append(QList<qsizetype>());
     }
     else if (state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN) {
         // For an expression chain, extend the current isolated code range on
         // seeing the "." - this papers over a peculiarity of the parser
-        if (d_codeSequenceRanges.last()) {
-            auto& existingRange = d_ranges[*d_codeSequenceRanges.last()];
+        if (!d_codeSequenceRangesForLevel.last().isEmpty()) {
+            auto& existingRange = d_ranges[d_codeSequenceRangesForLevel.last().last()];
             existingRange.endPos = endMarker;
         }
     }
@@ -1124,7 +1138,7 @@ void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker,
     }
 
     if (state.kind == ParserState::Kind::CONTENT_BLOCK || state.kind == ParserState::Kind::MATH) {
-        d_codeSequenceRanges.takeLast();
+        d_codeSequenceRangesForLevel.takeLast();
     }
 
     if (state.kind == ParserState::Kind::CONTENT_REFERENCE) {
@@ -1147,8 +1161,8 @@ void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker,
         || state.kind == ParserState::Kind::CONTENT_BLOCK;
 
     if (isIsolatableCode) {
-        if (d_codeSequenceRanges.last()) {
-            auto& existingRange = d_ranges[*d_codeSequenceRanges.last()];
+        if (!d_codeSequenceRangesForLevel.last().isEmpty()) {
+            auto& existingRange = d_ranges[d_codeSequenceRangesForLevel.last().last()];
 
             if (state.startPos == existingRange.endPos + 1) {
                 // Extends existing isolated code range
@@ -1156,9 +1170,14 @@ void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker,
                 return;
             }
             else if (existingRange.startPos <= endMarker && existingRange.endPos >= state.startPos) {
-                // Contained in existing isolated code range
+                // Intersects with existing isolated code range
+                size_t origStartPos = existingRange.startPos;
                 existingRange.startPos = qMin(existingRange.startPos, state.startPos);
                 existingRange.endPos = qMax(existingRange.endPos, endMarker);
+
+                if (existingRange.startPos < origStartPos) {
+                    discardRedundantCodeRanges();
+                }
                 return;
             }
         }
@@ -1167,8 +1186,36 @@ void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker,
         // intersect. Start a new one, but not for content blocks as they have
         // special handling above.
         if (state.kind != ParserState::Kind::CONTENT_BLOCK) {
-            d_codeSequenceRanges.last() = d_ranges.size();
+            d_codeSequenceRangesForLevel.last().append(d_ranges.size());
             d_ranges.append(IsolateRange{ Qt::LeftToRight, state.startPos, endMarker });
+        }
+    }
+}
+
+void IsolatesListener::discardRedundantCodeRanges()
+{
+    auto& levelCodeRanges = d_codeSequenceRangesForLevel.last();
+    Q_ASSERT(!levelCodeRanges.isEmpty());
+
+    auto& reference = d_ranges[levelCodeRanges.last()];
+
+    while (levelCodeRanges.size() > 1) {
+        qsizetype i = levelCodeRanges.size() - 2;
+        auto& candidate = d_ranges[levelCodeRanges[i]];
+
+        if (reference.startPos == candidate.endPos + 1) {
+            // Candidate and reference ranges are continuous
+            reference.startPos = candidate.startPos;
+            candidate.discard = true;
+            levelCodeRanges.remove(i);
+        }
+        else if (reference.startPos <= candidate.startPos && reference.endPos >= candidate.endPos) {
+            // Reference range contains candidate range
+            candidate.discard = true;
+            levelCodeRanges.remove(i);
+        }
+        else {
+            return;
         }
     }
 }

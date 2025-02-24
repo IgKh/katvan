@@ -808,6 +808,24 @@ TEST(IsolatesListenerTests, Basic)
     ));
 }
 
+TEST(IsolatesListenerTests, Math)
+{
+    auto isolates = extractIsolates(QStringLiteral("$f(x) = x dot sin(pi/2 + x)$"));
+
+    EXPECT_THAT(isolates, ::testing::ElementsAre(
+        IsolateRange { Qt::LeftToRight, 0, 27 } // The whole thing
+    ));
+}
+
+TEST(IsolatesListenerTests, CodeNumbers)
+{
+    auto isolates = extractIsolates(QStringLiteral("#par(leading: 1em, spacing: 2px)"));
+
+    EXPECT_THAT(isolates, ::testing::ElementsAre(
+        IsolateRange { Qt::LeftToRight, 0, 31 } // The whole thing
+    ));
+}
+
 TEST(IsolatesListenerTests, Nesting)
 {
     auto isolates = extractIsolates(QStringLiteral(

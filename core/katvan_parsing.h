@@ -118,6 +118,8 @@ struct ParserState
         CONTENT_TERM,
         MATH,
         MATH_DELIMITER,
+        MATH_SYMBOL_NAME,
+        MATH_FUNCTION_NAME,
         MATH_EXPRESSION_CHAIN,
         MATH_ARGUMENTS,
         CODE_VARIABLE_NAME,
@@ -181,8 +183,7 @@ private:
     bool handleCodeStart();
 
     template <Matcher M>
-    bool match(const M& matcher)
-    {
+    bool match(const M& matcher) {
         size_t pos = d_tokenStream.position();
         if (!matcher.tryMatch(d_tokenStream)) {
             d_tokenStream.rewindTo(pos);
@@ -288,8 +289,11 @@ struct IsolateRange
     Qt::LayoutDirection dir;
     size_t startPos;
     size_t endPos;
+    bool discard = false;
 
-    bool operator==(const IsolateRange&) const = default;
+    bool operator==(const IsolateRange& other) const {
+        return dir == other.dir && startPos == other.startPos && endPos == other.endPos;
+    }
 };
 
 using IsolateRangeList = QList<IsolateRange>;
@@ -303,14 +307,16 @@ class IsolatesListener : public ParsingListener
 public:
     IsolatesListener();
 
-    IsolateRangeList isolateRanges() const { return d_ranges; }
+    IsolateRangeList isolateRanges() const;
 
     void initializeState(const ParserState& state, size_t endMarker) override;
     void finalizeState(const ParserState& state, size_t endMarker, bool implicit) override;
 
 private:
+    void discardRedundantCodeRanges();
+
     IsolateRangeList d_ranges;
-    QList<std::optional<qsizetype>> d_codeSequenceRanges;
+    QList<QList<qsizetype>> d_codeSequenceRangesForLevel;
 };
 
 }
