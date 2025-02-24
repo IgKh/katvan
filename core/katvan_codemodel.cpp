@@ -282,28 +282,41 @@ QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
     return block;
 }
 
-parsing::ParserState::Kind CodeModel::getStateForBracketInsertion(QTextCursor cursor) const
+std::tuple<State, State> CodeModel::getStatesForBracketInsertion(QTextCursor cursor) const
 {
+    State prevState = State::INVALID;
+    State currState = State::INVALID;
+
     // First, there might be an interesting state that the parser may have
     // already implicitly closed; e.g. block scoped states closed by reaching
-    // end of line, or certain "instant" states. These take precedence.
+    // end of line, or certain "instant" states. These take precedence in
+    // being the "current" state - while they are also the "previous" state.
     if (!cursor.atBlockStart()) {
         auto span = spanAtPosition(cursor.block(), cursor.position() - 1);
-        if (span && span->implicitlyClosed) {
-            return span->state;
+        if (span) {
+            prevState = span->state;
+            if (span->implicitlyClosed) {
+                currState = span->state;
+            }
         }
     }
 
-    auto span = spanAtPosition(cursor.block(), cursor.position());
-    if (span) {
-        return span->state;
+    if (currState == State::INVALID) {
+        auto span = spanAtPosition(cursor.block(), cursor.position());
+        if (span) {
+            currState = span->state;
+        }
+        else {
+            currState = State::CONTENT;
+        }
     }
-    return State::CONTENT;
+
+    return std::make_tuple(prevState, currState);
 }
 
 std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const
 {
-    State state = getStateForBracketInsertion(cursor);
+    auto [prevState, state] = getStatesForBracketInsertion(cursor);
 
     QChar prevChar;
     if (!cursor.atBlockStart()) {
@@ -340,7 +353,8 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
         }
     }
     else if (openBracket == QLatin1Char('[')) {
-        if (isInCode || isCodeFunctionCall || ((isInContent || isInMath) && prevChar == QLatin1Char('#'))) {
+        if (isInCode || isCodeFunctionCall || ((isInContent || isInMath) && prevChar == QLatin1Char('#')) ||
+            prevState == State::CODE_ARGUMENTS || prevState == State::CONTENT_BLOCK) {
             return QLatin1Char(']');
         }
     }

@@ -111,9 +111,9 @@ private:
     // Find the inner most state span still in effect at the given global position
     std::optional<StateSpan> spanAtPosition(QTextBlock block, int globalPos) const;
 
-    // Find the relevant "current" state for the cursor to consider which brackets
-    // can be auto-inserted.
-    parsing::ParserState::Kind getStateForBracketInsertion(QTextCursor cursor) const;
+    // Find the relevant "previous" and current" states for the cursor to consider
+    // which brackets can be auto-inserted.
+    std::tuple<parsing::ParserState::Kind, parsing::ParserState::Kind> getStatesForBracketInsertion(QTextCursor cursor) const;
 
     QTextDocument* d_document;
 };

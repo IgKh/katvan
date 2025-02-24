@@ -301,7 +301,8 @@ Q_GLOBAL_STATIC(QStringList, GET_MATCHING_CLOSE_BRACKET_TEST_DOC, {
     /* 3 */ "$\"AB\" = ln(1 + x)$",
     /* 4 */ "// a comment",
     /* 5 */ "`raw content`",
-    /* 6 */ "#par $ x = #rect $"
+    /* 6 */ "#par $ x = #rect $",
+    /* 7 */ "#text()"
 })
 
 class CodeModel_GetMatchingCloseBracketTests : public ::testing::Test {
@@ -418,6 +419,8 @@ TEST_F(CodeModel_GetMatchingCloseBracketTests, SquareBrackets)
 
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 4),  QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
     EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(6, 16), QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
+
+    EXPECT_THAT(model.getMatchingCloseBracket(cursorAt(7, 7),  QLatin1Char('[')), ::testing::Eq(QLatin1Char(']')));
 }
 
 TEST_F(CodeModel_GetMatchingCloseBracketTests, MathDelimiters)
