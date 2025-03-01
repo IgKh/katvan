@@ -20,6 +20,8 @@
 #include "katvan_editortheme.h"
 #include "katvan_editorsettings.h"
 
+#include "typstdriver_logger.h"
+
 #include <QPointer>
 #include <QTextEdit>
 
@@ -50,6 +52,7 @@ public:
 
     void applySettings(const EditorSettings& settings);
     void updateEditorTheme();
+    void setSourceDiagnostics(QList<typstdriver::Diagnostic> diagnostics);
 
     QMenu* createInsertMenu();
 
@@ -76,6 +79,8 @@ private:
     void insertMark(QChar mark);
     void insertSurroundingMarks(QString before, QString after);
 
+    QTextCursor cursorAt(int blockNum, int charOffset) const;
+    QString predefinedTooltipAtPosition(int position) const;
     std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;
     QString getIndentString(QTextCursor cursor) const;
     void handleNewLine();
@@ -115,6 +120,7 @@ private:
     EditorSettings d_effectiveSettings;
     EditorTheme d_theme;
 
+    QList<typstdriver::Diagnostic> d_sourceDiagnostics;
     QPointer<QMenu> d_contextMenu;
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;

@@ -27,20 +27,25 @@ use crate::darkifier;
 use crate::world::{KatvanWorld, MAIN_ID};
 
 #[derive(Debug)]
-struct DiagnosticLocation {
-    file: String,
+struct DiagnosticFileLocation {
     line: i64,
     column: i64,
 }
 
-impl Default for DiagnosticLocation {
+impl Default for DiagnosticFileLocation {
     fn default() -> Self {
         Self {
-            file: String::new(),
             line: -1,
             column: 0,
         }
     }
+}
+
+#[derive(Debug, Default)]
+struct DiagnosticLocation {
+    file: String,
+    start: DiagnosticFileLocation,
+    end: DiagnosticFileLocation,
 }
 
 pub struct EngineImpl<'a> {
@@ -133,15 +138,19 @@ impl<'a> EngineImpl<'a> {
                 typst::diag::Severity::Error => self.logger.log_error(
                     &diag.message,
                     &location.file,
-                    location.line,
-                    location.column,
+                    location.start.line,
+                    location.start.column,
+                    location.end.line,
+                    location.end.column,
                     hints,
                 ),
                 typst::diag::Severity::Warning => self.logger.log_warning(
                     &diag.message,
                     &location.file,
-                    location.line,
-                    location.column,
+                    location.start.line,
+                    location.start.column,
+                    location.end.line,
+                    location.end.column,
                     hints,
                 ),
             };
@@ -163,13 +172,13 @@ impl<'a> EngineImpl<'a> {
         let file = id.vpath().as_rootless_path().to_string_lossy();
 
         let range = source.range(span).unwrap();
-        let line = source.byte_to_line(range.start).unwrap_or(0);
-        let col = source.byte_to_column(range.start).unwrap_or(0);
+        let start = position_to_file_location(&source, range.start).unwrap_or_default();
+        let end = position_to_file_location(&source, range.end).unwrap_or_default();
 
         DiagnosticLocation {
             file: format!("{}{}", package, file),
-            line: (line + 1) as i64,
-            column: col as i64,
+            start,
+            end,
         }
     }
 
@@ -234,6 +243,8 @@ impl<'a> EngineImpl<'a> {
                     self.logger.log_error(
                         &format!("Unable to write to {path}: {err}"),
                         "",
+                        -1,
+                        -1,
                         -1,
                         -1,
                         Vec::new(),
@@ -347,6 +358,19 @@ impl<'a> EngineImpl<'a> {
     pub fn discard_lookup_caches(&mut self) {
         self.world.discard_package_roots_cache();
     }
+}
+
+fn position_to_file_location(
+    source: &typst::syntax::Source,
+    byte_idx: usize,
+) -> Option<DiagnosticFileLocation> {
+    let line = source.byte_to_line(byte_idx)?;
+    let column = source.byte_to_column(byte_idx)?;
+
+    Some(DiagnosticFileLocation {
+        line: line as i64,
+        column: column as i64,
+    })
 }
 
 fn hash_frame(frame: &typst::layout::Frame) -> u64 {

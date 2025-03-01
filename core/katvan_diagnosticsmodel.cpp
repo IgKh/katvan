@@ -60,6 +60,18 @@ TypstDriverWrapper::Status DiagnosticsModel::impliedStatus() const
         : TypstDriverWrapper::Status::SUCCESS;
 }
 
+QList<typstdriver::Diagnostic> DiagnosticsModel::sourceDiagnostics() const
+{
+    QList<typstdriver::Diagnostic> result = d_diagnostics;
+
+    auto it = std::remove_if(result.begin(), result.end(), [](const typstdriver::Diagnostic& diagnostic) {
+        return diagnostic.file() != MAIN_SOURCE;
+    });
+    result.erase(it, result.end());
+
+    return result;
+}
+
 std::optional<std::tuple<int, int>> DiagnosticsModel::getSourceLocation(const QModelIndex& index) const
 {
     if (!index.isValid() || index.row() >= d_diagnostics.size()) {
@@ -71,9 +83,9 @@ std::optional<std::tuple<int, int>> DiagnosticsModel::getSourceLocation(const QM
         return std::nullopt;
     }
 
-    const auto& location = diagnostic.location();
+    const auto& location = diagnostic.startLocation();
     if (location) {
-        return std::make_tuple(location.value().line, location.value().column);
+        return std::make_tuple(location->line, location->column);
     }
     return std::nullopt;
 }
@@ -160,9 +172,9 @@ QVariant DiagnosticsModel::data(const QModelIndex& index, int role) const
             result = d_shortFileName;
         }
 
-        if (diagnostic.location()) {
-            auto location = diagnostic.location().value();
-            result += QStringLiteral(" (%1:%2)").arg(location.line).arg(location.column);
+        if (diagnostic.startLocation()) {
+            auto location = diagnostic.startLocation().value();
+            result += QStringLiteral(" (%1:%2)").arg(location.line + 1).arg(location.column);
         }
         return result;
     }

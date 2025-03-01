@@ -132,7 +132,7 @@ void CompilerOutput::indexClicked(const QModelIndex& index)
     auto result = dmodel->getSourceLocation(index);
     if (result) {
         const auto [line, column] = *result;
-        Q_EMIT goToPosition(line - 1, column);
+        Q_EMIT goToPosition(line, column);
     }
 }
 

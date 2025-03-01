@@ -35,7 +35,8 @@ public:
         FOREGROUND,
         GUTTER,
         CURRENT_LINE,
-        SPELLING_ERROR,
+        ERROR,
+        WARNING,
         MATCHING_BRACKET
     };
 

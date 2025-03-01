@@ -53,8 +53,10 @@ static Diagnostic makeDiagnostic(
     Diagnostic::Kind kind,
     rust::Str message,
     rust::Str file,
-    int32_t line,
-    int32_t col,
+    int64_t startLine,
+    int64_t startCol,
+    int64_t endLine,
+    int64_t endCol,
     rust::Vec<rust::Str> rustHints)
 {
     Diagnostic diag;
@@ -62,8 +64,17 @@ static Diagnostic makeDiagnostic(
     diag.setMessage(QString::fromUtf8(message.data(), message.size()));
     diag.setFile(QString::fromUtf8(file.data(), file.size()));
 
-    if (line >= 0) {
-        diag.setLocation(Diagnostic::Location { line, col });
+    if (startLine >= 0) {
+        diag.setStartLocation(Diagnostic::Location {
+            static_cast<int>(startLine),
+            static_cast<int>(startCol)
+        });
+    }
+    if (endLine >= 0) {
+        diag.setEndLocation(Diagnostic::Location {
+            static_cast<int>(endLine),
+            static_cast<int>(endCol)
+        });
     }
 
     QStringList hints;
@@ -78,21 +89,25 @@ static Diagnostic makeDiagnostic(
 void LoggerProxy::logWarning(
     rust::Str message,
     rust::Str file,
-    int64_t line,
-    int64_t col,
+    int64_t startLine,
+    int64_t startCol,
+    int64_t endLine,
+    int64_t endCol,
     rust::Vec<rust::Str> hints) const
 {
-    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::WARNING, message, file, line, col, hints));
+    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::WARNING, message, file, startLine, startCol, endLine, endCol, hints));
 }
 
 void LoggerProxy::logError(
     rust::Str message,
     rust::Str file,
-    int64_t line,
-    int64_t col,
+    int64_t startLine,
+    int64_t startCol,
+    int64_t endLine,
+    int64_t endCol,
     rust::Vec<rust::Str> hints) const
 {
-    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::ERROR, message, file, line, col, hints));
+    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::ERROR, message, file, startLine, startCol, endLine, endCol, hints));
 }
 
 }

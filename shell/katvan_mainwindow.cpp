@@ -920,7 +920,9 @@ void MainWindow::compilationStatusChanged()
     if (status != TypstDriverWrapper::Status::PROCESSING) {
         d_compilingMovie->stop();
     }
+
     d_compilerOutput->adjustColumnWidths();
+    d_editor->setSourceDiagnostics(d_driver->diagnosticsModel()->sourceDiagnostics());
 
     if (status == TypstDriverWrapper::Status::PROCESSING) {
         d_compilationStatusButton->setText(tr("Compiling..."));

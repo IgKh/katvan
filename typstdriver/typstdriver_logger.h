@@ -49,20 +49,23 @@ public:
     Kind kind() const { return d_kind; }
     QString message() const { return d_message; }
     QString file() const { return d_file; }
-    std::optional<Location> location() const { return d_location; }
+    std::optional<Location> startLocation() const { return d_startLocation; }
+    std::optional<Location> endLocation() const { return d_endLocation; }
     QStringList hints() const { return d_hints; }
 
     void setKind(Kind kind) { d_kind = kind; }
     void setMessage(const QString& message) { d_message = message; }
     void setFile(const QString& file) { d_file = file; }
-    void setLocation(Location location) { d_location = location; }
+    void setStartLocation(Location location) { d_startLocation = location; }
+    void setEndLocation(Location location) { d_endLocation = location; }
     void setHints(const QStringList& hints) { d_hints = hints; }
 
 private:
     Kind d_kind;
     QString d_message;
     QString d_file;
-    std::optional<Location> d_location;
+    std::optional<Location> d_startLocation;
+    std::optional<Location> d_endLocation;
     QStringList d_hints;
 };
 

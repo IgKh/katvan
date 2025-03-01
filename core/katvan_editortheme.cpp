@@ -130,7 +130,8 @@ static void readEditorColors(const QJsonObject& obj,
     editorColors[EditorTheme::EditorColor::FOREGROUND] = readColor(obj.value("foreground"));
     editorColors[EditorTheme::EditorColor::GUTTER] = readColor(obj.value("gutter"));
     editorColors[EditorTheme::EditorColor::CURRENT_LINE] = readColor(obj.value("current-line"));
-    editorColors[EditorTheme::EditorColor::SPELLING_ERROR] = readColor(obj.value("spelling-error"));
+    editorColors[EditorTheme::EditorColor::ERROR] = readColor(obj.value("error"));
+    editorColors[EditorTheme::EditorColor::WARNING] = readColor(obj.value("warning"));
     editorColors[EditorTheme::EditorColor::MATCHING_BRACKET] = readColor(obj.value("matching-bracket"));
 }
 

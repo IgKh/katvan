@@ -187,6 +187,12 @@ void Editor::updateEditorTheme()
     updateExtraSelections();
 }
 
+void Editor::setSourceDiagnostics(QList<typstdriver::Diagnostic> diagnostics)
+{
+    d_sourceDiagnostics = diagnostics;
+    updateExtraSelections();
+}
+
 QMenu* Editor::createInsertMenu()
 {
     QFont ccFont { "KatvanControl" };
@@ -260,15 +266,11 @@ void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
 
 void Editor::goToBlock(int blockNum, int charOffset)
 {
-    QTextBlock block = document()->findBlockByNumber(blockNum);
-    if (!block.isValid()) {
+    QTextCursor cursor = cursorAt(blockNum, charOffset);
+    if (cursor.isNull()) {
         return;
     }
 
-    QTextCursor cursor { block };
-    if (charOffset > 0) {
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, charOffset);
-    }
     setTextCursor(cursor);
     setFocus();
 }
@@ -313,17 +315,23 @@ void Editor::handleToolTipEvent(QHelpEvent* event)
         + QPoint(horizontalScrollBar()->value(), verticalScrollBar()->value());
 
     int offset = document()->documentLayout()->hitTest(documentPoint, Qt::ExactHit);
-    if (offset >= 0) {
-        QTextCursor cursor(document());
-        cursor.setPosition(offset);
-
-        d_pendingTooltipPos = event->pos();
-        Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock(), event->pos());
-    }
-    else {
+    if (offset < 0) {
         QToolTip::hideText();
         event->ignore();
+        return;
     }
+
+    QString tooltip = predefinedTooltipAtPosition(offset);
+    if (!tooltip.isEmpty()) {
+        QToolTip::showText(event->globalPos(), tooltip, this);
+        return;
+    }
+
+    QTextCursor cursor(document());
+    cursor.setPosition(offset);
+
+    d_pendingTooltipPos = event->pos();
+    Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock(), event->pos());
 }
 
 bool Editor::event(QEvent* event)
@@ -389,6 +397,34 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         SpellChecker::instance()->requestSuggestions(misspelledWord, cursor.position());
     }
     d_contextMenu->popup(event->globalPos());
+}
+
+QTextCursor Editor::cursorAt(int blockNum, int charOffset) const
+{
+    QTextBlock block = document()->findBlockByNumber(blockNum);
+    if (!block.isValid()) {
+        return QTextCursor();
+    }
+
+    QTextCursor cursor { block };
+    if (charOffset > 0) {
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, charOffset);
+    }
+    return cursor;
+}
+
+QString Editor::predefinedTooltipAtPosition(int position) const
+{
+    const QList<QTextEdit::ExtraSelection> selections = extraSelections();
+    for (const auto& selection : selections) {
+        if (position >= selection.cursor.selectionStart() && position <= selection.cursor.selectionEnd()) {
+            QString tooltip = selection.format.toolTip();
+            if (!tooltip.isEmpty()) {
+                return tooltip;
+            }
+        }
+    }
+    return QString();
 }
 
 std::tuple<QTextBlock, QTextBlock, bool> Editor::selectedBlockRange() const
@@ -937,6 +973,36 @@ void Editor::updateExtraSelections()
             extraSelections.append(makeBracketHighlight(currentPos - 1));
             extraSelections.append(makeBracketHighlight(bracketPos.value()));
         }
+    }
+
+    //
+    // Diagnostics
+    //
+    for (const typstdriver::Diagnostic& diagnostic : std::as_const(d_sourceDiagnostics)) {
+        if (!diagnostic.startLocation() || !diagnostic.endLocation()) {
+            continue;
+        }
+
+        QTextCursor start = cursorAt(diagnostic.startLocation()->line, diagnostic.startLocation()->column);
+        QTextCursor end = cursorAt(diagnostic.endLocation()->line, diagnostic.endLocation()->column);
+        if (start.isNull() || end.isNull()) {
+            continue;
+        }
+
+        start.setPosition(end.position(), QTextCursor::KeepAnchor);
+
+        QColor noteColor = diagnostic.kind() == typstdriver::Diagnostic::Kind::ERROR
+            ? d_theme.editorColor(EditorTheme::EditorColor::ERROR)
+            : d_theme.editorColor(EditorTheme::EditorColor::WARNING);
+
+        QTextEdit::ExtraSelection selection;
+        selection.cursor = start;
+        selection.format.setFontUnderline(true);
+        selection.format.setUnderlineStyle(QTextCharFormat::DashUnderline);
+        selection.format.setForeground(noteColor);
+        selection.format.setToolTip(diagnostic.message());
+
+        extraSelections.append(selection);
     }
 
     setExtraSelections(extraSelections);

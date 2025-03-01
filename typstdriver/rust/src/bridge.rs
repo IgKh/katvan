@@ -69,10 +69,28 @@ pub(crate) mod ffi {
         fn logNote(&self, message: &str);
 
         #[rust_name = "log_warning"]
-        fn logWarning(&self, message: &str, file: &str, line: i64, col: i64, hints: Vec<&str>);
+        fn logWarning(
+            &self,
+            message: &str,
+            file: &str,
+            start_line: i64,
+            start_col: i64,
+            end_line: i64,
+            end_col: i64,
+            hints: Vec<&str>,
+        );
 
         #[rust_name = "log_error"]
-        fn logError(&self, message: &str, file: &str, line: i64, col: i64, hints: Vec<&str>);
+        fn logError(
+            &self,
+            message: &str,
+            file: &str,
+            start_line: i64,
+            start_col: i64,
+            end_line: i64,
+            end_col: i64,
+            hints: Vec<&str>,
+        );
     }
 
     unsafe extern "C++" {

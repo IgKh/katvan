@@ -35,7 +35,8 @@
         "foreground": "#1f1c1b",
         "gutter": "#f0f0f0",
         "current-line": "#f8f7f6",
-        "spelling-error": "#ff0000",
+        "error": "#ff0000",
+        "warning": "#808000",
         "matching-bracket": "#ffff00"
     }
 }

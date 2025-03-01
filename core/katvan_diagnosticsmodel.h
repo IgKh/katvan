@@ -51,6 +51,8 @@ public:
     void setInputFileName(const QString& fileName);
 
     TypstDriverWrapper::Status impliedStatus() const;
+    QList<typstdriver::Diagnostic> sourceDiagnostics() const;
+
     std::optional<std::tuple<int, int>> getSourceLocation(const QModelIndex& index) const;
 
     int rowCount(const QModelIndex& parent) const override;

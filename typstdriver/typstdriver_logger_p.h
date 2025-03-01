@@ -29,8 +29,8 @@ public:
     LoggerProxy(Logger& logger);
 
     void logNote(rust::Str message) const;
-    void logWarning(rust::Str message, rust::Str file, int64_t line, int64_t col, rust::Vec<rust::Str> hints) const;
-    void logError(rust::Str message, rust::Str file, int64_t line, int64_t col, rust::Vec<rust::Str> hints) const;
+    void logWarning(rust::Str message, rust::Str file, int64_t startLine, int64_t startCol, int64_t endLine, int64_t endCol, rust::Vec<rust::Str> hints) const;
+    void logError(rust::Str message, rust::Str file, int64_t startLine, int64_t startCol, int64_t endLine, int64_t endCol, rust::Vec<rust::Str> hints) const;
 
 private:
     Logger& d_logger;

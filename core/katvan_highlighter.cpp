@@ -183,7 +183,7 @@ void Highlighter::doSpellChecking(
 {
     QTextCharFormat misspelledWordFormat;
     misspelledWordFormat.setFontUnderline(true);
-    misspelledWordFormat.setUnderlineColor(d_theme.editorColor(EditorTheme::EditorColor::SPELLING_ERROR));
+    misspelledWordFormat.setUnderlineColor(d_theme.editorColor(EditorTheme::EditorColor::ERROR));
     misspelledWordFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
 
     parsing::SegmentList result;
