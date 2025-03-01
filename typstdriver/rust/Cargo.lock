@@ -2124,7 +2124,6 @@ name = "typstdriver_rs"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "comemo",
  "cxx",
  "idna_adapter",
  "serde_json",

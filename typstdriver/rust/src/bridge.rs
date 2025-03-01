@@ -68,6 +68,7 @@ pub(crate) mod ffi {
         #[rust_name = "log_note"]
         fn logNote(&self, message: &str);
 
+        #[allow(clippy::too_many_arguments)]
         #[rust_name = "log_warning"]
         fn logWarning(
             &self,
@@ -80,6 +81,7 @@ pub(crate) mod ffi {
             hints: Vec<&str>,
         );
 
+        #[allow(clippy::too_many_arguments)]
         #[rust_name = "log_error"]
         fn logError(
             &self,

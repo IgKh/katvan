@@ -95,7 +95,7 @@ impl<'a> EngineImpl<'a> {
                     .log_note(&format!("compiled with warnings in {elapsed}"));
             }
 
-            comemo::evict(5);
+            typst::comemo::evict(3);
 
             let pages = doc
                 .pages
