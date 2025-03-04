@@ -28,6 +28,7 @@
 #include <QFontDatabase>
 #include <QLibraryInfo>
 #include <QSettings>
+#include <QStyle>
 #include <QTranslator>
 
 void setupPortableMode()
@@ -111,6 +112,16 @@ int main(int argc, char** argv)
     if (rc < 0) {
         qWarning() << "Failed to load control character font";
     }
+
+#ifdef Q_OS_WINDOWS
+    // Starting from Qt 6.8.1 the Windows11 style works on Windows 10 too. Prefer
+    // it since it supports dark mode.
+    if (QLibraryInfo::version() >= QVersionNumber(6, 8, 1)) {
+        if (app.style()->name() == "windowsvista") {
+            app.setStyle("windows11");
+        }
+    }
+#endif
 
     katvan::MainWindow wnd;
     QCoreApplication::connect(&app, &QGuiApplication::commitDataRequest, &wnd, &katvan::MainWindow::commitSession);
