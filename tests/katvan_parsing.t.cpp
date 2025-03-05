@@ -790,7 +790,7 @@ static IsolateRangeList extractIsolates(QStringView text)
 {
     IsolatesListener listener;
     Parser parser(text);
-    parser.addListener(listener, false);
+    parser.addListener(listener, true);
     parser.parse();
     return listener.isolateRanges();
 }
@@ -819,11 +819,18 @@ TEST(IsolatesListenerTests, Math)
 
 TEST(IsolatesListenerTests, CodeNumbers)
 {
-    auto isolates = extractIsolates(QStringLiteral("#par(leading: 1em, spacing: 2px)"));
+    auto isolates = extractIsolates(QStringLiteral("#par(leading: 1em, spacing: 2px, text: `foo`)"));
 
     EXPECT_THAT(isolates, ::testing::ElementsAre(
-        IsolateRange { Qt::LeftToRight, 0, 31 } // The whole thing
+        IsolateRange { Qt::LeftToRight, 0, 44 } // The whole thing
     ));
+}
+
+TEST(IsolatesListenerTests, CodeLine)
+{
+    auto isolates = extractIsolates(QStringLiteral("#set text(lang: \"he\")"));
+
+    EXPECT_THAT(isolates, ::testing::IsEmpty());
 }
 
 TEST(IsolatesListenerTests, Nesting)

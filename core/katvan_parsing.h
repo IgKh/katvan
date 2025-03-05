@@ -313,6 +313,7 @@ public:
     void finalizeState(const ParserState& state, size_t endMarker, bool implicit) override;
 
 private:
+    IsolateRange* createOrUpdateCodeRange(ParserState::Kind state, size_t startPos, size_t endPos);
     void discardRedundantCodeRanges();
 
     IsolateRangeList d_ranges;

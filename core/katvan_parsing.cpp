@@ -422,6 +422,17 @@ static bool isCodeHolderState(const ParserState& state)
         || state.kind == ParserState::Kind::CODE_ARGUMENTS;
 }
 
+static bool isCodeState(const ParserState& state)
+{
+    return isCodeHolderState(state)
+        || state.kind == ParserState::Kind::CODE_VARIABLE_NAME
+        || state.kind == ParserState::Kind::CODE_FUNCTION_NAME
+        || state.kind == ParserState::Kind::CODE_NUMERIC_LITERAL
+        || state.kind == ParserState::Kind::CODE_KEYWORD
+        || state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN
+        || state.kind == ParserState::Kind::CODE_STRING_EXPRESSION;
+}
+
 void Parser::parse()
 {
     namespace m = matchers;
@@ -1125,8 +1136,6 @@ void IsolatesListener::initializeState(const ParserState& state, size_t endMarke
 
 void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker, bool implicit)
 {
-    Q_UNUSED(implicit);
-
     // What do we want to isolate the directionality of? Ideally short and
     // _continuous_ bits of text associated with a state that typically involves
     // characters with weak or no directionality. Math, inline code, content bits
@@ -1141,55 +1150,67 @@ void IsolatesListener::finalizeState(const ParserState& state, size_t endMarker,
         d_codeSequenceRangesForLevel.takeLast();
     }
 
-    if (state.kind == ParserState::Kind::CONTENT_REFERENCE) {
-        d_ranges.append(IsolateRange{ Qt::LayoutDirectionAuto, state.startPos, endMarker });
-    }
-    else if (state.kind == ParserState::Kind::CONTENT_BLOCK) {
-        // Don't include the square brackets in the isolate
-        d_ranges.append(IsolateRange{ Qt::LayoutDirectionAuto, state.startPos + 1, endMarker - 1 });
-    }
-    else if (state.kind == ParserState::Kind::MATH) {
-        d_ranges.append(IsolateRange{ Qt::LeftToRight, state.startPos, endMarker });
-    }
-
-    bool isIsolatableCode = state.kind == ParserState::Kind::CODE_VARIABLE_NAME
-        || state.kind == ParserState::Kind::CODE_FUNCTION_NAME
-        || state.kind == ParserState::Kind::CODE_ARGUMENTS
-        || state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN
-        || state.kind == ParserState::Kind::CODE_NUMERIC_LITERAL
-        || state.kind == ParserState::Kind::CODE_STRING_EXPRESSION
-        || state.kind == ParserState::Kind::CONTENT_BLOCK;
-
-    if (isIsolatableCode) {
-        if (!d_codeSequenceRangesForLevel.last().isEmpty()) {
-            auto& existingRange = d_ranges[d_codeSequenceRangesForLevel.last().last()];
-
-            if (state.startPos == existingRange.endPos + 1) {
-                // Extends existing isolated code range
-                existingRange.endPos = endMarker;
-                return;
-            }
-            else if (existingRange.startPos <= endMarker && existingRange.endPos >= state.startPos) {
-                // Intersects with existing isolated code range
-                size_t origStartPos = existingRange.startPos;
-                existingRange.startPos = qMin(existingRange.startPos, state.startPos);
-                existingRange.endPos = qMax(existingRange.endPos, endMarker);
-
-                if (existingRange.startPos < origStartPos) {
-                    discardRedundantCodeRanges();
-                }
-                return;
-            }
+    if (!implicit) {
+        if (state.kind == ParserState::Kind::CONTENT_REFERENCE) {
+            d_ranges.append(IsolateRange{ Qt::LayoutDirectionAuto, state.startPos, endMarker });
         }
-
-        // No existing isolated code range in this nesting level, or does not
-        // intersect. Start a new one, but not for content blocks as they have
-        // special handling above.
-        if (state.kind != ParserState::Kind::CONTENT_BLOCK) {
-            d_codeSequenceRangesForLevel.last().append(d_ranges.size());
+        else if (state.kind == ParserState::Kind::CONTENT_BLOCK) {
+            // Don't include the square brackets in the isolate
+            d_ranges.append(IsolateRange{ Qt::LayoutDirectionAuto, state.startPos + 1, endMarker - 1 });
+        }
+        else if (state.kind == ParserState::Kind::MATH) {
             d_ranges.append(IsolateRange{ Qt::LeftToRight, state.startPos, endMarker });
         }
     }
+
+    // Basically we want ANY code state to be considered so we have maximally
+    // long isolate ranges; but if any of it is something we don't want to
+    // isolate (code blocks, full lines, and parameter lists that spill to the
+    // next line), we can discard the whole thing.
+    if (isCodeState(state) || state.kind == ParserState::Kind::CONTENT_BLOCK) {
+        IsolateRange* codeRange = createOrUpdateCodeRange(state.kind, state.startPos, endMarker);
+        if (!codeRange) {
+            return;
+        }
+
+        if (implicit || state.kind == ParserState::Kind::CODE_BLOCK || state.kind == ParserState::Kind::CODE_LINE) {
+            codeRange->discard = true;
+        }
+    }
+}
+
+IsolateRange* IsolatesListener::createOrUpdateCodeRange(ParserState::Kind state, size_t startPos, size_t endPos)
+{
+    if (!d_codeSequenceRangesForLevel.last().isEmpty()) {
+        auto& existingRange = d_ranges[d_codeSequenceRangesForLevel.last().last()];
+
+        if (startPos == existingRange.endPos + 1) {
+            // Extends existing isolated code range
+            existingRange.endPos = endPos;
+            return &existingRange;
+        }
+        else if (existingRange.startPos <= endPos && existingRange.endPos >= startPos) {
+            // Intersects with existing isolated code range
+            size_t origStartPos = existingRange.startPos;
+            existingRange.startPos = qMin(existingRange.startPos, startPos);
+            existingRange.endPos = qMax(existingRange.endPos, endPos);
+
+            if (existingRange.startPos < origStartPos) {
+                discardRedundantCodeRanges();
+            }
+            return &existingRange;
+        }
+    }
+
+    // No existing isolated code range in this nesting level, or does not
+    // intersect. Start a new one, but not for content blocks as they have
+    // special handling in finalizeState.
+    if (state != ParserState::Kind::CONTENT_BLOCK) {
+        d_codeSequenceRangesForLevel.last().append(d_ranges.size());
+        d_ranges.append(IsolateRange{ Qt::LeftToRight, startPos, endPos });
+        return &d_ranges.last();
+    }
+    return nullptr;
 }
 
 void IsolatesListener::discardRedundantCodeRanges()

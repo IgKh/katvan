@@ -120,7 +120,7 @@ void Highlighter::highlightBlock(const QString& text)
         parser.addListener(spanListener, false);
         parser.addListener(highlightingListener, true);
         parser.addListener(contentListenger, true);
-        parser.addListener(isolatesListener, false);
+        parser.addListener(isolatesListener, true);
 
         parser.parse();
 
