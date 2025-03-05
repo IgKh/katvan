@@ -47,6 +47,7 @@ public:
 
 private:
     QList<QJsonObject> d_suggestions;
+    QFont d_symbolFont;
 };
 
 class CompletionSuggestionDelegate : public QAbstractItemDelegate

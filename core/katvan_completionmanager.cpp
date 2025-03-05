@@ -53,6 +53,7 @@ constexpr int ICON_MARGIN_PX = 3;
 
 CompletionListModel::CompletionListModel(QObject* parent)
     : QAbstractListModel(parent)
+    , d_symbolFont("Noto Sans Math")
 {
 }
 
@@ -102,7 +103,7 @@ QVariant CompletionListModel::data(const QModelIndex& index, int role) const
             QJsonObject kind = obj["kind"].toObject();
             QString symbol = kind["symbol"].toString();
             if (!symbol.isEmpty()) {
-                return utils::fontIcon(symbol[0]);
+                return utils::fontIcon(symbol[0], d_symbolFont);
             }
         }
     }

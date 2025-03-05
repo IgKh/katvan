@@ -49,6 +49,19 @@ void setupPortableMode()
     katvan::typstdriver::PackageManager::setDownloadCacheLocation(settingsPath + "/Katvan/cache");
 }
 
+void loadAuxillaryFonts()
+{
+    int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load control character font";
+    }
+
+    rc = QFontDatabase::addApplicationFont(":/assets/NotoSansMath-Regular.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load math symbol font";
+    }
+}
+
 int main(int argc, char** argv)
 {
 #ifdef Q_OS_MACOS
@@ -108,10 +121,7 @@ int main(int argc, char** argv)
         QCoreApplication::installTranslator(&qtTranslator);
     }
 
-    int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
-    if (rc < 0) {
-        qWarning() << "Failed to load control character font";
-    }
+    loadAuxillaryFonts();
 
 #ifdef Q_OS_WINDOWS
     // Starting from Qt 6.8.1 the Windows11 style works on Windows 10 too. Prefer
