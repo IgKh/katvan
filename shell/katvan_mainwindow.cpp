@@ -24,6 +24,7 @@
 #include "katvan_settingsdialog.h"
 #include "katvan_utils.h"
 
+#include "katvan_aboutdialog.h"
 #include "katvan_completionmanager.h"
 #include "katvan_diagnosticsmodel.h"
 #include "katvan_document.h"
@@ -742,29 +743,7 @@ void MainWindow::showTypstDocs()
 
 void MainWindow::showAbout()
 {
-    QString mainText = tr(
-        "<h3>Katvan</h3>"
-        "<a href=\"%1\">%1</a>"
-        "<p>A bare-bones editor for <i>Typst</i> files, with a bias for RTL</p>"
-        "<p>Version %2 (Qt %3; Typst %4)"
-    )
-    .arg(
-        QLatin1String("https://github.com/IgKh/katvan"),
-        QCoreApplication::applicationVersion(),
-        QLatin1String(qVersion()),
-        TypstDriverWrapper::typstVersion());
-
-    QString informativeText = tr(
-        "<p>Katvan is offered under the terms of the <a href=\"%1\">GNU General Public License Version 3</a>. "
-        "Contains icons taken from the <a href=\"%2\">Breeze</a> icon theme.</p>"
-    )
-    .arg(
-        QStringLiteral("https://www.gnu.org/licenses/gpl-3.0.en.html"),
-        QStringLiteral("https://invent.kde.org/frameworks/breeze-icons"));
-
-    QMessageBox dlg(QMessageBox::NoIcon, tr("About Katvan"), mainText, QMessageBox::Ok, this);
-    dlg.setIconPixmap(windowIcon().pixmap(QSize(128, 128)));
-    dlg.setInformativeText(informativeText);
+    AboutDialog dlg(this);
     dlg.exec();
 }
 
