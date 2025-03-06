@@ -194,12 +194,12 @@ void PreviewerView::jumpTo(int page, QPointF pos)
 
     QRect marginedRect {
         QPoint {
-            qMax(qRound(target.x() - xMargin), 0),
-            qMax(qRound(target.y() - yMargin), 0)
+            qMax(qRound(target.x() - xMargin), DOCUMENT_MARGINS.left()),
+            qMax(qRound(target.y() - yMargin), DOCUMENT_MARGINS.top())
         },
         QPoint{
-            qMin(qRound(target.x() + xMargin), d_documentSize.width()),
-            qMin(qRound(target.y() + yMargin), d_documentSize.height())
+            qMin(qRound(target.x() + xMargin), d_documentSize.width() - DOCUMENT_MARGINS.right()),
+            qMin(qRound(target.y() + yMargin), d_documentSize.height() - DOCUMENT_MARGINS.bottom())
         },
     };
 
