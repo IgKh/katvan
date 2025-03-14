@@ -57,7 +57,7 @@ AboutDialog::AboutDialog(QWidget* parent)
         "<h3>Katvan</h3>"
         "<a href=\"%1\">%1</a>"
         "<p>A bare-bones editor for <i>Typst</i> files, with a bias for RTL</p>"
-        "<p>Version %2 (Qt %3; Typst %4), on %5</p>"
+        "<p>Version %2 (Qt %3; Typst %4) on %5</p>"
     )
     .arg(
         QStringLiteral("https://katvan.app"),

@@ -116,6 +116,9 @@ void EditorSettings::parseModeLine(QString mode, EditorSettings::ModeSource sour
         else if (variable == QStringLiteral("show-control-chars")) {
             d_showControlChars = parseModeLineBool(rest);
         }
+        else if (variable == QStringLiteral("auto-brackets")) {
+            d_autoBrackets = parseModeLineBool(rest);
+        }
         else if (variable == QStringLiteral("backup-interval") && source == ModeSource::SETTINGS) {
             bool ok = false;
             int interval = rest.toInt(&ok);
@@ -184,6 +187,14 @@ QString EditorSettings::toModeLine() const
             result += QLatin1String("show-control-chars off; ");
         }
     }
+    if (d_autoBrackets) {
+        if (d_autoBrackets.value()) {
+            result += QLatin1String("auto-brackets on; ");
+        }
+        else {
+            result += QLatin1String("auto-brackets off; ");
+        }
+    }
     if (d_autoBackupInterval) {
         result += QLatin1String("backup-interval %1; ").arg(QString::number(d_autoBackupInterval.value()));
     }
@@ -242,6 +253,11 @@ bool EditorSettings::showControlChars() const
     return d_showControlChars.value_or(true);
 }
 
+bool EditorSettings::autoBrackets() const
+{
+    return d_autoBrackets.value_or(true);
+}
+
 int EditorSettings::autoBackupInterval() const
 {
     return d_autoBackupInterval.value_or(15);
@@ -272,6 +288,9 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
     }
     if (other.d_showControlChars) {
         d_showControlChars = other.d_showControlChars;
+    }
+    if (other.d_autoBrackets) {
+        d_autoBrackets = other.d_autoBrackets;
     }
 }
 

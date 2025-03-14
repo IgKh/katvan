@@ -703,7 +703,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
             return;
         }
     }
-    if (OPENING_BRACKETS->contains(event->text())) {
+    if (OPENING_BRACKETS->contains(event->text()) && d_effectiveSettings.autoBrackets()) {
         QTextCursor cursor = textCursor();
         if (cursor.hasSelection() || cursor.atBlockEnd() || !cursor.block().text().at(cursor.positionInBlock()).isLetterOrNumber()) {
             auto closingBracket = d_codeModel->getMatchingCloseBracket(textCursor(), event->text().at(0));

@@ -76,6 +76,8 @@ public:
     LineNumberStyle lineNumberStyle() const;
     bool showControlChars() const;
 
+    bool autoBrackets() const;
+
     int autoBackupInterval() const;
 
     void setFontFamily(const QString& fontFamily) { d_fontFamily = fontFamily; }
@@ -86,6 +88,7 @@ public:
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
     void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
     void setShowControlChars(bool show) { d_showControlChars = show; }
+    void setAutoBrackets(bool enable) { d_autoBrackets = enable; }
     void setAutoBackupInterval(int interval) { d_autoBackupInterval = interval; }
 
     bool hasFontFamily() const { return d_fontFamily.has_value(); }
@@ -96,6 +99,7 @@ public:
     bool hasTabWidth() const { return d_tabWidth.has_value(); }
     bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
     bool hasShowControlChars() const { return d_showControlChars.has_value(); }
+    bool hasAutoBrackets() const { return d_autoBrackets.has_value(); }
     bool hasAutoBackupInterval() const { return d_autoBackupInterval.has_value(); }
 
     void mergeSettings(const EditorSettings& other);
@@ -111,6 +115,7 @@ private:
     std::optional<int> d_tabWidth;
     std::optional<LineNumberStyle> d_lineNumberStyle;
     std::optional<bool> d_showControlChars;
+    std::optional<bool> d_autoBrackets;
     std::optional<int> d_autoBackupInterval;
 };
 

@@ -124,6 +124,7 @@ EditorSettings EditorSettingsTab::settings() const
 
     settings.setIndentWidth(d_indentWidth->value());
     settings.setTabWidth(d_tabWidth->value());
+    settings.setAutoBrackets(d_autoBrackets->isChecked());
     settings.setAutoBackupInterval(d_backupInterval->value());
 
     return settings;
@@ -152,6 +153,7 @@ void EditorSettingsTab::setSettings(const EditorSettings& settings)
 
     d_indentWidth->setValue(settings.indentWidth());
     d_tabWidth->setValue(settings.tabWidth());
+    d_autoBrackets->setChecked(settings.autoBrackets());
     d_backupInterval->setValue(settings.autoBackupInterval());
 
     updateControlStates();
@@ -172,7 +174,7 @@ void EditorSettingsTab::setupUI()
     d_lineNumberStyle->addItem(tr("On Primary Side"), QVariant::fromValue(EditorSettings::LineNumberStyle::PRIMARY_ONLY));
     d_lineNumberStyle->addItem(tr("Don't Show"), QVariant::fromValue(EditorSettings::LineNumberStyle::NONE));
 
-    d_showControlChars = new QCheckBox(tr("Show Control Characters"));
+    d_showControlChars = new QCheckBox(tr("Show BiDi Control Characters"));
     if (QLibraryInfo::version() < QVersionNumber(6, 9)) {
         d_showControlChars->setEnabled(false);
         d_showControlChars->setToolTip(tr("Requires Qt version 6.9 or above"));
@@ -202,6 +204,8 @@ void EditorSettingsTab::setupUI()
 
     QLabel* tabWidthLabel = new QLabel(tr("Tab &Display Width:"));
     tabWidthLabel->setBuddy(d_tabWidth);
+
+    d_autoBrackets = new QCheckBox(tr("Automatically insert &closing brackets"));
 
     d_backupInterval = new QSpinBox();
     d_backupInterval->setSuffix(tr(" seconds"));
@@ -240,6 +244,10 @@ void EditorSettingsTab::setupUI()
     indentationLayout->addLayout(indentationTopLayout);
     indentationLayout->addLayout(indentationStyleLayout);
 
+    QGroupBox* behaviourGroup = new QGroupBox(tr("Behaviour"));
+    QVBoxLayout* behaviourLayout = new QVBoxLayout(behaviourGroup);
+    behaviourLayout->addWidget(d_autoBrackets);
+
     QGroupBox* autoBackupGroup = new QGroupBox(tr("Automatically Backup Unsaved Changes"));
 
     QFormLayout* autoBackupLayout = new QFormLayout(autoBackupGroup);
@@ -248,6 +256,7 @@ void EditorSettingsTab::setupUI()
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(appearanceGroup);
     mainLayout->addWidget(indentationGroup);
+    mainLayout->addWidget(behaviourGroup);
     mainLayout->addWidget(autoBackupGroup);
     mainLayout->addStretch(1);
 }

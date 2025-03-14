@@ -231,6 +231,16 @@ TEST(EditorSettingsTests, TabWidth) {
     EXPECT_THAT(s5.hasTabWidth(), ::testing::IsFalse());
 }
 
+TEST(EditorSettingsTests, AutoBrackets) {
+    EditorSettings s1 { "auto-brackets ON" };
+    EXPECT_THAT(s1.hasAutoBrackets(), ::testing::IsTrue());
+    EXPECT_THAT(s1.autoBrackets(), ::testing::IsTrue());
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("auto-brackets on;")));
+
+    EditorSettings s2 { "replace-tabs" };
+    EXPECT_THAT(s2.hasAutoBrackets(), ::testing::IsFalse());
+}
+
 TEST(EditorSettingsTests, AutoBackupInterval) {
     EditorSettings s1 { "backup-interval 10", EditorSettings::ModeSource::SETTINGS };
     EXPECT_THAT(s1.hasAutoBackupInterval(), ::testing::IsTrue());
