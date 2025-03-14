@@ -503,6 +503,10 @@ Qt::LayoutDirection EditorLayout::getBlockDirection(const QTextBlock& block)
         return matchingBlock.layout()->textOption().textDirection();
     }
 
+    if (d_codeModel->startsLeftLeaningSpan(block)) {
+        return Qt::LeftToRight;
+    }
+
     QTextBlock prevBlock = block.previous();
     if (prevBlock.isValid()) {
         return prevBlock.layout()->textOption().textDirection();

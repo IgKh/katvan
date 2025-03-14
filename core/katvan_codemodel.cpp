@@ -148,6 +148,23 @@ static bool isDelimitedState(State state)
         || state == State::CODE_ARGUMENTS;
 }
 
+static bool isIndentingState(State state)
+{
+    return state == State::CONTENT_BLOCK
+        || state == State::CODE_BLOCK
+        || state == State::CODE_ARGUMENTS
+        || state == State::MATH_ARGUMENTS;
+}
+
+static bool isLeftLeaningState(State state)
+{
+    return state == State::CODE_BLOCK
+        || state == State::CODE_LINE
+        || state == State::MATH
+        || state == State::CONTENT_RAW
+        || state == State::CONTENT_RAW_BLOCK;
+}
+
 std::optional<int> CodeModel::findMatchingBracket(int pos) const
 {
     QTextBlock block = d_document->findBlock(pos);
@@ -182,14 +199,6 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
         }
     }
     return std::nullopt;
-}
-
-static bool isIndentingState(State state)
-{
-    return state == State::CONTENT_BLOCK
-        || state == State::CODE_BLOCK
-        || state == State::CODE_ARGUMENTS
-        || state == State::MATH_ARGUMENTS;
 }
 
 std::optional<StateSpan> CodeModel::spanAtPosition(QTextBlock block, int globalPos) const
@@ -280,6 +289,21 @@ QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
         return d_document->findBlock(block.position() + span.startPos);
     }
     return block;
+}
+
+bool CodeModel::startsLeftLeaningSpan(QTextBlock block) const
+{
+    auto* blockData = BlockData::get<StateSpansBlockData>(block);
+    if (!blockData) {
+        return false;
+    }
+
+    for (const StateSpan& span : blockData->stateSpans()) {
+        if (span.startPos >= 0 && isLeftLeaningState(span.state)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::tuple<State, State> CodeModel::getStatesForBracketInsertion(QTextCursor cursor) const

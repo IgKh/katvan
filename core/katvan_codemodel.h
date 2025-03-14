@@ -103,6 +103,11 @@ public:
     // level. If none, returns the position's own block.
     QTextBlock findMatchingIndentBlock(QTextBlock block) const;
 
+    // For the given block, check if a "left leaning" scope starts in it. "Left
+    // leaning" means a code scope whose a-priori directionality (without knowing
+    // the content) is Left-to-Right.
+    bool startsLeftLeaningSpan(QTextBlock block) const;
+
     // Find closing bracket character that should be automatically appended
     // if _openBracket_ is inserted at the given cursor's position.
     std::optional<QChar> getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const;
