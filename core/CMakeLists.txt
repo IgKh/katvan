@@ -37,6 +37,10 @@ if(APPLE)
     list(APPEND SOURCES
         katvan_spellchecker_macos.mm
     )
+elseif(WIN32)
+    list(APPEND SOURCES
+        katvan_spellchecker_windows.cpp
+    )
 else()
     list(APPEND SOURCES
         katvan_spellchecker_hunspell.cpp
@@ -59,7 +63,7 @@ target_link_libraries(katvan_core PUBLIC
     Qt6::Widgets
 )
 
-if(NOT APPLE)
+if(NOT APPLE AND NOT WIN32)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(hunspell REQUIRED IMPORTED_TARGET hunspell)
 

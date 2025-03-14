@@ -17,8 +17,10 @@
  */
 #include "katvan_spellchecker.h"
 
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS)
 #include "katvan_spellchecker_macos.h"
+#elif defined(Q_OS_WINDOWS)
+#include "katvan_spellchecker_windows.h"
 #else
 #include "katvan_spellchecker_hunspell.h"
 #endif
@@ -44,8 +46,10 @@ SpellChecker* SpellChecker::instance()
 {
     static SpellChecker* checker = nullptr;
     if (!checker) {
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS)
         checker = new MacOsSpellChecker();
+#elif defined(Q_OS_WINDOWS)
+        checker = new WindowsSpellChecker();
 #else
         checker = new HunspellSpellChecker();
 #endif

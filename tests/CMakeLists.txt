@@ -14,7 +14,7 @@ add_executable(katvan_tests
     main.cpp
 )
 
-if(NOT APPLE)
+if(NOT APPLE AND NOT WIN32)
     target_sources(katvan_tests PRIVATE katvan_spellchecker.t.cpp)
 endif()
 
