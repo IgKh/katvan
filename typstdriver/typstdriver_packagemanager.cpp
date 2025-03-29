@@ -93,7 +93,7 @@ PackageManagerStatistics PackageManager::cacheStatistics()
         totalSize += info.size();
 
         if (info.isDir()) {
-            QStringList parts = info.filePath().remove(cacheDir).split(QDir::separator(), Qt::SkipEmptyParts);
+            QStringList parts = info.filePath().remove(cacheDir).split(QLatin1Char('/'), Qt::SkipEmptyParts);
             if (parts.length() == 3) {
                 distinctPackages.insert(parts[1]);
                 distinctPackageVersions.insert(parts[1] + ":" + parts[2]);
