@@ -62,7 +62,7 @@ public slots:
     void goToBlock(int blockNum, int charOffset);
     void forceRehighlighting();
     void checkForModelines();
-    void showToolTip(QPoint windowPos, const QString& text);
+    void showToolTip(QPoint windowPos, const QString& text, const QUrl& detailsUrl);
 
 protected:
     bool event(QEvent* event) override;

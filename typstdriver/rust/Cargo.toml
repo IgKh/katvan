@@ -14,11 +14,12 @@ typst = "0.13.1"
 typst-pdf = "0.13.1"
 typst-render = "0.13.1"
 typst-ide = "0.13.1"
-typst-kit = { version = "0.13.1", default-features = false, features=["embed-fonts"] }
+typst-kit = { version = "0.13.1", default-features = false, features = ["embed-fonts"] }
 
 anyhow = "1"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 serde_json = "1.0"
-time = { version = "0.3", features=["parsing"] }
+time = { version = "0.3", features = ["parsing"] }
 
 # We don't actually need IDNA support - pin a no-op adapter
 idna_adapter = "=1.0.0"

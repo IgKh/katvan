@@ -55,6 +55,11 @@ pub(crate) mod ffi {
         column: usize,
     }
 
+    struct ToolTip {
+        content: String,
+        details_url: String,
+    }
+
     struct Completions {
         from: SourcePosition,
         completions_json: String,
@@ -136,7 +141,7 @@ pub(crate) mod ffi {
 
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 
-        fn get_tooltip(&self, line: usize, column: usize) -> Result<String>;
+        fn get_tooltip(&self, line: usize, column: usize) -> Result<ToolTip>;
 
         fn get_completions(&self, line: usize, column: usize) -> Result<Completions>;
 

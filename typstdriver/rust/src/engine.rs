@@ -22,6 +22,7 @@ use anyhow::{Context, Result};
 use typst::layout::{Abs, PagedDocument, Point};
 use typst::World;
 
+use crate::analysis;
 use crate::bridge::ffi;
 use crate::darkifier;
 use crate::world::{KatvanWorld, MAIN_ID};
@@ -308,28 +309,14 @@ impl<'a> EngineImpl<'a> {
             .context("Jump target not applicable")
     }
 
-    pub fn get_tooltip(&self, line: usize, column: usize) -> Result<String> {
+    pub fn get_tooltip(&self, line: usize, column: usize) -> Result<ffi::ToolTip> {
         let main = self.world.main_source();
         let cursor = main
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
-        let tooltip = typst_ide::tooltip(
-            &self.world,
-            self.result.as_ref(),
-            &main,
-            cursor,
-            typst::syntax::Side::Before,
-        )
-        .context("No available tooltip")?;
-
-        match tooltip {
-            typst_ide::Tooltip::Text(val) => Ok(val.to_string()),
-            typst_ide::Tooltip::Code(val) => {
-                let escaped = html_escape(&val);
-                Ok(format!("<pre>{escaped}</pre>"))
-            }
-        }
+        analysis::get_tooltip(&self.world, self.result.as_ref(), &main, cursor)
+            .context("No available tooltip")
     }
 
     pub fn get_completions(&self, line: usize, column: usize) -> Result<ffi::Completions> {
@@ -377,18 +364,4 @@ fn hash_frame(frame: &typst::layout::Frame) -> u64 {
     let mut hasher = DefaultHasher::new();
     frame.hash(&mut hasher);
     hasher.finish()
-}
-
-fn html_escape(value: &str) -> String {
-    let mut result = String::new();
-    for ch in value.chars() {
-        match ch {
-            '<' => result.push_str("&lt;"),
-            '>' => result.push_str("&gt;"),
-            '&' => result.push_str("&amp;"),
-            '"' => result.push_str("&quot;"),
-            _ => result.push(ch),
-        }
-    }
-    result
 }

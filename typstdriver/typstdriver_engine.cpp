@@ -224,11 +224,14 @@ void Engine::requestToolTip(int line, int column, QPoint pos)
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        rust::String toolTip = d_ptr->engine.value()->get_tooltip(
+        ToolTip toolTip = d_ptr->engine.value()->get_tooltip(
             static_cast<size_t>(line),
             static_cast<size_t>(column));
 
-        Q_EMIT toolTipReady(pos, QString::fromUtf8(toolTip.data(), toolTip.size()));
+        QString content = QString::fromUtf8(toolTip.content.data(), toolTip.content.size());
+        QString url = QString::fromUtf8(toolTip.details_url.data(), toolTip.details_url.size());
+
+        Q_EMIT toolTipReady(pos, content, url);
     }
     catch (rust::Error&) {
     }

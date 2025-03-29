@@ -20,6 +20,7 @@
 #include "katvan_document.h"
 #include "katvan_editor.h"
 #include "katvan_editorlayout.h"
+#include "katvan_editortooltip.h"
 #include "katvan_highlighter.h"
 #include "katvan_spellchecker.h"
 #include "katvan_text_utils.h"
@@ -31,7 +32,6 @@
 #include <QShortcut>
 #include <QTextBlock>
 #include <QTimer>
-#include <QToolTip>
 
 namespace katvan {
 
@@ -298,14 +298,14 @@ void Editor::checkForModelines()
     applyEffectiveSettings();
 }
 
-void Editor::showToolTip(QPoint widgetPos, const QString& text)
+void Editor::showToolTip(QPoint widgetPos, const QString& text, const QUrl& detailsUrl)
 {
     if (!d_pendingTooltipPos || d_pendingTooltipPos.value() != widgetPos) {
         return;
     }
     d_pendingTooltipPos.reset();
 
-    QToolTip::showText(mapToGlobal(widgetPos), text, this);
+    EditorToolTip::show(mapToGlobal(widgetPos), this, text, detailsUrl);
 }
 
 void Editor::handleToolTipEvent(QHelpEvent* event)
@@ -316,14 +316,14 @@ void Editor::handleToolTipEvent(QHelpEvent* event)
 
     int offset = document()->documentLayout()->hitTest(documentPoint, Qt::ExactHit);
     if (offset < 0) {
-        QToolTip::hideText();
+        EditorToolTip::hide();
         event->ignore();
         return;
     }
 
     QString tooltip = predefinedTooltipAtPosition(offset);
     if (!tooltip.isEmpty()) {
-        QToolTip::showText(event->globalPos(), tooltip, this);
+        EditorToolTip::show(event->globalPos(), this, tooltip);
         return;
     }
 

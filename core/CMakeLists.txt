@@ -23,6 +23,7 @@ set(SOURCES
     katvan_editorlayout.cpp
     katvan_editorsettings.cpp
     katvan_editortheme.cpp
+    katvan_editortooltip.cpp
     katvan_highlighter.cpp
     katvan_parsing.cpp
     katvan_previewerview.cpp
@@ -61,6 +62,10 @@ endif()
 target_link_libraries(katvan_core PUBLIC
     typstdriver
     Qt6::Widgets
+)
+
+target_link_libraries(katvan_core PRIVATE
+    Qt6::GuiPrivate
 )
 
 if(NOT APPLE AND NOT WIN32)

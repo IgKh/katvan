@@ -24,6 +24,7 @@
 #include <QObject>
 #include <QSize>
 #include <QString>
+#include <QUrl>
 
 #include <memory>
 
@@ -57,7 +58,7 @@ signals:
     void exportFinished(bool success);
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
-    void toolTipReady(QPoint pos, QString toolTip);
+    void toolTipReady(QPoint pos, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
 
 public slots:
