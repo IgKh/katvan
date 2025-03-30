@@ -153,7 +153,6 @@ jobs:
             --no-opengl-sw `
             --no-compiler-runtime `
             Katvan\katvan.exe Katvan\typstdriver.dll
-          mkdir Katvan\hunspell
           7z a katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip Katvan\*
 
       - name: Create attestation
@@ -244,7 +243,13 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Extract release notes
+        run: uv run scripts/format_changelog.py --pick ${{ github.ref_name }} -o notes.md CHANGELOG.md
+
       - name: Create draft release
-        run: gh release create --draft --verify-tag ${{ github.ref_name }} tarball/* AppImage/* WindowsZip/* WindowsInstaller/*
+        run: gh release create --draft --verify-tag ${{ github.ref_name }} --notes-file notes.md tarball/* AppImage/* WindowsZip/* WindowsInstaller/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

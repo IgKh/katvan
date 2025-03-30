@@ -69,7 +69,6 @@ Section
     File "Qt6Network.dll"
     File "Qt6Svg.dll"
     File "archive.dll"
-    File "hunspell-*.dll"
     File "zlib1.dll"
     File "LICENSE.txt"
     File /r "iconengines"
@@ -77,7 +76,6 @@ Section
     File /r "styles"
     File /r "tls"
     File /r "translations"
-    CreateDirectory $INSTDIR\hunspell
 
     ; Ensure VCRT is installed
     File "vc_redist.x64.exe"
@@ -122,7 +120,6 @@ Section "Uninstall"
     Delete "$INSTDIR\Qt6Network.dll"
     Delete "$INSTDIR\Qt6Svg.dll"
     Delete "$INSTDIR\archive.dll"
-    Delete "$INSTDIR\hunspell-*.dll"
     Delete "$INSTDIR\zlib1.dll"
     Delete "$INSTDIR\LICENSE.txt"
     RMDir /r "$INSTDIR\iconengines"
