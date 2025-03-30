@@ -19,9 +19,9 @@ Legend:
 
 - [ ] :arrow_up: True live preview.
 - [X] :arrow_up: Configuration panel for monitoring and pruning download cache.
-- [ ] :arrow_right: Highlight errors directly on the editor.
+- [X] :arrow_right: Highlight errors directly on the editor.
 - [ ] :arrow_right: Auto-complete.
-- [ ] :arrow_right: Compiler-assisted tool tips.
+- [X] :arrow_right: Compiler-assisted tool tips.
 - [ ] :arrow_right: Go to definition (as long as it is in the same file).
 
 ## General Editing

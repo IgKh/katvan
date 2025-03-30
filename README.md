@@ -21,6 +21,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
     - Mostly thanks to Qt's excellent Rich Text Framework
     - But also specific additional functionality, for example:
       - Syntax-aware line directionality heuristc
+      - Automatic directionality isolation of inline math and code
       - Toggling between logical and visual cursor movement
       - Manually flipping paragraph direction (using both Windows style `Ctrl+RShift`/`LShift`, or Firefox style `Ctrl+Shift+X`)
       - Handy commands to insert BiDi control marks and isolates for when the algorithm doesn't quite lead to the right result (e.g. for inline math)
@@ -46,9 +47,9 @@ There is also an [AUR package](https://aur.archlinux.org/packages/katvan) for Ar
 
 ### Windows
 
-Builds for 64-bit Windows 10/11 are available from the project releases page. There is a traditional installer, as well as a portable build. The portable build will store settings, the personal dictionary file and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
+Builds for 64-bit Windows 10/11 are available from the project releases page. There is a traditional installer, as well as a portable build. The portable build will store settings and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
 
-Neither build includes spell checking dictionaries. You'll need to download hunsepll dictionaries for any desired languages (as a pair of `.dic` and `.aff` files), and save them to the `hunspell` sub-directory next to the main executable file. See the hunspell [README](https://github.com/hunspell/hunspell?tab=readme-ov-file#dictionaries) page for locations to get dictionaries from.
+Both builds use the built-in Windows spell checker, and will therefore make use of the language packs available on the host.
 
 ### macOS
 
@@ -63,7 +64,7 @@ To compile and install Katvan from source code, you'll need:
 - CMake 3.19 or later
 - [Corrosion](https://github.com/corrosion-rs/corrosion) (optional, will be automatically downloaded if missing)
 - A working `pkg-config`
-- [hunspell](http://hunspell.github.io/) (not required on macOS)
+- [hunspell](http://hunspell.github.io/) (required only on Linux)
 - [libarchive](https://libarchive.org/)
 - [GoogleTest](https://google.github.io/googletest/) (optional, for running unit tests)
 
