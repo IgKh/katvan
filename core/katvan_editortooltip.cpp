@@ -68,7 +68,6 @@ EditorToolTipFrame::EditorToolTipFrame(QWidget* parent)
     d_browser->setContextMenuPolicy(Qt::NoContextMenu);
     d_browser->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     d_browser->setFrameStyle(QFrame::NoFrame);
-    d_browser->document()->setDocumentMargin(0);
 
     d_extraInfoLabel = new QLabel(this);
     d_extraInfoLabel->setOpenExternalLinks(true);
@@ -131,7 +130,7 @@ static QSizeF doucmentNaturalSize(QTextDocument* doc)
     return QSizeF { width, fullSize.height() };
 }
 
-static QSize calculateBrowserSize(QTextDocument* doc, int scrollBarWidth)
+static QSize calculateBrowserSize(QTextDocument* doc, bool& needsScrollBar)
 {
     constexpr int MAX_WIDTH = 500;
     constexpr int MAX_HEIGHT = 600;
@@ -144,7 +143,10 @@ static QSize calculateBrowserSize(QTextDocument* doc, int scrollBarWidth)
     int height = qCeil(documentSize.height());
     if (height > MAX_HEIGHT) {
         height = MAX_HEIGHT;
-        width += (scrollBarWidth + 5);
+        needsScrollBar = true;
+    }
+    else {
+        needsScrollBar = false;
     }
 
     return QSize(width, height);
@@ -158,7 +160,16 @@ void EditorToolTipFrame::updateSizeAndLayout(QTextDocument* newDocument)
     int totalWidth = 2 * margin;
     int totalHeight = 2 * margin;
 
-    QSize browserSize = calculateBrowserSize(newDocument, d_browser->verticalScrollBar()->width());
+    bool needsScrollBar = false;
+    QSize browserSize = calculateBrowserSize(newDocument, needsScrollBar);
+    if (needsScrollBar) {
+        browserSize.rwidth() += (d_browser->verticalScrollBar()->width() + 5);
+        d_browser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    }
+    else {
+        d_browser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    }
+
     totalWidth += browserSize.width();
     totalHeight += browserSize.height();
 
