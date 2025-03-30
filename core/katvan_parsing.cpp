@@ -480,7 +480,7 @@ void Parser::parse()
                     // Another content block can immediately start
                     pushState(ParserState::Kind::CONTENT_BLOCK);
                 }
-                else if (!isCodeHolderState(d_stateStack.last()) && match(m::Symbol(QLatin1Char('.')))) {
+                else if (!isCodeHolderState(d_stateStack.last()) && match(m::ExpressionChainContinuation())) {
                     // Resume expression chain on the return value of function
                     // the code block was an argument for
                     pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
@@ -646,7 +646,7 @@ void Parser::parse()
             else if (match(m::FullWord())) {
                 if (d_endMarker > d_startMarker) {
                     instantState(ParserState::Kind::MATH_SYMBOL_NAME);
-                    if (match(m::Symbol(QLatin1Char('.')))) {
+                    if (match(m::ExpressionChainContinuation())) {
                         pushState(ParserState::Kind::MATH_EXPRESSION_CHAIN);
                     }
                 }
@@ -661,7 +661,7 @@ void Parser::parse()
             }
             else if (match(m::FullWord())) {
                 instantState(ParserState::Kind::MATH_SYMBOL_NAME);
-                if (!match(m::Symbol(QLatin1Char('.')))) {
+                if (!match(m::ExpressionChainContinuation())) {
                     popState();
                 }
                 continue;
@@ -687,7 +687,7 @@ void Parser::parse()
                     // normal argument list of a function call expression.
                     pushState(ParserState::Kind::CONTENT_BLOCK);
                 }
-                else if (!isCodeHolderState(d_stateStack.last()) && match(m::Symbol(QLatin1Char('.')))) {
+                else if (!isCodeHolderState(d_stateStack.last()) && match(m::ExpressionChainContinuation())) {
                     // Resume expression chain, now on the return value
                     pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
                 }
@@ -763,7 +763,7 @@ void Parser::parse()
             }
             else if (match(m::CodeIdentifier())) {
                 instantState(ParserState::Kind::CODE_VARIABLE_NAME);
-                if (!match(m::Symbol(QLatin1Char('.')))) {
+                if (!match(m::ExpressionChainContinuation())) {
                     popState();
                 }
                 continue;
@@ -785,7 +785,7 @@ void Parser::parse()
                 popState();
 
                 if (state.kind == ParserState::Kind::CODE_STRING_EXPRESSION
-                    && match(m::Symbol(QLatin1Char('.'))))
+                    && match(m::ExpressionChainContinuation()))
                 {
                     // A method/field on a string literal in code mode - continue
                     // with a chain
@@ -885,7 +885,7 @@ bool Parser::handleCodeStart()
         m::FullCodeNumber()
     ))) {
         instantState(ParserState::Kind::CODE_NUMERIC_LITERAL);
-        if (match(m::Symbol(QLatin1Char('.')))) {
+        if (match(m::ExpressionChainContinuation())) {
             pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
         }
         return true;
@@ -899,7 +899,7 @@ bool Parser::handleCodeStart()
         m::CodeIdentifier()
     ))) {
         instantState(ParserState::Kind::CODE_VARIABLE_NAME);
-        if (match(m::Symbol(QLatin1Char('.')))) {
+        if (match(m::ExpressionChainContinuation())) {
             pushState(ParserState::Kind::CODE_EXPRESSION_CHAIN);
         }
         return true;
@@ -1230,8 +1230,9 @@ void IsolatesListener::discardRedundantCodeRanges()
             candidate.discard = true;
             levelCodeRanges.remove(i);
         }
-        else if (reference.startPos <= candidate.startPos && reference.endPos >= candidate.endPos) {
-            // Reference range contains candidate range
+        else if (reference.startPos <= candidate.endPos && reference.endPos >= candidate.endPos) {
+            // Reference range contains/extends candidate range
+            reference.startPos = qMin(reference.startPos, candidate.startPos);
             candidate.discard = true;
             levelCodeRanges.remove(i);
         }

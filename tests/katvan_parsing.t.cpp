@@ -833,6 +833,15 @@ TEST(IsolatesListenerTests, CodeLine)
     EXPECT_THAT(isolates, ::testing::IsEmpty());
 }
 
+TEST(IsolatesListenerTests, FieldAcces)
+{
+    auto isolates = extractIsolates(QStringLiteral("Checking #test.test.test. Like that!"));
+
+    EXPECT_THAT(isolates, ::testing::ElementsAre(
+        IsolateRange { Qt::LeftToRight, 9, 23 } // "#test.test.test" (without final period)
+    ));
+}
+
 TEST(IsolatesListenerTests, Nesting)
 {
     auto isolates = extractIsolates(QStringLiteral(

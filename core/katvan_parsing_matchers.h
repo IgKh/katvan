@@ -275,6 +275,13 @@ auto LabelName() {
     );
 }
 
+auto ExpressionChainContinuation() {
+    return All(
+        Symbol(QLatin1Char('.')),
+        Peek(TokenType(parsing::TokenType::WORD))
+    );
+}
+
 class Keyword
 {
     const QSet<QString>& d_keywords;
