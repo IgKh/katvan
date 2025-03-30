@@ -908,16 +908,16 @@ void MainWindow::compilationStatusChanged()
         d_compilingMovie->start();
     }
     else if (status == TypstDriverWrapper::Status::SUCCESS) {
-        d_compilationStatusButton->setText(tr("Success"));
+        d_compilationStatusButton->setText(tr("No Errors"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-success.svg"));
     }
     else if (status == TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS) {
-        d_compilationStatusButton->setText(tr("Success"));
+        d_compilationStatusButton->setText(tr("Warnings"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-warning.svg"));
     }
     else if (status == TypstDriverWrapper::Status::FAILED) {
         d_compilerOutputDock->show();
-        d_compilationStatusButton->setText(tr("Failed"));
+        d_compilationStatusButton->setText(tr("Errors"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-error.svg"));
     }
     else {

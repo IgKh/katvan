@@ -13,6 +13,21 @@
     </message>
 </context>
 <context>
+    <name>katvan::AboutDialog</name>
+    <message>
+        <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Contains icons taken from the &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt; icon theme.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל צלמיות שנלקחו מן סט הצלמיות &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>About Katvan</source>
+        <translation>אודות כתבן</translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;Typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3; Typst %4) on %5&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;Typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3 וגרסת Typst %4) על גבי %5&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
     <name>katvan::CompilerSettingsTab</name>
     <message>
         <source>Typst Universe</source>
@@ -147,10 +162,6 @@
         <translation>אל תציג</translation>
     </message>
     <message>
-        <source>Show Control Characters</source>
-        <translation>הצג תווי בקרה</translation>
-    </message>
-    <message>
         <source>Requires Qt version 6.9 or above</source>
         <translation>נדרשת גרסא 6.9 ומעלה של Qt</translation>
     </message>
@@ -221,6 +232,25 @@
     <message>
         <source>&amp;Backup Interval:</source>
         <translation>תדירות ה&amp;גיבוי:</translation>
+    </message>
+    <message>
+        <source>Show BiDi Control Characters</source>
+        <translation>הצג תווי בקרת כיווניות</translation>
+    </message>
+    <message>
+        <source>Behaviour</source>
+        <translation>התנהגות</translation>
+    </message>
+    <message>
+        <source>Automatically insert &amp;closing brackets</source>
+        <translation>הוסף &amp;סוגרים באופן אוטומטי</translation>
+    </message>
+</context>
+<context>
+    <name>katvan::EditorToolTipFrame</name>
+    <message>
+        <source>See More...</source>
+        <translation>ראה עוד...</translation>
     </message>
 </context>
 <context>
@@ -321,20 +351,8 @@
         <translation>הקובץ %1 אינו קיים יותר</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;Typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3; Typst %4)</source>
-        <translation>&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;Typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3 וגרסת Typst %4)&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Compiling...</source>
         <translation>מהדר...</translation>
-    </message>
-    <message>
-        <source>Success</source>
-        <translation>הצלחה</translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>כשלון</translation>
     </message>
     <message>
         <source>&amp;Find...</source>
@@ -414,10 +432,6 @@ Do you want to save your changes?</source>
         <translation>שינויים אלה נעשו ב-%2 (%3).</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Contains icons taken from the &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt; icon theme.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל צלמיות שנלקחו מן סט הצלמיות &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Untitled</source>
         <translation>ללא שם</translation>
     </message>
@@ -463,10 +477,6 @@ To export the document, please correct them.</source>
         <translation>בחר מספר שורה (מתוך %1)</translation>
     </message>
     <message>
-        <source>About Katvan</source>
-        <translation>אודות כתבן</translation>
-    </message>
-    <message>
         <source>Spell Checking</source>
         <translation>בדיקת איות</translation>
     </message>
@@ -489,6 +499,18 @@ To export the document, please correct them.</source>
     <message>
         <source>Spell &amp;Checking...</source>
         <translation>&amp;בדיקת איות...</translation>
+    </message>
+    <message>
+        <source>No Errors</source>
+        <translation>ללא שגיאות</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>עם אזהרות</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>עם שגיאות</translation>
     </message>
 </context>
 <context>
