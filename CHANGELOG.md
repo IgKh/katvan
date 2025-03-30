@@ -1,6 +1,34 @@
+## v0.9.0 (2025-03-30)
+
+### Typst Version
+
+- The included Typst compiler version was upgraded to `0.13.1`. As always, note that some Universe packages used in your documents may be incompatible and will need upgrading.
+
+### New Features
+
+- The editor now automatically handles directionality isolation where it may be need according to Typst syntax - e.g. for inline math inside RTL content, label references and inline code invocations, and content blocks inside code regions. This means that you get correct rendering and cursor movement without needing to manually insert isolates using the Insert menu in most cases.
+- Compiler assisted tool tips are greatly enhanced - long values can be scrolled, more of the documentation is shown for function calls, and direct links to the online reference documentation are offered when applicable.
+- Compiler error and warnings are now highlighted on the text causing them in the editor itself.
+- Spell checking on Windows now uses the built-in system spell checker instead of Hunspell (**BREAKING CHANGE**).
+- Automatic bracket insertion can be disabled through the settings dialog and/or via modeline.
+
+### Fixes
+
+- Fixed long standing (and very annoying) bug that caused the code model to drift from the visible text after editing content. This bug used to cause syntax-sensitive feature (like matching bracket highlighting and the directionality heuristic) to misbehave.
+- Fixed automatic insertion of closing bracket for a content block argument trailing normal function call arguments.
+- The Windows 11 style is used also in Windows 10 if possible, as it has a proper dark mode palette.
+- Fixed the package cache statistics on Windows.
+- The [Noto Sans Math](https://github.com/notofonts/math) font is now bundled, to make sure there is a fallback font for math symbol preview in the auto-completion suggestions menu.
+- More stability fixes for when the preview is following the editor cursor.
+
+### Packaging Changes
+
+- Bundled Qt version in pre-built packages is now `6.8.3`.
+
 ## v0.8.1 (2025-02-07)
 
 ### Typst Version
+
 - The included Typst compiler version remains at `0.12`.
 
 ### New Features
