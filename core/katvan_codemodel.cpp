@@ -306,6 +306,14 @@ bool CodeModel::startsLeftLeaningSpan(QTextBlock block) const
     return false;
 }
 
+bool CodeModel::canStartWithListItem(QTextBlock block) const
+{
+    auto span = spanAtPosition(block, block.position());
+    return !span
+        || span->state == State::CONTENT
+        || span->state == State::CONTENT_BLOCK;
+}
+
 std::tuple<State, State> CodeModel::getStatesForBracketInsertion(QTextCursor cursor) const
 {
     State prevState = State::INVALID;

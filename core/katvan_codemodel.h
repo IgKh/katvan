@@ -108,6 +108,10 @@ public:
     // the content) is Left-to-Right.
     bool startsLeftLeaningSpan(QTextBlock block) const;
 
+    // For the given block, check if its' initial span allows for it to represent
+    // a list item.
+    bool canStartWithListItem(QTextBlock block) const;
+
     // Find closing bracket character that should be automatically appended
     // if _openBracket_ is inserted at the given cursor's position.
     std::optional<QChar> getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const;
@@ -116,7 +120,7 @@ private:
     // Find the inner most state span still in effect at the given global position
     std::optional<StateSpan> spanAtPosition(QTextBlock block, int globalPos) const;
 
-    // Find the relevant "previous" and current" states for the cursor to consider
+    // Find the relevant "previous" and "current" states for the cursor to consider
     // which brackets can be auto-inserted.
     std::tuple<parsing::ParserState::Kind, parsing::ParserState::Kind> getStatesForBracketInsertion(QTextCursor cursor) const;
 

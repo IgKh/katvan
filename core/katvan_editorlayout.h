@@ -49,9 +49,10 @@ protected:
 
 private:
     void layoutBlock(QTextBlock& block, qreal topY);
-    void doBlockLayout(QTextLayout* layout, const QTextOption& option, qreal topY);
+    void doBlockLayout(QTextLayout* layout, const QTextOption& option, qreal wrappingIndentWidth, qreal topY);
+    Qt::LayoutDirection getBlockDirection(const QTextBlock& block, const QString& blockText);
+    qreal calculateIndentWidth(const QString& text, const QTextOption& option, bool inContent);
     void recalculateDocumentSize();
-    Qt::LayoutDirection getBlockDirection(const QTextBlock& block);
 
     CodeModel* d_codeModel;
 

@@ -22,6 +22,8 @@
 #include <QPainter>
 #include <QPalette>
 
+#include <algorithm>
+
 namespace katvan::utils {
 
 bool isBidiControlChar(QChar ch)
@@ -33,6 +35,23 @@ bool isBidiControlChar(QChar ch)
         || ch == RLI_MARK
         || ch == FSI_MARK
         || ch == PDI_MARK;
+}
+
+bool isSingleBidiMark(QChar ch)
+{
+    return ch == utils::LRM_MARK
+        || ch == utils::RLM_MARK
+        || ch == utils::ALM_MARK;
+}
+
+bool isWhitespace(QChar ch)
+{
+    return ch.category() == QChar::Separator_Space || ch == QLatin1Char('\t') || isSingleBidiMark(ch);
+}
+
+bool isAllWhitespace(const QString& text)
+{
+    return std::all_of(text.begin(), text.end(), isWhitespace);
 }
 
 Qt::LayoutDirection naturalTextDirection(const QString& text)

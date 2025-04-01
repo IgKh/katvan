@@ -167,7 +167,7 @@ void Highlighter::doShowControlChars(
     QList<QTextCharFormat>& charFormats)
 {
     QTextCharFormat controlCharFormat;
-    controlCharFormat.setFontFamilies(QStringList() << "KatvanControl");
+    controlCharFormat.setFontFamilies(QStringList() << utils::CONTROL_FONT_FAMILY);
 
     for (qsizetype i = 0; i < text.size(); i++) {
         if (utils::isBidiControlChar(text[i])) {

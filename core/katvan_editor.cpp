@@ -195,7 +195,7 @@ void Editor::setSourceDiagnostics(QList<typstdriver::Diagnostic> diagnostics)
 
 QMenu* Editor::createInsertMenu()
 {
-    QFont ccFont { "KatvanControl" };
+    QFont ccFont { utils::CONTROL_FONT_FAMILY };
 
     QMenu* menu = new QMenu();
 
@@ -454,35 +454,20 @@ QString Editor::getIndentString(QTextCursor cursor) const
     return QLatin1String("\t");
 }
 
-static bool isSingleBidiMark(QChar ch)
-{
-    return ch == utils::LRM_MARK || ch == utils::RLM_MARK || ch == utils::ALM_MARK;
-}
-
-static bool isSpace(QChar ch)
-{
-    return ch.category() == QChar::Separator_Space || ch == QLatin1Char('\t') || isSingleBidiMark(ch);
-}
-
-static bool isAllWhitespace(const QString& text)
-{
-    return std::all_of(text.begin(), text.end(), isSpace);
-}
-
 static QString getLeadingIndent(const QString& text)
 {
     qsizetype i = 0;
-    while (i < text.size() && isSpace(text[i])) {
+    while (i < text.size() && utils::isWhitespace(text[i])) {
         i++;
     }
-    return text.left(i).removeIf(isSingleBidiMark);
+    return text.left(i).removeIf(utils::isSingleBidiMark);
 }
 
 static void cursorSkipWhite(QTextCursor& cursor)
 {
     QString blockText = cursor.block().text();
     while (!cursor.atBlockEnd()) {
-        if (isSpace(blockText[cursor.positionInBlock()])) {
+        if (utils::isWhitespace(blockText[cursor.positionInBlock()])) {
             cursor.movePosition(QTextCursor::NextCharacter);
         }
         else {
@@ -495,7 +480,7 @@ static bool cursorInLeadingWhitespace(const QTextCursor& cursor)
 {
     QString blockText = cursor.block().text();
     QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
-    return isAllWhitespace(textBeforeCursor);
+    return utils::isAllWhitespace(textBeforeCursor);
 }
 
 void Editor::handleNewLine()

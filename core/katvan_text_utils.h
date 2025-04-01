@@ -22,6 +22,8 @@
 
 namespace katvan::utils {
 
+static constexpr QLatin1StringView CONTROL_FONT_FAMILY = QLatin1StringView("KatvanControl");
+
 static constexpr QChar ALM_MARK = (ushort)0x061c;
 static constexpr QChar LRM_MARK = (ushort)0x200e;
 static constexpr QChar RLM_MARK = (ushort)0x200f;
@@ -31,6 +33,9 @@ static constexpr QChar FSI_MARK = (ushort)0x2068;
 static constexpr QChar PDI_MARK = (ushort)0x2069;
 
 bool isBidiControlChar(QChar ch);
+bool isSingleBidiMark(QChar ch);
+bool isWhitespace(QChar ch);
+bool isAllWhitespace(const QString& text);
 
 Qt::LayoutDirection naturalTextDirection(const QString& text);
 

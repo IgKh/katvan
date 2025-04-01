@@ -178,7 +178,10 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
     int lineCount = layout->lineCount();
     for (int i = 0; i < lineCount; i++) {
         QTextLine line = layout->lineAt(i);
-        if (!line.rect().contains(blockPoint) && i < lineCount - 1) {
+
+        QRectF lineRect = line.rect();
+        bool inLine = blockPoint.y() >= lineRect.top() && blockPoint.y() <= lineRect.bottom();
+        if (!inLine && i < lineCount - 1) {
             continue;
         }
 
@@ -333,10 +336,9 @@ void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdde
     Q_EMIT update();
 }
 
-static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockData)
+static void buildDisplayLayout(const QTextBlock& block, QString blockText, LayoutBlockData* blockData)
 {
-    QString text = block.text();
-    size_t newHash = qHash(text);
+    size_t newHash = qHash(blockText);
 
     // Calculating a display layout is expensive, only do it if content actually changed
     if (newHash == blockData->textHash) {
@@ -355,6 +357,8 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
     QList<QTextLayout::FormatRange> formats = defaultLayout->formats();
     parsing::IsolateRangeList isolates = isolateData->isolates();
 
+    blockText.detach();
+
     // Inject Unicode BiDi control characters the block's text for the needed
     // isolate ranges, creating a different text that is used for shaping but
     // not edit purposes. This moves around positions of visible characters
@@ -362,7 +366,7 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
     // we need to save an offset mapping.
 
     auto& offsets = blockData->displayOffsets;
-    offsets.resize(text.size());
+    offsets.resize(blockText.size());
     offsets.fill(0);
 
     QMap<int, int> isolatesStartingAt;
@@ -379,8 +383,8 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
         int start = static_cast<int>(isolate.startPos);
         int end = static_cast<int>(isolate.endPos);
 
-        text.insert(start + offsets[start], startChar);
-        text.insert(end + offsets[end] + 2, utils::PDI_MARK);
+        blockText.insert(start + offsets[start], startChar);
+        blockText.insert(end + offsets[end] + 2, utils::PDI_MARK);
 
         for (int i = start; i <= end; i++) {
             offsets[i] += 1;
@@ -414,6 +418,7 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
     // for each control char we injected that prevents font merging.
     QTextLayout::FormatRange r;
     r.format.setFontStyleStrategy(QFont::NoFontMerging);
+    r.format.setFontPointSize(0.01);
 
     for (const auto& [pos, count] : isolatesStartingAt.asKeyValueRange()) {
         r.start = pos + offsets[pos] - count;
@@ -426,7 +431,7 @@ static void buildDisplayLayout(const QTextBlock& block, LayoutBlockData* blockDa
         formats.append(r);
     }
 
-    blockData->displayLayout = std::make_unique<QTextLayout>(text);
+    blockData->displayLayout = std::make_unique<QTextLayout>(blockText);
     blockData->displayLayout->setFormats(formats);
 }
 
@@ -438,24 +443,28 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
         BlockData::set<LayoutBlockData>(block, blockData);
     }
 
-    Qt::LayoutDirection dir = getBlockDirection(block);
+    QString blockText = block.text();
+    Qt::LayoutDirection dir = getBlockDirection(block, blockText);
 
     QTextOption option = document()->defaultTextOption();
     option.setTextDirection(dir);
     option.setAlignment(QStyle::visualAlignment(dir, option.alignment()));
 
+    bool inContent = d_codeModel->canStartWithListItem(block);
+    qreal wrappingIndentWidth = calculateIndentWidth(blockText, option, inContent);
+
     QTextLayout* defaultLayout = block.layout();
-    doBlockLayout(defaultLayout, option, topY);
+    doBlockLayout(defaultLayout, option, wrappingIndentWidth, topY);
     block.setLineCount(defaultLayout->lineCount());
 
-    buildDisplayLayout(block, blockData);
+    buildDisplayLayout(block, blockText, blockData);
 
     QTextLayout* displayLayout = blockData->displayLayout.get();
     if (displayLayout != nullptr) {
         displayLayout->setFont(document()->defaultFont());
         displayLayout->setCursorMoveStyle(document()->defaultCursorMoveStyle());
 
-        doBlockLayout(displayLayout, option, topY);
+        doBlockLayout(displayLayout, option, wrappingIndentWidth, topY);
 
         if (displayLayout->boundingRect() != defaultLayout->boundingRect()) {
             qWarning() << "Block" << block.blockNumber() << "display bounding rect differs from default one!"
@@ -464,7 +473,11 @@ void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
     }
 }
 
-void EditorLayout::doBlockLayout(QTextLayout* layout, const QTextOption& option, qreal topY)
+void EditorLayout::doBlockLayout(
+    QTextLayout* layout,
+    const QTextOption& option,
+    qreal wrappingIndentWidth,
+    qreal topY)
 {
     qreal margin = document()->documentMargin();
     qreal availableWidth = document()->textWidth() - 2 * margin;
@@ -473,6 +486,7 @@ void EditorLayout::doBlockLayout(QTextLayout* layout, const QTextOption& option,
     layout->beginLayout();
 
     qreal lineHeight = 0;
+    bool first = true;
 
     while (true) {
         QTextLine line = layout->createLine();
@@ -481,8 +495,25 @@ void EditorLayout::doBlockLayout(QTextLayout* layout, const QTextOption& option,
         }
 
         line.setLeadingIncluded(true);
-        line.setLineWidth(availableWidth);
-        line.setPosition(QPointF(0, lineHeight));
+
+        if (first) {
+            line.setLineWidth(availableWidth);
+            line.setPosition(QPointF(0, lineHeight));
+            first = false;
+        }
+        else {
+            qreal restrictedWidth = qMax(
+                availableWidth - wrappingIndentWidth,
+                0.2 * availableWidth);
+
+            line.setLineWidth(restrictedWidth);
+            if (option.textDirection() == Qt::RightToLeft) {
+                line.setPosition(QPointF(0, lineHeight));
+            }
+            else {
+                line.setPosition(QPointF(availableWidth - restrictedWidth, lineHeight));
+            }
+        }
 
         lineHeight += line.height();
     }
@@ -491,9 +522,9 @@ void EditorLayout::doBlockLayout(QTextLayout* layout, const QTextOption& option,
     layout->endLayout();
 }
 
-Qt::LayoutDirection EditorLayout::getBlockDirection(const QTextBlock& block)
+Qt::LayoutDirection EditorLayout::getBlockDirection(const QTextBlock& block, const QString& blockText)
 {
-    Qt::LayoutDirection dir = utils::naturalTextDirection(block.text());
+    Qt::LayoutDirection dir = utils::naturalTextDirection(blockText);
     if (dir != Qt::LayoutDirectionAuto) {
         return dir;
     }
@@ -518,6 +549,39 @@ Qt::LayoutDirection EditorLayout::getBlockDirection(const QTextBlock& block)
     }
 
     return qGuiApp->layoutDirection();
+}
+
+qreal EditorLayout::calculateIndentWidth(const QString& text, const QTextOption& option, bool inContent)
+{
+    qreal controlCharsWidth = 0;
+    QFontMetricsF ccFontMetrics { QFont(utils::CONTROL_FONT_FAMILY) };
+
+    QString prefix;
+    prefix.reserve(qRound(text.size() * 0.2));
+
+    for (QChar ch : text) {
+        if (utils::isWhitespace(ch)) {
+            if (utils::isSingleBidiMark(ch)) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+                if (option.flags() & QTextOption::ShowDefaultIgnorables) {
+                    controlCharsWidth += ccFontMetrics.horizontalAdvance(ch);
+                }
+#endif
+            }
+            else {
+                prefix.append(ch);
+            }
+        }
+        else if (inContent && (ch == '-' || ch == '+')) {
+            prefix.append(ch);
+        }
+        else {
+            break;
+        }
+    }
+
+    QFontMetricsF metrics { document()->defaultFont() };
+    return metrics.horizontalAdvance(prefix, option) + controlCharsWidth;
 }
 
 QTextBlock EditorLayout::findContainingBlock(qreal y) const
