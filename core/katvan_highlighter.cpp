@@ -45,8 +45,7 @@ static void getBlockInitialParams(QTextBlock block, StateSpanList& initialSpans,
             if (span.endPos) {
                 continue;
             }
-
-            span.startPos -= block.previous().length();
+            span.startPos.reset();
 
             initialSpans.elements().append(span);
             initialStates.append(span.state);

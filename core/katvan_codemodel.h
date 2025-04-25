@@ -36,7 +36,7 @@ struct StateSpan
 {
     unsigned long spanId;
     parsing::ParserState::Kind state;
-    int startPos;
+    std::optional<int> startPos;
     std::optional<int> endPos;
     bool implicitlyClosed;
 

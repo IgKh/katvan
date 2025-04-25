@@ -33,11 +33,24 @@ static unsigned long g_spanIdCounter = 0;
 bool operator<(const StateSpan& lhs, const StateSpan& rhs)
 {
     if (lhs.startPos != rhs.startPos) {
-        return lhs.startPos < rhs.startPos;
+        // If startPos has no value, it is like negative infinity
+        if (!lhs.startPos) {
+            return true;
+        }
+        if (!rhs.startPos) {
+            return false;
+        }
+        return lhs.startPos.value() < rhs.startPos.value();
     }
     if (lhs.endPos != rhs.endPos) {
         // If endPos has no value, it is like infinity
-        return !lhs.endPos.has_value() || lhs.endPos > rhs.endPos;
+        if (!lhs.endPos) {
+            return true;
+        }
+        if (!rhs.endPos) {
+            return false;
+        }
+        return lhs.endPos.value() > rhs.endPos.value();
     }
     return lhs.spanId < rhs.spanId;
 }
@@ -47,7 +60,7 @@ constexpr inline size_t qHash(const StateSpan& span, size_t seed = 0) noexcept
     return qHashMulti(seed,
         span.spanId,
         span.state,
-        span.startPos,
+        span.startPos.value_or(0),
         span.endPos.value_or(0),
         span.implicitlyClosed);
 }
@@ -110,10 +123,10 @@ void StateSpansListener::handleInstantState(const parsing::ParserState& state, s
     });
 }
 
+static constexpr int MAX_BLOCKS_TO_SCAN = 1000;
+
 static std::optional<int> findSpanEndPosition(unsigned long spanId, QTextBlock fromBlock)
 {
-    static constexpr int MAX_BLOCKS_TO_SCAN = 1000;
-
     int blocksScanned = 0;
     for (QTextBlock block = fromBlock; block.isValid(); block = block.next(), blocksScanned++) {
         if (blocksScanned > MAX_BLOCKS_TO_SCAN) {
@@ -137,6 +150,48 @@ static std::optional<int> findSpanEndPosition(unsigned long spanId, QTextBlock f
         }
     }
     return std::nullopt;
+}
+
+static std::optional<int> findSpanStartPosition(unsigned long spanId, QTextBlock untilBlock)
+{
+    int blocksScanned = 0;
+    for (QTextBlock block = untilBlock; block.isValid(); block = block.previous(), blocksScanned++) {
+        if (blocksScanned > MAX_BLOCKS_TO_SCAN) {
+            return std::nullopt;
+        }
+
+        auto* blockData = BlockData::get<StateSpansBlockData>(block);
+        if (!blockData) {
+            continue;
+        }
+
+        for (const StateSpan& span : blockData->stateSpans()) {
+            if (span.spanId == spanId) {
+                if (span.startPos) {
+                    return block.position() + span.startPos.value();
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    }
+    return std::nullopt;
+}
+
+static QTextBlock findSpanStartBlock(QTextDocument* doc, const StateSpan& span, QTextBlock untilBlock)
+{
+    if (span.startPos) {
+        // Assuption - span was started in untilBlock
+        return untilBlock;
+    }
+
+    std::optional<int> startPos = findSpanStartPosition(span.spanId, untilBlock.previous());
+    if (!startPos) {
+        return untilBlock;
+    }
+
+    return doc->findBlock(startPos.value());
 }
 
 static bool isDelimitedState(State state)
@@ -181,7 +236,7 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
     Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
 
     for (const StateSpan& span : blockData->stateSpans()) {
-        if (span.startPos > posInBlock) {
+        if (span.startPos && span.startPos.value() > posInBlock) {
             break;
         }
         if (!isDelimitedState(span.state)) {
@@ -189,7 +244,10 @@ std::optional<int> CodeModel::findMatchingBracket(int pos) const
         }
 
         if (span.endPos == posInBlock) {
-            return block.position() + span.startPos;
+            if (span.startPos) {
+                return block.position() + span.startPos.value();
+            }
+            return findSpanStartPosition(span.spanId, block.previous());
         }
         else if (span.startPos == posInBlock) {
             if (span.endPos) {
@@ -215,7 +273,8 @@ std::optional<StateSpan> CodeModel::spanAtPosition(QTextBlock block, int globalP
 
     const auto& spans = blockData->stateSpans().elements();
     for (auto rit = spans.rbegin(); rit != spans.rend(); ++rit) {
-        if (rit->startPos < posInBlock && (!rit->endPos.has_value() || rit->endPos.value() >= posInBlock)) {
+        if ((!rit->startPos.has_value() || rit->startPos.value() < posInBlock) &&
+            (!rit->endPos.has_value()   || rit->endPos.value() >= posInBlock)) {
             return *rit;
         }
     }
@@ -238,7 +297,7 @@ bool CodeModel::shouldIncreaseIndent(int pos) const
         return false;
     }
 
-    QTextBlock startBlock = d_document->findBlock(block.position() + span->startPos);
+    QTextBlock startBlock = findSpanStartBlock(d_document, span.value(), block);
     return startBlock == block;
 }
 
@@ -259,7 +318,7 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
 
     // Find a relevant state span that ends on pos exactly.
     for (const StateSpan& span : blockData->stateSpans()) {
-        if (span.startPos > posInBlock) {
+        if (span.startPos && span.startPos.value() > posInBlock) {
             break;
         }
         if (!isIndentingState(span.state)) {
@@ -267,7 +326,7 @@ QTextBlock CodeModel::findMatchingIndentBlock(int pos) const
         }
 
         if (span.endPos == posInBlock) {
-            return d_document->findBlock(block.position() + span.startPos);
+            return findSpanStartBlock(d_document, span, block);
         }
     }
     return block;
@@ -286,7 +345,8 @@ QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
         if (!isIndentingState(span.state)) {
             continue;
         }
-        return d_document->findBlock(block.position() + span.startPos);
+
+        return findSpanStartBlock(d_document, span, block);
     }
     return block;
 }
