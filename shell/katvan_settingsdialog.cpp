@@ -18,6 +18,8 @@
 #include "katvan_settingsdialog.h"
 #include "katvan_utils.h"
 
+#include "typstdriver_packagemanager.h"
+
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QDesktopServices>
@@ -57,24 +59,14 @@ void SettingsDialog::setEditorSettings(const EditorSettings& settings)
     d_editorSettingsTab->setSettings(settings);
 }
 
-typstdriver::PackageManagerSettings SettingsDialog::packageManagerSettings() const
+typstdriver::TypstCompilerSettings SettingsDialog::compilerSettings() const
 {
     return d_compilerSettingsTab->settings();
 }
 
-void SettingsDialog::setPackageManagerSettings(const typstdriver::PackageManagerSettings& settings)
+void SettingsDialog::setCompilerSettings(const typstdriver::TypstCompilerSettings& settings)
 {
     d_compilerSettingsTab->setSettings(settings);
-}
-
-QStringList SettingsDialog::allowedPaths() const
-{
-    return d_compilerSettingsTab->allowedPaths();
-}
-
-void SettingsDialog::setAllowedPaths(const QStringList& paths)
-{
-    d_compilerSettingsTab->setAllowedPaths(paths);
 }
 
 void SettingsDialog::setupUI()
@@ -373,27 +365,19 @@ void CompilerSettingsTab::setupUI()
     mainLayout->addWidget(downloadCacheGroup);
 }
 
-typstdriver::PackageManagerSettings CompilerSettingsTab::settings() const
+typstdriver::TypstCompilerSettings CompilerSettingsTab::settings() const
 {
-    typstdriver::PackageManagerSettings settings;
+    typstdriver::TypstCompilerSettings settings;
     settings.setAllowPreviewPackages(d_allowPreviewPackages->isChecked());
+    settings.setAllowedPaths(d_allowedPathsModel->stringList());
 
     return settings;
 }
 
-void CompilerSettingsTab::setSettings(const typstdriver::PackageManagerSettings& settings)
+void CompilerSettingsTab::setSettings(const typstdriver::TypstCompilerSettings& settings)
 {
     d_allowPreviewPackages->setChecked(settings.allowPreviewPackages());
-}
-
-QStringList CompilerSettingsTab::allowedPaths() const
-{
-    return d_allowedPathsModel->stringList();
-}
-
-void CompilerSettingsTab::setAllowedPaths(const QStringList& paths)
-{
-    d_allowedPathsModel->setStringList(paths);
+    d_allowedPathsModel->setStringList(settings.allowedPaths());
 }
 
 void CompilerSettingsTab::showEvent(QShowEvent* event)

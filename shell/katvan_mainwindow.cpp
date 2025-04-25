@@ -33,7 +33,7 @@
 #include "katvan_spellchecker.h"
 #include "katvan_typstdriverwrapper.h"
 
-#include "typstdriver_packagemanager.h"
+#include "typstdriver_compilersettings.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -59,7 +59,6 @@ static constexpr QLatin1StringView SETTING_MAIN_WINDOW_STATE = QLatin1StringView
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_GEOMETRY = QLatin1StringView("MainWindow/geometry");
 static constexpr QLatin1StringView SETTING_SPELLING_DICT = QLatin1StringView("spelling/dict");
 static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("editor/mode");
-static constexpr QLatin1StringView SETTING_COMPILER_ALLOWED_PATHS = QLatin1StringView("compiler/allowedPaths");
 
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
@@ -356,14 +355,9 @@ void MainWindow::readSettings()
         editorSettings = EditorSettings(mode, EditorSettings::ModeSource::SETTINGS);
     }
     d_editor->applySettings(editorSettings);
+
     d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
-    typstdriver::PackageManager::applySettings(typstdriver::PackageManagerSettings(settings));
-
-    if (settings.contains(SETTING_COMPILER_ALLOWED_PATHS)) {
-        QStringList allowedPaths = settings.value(SETTING_COMPILER_ALLOWED_PATHS).toStringList();
-        d_driver->setAllowedPaths(allowedPaths);
-    }
-
+    d_driver->setCompilerSettings(typstdriver::TypstCompilerSettings(settings));
     d_recentFiles->restoreRecents(settings);
     d_previewer->restoreSettings(settings);
     restoreSpellingDictionary(settings);
@@ -854,34 +848,30 @@ void MainWindow::showSettingsDialog()
     QString mode = settings.value(SETTING_EDITOR_MODE).toString();
     EditorSettings editorSettings { mode, EditorSettings::ModeSource::SETTINGS };
 
-    QStringList allowedPaths = settings.value(SETTING_COMPILER_ALLOWED_PATHS).toStringList();
+    typstdriver::TypstCompilerSettings compilerSettings { settings };
 
     d_settingsDialog->setEditorSettings(editorSettings);
-    d_settingsDialog->setPackageManagerSettings(typstdriver::PackageManagerSettings(settings));
-    d_settingsDialog->setAllowedPaths(allowedPaths);
+    d_settingsDialog->setCompilerSettings(compilerSettings);
     d_settingsDialog->open();
 }
 
 void MainWindow::settingsDialogAccepted()
 {
     EditorSettings editorSettings = d_settingsDialog->editorSettings();
-    typstdriver::PackageManagerSettings packageManagerSettings = d_settingsDialog->packageManagerSettings();
-    QStringList allowedPaths = d_settingsDialog->allowedPaths();
+    typstdriver::TypstCompilerSettings compilerSettings = d_settingsDialog->compilerSettings();
 
     d_editor->applySettings(editorSettings);
     d_backupHandler->setBackupInterval(editorSettings.autoBackupInterval());
-    d_driver->setAllowedPaths(allowedPaths);
-    typstdriver::PackageManager::applySettings(packageManagerSettings);
 
-    if (!packageManagerSettings.allowPreviewPackages()) {
+    d_driver->setCompilerSettings(compilerSettings);
+    if (!compilerSettings.allowPreviewPackages()) {
         d_driver->discardLookupCaches();
     }
     d_driver->updatePreview();
 
     QSettings settings;
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
-    settings.setValue(SETTING_COMPILER_ALLOWED_PATHS, allowedPaths);
-    packageManagerSettings.save(settings);
+    compilerSettings.save(settings);
 }
 
 void MainWindow::previewReady()

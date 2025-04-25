@@ -21,7 +21,7 @@
 
 #include "katvan_editorsettings.h"
 
-#include "typstdriver_packagemanager.h"
+#include "typstdriver_compilersettings.h"
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
@@ -49,11 +49,8 @@ public:
     EditorSettings editorSettings() const;
     void setEditorSettings(const EditorSettings& settings);
 
-    typstdriver::PackageManagerSettings packageManagerSettings() const;
-    void setPackageManagerSettings(const typstdriver::PackageManagerSettings& settings);
-
-    QStringList allowedPaths() const;
-    void setAllowedPaths(const QStringList& paths);
+    typstdriver::TypstCompilerSettings compilerSettings() const;
+    void setCompilerSettings(const typstdriver::TypstCompilerSettings& settings);
 
 private:
     void setupUI();
@@ -99,11 +96,8 @@ class CompilerSettingsTab : public QWidget
 public:
     CompilerSettingsTab(QWidget* parent = nullptr);
 
-    typstdriver::PackageManagerSettings settings() const;
-    void setSettings(const typstdriver::PackageManagerSettings& settings);
-
-    QStringList allowedPaths() const;
-    void setAllowedPaths(const QStringList& paths);
+    typstdriver::TypstCompilerSettings settings() const;
+    void setSettings(const typstdriver::TypstCompilerSettings& settings);
 
 private slots:
     void addAllowedPath();

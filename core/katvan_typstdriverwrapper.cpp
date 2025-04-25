@@ -18,6 +18,7 @@
 #include "katvan_diagnosticsmodel.h"
 #include "katvan_typstdriverwrapper.h"
 
+#include "typstdriver_compilersettings.h"
 #include "typstdriver_packagemanager.h"
 
 #include <QDebug>
@@ -31,6 +32,7 @@ TypstDriverWrapper::TypstDriverWrapper(QObject* parent)
     : QObject(parent)
     , d_engine(nullptr)
     , d_status(Status::INITIALIZING)
+    , d_settings(std::make_shared<typstdriver::TypstCompilerSettings>())
 {
     d_thread = new QThread(this);
     d_thread->setObjectName("TypstDriverThread");
@@ -66,6 +68,16 @@ QString TypstDriverWrapper::typstVersion()
     return typstdriver::Engine::typstVersion();
 }
 
+void TypstDriverWrapper::setCompilerSettings(const typstdriver::TypstCompilerSettings& settings)
+{
+    d_settings = std::make_shared<typstdriver::TypstCompilerSettings>(settings);
+    d_packageManager->applySettings(d_settings);
+
+    if (d_status != Status::INITIALIZING) {
+        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", d_settings->allowedPaths());
+    }
+}
+
 void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
 {
     d_status = Status::INITIALIZING;
@@ -84,7 +96,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         d_status = Status::INITIALIZED;
         Q_EMIT compilationStatusChanged();
 
-        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", d_allowedPaths);
+        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", d_settings->allowedPaths());
 
         bool hasPending = false;
         if (d_pendingSource) {
@@ -192,15 +204,6 @@ void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
 void TypstDriverWrapper::requestCompletions(int line, int column)
 {
     QMetaObject::invokeMethod(d_engine, "requestCompletions", line, column);
-}
-
-void TypstDriverWrapper::setAllowedPaths(const QStringList& allowedPaths)
-{
-    d_allowedPaths = allowedPaths;
-
-    if (d_status != Status::INITIALIZING) {
-        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", allowedPaths);
-    }
 }
 
 void TypstDriverWrapper::discardLookupCaches()

@@ -29,25 +29,11 @@
 QT_BEGIN_NAMESPACE
 class QDir;
 class QNetworkAccessManager;
-class QSettings;
 QT_END_NAMESPACE
 
 namespace katvan::typstdriver {
 
-class TYPSTDRIVER_EXPORT PackageManagerSettings {
-public:
-    PackageManagerSettings();
-    PackageManagerSettings(const QSettings& settings);
-
-    void save(QSettings& settings);
-
-    bool allowPreviewPackages() const { return d_allowPreviewPackages; }
-
-    void setAllowPreviewPackages(bool allow) { d_allowPreviewPackages = allow; }
-
-private:
-    bool d_allowPreviewPackages;
-};
+class TypstCompilerSettings;
 
 struct TYPSTDRIVER_EXPORT PackageManagerStatistics {
     qsizetype totalSize;
@@ -69,7 +55,6 @@ public:
         ARCHIVE_ERROR,
     };
 
-    static void applySettings(const PackageManagerSettings& settings);
     static void setDownloadCacheLocation(const QString& dirPath);
     static QString downloadCacheDirectory();
     static PackageManagerStatistics cacheStatistics();
@@ -78,6 +63,8 @@ public:
 
     Error error() const { return d_error; }
     QString errorMessage() const { return d_errorMessage; }
+
+    void applySettings(std::shared_ptr<TypstCompilerSettings> settings);
 
     QString getPackageLocalPath(const QString& packageNamespace, const QString& name, const QString& version);
 
@@ -91,11 +78,11 @@ private:
     bool extractArchive(const QString& archivePath, const QDir& targetDir);
 
     static QString s_downloadCacheLocation;
-    static std::shared_ptr<PackageManagerSettings> s_settings;
-    static QMutex s_settingsLock;
 
     Error d_error;
     QString d_errorMessage;
+    std::shared_ptr<TypstCompilerSettings> d_settings;
+    QMutex d_settingsLock;
 
     Logger* d_logger;
     QNetworkAccessManager* d_networkManager;

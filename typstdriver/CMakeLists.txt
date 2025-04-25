@@ -49,6 +49,7 @@ target_include_directories(typstdriver_ffi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET typstdriver_ffi PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(typstdriver SHARED
+    typstdriver_compilersettings.cpp
     typstdriver_engine.cpp
     typstdriver_logger.cpp
     typstdriver_packagemanager.cpp

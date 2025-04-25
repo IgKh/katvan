@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include "typstdriver_compilersettings.h"
 #include "typstdriver_packagemanager.h"
 #include "typstdriver_packagemanager_p.h"
 
@@ -26,40 +27,14 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QSet>
-#include <QSettings>
 #include <QStandardPaths>
 
 #include <archive.h>
 #include <archive_entry.h>
 
-static constexpr QLatin1StringView SETTING_ALLOW_PREVIEW_PACKAGES("compiler/allow-preview-packages");
-
 namespace katvan::typstdriver {
 
 QString PackageManager::s_downloadCacheLocation;
-std::shared_ptr<PackageManagerSettings> PackageManager::s_settings = std::make_shared<PackageManagerSettings>();
-QMutex PackageManager::s_settingsLock;
-
-PackageManagerSettings::PackageManagerSettings()
-    : d_allowPreviewPackages(false)
-{
-}
-
-PackageManagerSettings::PackageManagerSettings(const QSettings& settings)
-    : d_allowPreviewPackages(settings.value(SETTING_ALLOW_PREVIEW_PACKAGES, true).toBool())
-{
-}
-
-void PackageManagerSettings::save(QSettings& settings)
-{
-    settings.setValue(SETTING_ALLOW_PREVIEW_PACKAGES, d_allowPreviewPackages);
-}
-
-void PackageManager::applySettings(const PackageManagerSettings& settings)
-{
-    QMutexLocker locker { &s_settingsLock };
-    s_settings = std::make_shared<PackageManagerSettings>(settings);
-}
 
 void PackageManager::setDownloadCacheLocation(const QString& dirPath)
 {
@@ -112,8 +87,15 @@ PackageManager::PackageManager(Logger* logger, QObject* parent)
     : QObject(parent)
     , d_error(Error::SUCCESS)
     , d_logger(logger)
+    , d_settings(std::make_shared<TypstCompilerSettings>())
 {
     d_networkManager = new QNetworkAccessManager(this);
+}
+
+void PackageManager::applySettings(std::shared_ptr<TypstCompilerSettings> settings)
+{
+    QMutexLocker locker { &d_settingsLock };
+    d_settings = settings;
 }
 
 QString PackageManager::getPackageLocalPath(const QString& packageNamespace, const QString& name, const QString& version)
@@ -133,8 +115,8 @@ QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QS
 {
     bool allowed = false;
     {
-        QMutexLocker locker { &s_settingsLock };
-        allowed = s_settings->allowPreviewPackages();
+        QMutexLocker locker { &d_settingsLock };
+        allowed = d_settings->allowPreviewPackages();
     }
 
     if (!allowed) {
