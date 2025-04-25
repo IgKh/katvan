@@ -56,7 +56,12 @@ void loadAuxillaryFonts()
         qWarning() << "Failed to load control character font";
     }
 
-    rc = QFontDatabase::addApplicationFont(":/assets/NotoSansMath-Regular.otf");
+    rc = QFontDatabase::addApplicationFont(":/assets/fonts/AdobeBlank.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load blank font";
+    }
+
+    rc = QFontDatabase::addApplicationFont(":/assets/fonts/NotoSansMath-Regular.otf");
     if (rc < 0) {
         qWarning() << "Failed to load math symbol font";
     }

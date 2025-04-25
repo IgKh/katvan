@@ -3,7 +3,8 @@
         <file>katvan.svg</file>
         <file>spinner.gif</file>
         <file>KatvanControl.otf</file>
-        <file>NotoSansMath-Regular.otf</file>
+        <file>fonts/NotoSansMath-Regular.otf</file>
+        <file>fonts/AdobeBlank.otf</file>
     </qresource>
 
     <qresource prefix="/">

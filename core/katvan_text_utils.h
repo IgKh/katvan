@@ -23,6 +23,7 @@
 namespace katvan::utils {
 
 static constexpr QLatin1StringView CONTROL_FONT_FAMILY = QLatin1StringView("KatvanControl");
+static constexpr QLatin1StringView BLANK_FONT_FAMILY = QLatin1StringView("Adobe Blank");
 
 static constexpr QChar ALM_MARK = (ushort)0x061c;
 static constexpr QChar LRM_MARK = (ushort)0x200e;

@@ -404,21 +404,11 @@ static void buildDisplayLayout(const QTextBlock& block, QString blockText, Layou
         r.start += startOffset;
     }
 
-    // The Qt method QWidgetTextControlPrivate::rectForPosition directly
-    // uses the QTextLine objects from the default layout to determine cursor
-    // and selection rectangles position and height. It is essential that
-    // our display layout's lines have the same bounding rectangles - otherwise
-    // there are various visual glitches related to mouse selection.
-    //
-    // In theory, we only add invisible control characters which shouldn't affect
-    // text size, BUT - due to them being control chars most fonts will (rightfully)
-    // claim to not cover them. We must prevent Qt from falling back to another font
-    // that might claim coverage, and has a bigger ascent or descent height than
-    // any font used for visible characters. To achieve that, add a format
-    // for each control char we injected that prevents font merging.
+    // Ensure that we use an invisible font for all injected control characters,
+    // and never fallback to a different font.
     QTextLayout::FormatRange r;
+    r.format.setFontFamilies(QStringList() << utils::BLANK_FONT_FAMILY);
     r.format.setFontStyleStrategy(QFont::NoFontMerging);
-    r.format.setFontPointSize(0.01);
 
     for (const auto& [pos, count] : isolatesStartingAt.asKeyValueRange()) {
         r.start = pos + offsets[pos] - count;
