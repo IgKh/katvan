@@ -134,8 +134,12 @@ void Highlighter::highlightBlock(const QString& text)
 
     doShowControlChars(text, charFormats);
 
+    bool formatsChanged = false;
     for (qsizetype i = 0; i < text.size(); i++) {
         setFormat(i, 1, charFormats[i]);
+        if (!charFormats[i].isEmpty()) {
+            formatsChanged = true;
+        }
     }
 
     // In addition to storing the detailed block data obtained from parsing it as
@@ -143,7 +147,18 @@ void Highlighter::highlightBlock(const QString& text)
     // force re-highlighting of the next block if something changed - QSyntaxHighlighter
     // only tracks changes to the block state number.
     BlockData::set<StateSpansBlockData>(currentBlock(), blockData);
-    setCurrentBlockState(blockData->stateSpans().fingerprint());
+
+    int currentState = currentBlockState();
+    int fingerprint = blockData->stateSpans().fingerprint();
+    setCurrentBlockState(fingerprint);
+
+    // If the block state spans have changed, we need to re-layout the block, since
+    // some layout decisions are affected by state (e.g base directionality). There
+    // is no need to do it if we also set any formats, since in this case
+    // QSyntaxHighlighter will call markContentDirty anyway.
+    if (!formatsChanged && currentState != fingerprint) {
+        document()->markContentsDirty(currentBlock().position(), currentBlock().length());
+    }
 }
 
 void Highlighter::doSyntaxHighlighting(
