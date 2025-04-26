@@ -33,6 +33,8 @@
         <file>icons/edit-redo.svg</file>
         <file>icons/edit-undo.svg</file>
         <file>icons/go-down.svg</file>
+        <file>icons/go-next.svg</file>
+        <file>icons/go-previous.svg</file>
         <file>icons/go-up.svg</file>
         <file>icons/help-about.svg</file>
         <file>icons/help-contents.svg</file>
@@ -65,6 +67,8 @@
         <file>icons-dark/edit-redo.svg</file>
         <file>icons-dark/edit-undo.svg</file>
         <file>icons-dark/go-down.svg</file>
+        <file>icons-dark/go-next.svg</file>
+        <file>icons-dark/go-previous.svg</file>
         <file>icons-dark/go-up.svg</file>
         <file>icons-dark/help-about.svg</file>
         <file>icons-dark/help-contents.svg</file>

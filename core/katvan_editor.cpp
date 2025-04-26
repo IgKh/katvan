@@ -220,6 +220,88 @@ QMenu* Editor::createInsertMenu()
     return menu;
 }
 
+QTextCursor Editor::cursorAt(int blockNum, int charOffset) const
+{
+    QTextBlock block = document()->findBlockByNumber(blockNum);
+    if (!block.isValid()) {
+        return QTextCursor();
+    }
+
+    QTextCursor cursor { block };
+    if (charOffset > 0) {
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, charOffset);
+    }
+    return cursor;
+}
+
+void Editor::setCurrentLandmark(const QTextCursor& target)
+{
+    d_currentLandmark = EditorLocation { target };
+    setTextCursor(target);
+    setFocus();
+
+    Q_EMIT goBackAvailable(!d_backLandmarks.empty());
+    Q_EMIT goForwardAvailable(!d_fowardLandmarks.empty());
+}
+
+void Editor::goToBlock(int blockNum, int charOffset)
+{
+    QTextCursor targetCursor = cursorAt(blockNum, charOffset);
+    if (targetCursor.isNull()) {
+        return;
+    }
+
+    if (d_currentLandmark) {
+        d_backLandmarks.append(d_currentLandmark.value());
+    }
+
+    EditorLocation current { textCursor() };
+    if (!d_currentLandmark || *d_currentLandmark != current) {
+        d_backLandmarks.append(current);
+    }
+
+    d_fowardLandmarks.clear();
+    setCurrentLandmark(targetCursor);
+}
+
+void Editor::goBack()
+{
+    if (d_backLandmarks.isEmpty()) {
+        return;
+    }
+
+    EditorLocation targetLocation = d_backLandmarks.takeLast();
+    QTextCursor targetCursor = cursorAt(targetLocation.blockNumber, targetLocation.offset);
+    if (targetCursor.isNull()) {
+        return;
+    }
+
+    if (d_currentLandmark) {
+        d_fowardLandmarks.append(d_currentLandmark.value());
+    }
+
+    setCurrentLandmark(targetCursor);
+}
+
+void Editor::goForward()
+{
+    if (d_fowardLandmarks.isEmpty()) {
+        return;
+    }
+
+    EditorLocation targetLocation = d_fowardLandmarks.takeLast();
+    QTextCursor targetCursor = cursorAt(targetLocation.blockNumber, targetLocation.offset);
+    if (targetCursor.isNull()) {
+        return;
+    }
+
+    if (d_currentLandmark) {
+        d_backLandmarks.append(d_currentLandmark.value());
+    }
+
+    setCurrentLandmark(targetCursor);
+}
+
 void Editor::toggleTextBlockDirection()
 {
     QTextBlock currentBlock = textCursor().block();
@@ -262,17 +344,6 @@ void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
     }
 
     cursor.endEditBlock();
-}
-
-void Editor::goToBlock(int blockNum, int charOffset)
-{
-    QTextCursor cursor = cursorAt(blockNum, charOffset);
-    if (cursor.isNull()) {
-        return;
-    }
-
-    setTextCursor(cursor);
-    setFocus();
 }
 
 void Editor::forceRehighlighting()
@@ -397,20 +468,6 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         SpellChecker::instance()->requestSuggestions(misspelledWord, cursor.position());
     }
     d_contextMenu->popup(event->globalPos());
-}
-
-QTextCursor Editor::cursorAt(int blockNum, int charOffset) const
-{
-    QTextBlock block = document()->findBlockByNumber(blockNum);
-    if (!block.isValid()) {
-        return QTextCursor();
-    }
-
-    QTextCursor cursor { block };
-    if (charOffset > 0) {
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, charOffset);
-    }
-    return cursor;
 }
 
 QString Editor::predefinedTooltipAtPosition(int position) const

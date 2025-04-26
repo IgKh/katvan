@@ -57,9 +57,12 @@ public:
     QMenu* createInsertMenu();
 
 public slots:
+    void goToBlock(int blockNum, int charOffset);
+    void goBack();
+    void goForward();
+
     void toggleTextBlockDirection();
     void setTextBlockDirection(Qt::LayoutDirection dir);
-    void goToBlock(int blockNum, int charOffset);
     void forceRehighlighting();
     void checkForModelines();
     void showToolTip(QPoint windowPos, const QString& text, const QUrl& detailsUrl);
@@ -80,6 +83,8 @@ private:
     void insertSurroundingMarks(QString before, QString after);
 
     QTextCursor cursorAt(int blockNum, int charOffset) const;
+    void setCurrentLandmark(const QTextCursor& target);
+
     QString predefinedTooltipAtPosition(int position) const;
     std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;
     QString getIndentString(QTextCursor cursor) const;
@@ -105,6 +110,8 @@ private slots:
     void updateExtraSelections();
 
 signals:
+    void goBackAvailable(bool available);
+    void goForwardAvailable(bool available);
     void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
 
 private:
@@ -122,6 +129,22 @@ private:
 
     QList<typstdriver::Diagnostic> d_sourceDiagnostics;
     QPointer<QMenu> d_contextMenu;
+
+    struct EditorLocation {
+        EditorLocation(const QTextCursor& cursor)
+            : blockNumber(cursor.blockNumber())
+            , offset(cursor.positionInBlock()) {}
+
+        bool operator==(const EditorLocation&) const = default;
+        bool operator!=(const EditorLocation&) const = default;
+
+        int blockNumber;
+        int offset;
+    };
+    std::optional<EditorLocation> d_currentLandmark;
+    QList<EditorLocation> d_backLandmarks;
+    QList<EditorLocation> d_fowardLandmarks;
+
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
     int d_pendingSuggestionsPosition;

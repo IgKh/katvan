@@ -250,11 +250,32 @@ void MainWindow::setupActions()
     replaceAction->setShortcut(QKeySequence::Replace);
     replaceAction->setMenuRole(QAction::NoRole);
 
-    QAction* gotoLineAction = editMenu->addAction(tr("&Go to Line..."), this, &MainWindow::goToLine);
+    /*
+     * Go Menu
+     */
+    QMenu* goMenu = menuBar()->addMenu(tr("&Go"));
+
+    QAction* goBackAction = goMenu->addAction(tr("&Back"), d_editor, &Editor::goBack);
+    goBackAction->setIcon(utils::themeIcon("go-previous"));
+    goBackAction->setShortcut(QKeySequence::Back);
+    goBackAction->setMenuRole(QAction::NoRole);
+    goBackAction->setEnabled(false);
+    connect(d_editor, &Editor::goBackAvailable, goBackAction, &QAction::setEnabled);
+
+    QAction* goForwardAction = goMenu->addAction(tr("&Forward"), d_editor, &Editor::goForward);
+    goForwardAction->setIcon(utils::themeIcon("go-next"));
+    goForwardAction->setShortcut(QKeySequence::Forward);
+    goForwardAction->setMenuRole(QAction::NoRole);
+    goForwardAction->setEnabled(false);
+    connect(d_editor, &Editor::goForwardAvailable, goForwardAction, &QAction::setEnabled);
+
+    goMenu->addSeparator();
+
+    QAction* gotoLineAction = goMenu->addAction(tr("&Go to Line..."), this, &MainWindow::goToLine);
     gotoLineAction->setShortcut(Qt::CTRL | Qt::Key_G);
     gotoLineAction->setMenuRole(QAction::NoRole);
 
-    QAction* jumpToPreviewAction = editMenu->addAction(tr("&Jump to Preview"), this, &MainWindow::jumpToPreview);
+    QAction* jumpToPreviewAction = goMenu->addAction(tr("&Jump to Preview"), this, &MainWindow::jumpToPreview);
     jumpToPreviewAction->setShortcut(Qt::CTRL | Qt::Key_J);
     jumpToPreviewAction->setMenuRole(QAction::NoRole);
 
