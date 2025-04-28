@@ -106,6 +106,7 @@ void MainWindow::setupUI()
     connect(d_editor, &Editor::toolTipRequested, d_driver, &TypstDriverWrapper::requestToolTip);
     connect(d_editor->completionManager(), &CompletionManager::completionsRequested, d_driver, &TypstDriverWrapper::requestCompletions);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
+    connect(d_editor, &Editor::fontZoomFactorChanged, this, &MainWindow::editorFontZoomFactorChanged);
 
     d_searchBar = new SearchBar(d_editor);
     d_searchBar->setVisible(false);
@@ -284,6 +285,23 @@ void MainWindow::setupActions()
      */
     QMenu* viewMenu = menuBar()->addMenu(tr("&View"));
 
+    QAction* enlargeFontAction = viewMenu->addAction(tr("&Enlarge Font"), d_editor, &Editor::increaseFontSize);
+    enlargeFontAction->setIcon(utils::themeIcon("zoom-in"));
+    enlargeFontAction->setShortcut(QKeySequence::ZoomIn);
+    enlargeFontAction->setMenuRole(QAction::NoRole);
+
+    QAction* shrinkFontAction = viewMenu->addAction(tr("&Shrink Font"), d_editor, &Editor::decreaseFontSize);
+    shrinkFontAction->setIcon(utils::themeIcon("zoom-out"));
+    shrinkFontAction->setShortcut(QKeySequence::ZoomOut);
+    shrinkFontAction->setMenuRole(QAction::NoRole);
+
+    QAction* resetFontSizeAction = viewMenu->addAction(tr("&Reset Font Size"), d_editor, &Editor::resetFontSize);
+    resetFontSizeAction->setIcon(utils::themeIcon("zoom-original"));
+    resetFontSizeAction->setShortcut(Qt::CTRL | Qt::Key_0);
+    resetFontSizeAction->setMenuRole(QAction::NoRole);
+
+    viewMenu->addSeparator();
+
     viewMenu->addAction(d_previewDock->toggleViewAction());
     viewMenu->addAction(d_compilerOutputDock->toggleViewAction());
 
@@ -341,6 +359,13 @@ void MainWindow::setupStatusBar()
     connect(d_cursorPosButton, &QToolButton::clicked, this, &MainWindow::goToLine);
 
     statusBar()->addPermanentWidget(d_cursorPosButton);
+
+    d_fontZoomFactorButton = buildStatusBarButton();
+    d_fontZoomFactorButton->setVisible(false);
+    d_fontZoomFactorButton->setToolTip(tr("Font Zoom"));
+    connect(d_fontZoomFactorButton, &QToolButton::clicked, d_editor, &Editor::resetFontSize);
+
+    statusBar()->addPermanentWidget(d_fontZoomFactorButton);
 
     d_spellingButton = buildStatusBarButton();
     d_spellingButton->setToolTip(tr("Spell checking dictionary"));
@@ -847,6 +872,18 @@ void MainWindow::cursorPositionChanged()
 
     if (d_previewer->shouldFollowEditorCursor()) {
         d_driver->forwardSearch(line, column, d_previewer->currentPage());
+    }
+}
+
+void MainWindow::editorFontZoomFactorChanged(qreal factor)
+{
+    int factorPercentage = qRound(factor * 100);
+    if (factorPercentage == 100) {
+        d_fontZoomFactorButton->hide();
+    }
+    else {
+        d_fontZoomFactorButton->setText(QStringLiteral("%1%").arg(factorPercentage));
+        d_fontZoomFactorButton->show();
     }
 }
 

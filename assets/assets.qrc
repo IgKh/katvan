@@ -44,6 +44,7 @@
         <file>icons/tools-check-spelling.svg</file>
         <file>icons/window-close.svg</file>
         <file>icons/zoom-in.svg</file>
+        <file>icons/zoom-original.svg</file>
         <file>icons/zoom-out.svg</file>
 
         <file>icons-dark/application-exit.svg</file>
@@ -78,6 +79,7 @@
         <file>icons-dark/tools-check-spelling.svg</file>
         <file>icons-dark/window-close.svg</file>
         <file>icons-dark/zoom-in.svg</file>
+        <file>icons-dark/zoom-original.svg</file>
         <file>icons-dark/zoom-out.svg</file>
     </qresource>
 </RCC>

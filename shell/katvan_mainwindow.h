@@ -66,6 +66,7 @@ private slots:
     void showAbout();
 
     void cursorPositionChanged();
+    void editorFontZoomFactorChanged(qreal factor);
     void changeSpellCheckingDictionary();
     void toggleCursorMovementStyle();
     void showSettingsDialog();
@@ -110,6 +111,7 @@ private:
 
     QToolButton* d_compilationStatusButton;
     QToolButton* d_cursorPosButton;
+    QToolButton* d_fontZoomFactorButton;
     QToolButton* d_spellingButton;
     QToolButton* d_cursorStyleButton;
 

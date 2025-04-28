@@ -83,6 +83,8 @@ Editor::Editor(Document* doc, QWidget* parent)
     : QTextEdit(parent)
     , d_codeModel(doc->codeModel())
     , d_theme(EditorTheme::defaultTheme())
+    , d_fontZoomFactor(1.0)
+    , d_accumulatedWheelUnits(0)
     , d_pendingSuggestionsPosition(-1)
 {
     setAcceptRichText(false);
@@ -139,6 +141,7 @@ void Editor::applyEffectiveSettings()
     d_effectiveSettings = EditorSettings();
     d_effectiveSettings.mergeSettings(d_appSettings);
     d_effectiveSettings.mergeSettings(d_fileMode);
+    d_effectiveSettings.setFontSize(qRound(d_effectiveSettings.fontSize() * d_fontZoomFactor));
 
     if (origSettings == d_effectiveSettings) {
         return;
@@ -300,6 +303,35 @@ void Editor::goForward()
     }
 
     setCurrentLandmark(targetCursor);
+}
+
+void Editor::setFontZoomFactor(qreal factor)
+{
+    qreal newFactor = qBound(0.1, factor, 5.0);
+    if (qFuzzyCompare(d_fontZoomFactor, newFactor)) {
+        return;
+    }
+
+    d_fontZoomFactor = newFactor;
+    d_accumulatedWheelUnits = 0;
+    applyEffectiveSettings();
+
+    Q_EMIT fontZoomFactorChanged(newFactor);
+}
+
+void Editor::increaseFontSize()
+{
+    setFontZoomFactor(d_fontZoomFactor + 0.1);
+}
+
+void Editor::decreaseFontSize()
+{
+    setFontZoomFactor(d_fontZoomFactor - 0.1);
+}
+
+void Editor::resetFontSize()
+{
+    setFontZoomFactor(1.0);
 }
 
 void Editor::toggleTextBlockDirection()
@@ -796,6 +828,30 @@ void Editor::keyReleaseEvent(QKeyEvent* event)
         return;
     }
     QTextEdit::keyReleaseEvent(event);
+}
+
+void Editor::wheelEvent(QWheelEvent* event)
+{
+    int yAngle = event->angleDelta().y();
+    if (event->modifiers() == Qt::ControlModifier && yAngle != 0) {
+        // yAngle is in 1/8ths of a degree. 15 degrees are typically considered
+        // to be one "unit" of scroll. Therefore each 120 1/8ths should change
+        // the font zoom factor by 0.1. However - those can accumulate over
+        // multiple events - if the scrolling device has high precision (e.g.
+        // a laptop trackpad)
+        d_accumulatedWheelUnits += yAngle / 120.0;
+
+        qreal units = std::trunc(d_accumulatedWheelUnits);
+        if (!qFuzzyCompare(units, 0)) {
+            if (event->inverted()) {
+                units = -units;
+            }
+
+            setFontZoomFactor(d_fontZoomFactor + 0.1 * units);
+        }
+        return;
+    }
+    QTextEdit::wheelEvent(event);
 }
 
 void Editor::resizeEvent(QResizeEvent* event)

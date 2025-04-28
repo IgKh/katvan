@@ -61,6 +61,10 @@ public slots:
     void goBack();
     void goForward();
 
+    void increaseFontSize();
+    void decreaseFontSize();
+    void resetFontSize();
+
     void toggleTextBlockDirection();
     void setTextBlockDirection(Qt::LayoutDirection dir);
     void forceRehighlighting();
@@ -72,6 +76,7 @@ protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:
@@ -94,6 +99,7 @@ private:
 
     void handleToolTipEvent(QHelpEvent* event);
 
+    void setFontZoomFactor(qreal factor);
     void applyEffectiveSettings();
 
     QTextEdit::ExtraSelection makeBracketHighlight(int pos);
@@ -112,6 +118,7 @@ private slots:
 signals:
     void goBackAvailable(bool available);
     void goForwardAvailable(bool available);
+    void fontZoomFactorChanged(qreal factor);
     void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
 
 private:
@@ -126,6 +133,8 @@ private:
     EditorSettings d_fileMode;
     EditorSettings d_effectiveSettings;
     EditorTheme d_theme;
+    qreal d_fontZoomFactor;
+    qreal d_accumulatedWheelUnits;
 
     QList<typstdriver::Diagnostic> d_sourceDiagnostics;
     QPointer<QMenu> d_contextMenu;
