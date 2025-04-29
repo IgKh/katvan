@@ -177,10 +177,6 @@ void SearchBar::setupUI()
 
     QGridLayout* layout = new QGridLayout(this);
 
-    QMargins margins = layout->contentsMargins();
-    margins.setTop(0);
-    layout->setContentsMargins(margins);
-
     layout->addWidget(new QLabel(tr("Find:")), 0, 0);
     layout->addLayout(findLayout, 0, 1);
     layout->addWidget(closeButton, 0, 2);

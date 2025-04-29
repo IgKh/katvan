@@ -17,6 +17,7 @@
  */
 #include "katvan_backuphandler.h"
 #include "katvan_compileroutput.h"
+#include "katvan_infobar.h"
 #include "katvan_mainwindow.h"
 #include "katvan_previewer.h"
 #include "katvan_recentfiles.h"
@@ -41,10 +42,12 @@
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QFileDialog>
+#include <QFileSystemWatcher>
 #include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMovie>
+#include <QPushButton>
 #include <QSessionManager>
 #include <QSettings>
 #include <QStatusBar>
@@ -63,6 +66,7 @@ static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("edit
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
     , d_exportPdfPending(false)
+    , d_suppressFileChangeNotification(false)
 {
     setObjectName("katvanMainWindow");
 
@@ -93,6 +97,9 @@ MainWindow::MainWindow()
     d_backupHandler = new BackupHandler(d_editor, this);
     connect(d_document, &Document::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
 
+    d_fileWatcher = new QFileSystemWatcher(this);
+    connect(d_fileWatcher, &QFileSystemWatcher::fileChanged, this, &MainWindow::currentFileChangedOnDisk);
+
     readSettings();
     cursorPositionChanged();
 }
@@ -108,12 +115,17 @@ void MainWindow::setupUI()
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor, &Editor::fontZoomFactorChanged, this, &MainWindow::editorFontZoomFactorChanged);
 
+    d_infoBar = new InfoBar();
+    d_infoBar->setVisible(false);
+
     d_searchBar = new SearchBar(d_editor);
     d_searchBar->setVisible(false);
 
     QWidget* centralWidget = new QWidget();
     QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
     centralLayout->setContentsMargins(0, 0, 0, 0);
+    centralLayout->setSpacing(0);
+    centralLayout->addWidget(d_infoBar, 0);
     centralLayout->addWidget(d_editor, 1);
     centralLayout->addWidget(d_searchBar, 0);
 
@@ -461,6 +473,10 @@ bool MainWindow::maybeSave()
 
 void MainWindow::setCurrentFile(const QString& fileName)
 {
+    if (!d_fileWatcher->files().isEmpty()) {
+        d_fileWatcher->removePaths(d_fileWatcher->files());
+    }
+
     if (fileName.isEmpty()) {
         d_currentFileName.clear();
         d_currentFileShortName = tr("Untitled");
@@ -471,6 +487,10 @@ void MainWindow::setCurrentFile(const QString& fileName)
         d_currentFileShortName = info.fileName();
 
         d_recentFiles->addRecent(d_currentFileName);
+
+        if (info.exists()) {
+            d_fileWatcher->addPath(d_currentFileName);
+        }
     }
 
     d_editor->checkForModelines();
@@ -490,6 +510,7 @@ void MainWindow::setCurrentFile(const QString& fileName)
         tryRecover(fileName, previousTmpFile);
     }
 
+    d_infoBar->hide();
     d_searchBar->resetSearchRange();
     d_searchBar->hide();
 }
@@ -608,6 +629,47 @@ void MainWindow::commitSession(QSessionManager& manager)
     }
 }
 
+void MainWindow::currentFileChangedOnDisk()
+{
+    if (d_suppressFileChangeNotification) {
+        d_suppressFileChangeNotification = false;
+        return;
+    }
+
+    d_document->setModified(true);
+    d_infoBar->clear();
+
+    QString path = utils::formatFilePath(d_currentFileName);
+    QFileInfo info { d_currentFileName };
+
+    QString message;
+    if (info.exists()) {
+        qDebug() << "File" << d_currentFileName << "modified on disk";
+        message = tr("The file %1 was modified on disk").arg(path);
+
+        QPushButton* reloadButton = new QPushButton(utils::themeIcon("view-refresh"), tr("&Reload"));
+        connect(reloadButton, &QPushButton::clicked, this, [this]() {
+            loadFile(d_currentFileName);
+        });
+
+        d_infoBar->addButton(reloadButton);
+    }
+    else {
+        qDebug() << "File" << d_currentFileName << "removed from disk";
+        message = tr("The file %1 was deleted or moved on disk").arg(path);
+    }
+
+    QPushButton* saveAsButton = new QPushButton(utils::themeIcon("document-save-as"), tr("Save &As..."));
+    connect(saveAsButton, &QPushButton::clicked, this, &MainWindow::saveFileAs);
+
+    QPushButton* ignoreButton = new QPushButton(utils::themeIcon("window-close"), tr("&Ignore"));
+    connect(ignoreButton, &QPushButton::clicked, d_infoBar, &InfoBar::hide);
+
+    d_infoBar->addButton(saveAsButton);
+    d_infoBar->addButton(ignoreButton);
+    d_infoBar->showMessage(message);
+}
+
 void MainWindow::newFile()
 {
     if (!maybeSave()) {
@@ -671,6 +733,8 @@ bool MainWindow::saveFile()
         return false;
     }
 
+    d_suppressFileChangeNotification = true;
+
     QTextStream stream(&file);
     stream << d_editor->toPlainText();
     stream.flush();
@@ -681,12 +745,20 @@ bool MainWindow::saveFile()
             QCoreApplication::applicationName(),
             tr("Saving file %1 failed: %2").arg(utils::formatFilePath(d_currentFileName), file.errorString()));
 
+        d_suppressFileChangeNotification = false;
         return false;
     }
 
     d_document->setModified(false);
     d_editor->checkForModelines();
+    d_infoBar->hide();
     statusBar()->showMessage(tr("Saved %1").arg(utils::formatFilePath(d_currentFileName)));
+
+    // If this is a new file, watching it in setCurrentFile would have failed.
+    // Now that it definitely exists, add it here.
+    if (d_fileWatcher->files().isEmpty()) {
+        d_fileWatcher->addPath(d_currentFileName);
+    }
 
     return true;
 }

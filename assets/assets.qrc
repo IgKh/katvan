@@ -42,6 +42,7 @@
         <file>icons/list-remove.svg</file>
         <file>icons/settings-configure.svg</file>
         <file>icons/tools-check-spelling.svg</file>
+        <file>icons/view-refresh.svg</file>
         <file>icons/window-close.svg</file>
         <file>icons/zoom-in.svg</file>
         <file>icons/zoom-original.svg</file>
@@ -77,6 +78,7 @@
         <file>icons-dark/list-remove.svg</file>
         <file>icons-dark/settings-configure.svg</file>
         <file>icons-dark/tools-check-spelling.svg</file>
+        <file>icons-dark/view-refresh.svg</file>
         <file>icons-dark/window-close.svg</file>
         <file>icons-dark/zoom-in.svg</file>
         <file>icons-dark/zoom-original.svg</file>

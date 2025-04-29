@@ -20,6 +20,7 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
+class QFileSystemWatcher;
 class QMovie;
 class QSessionManager;
 class QSettings;
@@ -31,6 +32,7 @@ namespace katvan
 
 class BackupHandler;
 class CompilerOutput;
+class InfoBar;
 class Previewer;
 class RecentFiles;
 class SearchBar;
@@ -65,6 +67,7 @@ private slots:
     void showTypstDocs();
     void showAbout();
 
+    void currentFileChangedOnDisk();
     void cursorPositionChanged();
     void editorFontZoomFactorChanged(qreal factor);
     void changeSpellCheckingDictionary();
@@ -94,6 +97,7 @@ private:
     QString d_currentFileName;
     QString d_currentFileShortName;
     bool d_exportPdfPending;
+    bool d_suppressFileChangeNotification;
 
     Document* d_document;
     RecentFiles* d_recentFiles;
@@ -101,12 +105,14 @@ private:
     BackupHandler* d_backupHandler;
 
     Editor* d_editor;
+    InfoBar* d_infoBar;
     SearchBar* d_searchBar;
     Previewer* d_previewer;
     CompilerOutput* d_compilerOutput;
 
     SettingsDialog* d_settingsDialog;
 
+    QFileSystemWatcher* d_fileWatcher;
     QMovie* d_compilingMovie;
 
     QToolButton* d_compilationStatusButton;
