@@ -311,6 +311,7 @@ void CompilerSettingsTab::setupUI()
 
     d_allowedPathsList = new QListView();
     d_allowedPathsList->setModel(d_allowedPathsModel);
+    d_allowedPathsList->setEditTriggers(QAbstractItemView::NoEditTriggers);
     connect(d_allowedPathsList->selectionModel(), &QItemSelectionModel::currentChanged, this, &CompilerSettingsTab::currentAllowedPathChanged);
 
     QPushButton* addAllowedPathButton = new QPushButton();

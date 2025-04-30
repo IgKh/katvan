@@ -46,6 +46,8 @@ void Document::setDocumentText(const QString& text)
 {
     QScopedValueRollback guard { d_suppressContentChangeHandling, true };
     setPlainText(text);
+
+    Q_EMIT contentReset();
 }
 
 void Document::propagateDocumentEdit(int from, int charsRemoved, int charsAdded)

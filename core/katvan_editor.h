@@ -108,6 +108,7 @@ private:
     void lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event);
 
 private slots:
+    void resetNavigationData();
     void popupInsertMenu();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 

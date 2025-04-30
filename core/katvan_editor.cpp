@@ -107,6 +107,7 @@ Editor::Editor(Document* doc, QWidget* parent)
     connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateExtraSelections);
+    connect(doc, &Document::contentReset, this, &Editor::resetNavigationData);
 
     updateLineNumberGutters();
 
@@ -245,6 +246,16 @@ void Editor::setCurrentLandmark(const QTextCursor& target)
 
     Q_EMIT goBackAvailable(!d_backLandmarks.empty());
     Q_EMIT goForwardAvailable(!d_fowardLandmarks.empty());
+}
+
+void Editor::resetNavigationData()
+{
+    d_currentLandmark.reset();
+    d_backLandmarks.clear();
+    d_fowardLandmarks.clear();
+
+    Q_EMIT goBackAvailable(false);
+    Q_EMIT goForwardAvailable(false);
 }
 
 void Editor::goToBlock(int blockNum, int charOffset)

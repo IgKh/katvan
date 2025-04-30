@@ -101,6 +101,7 @@ private slots:
     void propagateDocumentEdit(int from, int charsRemoved, int charsAdded);
 
 signals:
+    void contentReset();
     void contentModified();
     void contentEdited(int from, int to, QString text);
 
