@@ -318,13 +318,14 @@ void Editor::goForward()
 
 void Editor::setFontZoomFactor(qreal factor)
 {
+    d_accumulatedWheelUnits = 0;
+
     qreal newFactor = qBound(0.1, factor, 5.0);
     if (qFuzzyCompare(d_fontZoomFactor, newFactor)) {
         return;
     }
 
     d_fontZoomFactor = newFactor;
-    d_accumulatedWheelUnits = 0;
     applyEffectiveSettings();
 
     Q_EMIT fontZoomFactorChanged(newFactor);
@@ -824,7 +825,27 @@ void Editor::keyPressEvent(QKeyEvent* event)
     }
 #endif
 
-    QTextEdit::keyPressEvent(event);
+    bool overrideMoveStyle = event->modifiers() == Qt::AltModifier && (
+        event->key() == Qt::Key_Up ||
+        event->key() == Qt::Key_Down ||
+        event->key() == Qt::Key_Left ||
+        event->key() == Qt::Key_Right);
+
+    if (overrideMoveStyle) {
+        QKeyEvent e {
+            event->type(),
+            event->key(),
+            Qt::NoModifier
+        };
+        auto currentMoveStyle = document()->defaultCursorMoveStyle();
+
+        document()->setDefaultCursorMoveStyle(Qt::VisualMoveStyle);
+        QTextEdit::keyPressEvent(&e);
+        document()->setDefaultCursorMoveStyle(currentMoveStyle);
+    }
+    else {
+        QTextEdit::keyPressEvent(event);
+    }
 
     if (d_completionManager->isActive()) {
         d_completionManager->updateCompletionPrefix();
