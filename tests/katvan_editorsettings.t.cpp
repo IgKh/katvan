@@ -71,6 +71,17 @@ TEST(EditorSettingsTests, FontSize) {
     EXPECT_THAT(s5.hasFontSize(), ::testing::IsFalse());
 }
 
+TEST(EditorSettingsTests, ColorScheme) {
+    EditorSettings s1 { "scheme dark" };
+    EXPECT_THAT(s1.hasColorScheme(), ::testing::IsTrue());
+    EXPECT_THAT(s1.colorScheme(), ::testing::Eq(QStringLiteral("dark")));
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("scheme dark;")));
+
+    EditorSettings s2 { "scheme" };
+    EXPECT_THAT(s2.hasColorScheme(), ::testing::IsFalse());
+    EXPECT_THAT(s2.colorScheme(), ::testing::Eq(QStringLiteral("auto")));
+}
+
 TEST(EditorSettingsTests, LineNumberStyle) {
     EditorSettings s1 { "show-line-numbers both" };
     EXPECT_THAT(s1.hasLineNumberStyle(), ::testing::IsTrue());

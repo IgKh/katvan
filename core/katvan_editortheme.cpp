@@ -60,13 +60,23 @@ bool EditorTheme::isAppInDarkMode()
 EditorTheme& EditorTheme::defaultTheme()
 {
     if (isAppInDarkMode()) {
-        static EditorTheme darkTheme(":/themes/default-dark.json");
-        return darkTheme;
+        return darkTheme();
     }
     else {
-        static EditorTheme lightTheme(":/themes/default-light.json");
-        return lightTheme;
+        return lightTheme();
     }
+}
+
+EditorTheme& EditorTheme::lightTheme()
+{
+    static EditorTheme lightTheme(":/themes/default-light.json");
+    return lightTheme;
+}
+
+EditorTheme& EditorTheme::darkTheme()
+{
+    static EditorTheme darkTheme(":/themes/default-dark.json");
+    return darkTheme;
 }
 
 static QColor readColor(const QJsonValue& val)

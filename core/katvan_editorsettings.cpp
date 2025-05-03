@@ -102,6 +102,9 @@ void EditorSettings::parseModeLine(QString mode, EditorSettings::ModeSource sour
                 d_tabWidth = width;
             }
         }
+        else if (variable == QStringLiteral("scheme")) {
+            d_colorScheme = rest;
+        }
         else if (variable == QStringLiteral("show-line-numbers")) {
             if (rest == QStringLiteral("both")) {
                 d_lineNumberStyle = EditorSettings::LineNumberStyle::BOTH_SIDES;
@@ -165,6 +168,9 @@ QString EditorSettings::toModeLine() const
     }
     if (d_tabWidth) {
         result += QLatin1String("tab-width %1; ").arg(QString::number(d_tabWidth.value()));
+    }
+    if (d_colorScheme) {
+        result += QLatin1String("scheme %1; ").arg(d_colorScheme.value());
     }
     if (d_lineNumberStyle) {
         switch (d_lineNumberStyle.value()) {
@@ -243,6 +249,11 @@ int EditorSettings::tabWidth() const
     return d_tabWidth.value_or(indentWidth());
 }
 
+QString EditorSettings::colorScheme() const
+{
+    return d_colorScheme.value_or("auto");
+}
+
 EditorSettings::LineNumberStyle EditorSettings::lineNumberStyle() const
 {
     return d_lineNumberStyle.value_or(EditorSettings::LineNumberStyle::BOTH_SIDES);
@@ -282,6 +293,9 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
     }
     if (other.d_tabWidth) {
         d_tabWidth = other.d_tabWidth;
+    }
+    if (other.d_colorScheme) {
+        d_colorScheme = other.d_colorScheme;
     }
     if (other.d_lineNumberStyle) {
         d_lineNumberStyle = other.d_lineNumberStyle;

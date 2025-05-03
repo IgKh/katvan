@@ -78,6 +78,7 @@ private:
 
     QFontComboBox* d_editorFontComboBox;
     QComboBox* d_editorFontSizeComboBox;
+    QComboBox* d_colorScheme;
     QComboBox* d_lineNumberStyle;
     QCheckBox* d_showControlChars;
     QComboBox* d_indentMode;

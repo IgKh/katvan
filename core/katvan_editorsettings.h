@@ -73,6 +73,7 @@ public:
     int indentWidth() const;
     int tabWidth() const;
 
+    QString colorScheme() const;
     LineNumberStyle lineNumberStyle() const;
     bool showControlChars() const;
 
@@ -86,6 +87,7 @@ public:
     void setIndentStyle(IndentStyle indentStyle) { d_indentStyle = indentStyle; }
     void setIndentWidth(int indentWidth) { d_indentWidth = indentWidth; }
     void setTabWidth(int tabWidth) { d_tabWidth = tabWidth; }
+    void setColorScheme(const QString& colorScheme) { d_colorScheme = colorScheme; }
     void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
     void setShowControlChars(bool show) { d_showControlChars = show; }
     void setAutoBrackets(bool enable) { d_autoBrackets = enable; }
@@ -97,6 +99,7 @@ public:
     bool hasIndentStyle() const { return d_indentStyle.has_value(); }
     bool hasIndentWidth() const { return d_indentWidth.has_value(); }
     bool hasTabWidth() const { return d_tabWidth.has_value(); }
+    bool hasColorScheme() const { return d_colorScheme.has_value(); }
     bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
     bool hasShowControlChars() const { return d_showControlChars.has_value(); }
     bool hasAutoBrackets() const { return d_autoBrackets.has_value(); }
@@ -113,6 +116,7 @@ private:
     std::optional<IndentStyle> d_indentStyle;
     std::optional<int> d_indentWidth;
     std::optional<int> d_tabWidth;
+    std::optional<QString> d_colorScheme;
     std::optional<LineNumberStyle> d_lineNumberStyle;
     std::optional<bool> d_showControlChars;
     std::optional<bool> d_autoBrackets;

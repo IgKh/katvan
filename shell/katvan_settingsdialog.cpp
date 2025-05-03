@@ -103,6 +103,7 @@ EditorSettings EditorSettingsTab::settings() const
 
     settings.setFontFamily(d_editorFontComboBox->currentFont().family());
     settings.setFontSize(d_editorFontSizeComboBox->currentText().toInt());
+    settings.setColorScheme(d_colorScheme->currentData().toString());
     settings.setLineNumberStyle(d_lineNumberStyle->currentData().value<EditorSettings::LineNumberStyle>());
     settings.setShowControlChars(d_showControlChars->isChecked());
     settings.setIndentMode(d_indentMode->currentData().value<EditorSettings::IndentMode>());
@@ -127,6 +128,8 @@ void EditorSettingsTab::setSettings(const EditorSettings& settings)
     QFont font = settings.font();
     d_editorFontComboBox->setCurrentFont(font);
     d_editorFontSizeComboBox->setCurrentText(QString::number(font.pointSize()));
+
+    d_colorScheme->setCurrentIndex(d_colorScheme->findData(settings.colorScheme()));
 
     QVariant lineNumberStyle = QVariant::fromValue(settings.lineNumberStyle());
     d_lineNumberStyle->setCurrentIndex(d_lineNumberStyle->findData(lineNumberStyle));
@@ -160,6 +163,11 @@ void EditorSettingsTab::setupUI()
     editorFontLabel->setBuddy(d_editorFontComboBox);
 
     d_editorFontSizeComboBox = new QComboBox();
+
+    d_colorScheme = new QComboBox();
+    d_colorScheme->addItem(tr("Follow System Settings"), "auto");
+    d_colorScheme->addItem(tr("Light"), "light");
+    d_colorScheme->addItem(tr("Dark"), "dark");
 
     d_lineNumberStyle = new QComboBox();
     d_lineNumberStyle->addItem(tr("On Both Sides"), QVariant::fromValue(EditorSettings::LineNumberStyle::BOTH_SIDES));
@@ -211,6 +219,7 @@ void EditorSettingsTab::setupUI()
     QGroupBox* appearanceGroup = new QGroupBox(tr("Appearance"));
     QFormLayout* appearanceLayout = new QFormLayout(appearanceGroup);
     appearanceLayout->addRow(editorFontLabel, editorFontLayout);
+    appearanceLayout->addRow(tr("C&olor Scheme:"), d_colorScheme);
     appearanceLayout->addRow(tr("Show &Line Numbers:"), d_lineNumberStyle);
     appearanceLayout->addRow(new QLabel(), d_showControlChars);
 

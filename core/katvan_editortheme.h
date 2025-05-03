@@ -43,6 +43,8 @@ public:
     static bool isAppInDarkMode();
 
     static EditorTheme& defaultTheme();
+    static EditorTheme& lightTheme();
+    static EditorTheme& darkTheme();
 
     EditorTheme() {};
 

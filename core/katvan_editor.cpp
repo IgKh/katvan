@@ -176,11 +176,23 @@ void Editor::applyEffectiveSettings()
         d_leftLineNumberGutter->setVisible(lineNumberStyle == EditorSettings::LineNumberStyle::BOTH_SIDES);
     }
     updateLineNumberGutters();
+    updateEditorTheme();
+}
+
+static EditorTheme& themeForColorScheme(const QString& scheme)
+{
+    if (scheme == "light") {
+        return EditorTheme::lightTheme();
+    }
+    if (scheme == "dark") {
+        return EditorTheme::darkTheme();
+    }
+    return EditorTheme::defaultTheme();
 }
 
 void Editor::updateEditorTheme()
 {
-    EditorTheme& newTheme = EditorTheme::defaultTheme();
+    EditorTheme& newTheme = themeForColorScheme(d_effectiveSettings.colorScheme());
     if (d_theme.name() == newTheme.name()) {
         return;
     }
