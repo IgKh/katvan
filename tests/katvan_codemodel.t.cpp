@@ -236,7 +236,8 @@ TEST(CodeModelTests, FindMatchingIndentBlockByPosition)
     auto doc = buildDocument({
         /* 0 */ "#if 5 > 2 { pagebreak() }",
         /* 1 */ "#while 1 < 2 [",
-        /* 2 */ "foo ]"
+        /* 2 */ "bar",
+        /* 3 */ "foo ]"
     });
 
     CodeModel model(doc.get());
@@ -263,10 +264,13 @@ TEST(CodeModelTests, FindMatchingIndentBlockByPosition)
     res = model.findMatchingIndentBlock(globalPos(*doc, 1, 13));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 
-    res = model.findMatchingIndentBlock(globalPos(*doc, 2, 0));
+    res = model.findMatchingIndentBlock(globalPos(*doc, 2, 1));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(2));
 
-    res = model.findMatchingIndentBlock(globalPos(*doc, 2, 4));
+    res = model.findMatchingIndentBlock(globalPos(*doc, 3, 0));
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(3));
+
+    res = model.findMatchingIndentBlock(globalPos(*doc, 3, 4));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 
@@ -275,7 +279,8 @@ TEST(CodeModelTests, FindMatchingIndentBlockByBlock)
     auto doc = buildDocument({
         /* 0 */ "#if 5 > 2 { pagebreak() }",
         /* 1 */ "#while 1 < 2 [",
-        /* 2 */ "foo ]"
+        /* 2 */ "bar",
+        /* 3 */ "foo ]"
     });
 
     CodeModel model(doc.get());
@@ -291,6 +296,9 @@ TEST(CodeModelTests, FindMatchingIndentBlockByBlock)
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 
     res = model.findMatchingIndentBlock(doc->findBlockByNumber(2));
+    EXPECT_THAT(res.blockNumber(), ::testing::Eq(2));
+
+    res = model.findMatchingIndentBlock(doc->findBlockByNumber(3));
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 

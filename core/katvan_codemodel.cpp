@@ -340,9 +340,9 @@ QTextBlock CodeModel::findMatchingIndentBlock(QTextBlock block) const
     }
     Q_ASSERT(std::is_sorted(blockData->stateSpans().begin(), blockData->stateSpans().end()));
 
-    // Find the first relevant state span that intersects with the block
+    // Find the first relevant state span that ends in the block
     for (const StateSpan& span : blockData->stateSpans()) {
-        if (!isIndentingState(span.state)) {
+        if (!isIndentingState(span.state) || !span.endPos) {
             continue;
         }
 
