@@ -74,6 +74,7 @@ signals:
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
     void showEditorToolTip(QPoint pos, QString toolTip, QUrl detailsUrl);
+    void showEditorToolTipAtLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
 
 public slots:
@@ -86,6 +87,7 @@ public slots:
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column);
+    void searchDefinition(int line, int column);
     void discardLookupCaches();
 
 private slots:

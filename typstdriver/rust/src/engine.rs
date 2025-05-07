@@ -338,6 +338,16 @@ impl<'a> EngineImpl<'a> {
         })
     }
 
+    pub fn get_definition(&self, line: usize, column: usize) -> Result<ffi::DefinitionLocation> {
+        let main = self.world.main_source();
+        let cursor = main
+            .line_column_to_byte(line, column)
+            .context("No such position")?;
+
+        analysis::get_definition(&self.world, self.result.as_ref(), &main, cursor)
+            .context("Definition not found")
+    }
+
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
         self.world.set_allowed_paths(paths);
     }

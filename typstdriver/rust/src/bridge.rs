@@ -50,6 +50,7 @@ pub(crate) mod ffi {
         y_pts: f64,
     }
 
+    #[derive(Default)]
     struct SourcePosition {
         line: usize,
         column: usize,
@@ -63,6 +64,11 @@ pub(crate) mod ffi {
     struct Completions {
         from: SourcePosition,
         completions_json: String,
+    }
+
+    struct DefinitionLocation {
+        in_std: bool,
+        position: SourcePosition,
     }
 
     unsafe extern "C++" {
@@ -144,6 +150,8 @@ pub(crate) mod ffi {
         fn get_tooltip(&self, line: usize, column: usize) -> Result<ToolTip>;
 
         fn get_completions(&self, line: usize, column: usize) -> Result<Completions>;
+
+        fn get_definition(&self, line: usize, column: usize) -> Result<DefinitionLocation>;
 
         fn set_allowed_paths(&mut self, paths: Vec<String>);
 

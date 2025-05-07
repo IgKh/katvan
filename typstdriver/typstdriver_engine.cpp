@@ -231,7 +231,12 @@ void Engine::requestToolTip(int line, int column, QPoint pos)
         QString content = QString::fromUtf8(toolTip.content.data(), toolTip.content.size());
         QString url = QString::fromUtf8(toolTip.details_url.data(), toolTip.details_url.size());
 
-        Q_EMIT toolTipReady(pos, content, url);
+        if (!pos.isNull()) {
+            Q_EMIT toolTipReady(pos, content, url);
+        }
+        else {
+            Q_EMIT toolTipForLocation(line, column, content, url);
+        }
     }
     catch (rust::Error&) {
     }
@@ -254,6 +259,26 @@ void Engine::requestCompletions(int line, int column)
         // The completion manager is waiting for something, so even on failure
         // send an empty reply.
         Q_EMIT completionsReady(-1, -1, QByteArrayLiteral("[]"));
+    }
+}
+
+void Engine::searchDefinition(int line, int column)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        DefinitionLocation result = d_ptr->engine.value()->get_definition(
+            static_cast<size_t>(line),
+            static_cast<size_t>(column));
+
+        if (!result.in_std) {
+            Q_EMIT jumpToEditor(result.position.line, result.position.column);
+        }
+        else {
+            requestToolTip(line, column, QPoint());
+        }
+    }
+    catch (rust::Error& e) {
     }
 }
 

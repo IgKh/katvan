@@ -19,7 +19,7 @@ use pulldown_cmark::{Event, Tag};
 use typst::{
     foundations::{Func, Value},
     layout::PagedDocument,
-    syntax::{ast, LinkedNode, Side, Source},
+    syntax::{ast, LinkedNode, Side, Source}, WorldExt,
 };
 use typst_ide::{analyze_expr, IdeWorld, Tooltip};
 
@@ -34,7 +34,7 @@ pub fn get_tooltip(
     cursor: usize,
 ) -> Option<ffi::ToolTip> {
     get_documentation_tooltip(world, source, cursor).or_else(|| {
-        let tooltip = typst_ide::tooltip(world, document, source, cursor, Side::Before)?;
+        let tooltip = typst_ide::tooltip(world, document, source, cursor, Side::After)?;
 
         let content = match tooltip {
             Tooltip::Text(val) => val.to_string(),
@@ -154,4 +154,44 @@ fn get_reference_link(world: &dyn IdeWorld, f: &Func) -> Option<String> {
         "{}/reference/{}/{}",
         ONLINE_DOCS_PREFIX, categoy, name
     ))
+}
+
+pub fn get_definition(
+    world: &dyn IdeWorld,
+    document: Option<&PagedDocument>,
+    source: &Source,
+    cursor: usize,
+) -> Option<ffi::DefinitionLocation> {
+    let definition = typst_ide::definition(
+        world,
+        document,
+        source,
+        cursor,
+        Side::After,
+    )?;
+
+    match definition {
+        typst_ide::Definition::Std(_) => {
+            Some(ffi::DefinitionLocation {
+                in_std: true,
+                position: ffi::SourcePosition::default(),
+            })
+        }
+        typst_ide::Definition::Span(span) => {
+            let id = span.id().unwrap();
+            if id == source.id() {
+                let start = world.range(span)?.start;
+                Some(ffi::DefinitionLocation {
+                    in_std: false,
+                    position: ffi::SourcePosition {
+                        line: source.byte_to_line(start).unwrap(),
+                        column: source.byte_to_column(start).unwrap(),
+                    }
+                })
+            } else {
+                // TODO try to at least find the import in the current file
+                None
+            }
+        }
+    }
 }

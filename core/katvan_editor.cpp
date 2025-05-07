@@ -435,6 +435,21 @@ void Editor::showToolTip(QPoint widgetPos, const QString& text, const QUrl& deta
     EditorToolTip::show(mapToGlobal(widgetPos), this, text, detailsUrl);
 }
 
+void Editor::showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl)
+{
+    QTextCursor cursor = cursorAt(line, column);
+    if (cursor.isNull()) {
+        return;
+    }
+
+    d_pendingTooltipPos.reset();
+
+    QRect r = cursorRect(cursor);
+    QPoint globalPos = viewport()->mapToGlobal(r.topLeft());
+
+    EditorToolTip::show(globalPos, this, text, detailsUrl);
+}
+
 void Editor::handleToolTipEvent(QHelpEvent* event)
 {
     QPoint documentPoint = event->pos()

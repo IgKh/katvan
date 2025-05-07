@@ -64,6 +64,7 @@ private slots:
     void exportPdf();
     void goToLine();
     void jumpToPreview();
+    void goToDefintion();
     void showTypstDocs();
     void showAbout();
 

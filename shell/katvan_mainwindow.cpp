@@ -92,6 +92,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, &Editor::goToBlock);
     connect(d_driver, &TypstDriverWrapper::showEditorToolTip, d_editor, &Editor::showToolTip);
+    connect(d_driver, &TypstDriverWrapper::showEditorToolTipAtLocation, d_editor, &Editor::showToolTipAtLocation);
     connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
 
     d_backupHandler = new BackupHandler(d_editor, this);
@@ -284,13 +285,17 @@ void MainWindow::setupActions()
 
     goMenu->addSeparator();
 
-    QAction* gotoLineAction = goMenu->addAction(tr("&Go to Line..."), this, &MainWindow::goToLine);
+    QAction* gotoLineAction = goMenu->addAction(tr("Go to &Line..."), this, &MainWindow::goToLine);
     gotoLineAction->setShortcut(Qt::CTRL | Qt::Key_G);
     gotoLineAction->setMenuRole(QAction::NoRole);
 
     QAction* jumpToPreviewAction = goMenu->addAction(tr("&Jump to Preview"), this, &MainWindow::jumpToPreview);
     jumpToPreviewAction->setShortcut(Qt::CTRL | Qt::Key_J);
     jumpToPreviewAction->setMenuRole(QAction::NoRole);
+
+    QAction* gotoDefinitionAction = goMenu->addAction(tr("Go to &Definition"), this, &MainWindow::goToDefintion);
+    gotoDefinitionAction->setShortcut(Qt::Key_F12);
+    gotoDefinitionAction->setMenuRole(QAction::NoRole);
 
     /*
      * View Menu
@@ -846,6 +851,12 @@ void MainWindow::jumpToPreview()
 {
     QTextCursor cursor = d_editor->textCursor();
     d_driver->forwardSearch(cursor.blockNumber(), cursor.positionInBlock(), d_previewer->currentPage());
+}
+
+void MainWindow::goToDefintion()
+{
+    QTextCursor cursor = d_editor->textCursor();
+    d_driver->searchDefinition(cursor.blockNumber(), cursor.positionInBlock());
 }
 
 void MainWindow::showTypstDocs()

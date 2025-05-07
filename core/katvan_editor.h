@@ -70,6 +70,7 @@ public slots:
     void forceRehighlighting();
     void checkForModelines();
     void showToolTip(QPoint windowPos, const QString& text, const QUrl& detailsUrl);
+    void showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl);
 
 protected:
     bool event(QEvent* event) override;

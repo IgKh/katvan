@@ -126,6 +126,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::jumpToPreview, this, &TypstDriverWrapper::jumpToPreview);
     connect(d_engine, &typstdriver::Engine::jumpToEditor, this, &TypstDriverWrapper::jumpToEditor);
     connect(d_engine, &typstdriver::Engine::toolTipReady, this, &TypstDriverWrapper::showEditorToolTip);
+    connect(d_engine, &typstdriver::Engine::toolTipForLocation, this, &TypstDriverWrapper::showEditorToolTipAtLocation);
     connect(d_engine, &typstdriver::Engine::completionsReady, this, &TypstDriverWrapper::completionsReady);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
@@ -204,6 +205,11 @@ void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
 void TypstDriverWrapper::requestCompletions(int line, int column)
 {
     QMetaObject::invokeMethod(d_engine, "requestCompletions", line, column);
+}
+
+void TypstDriverWrapper::searchDefinition(int line, int column)
+{
+    QMetaObject::invokeMethod(d_engine, "searchDefinition", line, column);
 }
 
 void TypstDriverWrapper::discardLookupCaches()
