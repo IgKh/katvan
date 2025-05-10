@@ -37,7 +37,9 @@ class EditorToolTipFrame : public QWidget
 public:
     EditorToolTipFrame(QWidget* parent = nullptr);
 
-    void setContent(const QPoint& globalPos, const QString& text, const QUrl& link);
+    void setContent(const QString& text, const QUrl& link);
+    void setPlacement(const QPoint& globalMousePos);
+    void setPlacement(const QRect& globalCursorRect);
 
 public slots:
     void hideDeferred();
@@ -55,12 +57,14 @@ private:
     QTextBrowser* d_browser;
     QLabel* d_extraInfoLabel;
     QTimer* d_hideTimer;
+    bool d_byKeyboard;
 };
 
 class EditorToolTip
 {
 public:
-    static void show(const QPoint& globalPos, QWidget* parent, const QString& text, const QUrl& link = QUrl());
+    static void showByMouse(const QPoint& globalPos, QWidget* parent, const QString& text, const QUrl& link = QUrl());
+    static void showByKeyboard(const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link = QUrl());
     static void hide();
 
 private:

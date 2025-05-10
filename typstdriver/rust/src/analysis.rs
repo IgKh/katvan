@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use pulldown_cmark::{Event, Tag};
+use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
     foundations::{Func, Value},
     layout::PagedDocument,
-    syntax::{ast, LinkedNode, Side, Source}, WorldExt,
+    syntax::{ast, LinkedNode, Side, Source},
+    WorldExt,
 };
 use typst_ide::{analyze_expr, IdeWorld, Tooltip};
 
@@ -68,7 +69,7 @@ fn get_documentation_tooltip(
 
     let values = analyze_expr(world, ancesstor);
     if let [(Value::Func(f), _)] = values.as_slice() {
-        let content = process_docs_markdown(f.docs()?);
+        let content = process_docs_markdown(world, f.docs()?);
         let details_url = get_reference_link(world, f).unwrap_or_default();
 
         Some(ffi::ToolTip {
@@ -94,8 +95,12 @@ fn html_escape(value: &str) -> String {
     result
 }
 
-fn process_docs_markdown(docs: &str) -> String {
-    let parser = pulldown_cmark::Parser::new(docs);
+fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
+    let parser = pulldown_cmark::Parser::new_with_broken_link_callback(
+        docs,
+        pulldown_cmark::Options::empty(),
+        Some(|link: BrokenLink| process_docs_broken_link(world, link)),
+    );
 
     // Convert internal links into external links into the Typst online
     // documentation, and only use the overview part of the docs (until the
@@ -141,12 +146,29 @@ fn process_docs_markdown(docs: &str) -> String {
     html
 }
 
+fn process_docs_broken_link<'a>(
+    world: &dyn IdeWorld,
+    link: BrokenLink,
+) -> Option<(CowStr<'a>, CowStr<'a>)> {
+    if link.link_type != pulldown_cmark::LinkType::Shortcut {
+        return None;
+    }
+
+    let reference = link.reference.into_string();
+    let name = reference.trim_matches('`');
+
+    get_reference_link_by_name(world, name).map(move |url| (url.into(), reference.into()))
+}
+
 fn get_reference_link(world: &dyn IdeWorld, f: &Func) -> Option<String> {
     // Lookup function name in standard library
     // FIXME: This needs extra work for functions that live in a sub-module of
     // the stdlib, e.g. `pdf.embed` or `html.elem`. However there first needs to
     // be some fix to https://github.com/typst/typst/issues/6115
-    let name = f.name()?;
+    get_reference_link_by_name(world, f.name()?)
+}
+
+fn get_reference_link_by_name(world: &dyn IdeWorld, name: &str) -> Option<String> {
     let binding = world.library().global.scope().get(name)?;
     let categoy = binding.category()?.name();
 
@@ -162,21 +184,13 @@ pub fn get_definition(
     source: &Source,
     cursor: usize,
 ) -> Option<ffi::DefinitionLocation> {
-    let definition = typst_ide::definition(
-        world,
-        document,
-        source,
-        cursor,
-        Side::After,
-    )?;
+    let definition = typst_ide::definition(world, document, source, cursor, Side::After)?;
 
     match definition {
-        typst_ide::Definition::Std(_) => {
-            Some(ffi::DefinitionLocation {
-                in_std: true,
-                position: ffi::SourcePosition::default(),
-            })
-        }
+        typst_ide::Definition::Std(_) => Some(ffi::DefinitionLocation {
+            in_std: true,
+            position: ffi::SourcePosition::default(),
+        }),
         typst_ide::Definition::Span(span) => {
             let id = span.id().unwrap();
             if id == source.id() {
@@ -186,7 +200,7 @@ pub fn get_definition(
                     position: ffi::SourcePosition {
                         line: source.byte_to_line(start).unwrap(),
                         column: source.byte_to_column(start).unwrap(),
-                    }
+                    },
                 })
             } else {
                 // TODO try to at least find the import in the current file

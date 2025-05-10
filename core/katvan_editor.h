@@ -77,6 +77,9 @@ protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
@@ -111,6 +114,7 @@ private:
 private slots:
     void resetNavigationData();
     void popupInsertMenu();
+    void triggerToolTipByKeyboard();
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
     void updateLineNumberGutterWidth();
@@ -122,6 +126,7 @@ signals:
     void goForwardAvailable(bool available);
     void fontZoomFactorChanged(qreal factor);
     void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
+    void goToDefinitionRequested(int blockNumber, int charOffset);
 
 private:
     QWidget* d_leftLineNumberGutter;

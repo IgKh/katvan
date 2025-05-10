@@ -38,6 +38,7 @@ namespace katvan {
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
 static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::CTRL | Qt::Key_E);
+static constexpr QKeyCombination TOOLTIP_TRIGGER(Qt::CTRL | Qt::Key_K);
 
 static constexpr int MAX_LINE_FOR_MODELINES = 10;
 
@@ -125,6 +126,11 @@ Editor::Editor(Document* doc, QWidget* parent)
     autocompletePrompt->setKey(AUTOCOMPLETE_PROMPT);
     autocompletePrompt->setContext(Qt::WidgetShortcut);
     connect(autocompletePrompt, &QShortcut::activated, d_completionManager, &CompletionManager::startCompletion);
+
+    QShortcut* toolTipTrigger = new QShortcut(this);
+    toolTipTrigger->setKey(TOOLTIP_TRIGGER);
+    toolTipTrigger->setContext(Qt::WidgetShortcut);
+    connect(toolTipTrigger, &QShortcut::activated, this, &Editor::triggerToolTipByKeyboard);
 
     QTimer::singleShot(0, this, &Editor::updateEditorTheme);
 }
@@ -432,7 +438,7 @@ void Editor::showToolTip(QPoint widgetPos, const QString& text, const QUrl& deta
     }
     d_pendingTooltipPos.reset();
 
-    EditorToolTip::show(mapToGlobal(widgetPos), this, text, detailsUrl);
+    EditorToolTip::showByMouse(mapToGlobal(widgetPos), this, text, detailsUrl);
 }
 
 void Editor::showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl)
@@ -445,9 +451,25 @@ void Editor::showToolTipAtLocation(int line, int column, const QString& text, co
     d_pendingTooltipPos.reset();
 
     QRect r = cursorRect(cursor);
-    QPoint globalPos = viewport()->mapToGlobal(r.topLeft());
+    r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
 
-    EditorToolTip::show(globalPos, this, text, detailsUrl);
+    EditorToolTip::showByKeyboard(r, this, text, detailsUrl);
+}
+
+void Editor::triggerToolTipByKeyboard()
+{
+    QTextCursor cursor = textCursor();
+
+    QString tooltip = predefinedTooltipAtPosition(cursor.position());
+    if (!tooltip.isEmpty()) {
+        QRect r = cursorRect(cursor);
+        r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
+
+        EditorToolTip::showByKeyboard(r, this, tooltip);
+        return;
+    }
+
+    Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock(), QPoint());
 }
 
 void Editor::handleToolTipEvent(QHelpEvent* event)
@@ -465,7 +487,7 @@ void Editor::handleToolTipEvent(QHelpEvent* event)
 
     QString tooltip = predefinedTooltipAtPosition(offset);
     if (!tooltip.isEmpty()) {
-        EditorToolTip::show(event->globalPos(), this, tooltip);
+        EditorToolTip::showByMouse(event->globalPos(), this, tooltip);
         return;
     }
 
@@ -887,6 +909,51 @@ void Editor::keyReleaseEvent(QKeyEvent* event)
         return;
     }
     QTextEdit::keyReleaseEvent(event);
+}
+
+void Editor::mouseMoveEvent(QMouseEvent* event)
+{
+    if (event->modifiers() == Qt::ControlModifier) {
+        if (viewport()->cursor().shape() != Qt::PointingHandCursor) {
+            viewport()->setCursor(Qt::PointingHandCursor);
+        }
+    }
+    else {
+        if (viewport()->cursor().shape() != Qt::IBeamCursor) {
+            viewport()->setCursor(Qt::IBeamCursor);
+        }
+    }
+    QTextEdit::mouseMoveEvent(event);
+}
+
+void Editor::mousePressEvent(QMouseEvent* event)
+{
+    if (event->modifiers() != Qt::ControlModifier || event->button() != Qt::LeftButton) {
+        QTextEdit::mousePressEvent(event);
+    }
+    // Swallow event - will do the thing on mouse release
+}
+
+void Editor::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (event->modifiers() != Qt::ControlModifier || event->button() != Qt::LeftButton) {
+        QTextEdit::mousePressEvent(event);
+        return;
+    }
+
+    QPoint documentPoint = event->pos()
+        + QPoint(horizontalScrollBar()->value(), verticalScrollBar()->value());
+
+    int offset = document()->documentLayout()->hitTest(documentPoint, Qt::ExactHit);
+    if (offset < 0) {
+        event->ignore();
+        return;
+    }
+
+    QTextCursor cursor(document());
+    cursor.setPosition(offset);
+
+    Q_EMIT goToDefinitionRequested(cursor.blockNumber(), cursor.positionInBlock());
 }
 
 void Editor::wheelEvent(QWheelEvent* event)

@@ -112,6 +112,7 @@ void MainWindow::setupUI()
 
     d_editor = new Editor(d_document);
     connect(d_editor, &Editor::toolTipRequested, d_driver, &TypstDriverWrapper::requestToolTip);
+    connect(d_editor, &Editor::goToDefinitionRequested, d_driver, &TypstDriverWrapper::searchDefinition);
     connect(d_editor->completionManager(), &CompletionManager::completionsRequested, d_driver, &TypstDriverWrapper::requestCompletions);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor, &Editor::fontZoomFactorChanged, this, &MainWindow::editorFontZoomFactorChanged);
