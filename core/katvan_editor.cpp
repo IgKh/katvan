@@ -874,7 +874,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
     }
 #endif
 
-    bool overrideMoveStyle = event->modifiers() == Qt::AltModifier && (
+    bool overrideMoveStyle = event->modifiers() == (Qt::ControlModifier | Qt::AltModifier) && (
         event->key() == Qt::Key_Up ||
         event->key() == Qt::Key_Down ||
         event->key() == Qt::Key_Left ||
