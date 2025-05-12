@@ -159,7 +159,7 @@ private:
     };
     std::optional<EditorLocation> d_currentLandmark;
     QList<EditorLocation> d_backLandmarks;
-    QList<EditorLocation> d_fowardLandmarks;
+    QList<EditorLocation> d_forwardLandmarks;
 
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;

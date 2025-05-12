@@ -178,7 +178,7 @@ void Engine::forwardSearch(int line, int column, int currentPreviewPage)
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        rust::Vec<PreviewPosition> result = d_ptr->engine.value()->foward_search(
+        rust::Vec<PreviewPosition> result = d_ptr->engine.value()->forward_search(
             static_cast<size_t>(line),
             static_cast<size_t>(column));
 

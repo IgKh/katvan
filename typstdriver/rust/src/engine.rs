@@ -259,7 +259,7 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn foward_search(&self, line: usize, column: usize) -> Result<Vec<ffi::PreviewPosition>> {
+    pub fn forward_search(&self, line: usize, column: usize) -> Result<Vec<ffi::PreviewPosition>> {
         let document = self.result.as_ref().context("Invalid state")?;
         let main = self.world.main_source();
 

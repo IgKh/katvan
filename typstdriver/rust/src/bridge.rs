@@ -156,7 +156,7 @@ pub(crate) mod ffi {
 
         fn export_pdf(&self, path: &str) -> Result<bool>;
 
-        fn foward_search(&self, line: usize, column: usize) -> Result<Vec<PreviewPosition>>;
+        fn forward_search(&self, line: usize, column: usize) -> Result<Vec<PreviewPosition>>;
 
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;
 
