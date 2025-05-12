@@ -25,6 +25,7 @@ set(SOURCES
     katvan_editortheme.cpp
     katvan_editortooltip.cpp
     katvan_highlighter.cpp
+    katvan_outlinemodel.cpp
     katvan_parsing.cpp
     katvan_previewerview.cpp
     katvan_spellchecker.cpp

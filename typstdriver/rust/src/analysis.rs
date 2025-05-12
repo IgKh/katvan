@@ -17,10 +17,11 @@
  */
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
-    foundations::{Func, Value},
+    foundations::{Func, NativeElement, StyleChain, Value},
     layout::PagedDocument,
-    syntax::{ast, LinkedNode, Side, Source},
-    WorldExt,
+    model::HeadingElem,
+    syntax::{ast, LinkedNode, Side, Source, Span, SyntaxKind},
+    Document, WorldExt,
 };
 use typst_ide::{analyze_expr, IdeWorld, Tooltip};
 
@@ -208,4 +209,58 @@ pub fn get_definition(
             }
         }
     }
+}
+
+pub fn get_outline(document: &PagedDocument, source: &Source) -> Vec<ffi::OutlineEntry> {
+    let introspector = document.introspector();
+    let headings = introspector.query(&HeadingElem::elem().select());
+    let styles = StyleChain::default();
+
+    headings
+        .iter()
+        .map(|content| content.to_packed::<HeadingElem>().unwrap())
+        .filter(|heading| heading.outlined(styles))
+        .map(|heading| {
+            let position = find_text_position_for_span(source, heading.span());
+
+            ffi::OutlineEntry {
+                level: heading.resolve_level(styles).into(),
+                title: heading.body.plain_text().to_string(),
+                has_position: position.is_some(),
+                position: position.unwrap_or_default(),
+            }
+        })
+        .collect()
+}
+
+fn find_text_position_for_span(source: &Source, span: Span) -> Option<ffi::SourcePosition> {
+    // When we want a source position that will be jumped to for a span, prefer
+    // to take the start of the first text node if any, since jumping from cursor
+    // only works on text.
+    let text_span = LinkedNode::new(source.root())
+        .find(span)
+        .and_then(find_first_text_node)
+        .map(|node| node.span());
+
+    let span = text_span.unwrap_or(span);
+
+    source.range(span).and_then(|span| {
+        Some(ffi::SourcePosition {
+            line: source.byte_to_line(span.start)?,
+            column: source.byte_to_column(span.start)?,
+        })
+    })
+}
+
+fn find_first_text_node<'a>(node: LinkedNode<'a>) -> Option<LinkedNode<'a>> {
+    if node.kind() == SyntaxKind::Text {
+        return Some(node.clone());
+    }
+
+    for child in node.children() {
+        if let Some(node) = find_first_text_node(child) {
+            return Some(node);
+        }
+    }
+    None
 }

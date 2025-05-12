@@ -5,6 +5,7 @@ set(SOURCES
     katvan_compileroutput.cpp
     katvan_infobar.cpp
     katvan_mainwindow.cpp
+    katvan_outlineview.cpp
     katvan_previewer.cpp
     katvan_recentfiles.cpp
     katvan_searchbar.cpp

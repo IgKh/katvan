@@ -33,6 +33,7 @@ TypstDriverWrapper::TypstDriverWrapper(QObject* parent)
     , d_engine(nullptr)
     , d_status(Status::INITIALIZING)
     , d_settings(std::make_shared<typstdriver::TypstCompilerSettings>())
+    , d_lastOutlineFingerprint(0)
 {
     d_thread = new QThread(this);
     d_thread->setObjectName("TypstDriverThread");
@@ -128,6 +129,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::toolTipReady, this, &TypstDriverWrapper::showEditorToolTip);
     connect(d_engine, &typstdriver::Engine::toolTipForLocation, this, &TypstDriverWrapper::showEditorToolTipAtLocation);
     connect(d_engine, &typstdriver::Engine::completionsReady, this, &TypstDriverWrapper::completionsReady);
+    connect(d_engine, &typstdriver::Engine::outlineUpdated, this, &TypstDriverWrapper::outlineUpdatedInternal);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
     QMetaObject::invokeMethod(d_engine, "init");
@@ -221,12 +223,23 @@ void TypstDriverWrapper::compilationFinished()
 {
     d_status = d_diagnosticsModel->impliedStatus();
     Q_EMIT compilationStatusChanged();
+
+    if (d_status == Status::SUCCESS || d_status == Status::SUCCESS_WITH_WARNINGS) {
+        // TODO: Possibly throttle this
+        QMetaObject::invokeMethod(d_engine, "requestOutline", d_lastOutlineFingerprint);
+    }
 }
 
 void TypstDriverWrapper::pageRenderComplete(int page, QImage renderedPage)
 {
     d_pendingPagesToRender.remove(page);
     Q_EMIT pageRendered(page, renderedPage);
+}
+
+void TypstDriverWrapper::outlineUpdatedInternal(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline)
+{
+    d_lastOutlineFingerprint = fingerprint;
+    Q_EMIT outlineUpdated(outline);
 }
 
 }

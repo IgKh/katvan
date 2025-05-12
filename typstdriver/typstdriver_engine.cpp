@@ -17,6 +17,7 @@
  */
 #include "typstdriver_engine.h"
 #include "typstdriver_logger.h"
+#include "typstdriver_outlinenode.h"
 
 #include "typstdriver_ffi/bridge.h"
 
@@ -278,7 +279,26 @@ void Engine::searchDefinition(int line, int column)
             requestToolTip(line, column, QPoint());
         }
     }
-    catch (rust::Error& e) {
+    catch (rust::Error&) {
+    }
+}
+
+void Engine::requestOutline(quint64 previousFingerprint)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        Outline outline = d_ptr->engine.value()->get_outline();
+        if (outline.fingerprint == previousFingerprint) {
+            return;
+        }
+
+        std::span entries { outline.entries.data(), outline.entries.size() };
+        OutlineNode* tree = new OutlineNode(entries);
+
+        Q_EMIT outlineUpdated(outline.fingerprint, tree);
+    }
+    catch (rust::Error&) {
     }
 }
 

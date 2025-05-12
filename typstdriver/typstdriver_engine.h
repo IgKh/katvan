@@ -31,6 +31,7 @@
 namespace katvan::typstdriver {
 
 class Logger;
+class OutlineNode;
 class PackageManager;
 
 struct TYPSTDRIVER_EXPORT PreviewPageData
@@ -61,6 +62,7 @@ signals:
     void toolTipReady(QPoint pos, QString toolTip, QUrl detailsUrl);
     void toolTipForLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
+    void outlineUpdated(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline);
 
 public slots:
     void init();
@@ -74,6 +76,7 @@ public slots:
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column);
     void searchDefinition(int line, int column);
+    void requestOutline(quint64 previousFingerprint);
     void setAllowedPaths(const QStringList& allowedPaths);
     void discardLookupCaches();
 

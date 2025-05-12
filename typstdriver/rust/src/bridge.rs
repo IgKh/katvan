@@ -50,7 +50,7 @@ pub(crate) mod ffi {
         y_pts: f64,
     }
 
-    #[derive(Default)]
+    #[derive(Default, Hash)]
     struct SourcePosition {
         line: usize,
         column: usize,
@@ -69,6 +69,19 @@ pub(crate) mod ffi {
     struct DefinitionLocation {
         in_std: bool,
         position: SourcePosition,
+    }
+
+    #[derive(Hash)]
+    struct OutlineEntry {
+        level: usize,
+        title: String,
+        has_position: bool,
+        position: SourcePosition,
+    }
+
+    struct Outline {
+        entries: Vec<OutlineEntry>,
+        fingerprint: u64,
     }
 
     unsafe extern "C++" {
@@ -152,6 +165,8 @@ pub(crate) mod ffi {
         fn get_completions(&self, line: usize, column: usize) -> Result<Completions>;
 
         fn get_definition(&self, line: usize, column: usize) -> Result<DefinitionLocation>;
+
+        fn get_outline(&self) -> Result<Outline>;
 
         fn set_allowed_paths(&mut self, paths: Vec<String>);
 

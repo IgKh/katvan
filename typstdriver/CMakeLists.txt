@@ -52,6 +52,7 @@ add_library(typstdriver SHARED
     typstdriver_compilersettings.cpp
     typstdriver_engine.cpp
     typstdriver_logger.cpp
+    typstdriver_outlinenode.cpp
     typstdriver_packagemanager.cpp
 )
 

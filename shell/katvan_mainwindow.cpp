@@ -19,6 +19,7 @@
 #include "katvan_compileroutput.h"
 #include "katvan_infobar.h"
 #include "katvan_mainwindow.h"
+#include "katvan_outlineview.h"
 #include "katvan_previewer.h"
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
@@ -94,6 +95,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::showEditorToolTip, d_editor, &Editor::showToolTip);
     connect(d_driver, &TypstDriverWrapper::showEditorToolTipAtLocation, d_editor, &Editor::showToolTipAtLocation);
     connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
+    connect(d_driver, &TypstDriverWrapper::outlineUpdated, d_outlineView, &OutlineView::outlineUpdated);
 
     d_backupHandler = new BackupHandler(d_editor, this);
     connect(d_document, &Document::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
@@ -142,6 +144,9 @@ void MainWindow::setupUI()
     d_compilerOutput = new CompilerOutput();
     connect(d_compilerOutput, &CompilerOutput::goToPosition, d_editor, &Editor::goToBlock);
 
+    d_outlineView = new OutlineView();
+    connect(d_outlineView, &OutlineView::goToPosition, d_editor, &Editor::goToBlock);
+
     setDockOptions(QMainWindow::AnimatedDocks);
 
     d_previewDock = new QDockWidget(tr("Preview"));
@@ -156,6 +161,11 @@ void MainWindow::setupUI()
     d_compilerOutputDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     d_compilerOutputDock->setWidget(d_compilerOutput);
     addDockWidget(Qt::RightDockWidgetArea, d_compilerOutputDock);
+
+    d_outlineDock = new QDockWidget(tr("Outline"));
+    d_outlineDock->setObjectName("outlineDockPanel");
+    d_outlineDock->setWidget(d_outlineView);
+    addDockWidget(Qt::LeftDockWidgetArea, d_outlineDock);
 }
 
 void MainWindow::setupActions()
@@ -322,6 +332,7 @@ void MainWindow::setupActions()
 
     viewMenu->addAction(d_previewDock->toggleViewAction());
     viewMenu->addAction(d_compilerOutputDock->toggleViewAction());
+    viewMenu->addAction(d_outlineDock->toggleViewAction());
 
     /*
      * Tools Menu

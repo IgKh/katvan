@@ -105,7 +105,7 @@ impl<'a> EngineImpl<'a> {
                     page_num: page.number,
                     width_pts: page.frame.width().abs().to_pt(),
                     height_pts: page.frame.height().abs().to_pt(),
-                    fingerprint: hash_frame(&page.frame),
+                    fingerprint: calc_fingerprint(&page.frame),
                 })
                 .collect();
 
@@ -348,6 +348,19 @@ impl<'a> EngineImpl<'a> {
             .context("Definition not found")
     }
 
+    pub fn get_outline(&self) -> Result<ffi::Outline> {
+        let doc = self.result.as_ref().context("Not compiled yet")?;
+        let main = self.world.main_source();
+
+        let entries = analysis::get_outline(doc, &main);
+        let fingerprint = calc_fingerprint(&entries);
+
+        Ok(ffi::Outline {
+            entries,
+            fingerprint,
+        })
+    }
+
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
         self.world.set_allowed_paths(paths);
     }
@@ -370,8 +383,8 @@ fn position_to_file_location(
     })
 }
 
-fn hash_frame(frame: &typst::layout::Frame) -> u64 {
+fn calc_fingerprint<H: Hash>(item: &H) -> u64 {
     let mut hasher = DefaultHasher::new();
-    frame.hash(&mut hasher);
+    item.hash(&mut hasher);
     hasher.finish()
 }

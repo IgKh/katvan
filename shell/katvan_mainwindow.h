@@ -33,6 +33,7 @@ namespace katvan
 class BackupHandler;
 class CompilerOutput;
 class InfoBar;
+class OutlineView;
 class Previewer;
 class RecentFiles;
 class SearchBar;
@@ -110,6 +111,7 @@ private:
     SearchBar* d_searchBar;
     Previewer* d_previewer;
     CompilerOutput* d_compilerOutput;
+    OutlineView* d_outlineView;
 
     SettingsDialog* d_settingsDialog;
 
@@ -124,6 +126,7 @@ private:
 
     QDockWidget* d_previewDock;
     QDockWidget* d_compilerOutputDock;
+    QDockWidget* d_outlineDock;
 };
 
 }
