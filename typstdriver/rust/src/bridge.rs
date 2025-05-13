@@ -29,6 +29,13 @@ pub(crate) mod ffi {
         NetworkError,
         IoError,
         ArchiveError,
+        ParseError,
+    }
+
+    struct PackageEntry {
+        name: String,
+        version: String,
+        description: String,
     }
 
     struct PreviewPageDataInternal {
@@ -131,6 +138,9 @@ pub(crate) mod ffi {
             name: &str,
             version: &str,
         ) -> String;
+
+        #[rust_name = "get_preview_packages_listing"]
+        fn getPreviewPackagesListing(self: Pin<&mut PackageManagerProxy>) -> Vec<PackageEntry>;
 
         fn error(&self) -> PackageManagerError;
 

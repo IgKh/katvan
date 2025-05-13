@@ -44,7 +44,7 @@ public:
     bool isRightToLeft() const;
 
 public slots:
-    void setOutline(typstdriver::OutlineNode* outline);
+    void setOutline(katvan::typstdriver::OutlineNode* outline);
 
 private:
     typstdriver::OutlineNode* indexToNode(const QModelIndex& index) const;

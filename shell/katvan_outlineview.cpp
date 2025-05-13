@@ -30,7 +30,7 @@ OutlineView::OutlineView(QWidget* parent)
     setHeaderHidden(true);
     setUniformRowHeights(true);
     setExpandsOnDoubleClick(false);
-    //setRootIsDecorated(false);
+    setSelectionMode(QAbstractItemView::NoSelection);
 
     connect(this, &QTreeView::activated, this, &OutlineView::itemActivated);
 }

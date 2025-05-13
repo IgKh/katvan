@@ -21,6 +21,7 @@
 
 namespace katvan::typstdriver {
 
+class PackageEntry;
 class PackageManager;
 
 enum class PackageManagerError : ::std::uint8_t;
@@ -34,6 +35,8 @@ public:
         rust::Str packageNamespace,
         rust::Str name,
         rust::Str version);
+
+    rust::Vec<PackageEntry> getPreviewPackagesListing();
 
     PackageManagerError error() const;
     rust::String errorMessage() const;

@@ -20,6 +20,7 @@
 #include "typstdriver_export.h"
 #include "typstdriver_logger.h"
 
+#include <QDir>
 #include <QMutex>
 #include <QObject>
 #include <QString>
@@ -27,7 +28,7 @@
 #include <memory>
 
 QT_BEGIN_NAMESPACE
-class QDir;
+class QDateTime;
 class QNetworkAccessManager;
 QT_END_NAMESPACE
 
@@ -39,6 +40,12 @@ struct TYPSTDRIVER_EXPORT PackageManagerStatistics {
     qsizetype totalSize;
     qsizetype numPackages;
     qsizetype numPackageVersions;
+};
+
+struct TYPSTDRIVER_EXPORT PackageDetails {
+    QString name;
+    QString version;
+    QString description;
 };
 
 class TYPSTDRIVER_EXPORT PackageManager : public QObject
@@ -53,6 +60,13 @@ public:
         NETWORK_ERROR,
         IO_ERROR,
         ARCHIVE_ERROR,
+        PARSE_ERROR,
+    };
+
+    enum class DownloadResult {
+        SUCCESS,
+        NOT_MODIFIED,
+        FAILED,
     };
 
     static void setDownloadCacheLocation(const QString& dirPath);
@@ -68,12 +82,19 @@ public:
 
     QString getPackageLocalPath(const QString& packageNamespace, const QString& name, const QString& version);
 
+    QList<PackageDetails> getPreviewPackagesListing();
+
 private:
     QString getPreviewPackageLocalPath(const QString& packageName, const QString& version);
 
     QString getLocalPackagePath(const QString& packageNamespace, const QString& packageName, const QString& version);
 
-    bool downloadFile(const QString& url, const QString& targetPath);
+    QDir ensurePreviewCacheDir();
+
+    QList<PackageDetails> parsePackageIndex(const QByteArray& indexData);
+
+    DownloadResult downloadFile(const QString& url, const QString& targetPath, const QDateTime& lastModified);
+    DownloadResult downloadFile(const QString& url, QIODevice* target, const QDateTime& lastModified);
 
     bool extractArchive(const QString& archivePath, const QDir& targetDir);
 

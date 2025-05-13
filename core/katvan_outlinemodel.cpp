@@ -135,7 +135,8 @@ bool OutlineModel::isRightToLeft() const
 
     int rtlCount = 0, ltrCount = 0;
 
-    for (auto* child : d_root->children()) {
+    const QList<typstdriver::OutlineNode*> children = d_root->children();
+    for (const auto* child : children) {
         if (child->title().isRightToLeft()) {
             rtlCount++;
         }

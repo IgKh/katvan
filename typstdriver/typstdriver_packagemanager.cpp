@@ -21,9 +21,13 @@
 
 #include "typstdriver_ffi/bridge.h"
 
-#include <QDir>
+#include <QBuffer>
+#include <QDateTime>
 #include <QDirIterator>
 #include <QEventLoop>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QSet>
@@ -33,6 +37,8 @@
 #include <archive_entry.h>
 
 namespace katvan::typstdriver {
+
+static constexpr QLatin1StringView PREVIEW_REPOSITORY_BASE("https://packages.typst.org/preview/");
 
 QString PackageManager::s_downloadCacheLocation;
 
@@ -125,11 +131,7 @@ QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QS
         return QString();
     }
 
-    QDir cacheDir = downloadCacheDirectory() + "/preview";
-    if (!cacheDir.exists()) {
-        cacheDir.mkpath(".");
-    }
-
+    QDir cacheDir = ensurePreviewCacheDir();
     QDir packageDir = cacheDir.filesystemPath() / qPrintable(name) / qPrintable(version);
     if (packageDir.exists()) {
         return packageDir.path();
@@ -139,8 +141,9 @@ QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QS
     QString archivePath = cacheDir.filePath(archiveName);
 
     if (!QFile::exists(archivePath)) {
-        QString url = "https://packages.typst.org/preview/" + archiveName;
-        if (!downloadFile(url, archivePath)) {
+        QString url = PREVIEW_REPOSITORY_BASE + archiveName;
+        DownloadResult result = downloadFile(url, archivePath, QDateTime());
+        if (result != DownloadResult::SUCCESS) {
             return QString();
         }
     }
@@ -173,24 +176,123 @@ QString PackageManager::getLocalPackagePath(const QString& packageNamespace, con
     return QString();
 }
 
-bool PackageManager::downloadFile(const QString& url, const QString& targetPath)
+QList<PackageDetails> PackageManager::getPreviewPackagesListing()
 {
-    d_logger->logNote(QStringLiteral("downloading %1 ...").arg(url));
+    QDir cacheDir = ensurePreviewCacheDir();
+    QString indexPath = cacheDir.filePath("index.json");
 
+    QDateTime lastModified;
+    QFileInfo info { indexPath };
+    if (info.exists()) {
+        lastModified = info.lastModified().toUTC();
+    }
+
+    QByteArray data;
+    QBuffer buffer(&data);
+
+    //DownloadResult result = downloadFile(PREVIEW_REPOSITORY_BASE + "index.json", &buffer, lastModified);
+    DownloadResult result = DownloadResult::NOT_MODIFIED; // FIXME
+    if (result == DownloadResult::FAILED) {
+        return QList<PackageDetails>();
+    }
+
+    QFile file(indexPath);
+    if (!file.open(QIODevice::ReadWrite)) {
+        d_error = Error::IO_ERROR;
+        d_errorMessage = QStringLiteral("failed to open %1: %2").arg(indexPath, file.errorString());
+        return QList<PackageDetails>();
+    }
+
+    if (result == DownloadResult::SUCCESS) {
+        // First time, or changed since last download. Save to disk.
+        file.write(data);
+    }
+    else {
+        Q_ASSERT(result == DownloadResult::NOT_MODIFIED);
+
+        // Not changed since last download. The buffer is empty, so read from disk.
+        data = file.readAll();
+    }
+
+    return parsePackageIndex(data);
+}
+
+QList<PackageDetails> PackageManager::parsePackageIndex(const QByteArray& indexData)
+{
+    QList<PackageDetails> result;
+
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(indexData, &error);
+    if (error.error != QJsonParseError::NoError) {
+        d_error = Error::PARSE_ERROR;
+        d_errorMessage = QStringLiteral("failed to parse package index: %1").arg(error.errorString());
+        return result;
+    }
+
+    if (!doc.isArray()) {
+        qWarning() << "Package index JSON is not an array";
+        return result;
+    }
+
+    const QJsonArray packages = doc.array();
+    for (const auto& packageJson : packages) {
+        if (!packageJson.isObject()) {
+            continue;
+        }
+        QJsonObject obj = packageJson.toObject();
+
+        PackageDetails details;
+        details.name = obj["name"].toString();
+        details.version = obj["version"].toString();
+        details.description = obj["description"].toString();
+
+        result.append(std::move(details));
+    }
+    return result;
+}
+
+QDir PackageManager::ensurePreviewCacheDir()
+{
+    QDir cacheDir = downloadCacheDirectory() + "/preview";
+    if (!cacheDir.exists()) {
+        cacheDir.mkpath(".");
+    }
+    return cacheDir;
+}
+
+PackageManager::DownloadResult PackageManager::downloadFile(const QString& url, const QString& targetPath, const QDateTime& lastModified)
+{
     QFile file(targetPath);
     if (!file.open(QIODevice::WriteOnly)) {
         d_error = Error::IO_ERROR;
         d_errorMessage = QStringLiteral("failed to create %1: %2").arg(targetPath, file.errorString());
-        return false;
+        return DownloadResult::FAILED;
     }
+
+    DownloadResult result = downloadFile(url, &file, lastModified);
+    if (result == DownloadResult::FAILED) {
+        file.remove();
+    }
+    return result;
+}
+
+PackageManager::DownloadResult PackageManager::downloadFile(const QString& url, QIODevice* target, const QDateTime& lastModified)
+{
+    d_logger->logNote(QStringLiteral("downloading %1 ...").arg(url));
 
     QNetworkRequest request;
     request.setUrl(QUrl(url));
     request.setHeader(QNetworkRequest::UserAgentHeader, "Katvan/0");
 
+    if (!lastModified.isNull()) {
+        // Wed, 21 Oct 2015 07:28:00 GMT
+        QString since = lastModified.toString(QStringLiteral("ddd, dd MMM yyyy HH:mm:ss GMT"));
+        request.setHeader(QNetworkRequest::IfModifiedSinceHeader, since);
+    }
+
     std::unique_ptr<QNetworkReply> reply { d_networkManager->get(request) };
-    connect(reply.get(), &QNetworkReply::readyRead, this, [&file, &reply]() {
-        file.write(reply->readAll());
+    connect(reply.get(), &QNetworkReply::readyRead, this, [&target, &reply]() {
+        target->write(reply->readAll());
     });
 
     QEventLoop loop;
@@ -205,13 +307,17 @@ bool PackageManager::downloadFile(const QString& url, const QString& targetPath)
             d_error = Error::NETWORK_ERROR;
             d_errorMessage = QStringLiteral("failed to download %1: %2").arg(url, reply->errorString());
         }
+        return DownloadResult::FAILED;
+    }
 
-        file.remove();
-        return false;
+    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (!lastModified.isNull() && statusCode == 304) {
+        d_logger->logNote("no changes");
+        return DownloadResult::NOT_MODIFIED;
     }
 
     d_logger->logNote("download complete");
-    return true;
+    return DownloadResult::SUCCESS;
 }
 
 static int copyArchiveData(struct archive* src, struct archive* dst)
@@ -312,6 +418,24 @@ rust::String PackageManagerProxy::getPackageLocalPath(
     return rust::String(qUtf8Printable(result));
 }
 
+rust::Vec<PackageEntry> PackageManagerProxy::getPreviewPackagesListing()
+{
+    QList<PackageDetails> packages = d_manager.getPreviewPackagesListing();
+
+    rust::Vec<PackageEntry> result;
+    result.reserve(packages.size());
+
+    for (const auto& package : packages) {
+        result.push_back(PackageEntry {
+            rust::String(qUtf8Printable(package.name)),
+            rust::String(qUtf8Printable(package.version)),
+            rust::String(qUtf8Printable(package.description))
+        });
+    }
+
+    return result;
+}
+
 PackageManagerError PackageManagerProxy::error() const
 {
     switch (d_manager.error()) {
@@ -321,6 +445,7 @@ PackageManagerError PackageManagerProxy::error() const
         case PackageManager::Error::NETWORK_ERROR: return PackageManagerError::NetworkError;
         case PackageManager::Error::IO_ERROR: return PackageManagerError::IoError;
         case PackageManager::Error::ARCHIVE_ERROR: return PackageManagerError::ArchiveError;
+        case PackageManager::Error::PARSE_ERROR: return PackageManagerError::ParseError;
     }
     Q_UNREACHABLE();
 }

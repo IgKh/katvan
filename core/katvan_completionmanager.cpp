@@ -38,6 +38,7 @@
  * {"apply":null,"detail":null,"kind":{"symbol":"/"},"label":"slash"}
  * {"apply":null,"detail":"op(text: [dim], limits: false)","kind":"constant","label":"dim"}
  * {"apply":"${x}^${2:2}","detail":"Sets something in superscript.","kind":"syntax","label":"superscript"}
+ * {"apply":"@preview/wordometer:0.1.4","detail":"Word counts and document statistics.","kind":"package","label":"@preview/wordometer:0.1.4"}
  */
 
 namespace katvan {
@@ -98,6 +99,9 @@ QVariant CompletionListModel::data(const QModelIndex& index, int role) const
             else if (kind == "param" || kind == "constant") {
                 return QIcon::fromTheme("code-variable");
             }
+            else if (kind == "package") {
+                return QIcon::fromTheme("package");
+            }
         }
         else if (obj["kind"].isObject()) {
             QJsonObject kind = obj["kind"].toObject();
@@ -127,11 +131,39 @@ CompletionSuggestionDelegate::CompletionSuggestionDelegate(QObject* parent)
     d_labelFont.setWeight(QFont::DemiBold);
 }
 
+static void createLayout(QTextLayout& layout, const QString& text, const QFont& font, bool forPainting)
+{
+    static constexpr int MAX_WIDTH = 500;
+
+    layout.setText(text);
+    layout.setFont(font);
+    if (forPainting) {
+        layout.setCacheEnabled(true);
+    }
+
+    qreal height = 0;
+
+    layout.beginLayout();
+    while (true) {
+        QTextLine tl = layout.createLine();
+        if (!tl.isValid()) {
+            break;
+        }
+        tl.setLineWidth(MAX_WIDTH);
+        tl.setPosition(QPointF(0, height));
+        height += tl.height();
+    }
+    layout.endLayout();
+}
+
 void CompletionSuggestionDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QString label = index.data(Qt::DisplayRole).toString();
     QString detail = index.data(COMPLETION_DETAIL_ROLE).toString();
     QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
+
+    QTextLayout detailLayout;
+    createLayout(detailLayout, detail, option.font, true);
 
     painter->save();
     painter->setClipRect(option.rect);
@@ -165,8 +197,7 @@ void CompletionSuggestionDelegate::paint(QPainter* painter, const QStyleOptionVi
     painter->setFont(d_labelFont);
     painter->drawText(labelRect, label);
 
-    painter->setFont(option.font);
-    painter->drawText(detailRect, detail);
+    detailLayout.draw(painter, detailRect.topLeft());
 
     painter->restore();
 }
@@ -177,15 +208,17 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
     QString detail = index.data(COMPLETION_DETAIL_ROLE).toString();
 
     QFontMetrics labelMetrics { d_labelFont };
-    QFontMetrics detailMetrics = option.fontMetrics;
+
+    QTextLayout layout;
+    createLayout(layout, detail, option.font, false);
 
     int width = labelMetrics.horizontalAdvance(label);
     int height = labelMetrics.height();
 
-    const QStringList lines = detail.split(QChar::LineFeed);
-    for (const QString& line : lines) {
-        width = qMax(width, detailMetrics.horizontalAdvance(line));
-        height += detailMetrics.height();
+    for (int i = 0; i < layout.lineCount(); i++) {
+        QTextLine tl = layout.lineAt(i);
+        width = qMax(width, qCeil(tl.naturalTextWidth()));
+        height += qCeil(tl.height());
     }
 
     width += (option.decorationSize.width() + ICON_MARGIN_PX);

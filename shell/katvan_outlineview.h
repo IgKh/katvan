@@ -33,7 +33,7 @@ public:
     OutlineView(QWidget* parent = nullptr);
 
 public slots:
-    void outlineUpdated(typstdriver::OutlineNode* outline);
+    void outlineUpdated(katvan::typstdriver::OutlineNode* outline);
 
 private slots:
     void itemActivated(const QModelIndex& index);

@@ -19,7 +19,7 @@ use std::{
     collections::HashMap,
     path::{Component, Path, PathBuf},
     pin::Pin,
-    sync::{LazyLock, Mutex},
+    sync::{LazyLock, Mutex, OnceLock},
 };
 
 use time::{format_description::well_known::Iso8601, OffsetDateTime};
@@ -35,13 +35,12 @@ use typst_kit::fonts::{FontSlot, Fonts};
 
 use crate::bridge::ffi;
 
-pub static MAIN_ID: LazyLock<FileId> = LazyLock::new(|| {
-    FileId::new_fake(VirtualPath::new("MAIN"))
-});
+pub static MAIN_ID: LazyLock<FileId> = LazyLock::new(|| FileId::new_fake(VirtualPath::new("MAIN")));
 
 pub struct KatvanWorld<'a> {
     root: PathBuf,
-    package_roots: Mutex<PackageRoots<'a>>,
+    package_manager: Mutex<PackageManagerWrapper<'a>>,
+    packages_list: OnceLock<Vec<(PackageSpec, Option<EcoString>)>>,
     allowed_paths: Vec<PathBuf>,
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
@@ -57,7 +56,8 @@ impl<'a> KatvanWorld<'a> {
 
         KatvanWorld {
             root: PathBuf::from(root),
-            package_roots: Mutex::new(PackageRoots::new(package_manager)),
+            package_manager: Mutex::new(PackageManagerWrapper::new(package_manager)),
+            packages_list: OnceLock::new(),
             allowed_paths: Vec::new(),
             library: LazyHash::new(Library::default()),
             book: LazyHash::new(fonts.book),
@@ -85,8 +85,8 @@ impl<'a> KatvanWorld<'a> {
     }
 
     pub fn discard_package_roots_cache(&mut self) {
-        let mut roots = self.package_roots.lock().unwrap();
-        roots.cache.clear();
+        let mut manager = self.package_manager.lock().unwrap();
+        manager.roots_cache.clear();
     }
 
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
@@ -102,8 +102,8 @@ impl<'a> KatvanWorld<'a> {
     }
 
     fn get_package_root(&self, pkg: &PackageSpec) -> FileResult<PathBuf> {
-        let mut roots = self.package_roots.lock().unwrap();
-        roots.get(pkg)
+        let mut manager = self.package_manager.lock().unwrap();
+        manager.get_package_root(pkg)
     }
 
     fn get_fs_file_path(&self, path: &VirtualPath) -> FileResult<PathBuf> {
@@ -190,26 +190,37 @@ impl typst_ide::IdeWorld for KatvanWorld<'_> {
     fn upcast(&self) -> &dyn typst::World {
         self
     }
+
+    fn packages(&self) -> &[(PackageSpec, Option<EcoString>)] {
+        // TODO - getting the package index is fallible, and failure is often
+        // transient. Ideally there should be a way to retry next time, but
+        // it is unclear how to do so as OnceLock::get_or_try_init is unstable
+        // and not really reproducible with regular stable & safe code.
+        self.packages_list.get_or_init(|| {
+            let mut manager = self.package_manager.lock().unwrap();
+            manager.get_all_packages()
+        })
+    }
 }
 
-struct PackageRoots<'a> {
-    package_manager: Pin<&'a mut ffi::PackageManagerProxy>,
-    cache: HashMap<PackageSpec, PathBuf>,
+struct PackageManagerWrapper<'a> {
+    proxy: Pin<&'a mut ffi::PackageManagerProxy>,
+    roots_cache: HashMap<PackageSpec, PathBuf>,
 }
 
-impl<'a> PackageRoots<'a> {
-    fn new(package_manager: Pin<&'a mut ffi::PackageManagerProxy>) -> Self {
-        PackageRoots {
-            package_manager,
-            cache: HashMap::new(),
+impl<'a> PackageManagerWrapper<'a> {
+    fn new(proxy: Pin<&'a mut ffi::PackageManagerProxy>) -> Self {
+        Self {
+            proxy,
+            roots_cache: HashMap::new(),
         }
     }
 
-    fn get(&mut self, pkg: &PackageSpec) -> FileResult<PathBuf> {
-        let root = match self.cache.get(pkg) {
+    fn get_package_root(&mut self, pkg: &PackageSpec) -> FileResult<PathBuf> {
+        let root = match self.roots_cache.get(pkg) {
             Some(root) => root.clone(),
             None => {
-                let path = self.package_manager.as_mut().get_package_local_path(
+                let path = self.proxy.as_mut().get_package_local_path(
                     &pkg.namespace,
                     &pkg.name,
                     &pkg.version.to_string(),
@@ -218,16 +229,36 @@ impl<'a> PackageRoots<'a> {
                 self.check_package_manager_error(pkg)?;
 
                 let path = PathBuf::from(path);
-                self.cache.insert(pkg.clone(), path.clone());
+                self.roots_cache.insert(pkg.clone(), path.clone());
                 path
             }
         };
         Ok(root)
     }
 
+    fn get_all_packages(&mut self) -> Vec<(PackageSpec, Option<EcoString>)> {
+        let entries = self.proxy.as_mut().get_preview_packages_listing();
+        if self.proxy.error() != ffi::PackageManagerError::Success {
+            return Vec::new();
+        }
+
+        entries
+            .iter()
+            .filter_map(|entry| {
+                let spec = PackageSpec {
+                    namespace: EcoString::from("preview"),
+                    name: EcoString::from(&entry.name),
+                    version: entry.version.parse().ok()?,
+                };
+
+                Some((spec, Some(EcoString::from(&entry.description))))
+            })
+            .collect()
+    }
+
     fn check_package_manager_error(&self, pkg: &PackageSpec) -> Result<(), PackageError> {
-        let error = self.package_manager.error();
-        let message = EcoString::from(self.package_manager.error_message());
+        let error = self.proxy.error();
+        let message = EcoString::from(self.proxy.error_message());
 
         match error {
             ffi::PackageManagerError::Success => Ok(()),
