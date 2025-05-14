@@ -9,6 +9,6 @@ Exec=katvan %f
 Icon=katvan
 Terminal=false
 Type=Application
-MimeType=text/x-typst
+MimeType=text/x-typst;text/vnd.typst
 Categories=Qt;Office;Publishing
 Keywords=typst

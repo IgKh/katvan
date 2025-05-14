@@ -48,4 +48,17 @@ elseif(UNIX)
     install(FILES assets/katvan.desktop DESTINATION share/applications)
     install(FILES assets/katvan.svg DESTINATION share/icons/hicolor/scalable/apps)
     install(FILES assets/katvan_48x48.png DESTINATION share/icons/hicolor/48x48/apps RENAME katvan.png)
+
+    # Generate AppStream release data
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_FOUND)
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} scripts/format_changelog.py --format appstream CHANGELOG.md
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE METAINFO_RELEASES_XML
+        )
+    endif()
+
+    configure_file(assets/app.katvan.Katvan.metainfo.xml.in app.katvan.Katvan.metainfo.xml @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/app.katvan.Katvan.metainfo.xml DESTINATION share/metainfo)
 endif()

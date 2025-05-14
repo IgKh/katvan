@@ -4,8 +4,8 @@ A bare-bones graphical editor for [Typst](https://github.com/typst/typst) files,
 
 ## Screenshots
 
-![App Screenshot](.github/assets/screenshot.png)
-![App Screenshot - Dark Mode](.github/assets/screenshot-dark.png)
+![App Screenshot](https://katvan.app/assets/screenshot-main.png)
+![App Screenshot - Dark Mode](https://katvan.app/assets/screenshot-main-dark.png)
 
 ## Motivation
 
@@ -24,7 +24,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
       - Automatic directionality isolation of inline math and code
       - Toggling between logical and visual cursor movement
       - Manually flipping paragraph direction (using both Windows style `Ctrl+RShift`/`LShift`, or Firefox style `Ctrl+Shift+X`)
-      - Handy commands to insert BiDi control marks and isolates for when the algorithm doesn't quite lead to the right result (e.g. for inline math)
+      - Handy commands to manually insert BiDi control marks and isolates for when the algorithm doesn't quite lead to the right result (e.g. for some instances of inline raw text)
 - Live previews
 - Syntax highlighting
 - Syntax-aware spell checking

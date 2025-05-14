@@ -247,9 +247,15 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Extract release notes
-        run: uv run scripts/format_changelog.py --pick ${{ github.ref_name }} -o notes.md CHANGELOG.md
+        run: uv run scripts/format_changelog.py --format markdown --pick ${{ github.ref_name }} -o notes.md CHANGELOG.md
 
       - name: Create draft release
-        run: gh release create --draft --verify-tag ${{ github.ref_name }} --notes-file notes.md tarball/* AppImage/* WindowsZip/* WindowsInstaller/*
+        run: |
+          gh release create --draft \
+            --title "${{ github.ref_name }}" \
+            --notes-file notes.md \
+            --verify-tag \
+            ${{ github.ref_name }} \
+            tarball/* AppImage/* WindowsZip/* WindowsInstaller/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2025 Igor Khanin <igor@khanin.biz> -->
+<component type="desktop-application">
+    <id>app.katvan.Katvan</id>
+
+    <metadata_license>FSFAP</metadata_license>
+    <project_license>GPL-3.0-or-later</project_license>
+
+    <name>Katvan</name>
+    <summary>Editor for Typst files, with a bias for Right-to-Left</summary>
+    <description>
+        <p>
+            Katvan is an editor for the Typst typesetting system, designed for working with documents
+            whose primary language is written from right to left. Features include live previews, syntax
+            highlighting, spell checking, auto-completion, forward/inverse search and more.
+        </p>
+    </description>
+
+    <launchable type="desktop-id">katvan.desktop</launchable>
+
+    <content_rating type="oars-1.0" />
+
+    <url type="homepage">https://katvan.app</url>
+    <url type="bugtracker">https://github.com/IgKh/katvan/issues</url>
+    <url type="vcs-browser">https://github.com/IgKh/katvan</url>
+
+    <branding>
+        <color type="primary" scheme_preference="light">#ddeeff</color>
+        <color type="primary" scheme_preference="dark">#2d507a</color>
+    </branding>
+
+    <screenshots>
+        <screenshot type="default">
+            <caption>Main window</caption>  
+            <image type="source">https://katvan.app/assets/screenshot-main.png</image>
+        </screenshot>
+        <screenshot>
+            <caption>Main window in dark mode</caption>
+            <image type="source">https://katvan.app/assets/screenshot-main-dark.png</image>
+        </screenshot>
+    </screenshots>
+
+    @METAINFO_RELEASES_XML@
+</component>

@@ -7,12 +7,14 @@
 
 import argparse
 import mistletoe
+import re
 import sys
+import xml.etree.ElementTree as ET
 
 from mistletoe.markdown_renderer import MarkdownRenderer
 
 
-def extract_version(doc, version):
+def extract_version(doc, version, keep_header=False):
     keep = False
     filtered = []
 
@@ -20,6 +22,8 @@ def extract_version(doc, version):
         if isinstance(elem, mistletoe.block_token.Heading) and elem.level == 2:
             content = getattr(elem.children[0], 'content', '')
             keep = content.strip().startswith(version)
+            if keep and keep_header:
+                filtered.append(elem)
             continue
 
         if keep:
@@ -30,10 +34,48 @@ def extract_version(doc, version):
     return doc
 
 
+def format_appstream_xml(doc):
+    HEADING_REGEX = re.compile(r'v(?P<version>\d+\.\d+\.\d+) \((?P<date>.+)\)')
+
+    root = ET.Element('releases')
+
+    for elem in doc.children:
+        if isinstance(elem, mistletoe.block_token.Heading) and elem.level == 2:
+            content = getattr(elem.children[0], 'content', '')
+            m = HEADING_REGEX.match(content)
+            if not m:
+                continue
+
+            version = m.group('version')
+            date = m.group('date')
+
+            release = ET.SubElement(root, 'release', attrib={
+                'version': version,
+                'date': date
+            })
+
+            url = ET.SubElement(release, 'url', attrib={
+                'type': 'details'
+            })
+            url.text = f'https://github.com/IgKh/katvan/releases/tag/v{version}'
+
+    ET.indent(root, space='    ', level=1)
+    return ET.tostring(root)
+
+
+def handle_format(doc, fmt, fout):
+    if fmt == 'markdown':
+        with MarkdownRenderer() as renderer:
+            fout.write(renderer.render(doc))
+    elif fmt == 'appstream':
+        fout.write(format_appstream_xml(doc).decode('utf-8'))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help='Path to CHANGELOG.md')
-    parser.add_argument('--output', '-o', required=True, help='File to write into')
+    parser.add_argument('--output', '-o', help='File to write into')
+    parser.add_argument('--format', choices=['markdown', 'appstream'], default='markdown', help='Output format')
     parser.add_argument('--pick', metavar='VERSION', help='Extract changelog for one version')
 
     args = parser.parse_args()
@@ -42,11 +84,13 @@ def main():
         doc = mistletoe.Document(fin)
 
     if args.pick is not None:
-        doc = extract_version(doc, args.pick)
+        doc = extract_version(doc, args.pick, keep_header=(args.format != 'markdown'))
 
-    with open(args.output, 'w') as fout:
-        with MarkdownRenderer() as renderer:
-            fout.write(renderer.render(doc))
+    if args.output:
+        with open(args.output, 'wt') as fout:
+            handle_format(doc, args.format, fout)
+    else:
+        handle_format(doc, args.format, sys.stdout)
 
     return 0
 
