@@ -18,6 +18,8 @@
 #include "katvan_searchbar.h"
 #include "katvan_utils.h"
 
+#include "katvan_editor.h"
+
 #include <QActionGroup>
 #include <QCoreApplication>
 #include <QGridLayout>
@@ -30,7 +32,6 @@
 #include <QRegularExpression>
 #include <QScopedValueRollback>
 #include <QTextBlock>
-#include <QTextEdit>
 #include <QToolButton>
 #include <QValidator>
 
@@ -75,7 +76,7 @@ static QString processToolTip(const QString& toolTipTemplate, const QKeySequence
     return result.trimmed();
 }
 
-SearchBar::SearchBar(QTextEdit* editor, QWidget* parent)
+SearchBar::SearchBar(Editor* editor, QWidget* parent)
     : QWidget(parent)
     , d_editor(editor)
     , d_searchRangeStart(editor->document())
@@ -386,7 +387,7 @@ void SearchBar::find(bool forward)
     if (!found.isNull()) {
         QScopedValueRollback scope { d_resultSettingInProgress, true };
         d_lastMatch = found;
-        d_editor->setTextCursor(found);
+        d_editor->goToBlock(found);
     }
     else {
         QMessageBox::warning(window(), QCoreApplication::applicationName(), tr("No matches found"));

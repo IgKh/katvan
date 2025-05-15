@@ -276,9 +276,8 @@ void Editor::resetNavigationData()
     Q_EMIT goForwardAvailable(false);
 }
 
-void Editor::goToBlock(int blockNum, int charOffset)
+void Editor::goToBlock(const QTextCursor& targetCursor)
 {
-    QTextCursor targetCursor = cursorAt(blockNum, charOffset);
     if (targetCursor.isNull()) {
         return;
     }
@@ -294,6 +293,11 @@ void Editor::goToBlock(int blockNum, int charOffset)
 
     d_forwardLandmarks.clear();
     setCurrentLandmark(targetCursor);
+}
+
+void Editor::goToBlock(int blockNum, int charOffset)
+{
+    goToBlock(cursorAt(blockNum, charOffset));
 }
 
 void Editor::goBack()

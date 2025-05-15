@@ -57,6 +57,7 @@ public:
     QMenu* createInsertMenu();
 
 public slots:
+    void goToBlock(const QTextCursor& targetCursor);
     void goToBlock(int blockNum, int charOffset);
     void goBack();
     void goForward();

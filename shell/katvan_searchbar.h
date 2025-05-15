@@ -24,17 +24,18 @@
 QT_BEGIN_NAMESPACE
 class QLineEdit;
 class QRegularExpression;
-class QTextEdit;
 QT_END_NAMESPACE
 
 namespace katvan {
+
+class Editor;
 
 class SearchBar : public QWidget
 {
     Q_OBJECT
 
 public:
-    SearchBar(QTextEdit* editor, QWidget* parent = nullptr);
+    SearchBar(Editor* editor, QWidget* parent = nullptr);
 
 public slots:
     void ensureFindVisible();
@@ -62,7 +63,7 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
 private:
-    QTextEdit* d_editor;
+    Editor* d_editor;
 
     QLineEdit* d_searchTerm;
     QLineEdit* d_replaceWith;
