@@ -159,6 +159,14 @@ QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QS
 QString PackageManager::getLocalPackagePath(const QString& packageNamespace, const QString& name, const QString& version)
 {
     QStringList locations = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
+
+#if defined(Q_OS_LINUX)
+    // Also explicitly look in the home directory (in case we are in flatpak or
+    // another enviroment that overrides XDG_DATA_HOME)
+    locations.append(QDir::homePath() + "/.local/share");
+    locations.removeDuplicates();
+#endif
+
     for (const QString& location : std::as_const(locations)) {
         QDir parent = location + "/typst/packages";
         auto path = parent.filesystemPath() /

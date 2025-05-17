@@ -15,7 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::path::Path;
 use std::pin::Pin;
 
 use anyhow::{Context, Result};
@@ -186,10 +188,17 @@ impl<'a> EngineImpl<'a> {
     fn get_diagnostic_hints(diag: &typst::diag::SourceDiagnostic) -> Vec<&str> {
         // As per https://github.com/typst/typst/blob/0.12/crates/typst/src/diag.rs#L311
         if diag.message.contains("(access denied)") {
-            vec![
-                "by default cannot read file outside of document's directory",
-                "additional allowed paths can be set in compiler settings",
-            ]
+            if is_in_sandbox() {
+                vec![
+                    "by default external files can't be read when running in a sandbox",
+                    "allowed paths to access can be set in the compiler tab of settings",
+                ]
+            } else {
+                vec![
+                    "by default cannot read file outside of document's directory",
+                    "additional allowed paths can be set in the compiler tab of settings",
+                ]
+            }
         } else {
             diag.hints.iter().map(|hint| hint.as_str()).collect()
         }
@@ -387,4 +396,11 @@ fn calc_fingerprint<H: Hash>(item: &H) -> u64 {
     let mut hasher = DefaultHasher::new();
     item.hash(&mut hasher);
     hasher.finish()
+}
+
+fn is_in_sandbox() -> bool {
+    if Path::new(OsStr::new("/.flatpak-info")).exists() {
+        return true;
+    }
+    return false;
 }

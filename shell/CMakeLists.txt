@@ -32,10 +32,14 @@ endif()
 add_executable(katvan ${SOURCES})
 target_link_libraries(katvan PRIVATE katvan_core)
 
-if(KATVAN_DISABLE_PORTABLE)
+if(KATVAN_DISABLE_PORTABLE OR KATVAN_FLATPAK_BUILD)
     target_compile_definitions(katvan PRIVATE KATVAN_DISABLE_PORTABLE)
 elseif(KATVAN_PORTABLE_BUILD)
     target_compile_definitions(katvan PRIVATE KATVAN_PORTABLE_BUILD)
+endif()
+
+if(KATVAN_FLATPAK_BUILD)
+    target_compile_definitions(katvan PRIVATE KATVAN_FLATPAK_BUILD)
 endif()
 
 set_target_properties(katvan PROPERTIES

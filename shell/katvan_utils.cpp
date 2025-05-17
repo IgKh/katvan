@@ -28,7 +28,13 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 
+#if defined(KATVAN_FLATPAK_BUILD)
+#include <sys/xattr.h>
+#endif
+
 namespace katvan::utils {
+
+static constexpr char XATTR_HOST_PATH[] = "user.document-portal.host-path";
 
 QString getApplicationDir(bool& isInstalled)
 {
@@ -64,8 +70,33 @@ QIcon themeIcon(const char* xdgIcon, const char* macIcon)
 #endif
 }
 
+static QString getHostPath(QString path)
+{
+#if !defined(KATVAN_FLATPAK_BUILD)
+    return path;
+#else
+    ssize_t size = getxattr(qPrintable(path), XATTR_HOST_PATH, nullptr, 0);
+    if (size < 0) {
+        return path;
+    }
+
+    std::vector<char> buff;
+    buff.resize(size);
+
+    ssize_t rc = getxattr(qPrintable(path), XATTR_HOST_PATH, buff.data(), size);
+    if (rc < 0) {
+        return path;
+    }
+
+    return QString::fromLocal8Bit(buff.data(), size);
+#endif
+}
+
+
 QString formatFilePath(QString path)
 {
+    // If behind an XDG document portal, use the host file path
+    path = getHostPath(std::move(path));
     path = QDir::toNativeSeparators(path);
 
     if (qGuiApp->layoutDirection() == Qt::RightToLeft) {

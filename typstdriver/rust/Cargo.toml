@@ -20,6 +20,7 @@ anyhow = "1"
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 serde_json = "1.0"
 time = { version = "0.3", features = ["parsing"] }
+xattr = "1.5"
 
 # We don't actually need IDNA support - pin a no-op adapter
 idna_adapter = "=1.0.0"

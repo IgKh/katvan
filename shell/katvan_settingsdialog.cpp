@@ -30,6 +30,7 @@
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QIdentityProxyModel>
 #include <QLabel>
 #include <QLibraryInfo>
 #include <QListView>
@@ -306,6 +307,28 @@ void EditorSettingsTab::updateFontSizes()
     }
 }
 
+class PathProxyModel : public QIdentityProxyModel
+{
+public:
+    PathProxyModel(QObject* parent = nullptr): QIdentityProxyModel(parent)
+    {
+    }
+
+    QVariant data(const QModelIndex& index, int role) const override
+    {
+        if (role == Qt::DisplayRole) {
+            QModelIndex sourceIndex = mapToSource(index);
+            QString origPath = sourceModel()->data(sourceIndex, Qt::DisplayRole).toString();
+            return utils::formatFilePath(std::move(origPath));
+        }
+        else if (role == Qt::ToolTipRole) {
+            QModelIndex sourceIndex = mapToSource(index);
+            return sourceModel()->data(sourceIndex, Qt::DisplayRole).toString();
+        }
+        return QIdentityProxyModel::data(index, role);
+    }
+};
+
 CompilerSettingsTab::CompilerSettingsTab(QWidget* parent)
     : QWidget(parent)
 {
@@ -316,10 +339,13 @@ void CompilerSettingsTab::setupUI()
 {
     d_allowPreviewPackages = new QCheckBox(tr("&Allow preview packages"));
 
-    d_allowedPathsModel = new QStringListModel();
+    d_allowedPathsModel = new QStringListModel(this);
+
+    PathProxyModel* proxyModel = new PathProxyModel();
+    proxyModel->setSourceModel(d_allowedPathsModel);
 
     d_allowedPathsList = new QListView();
-    d_allowedPathsList->setModel(d_allowedPathsModel);
+    d_allowedPathsList->setModel(proxyModel);
     d_allowedPathsList->setEditTriggers(QAbstractItemView::NoEditTriggers);
     connect(d_allowedPathsList->selectionModel(), &QItemSelectionModel::currentChanged, this, &CompilerSettingsTab::currentAllowedPathChanged);
 

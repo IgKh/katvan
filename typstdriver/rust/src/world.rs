@@ -17,7 +17,7 @@
  */
 use std::{
     collections::HashMap,
-    path::{Component, Path, PathBuf},
+    path::PathBuf,
     pin::Pin,
     sync::{LazyLock, Mutex, OnceLock},
 };
@@ -34,14 +34,14 @@ use typst::{
 use typst_kit::fonts::{FontSlot, Fonts};
 
 use crate::bridge::ffi;
+use crate::pathmap;
 
 pub static MAIN_ID: LazyLock<FileId> = LazyLock::new(|| FileId::new_fake(VirtualPath::new("MAIN")));
 
 pub struct KatvanWorld<'a> {
-    root: PathBuf,
+    path_mapper: pathmap::PathMapper,
     package_manager: Mutex<PackageManagerWrapper<'a>>,
     packages_list: OnceLock<Vec<(PackageSpec, Option<EcoString>)>>,
-    allowed_paths: Vec<PathBuf>,
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Vec<FontSlot>,
@@ -55,10 +55,9 @@ impl<'a> KatvanWorld<'a> {
         let source = Source::new(*MAIN_ID, String::new());
 
         KatvanWorld {
-            root: PathBuf::from(root),
+            path_mapper: pathmap::PathMapper::new(root),
             package_manager: Mutex::new(PackageManagerWrapper::new(package_manager)),
             packages_list: OnceLock::new(),
-            allowed_paths: Vec::new(),
             library: LazyHash::new(Library::default()),
             book: LazyHash::new(fonts.book),
             fonts: fonts.fonts,
@@ -90,11 +89,7 @@ impl<'a> KatvanWorld<'a> {
     }
 
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
-        self.allowed_paths = paths
-            .into_iter()
-            .map(Into::into)
-            .filter(|p: &PathBuf| p.is_absolute())
-            .collect();
+        self.path_mapper.set_allowed_paths(paths);
     }
 
     pub fn main_source(&self) -> Source {
@@ -106,31 +101,13 @@ impl<'a> KatvanWorld<'a> {
         manager.get_package_root(pkg)
     }
 
-    fn get_fs_file_path(&self, path: &VirtualPath) -> FileResult<PathBuf> {
-        if self.root.as_os_str().is_empty() {
-            return Err(FileError::Other(Some(EcoString::from(
-                "unsaved files cannot include external files",
-            ))));
-        }
-
-        let path = join_and_normalize_path(&self.root, path.as_rootless_path());
-
-        let allowed_roots = std::iter::once(&self.root).chain(self.allowed_paths.iter());
-        for root in allowed_roots {
-            if path.starts_with(root) {
-                return Ok(path);
-            }
-        }
-        Err(FileError::AccessDenied)
-    }
-
     fn get_file_content(&self, id: FileId) -> FileResult<Vec<u8>> {
         let path = match id.package() {
             Some(pkg) => {
                 let root = self.get_package_root(pkg)?;
                 id.vpath().resolve(&root).ok_or(FileError::AccessDenied)?
             }
-            None => self.get_fs_file_path(id.vpath())?,
+            None => self.path_mapper.get_fs_file_path(id.vpath())?,
         };
 
         if path.is_dir() {
@@ -272,20 +249,4 @@ impl<'a> PackageManagerWrapper<'a> {
             _ => Err(PackageError::Other(Some(message))),
         }
     }
-}
-
-fn join_and_normalize_path(base: &Path, path: &Path) -> PathBuf {
-    let mut result = base.to_path_buf();
-
-    for component in path.components() {
-        match component {
-            Component::CurDir | Component::Prefix(_) => {}
-            Component::ParentDir => {
-                result.pop();
-            }
-            _ => result.push(component),
-        }
-    }
-
-    result
 }

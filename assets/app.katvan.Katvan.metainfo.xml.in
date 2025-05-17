@@ -24,6 +24,10 @@
     <url type="bugtracker">https://github.com/IgKh/katvan/issues</url>
     <url type="vcs-browser">https://github.com/IgKh/katvan</url>
 
+    <developer id="io.github.IgKh">
+        <name>Igor Khanin</name>
+    </developer>
+
     <branding>
         <color type="primary" scheme_preference="light">#ddeeff</color>
         <color type="primary" scheme_preference="dark">#2d507a</color>
