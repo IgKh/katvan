@@ -328,14 +328,14 @@ impl<'a> EngineImpl<'a> {
             .context("No available tooltip")
     }
 
-    pub fn get_completions(&self, line: usize, column: usize) -> Result<ffi::Completions> {
+    pub fn get_completions(&self, line: usize, column: usize, implicit: bool) -> Result<ffi::Completions> {
         let main = self.world.main_source();
         let cursor = main
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
         let (start_crusor, completions) =
-            typst_ide::autocomplete(&self.world, self.result.as_ref(), &main, cursor, true)
+            typst_ide::autocomplete(&self.world, self.result.as_ref(), &main, cursor, !implicit)
                 .context("No available completions")?;
 
         Ok(ffi::Completions {

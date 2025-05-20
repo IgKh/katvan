@@ -78,6 +78,7 @@ public:
     bool showControlChars() const;
 
     bool autoBrackets() const;
+    bool autoTriggerCompletions() const;
 
     int autoBackupInterval() const;
 
@@ -91,6 +92,7 @@ public:
     void setLineNumberStyle(LineNumberStyle style) { d_lineNumberStyle = style; }
     void setShowControlChars(bool show) { d_showControlChars = show; }
     void setAutoBrackets(bool enable) { d_autoBrackets = enable; }
+    void setAutoTriggerCompletions(bool enable) { d_autoTriggerCompletions = enable; }
     void setAutoBackupInterval(int interval) { d_autoBackupInterval = interval; }
 
     bool hasFontFamily() const { return d_fontFamily.has_value(); }
@@ -103,6 +105,7 @@ public:
     bool hasLineNumberStyle() const { return d_lineNumberStyle.has_value(); }
     bool hasShowControlChars() const { return d_showControlChars.has_value(); }
     bool hasAutoBrackets() const { return d_autoBrackets.has_value(); }
+    bool hasAutoTriggerCompletions() const { return d_autoTriggerCompletions.has_value(); }
     bool hasAutoBackupInterval() const { return d_autoBackupInterval.has_value(); }
 
     void mergeSettings(const EditorSettings& other);
@@ -120,6 +123,7 @@ private:
     std::optional<LineNumberStyle> d_lineNumberStyle;
     std::optional<bool> d_showControlChars;
     std::optional<bool> d_autoBrackets;
+    std::optional<bool> d_autoTriggerCompletions;
     std::optional<int> d_autoBackupInterval;
 };
 

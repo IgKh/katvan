@@ -122,6 +122,9 @@ void EditorSettings::parseModeLine(QString mode, EditorSettings::ModeSource sour
         else if (variable == QStringLiteral("auto-brackets")) {
             d_autoBrackets = parseModeLineBool(rest);
         }
+        else if (variable == QStringLiteral("auto-trigger-completions")) {
+            d_autoTriggerCompletions = parseModeLineBool(rest);
+        }
         else if (variable == QStringLiteral("backup-interval") && source == ModeSource::SETTINGS) {
             bool ok = false;
             int interval = rest.toInt(&ok);
@@ -201,6 +204,14 @@ QString EditorSettings::toModeLine() const
             result += QLatin1String("auto-brackets off; ");
         }
     }
+    if (d_autoTriggerCompletions) {
+        if (d_autoTriggerCompletions.value()) {
+            result += QLatin1String("auto-trigger-completions on; ");
+        }
+        else {
+            result += QLatin1String("auto-trigger-completions off; ");
+        }
+    }
     if (d_autoBackupInterval) {
         result += QLatin1String("backup-interval %1; ").arg(QString::number(d_autoBackupInterval.value()));
     }
@@ -269,6 +280,11 @@ bool EditorSettings::autoBrackets() const
     return d_autoBrackets.value_or(true);
 }
 
+bool EditorSettings::autoTriggerCompletions() const
+{
+    return d_autoTriggerCompletions.value_or(true);
+}
+
 int EditorSettings::autoBackupInterval() const
 {
     return d_autoBackupInterval.value_or(15);
@@ -305,6 +321,9 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
     }
     if (other.d_autoBrackets) {
         d_autoBrackets = other.d_autoBrackets;
+    }
+    if (other.d_autoTriggerCompletions) {
+        d_autoTriggerCompletions = other.d_autoTriggerCompletions;
     }
 }
 

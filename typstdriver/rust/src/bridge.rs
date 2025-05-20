@@ -172,7 +172,7 @@ pub(crate) mod ffi {
 
         fn get_tooltip(&self, line: usize, column: usize) -> Result<ToolTip>;
 
-        fn get_completions(&self, line: usize, column: usize) -> Result<Completions>;
+        fn get_completions(&self, line: usize, column: usize, implicit: bool) -> Result<Completions>;
 
         fn get_definition(&self, line: usize, column: usize) -> Result<DefinitionLocation>;
 

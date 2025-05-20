@@ -243,14 +243,15 @@ void Engine::requestToolTip(int line, int column, QPoint pos)
     }
 }
 
-void Engine::requestCompletions(int line, int column)
+void Engine::requestCompletions(int line, int column, bool implicit)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
         Completions result = d_ptr->engine.value()->get_completions(
             static_cast<size_t>(line),
-            static_cast<size_t>(column));
+            static_cast<size_t>(column),
+            implicit);
 
         QByteArray json { result.completions_json.data(), static_cast<qsizetype>(result.completions_json.size()) };
 

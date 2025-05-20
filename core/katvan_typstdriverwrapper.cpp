@@ -204,9 +204,9 @@ void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
     QMetaObject::invokeMethod(d_engine, "requestToolTip", line, column, pos);
 }
 
-void TypstDriverWrapper::requestCompletions(int line, int column)
+void TypstDriverWrapper::requestCompletions(int line, int column, bool implicit)
 {
-    QMetaObject::invokeMethod(d_engine, "requestCompletions", line, column);
+    QMetaObject::invokeMethod(d_engine, "requestCompletions", line, column, implicit);
 }
 
 void TypstDriverWrapper::searchDefinition(int line, int column)

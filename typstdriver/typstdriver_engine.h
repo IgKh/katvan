@@ -74,7 +74,7 @@ public slots:
     void forwardSearch(int line, int column, int currentPreviewPage);
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
-    void requestCompletions(int line, int column);
+    void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
     void requestOutline(quint64 previousFingerprint);
     void setAllowedPaths(const QStringList& allowedPaths);

@@ -119,6 +119,7 @@ EditorSettings EditorSettingsTab::settings() const
     settings.setIndentWidth(d_indentWidth->value());
     settings.setTabWidth(d_tabWidth->value());
     settings.setAutoBrackets(d_autoBrackets->isChecked());
+    settings.setAutoTriggerCompletions(d_autoTriggerCompletions->isChecked());
     settings.setAutoBackupInterval(d_backupInterval->value());
 
     return settings;
@@ -150,6 +151,7 @@ void EditorSettingsTab::setSettings(const EditorSettings& settings)
     d_indentWidth->setValue(settings.indentWidth());
     d_tabWidth->setValue(settings.tabWidth());
     d_autoBrackets->setChecked(settings.autoBrackets());
+    d_autoTriggerCompletions->setChecked(settings.autoTriggerCompletions());
     d_backupInterval->setValue(settings.autoBackupInterval());
 
     updateControlStates();
@@ -207,6 +209,7 @@ void EditorSettingsTab::setupUI()
     tabWidthLabel->setBuddy(d_tabWidth);
 
     d_autoBrackets = new QCheckBox(tr("Automatically insert &closing brackets"));
+    d_autoTriggerCompletions = new QCheckBox(tr("Automatically show &autocomplete suggestions"));
 
     d_backupInterval = new QSpinBox();
     d_backupInterval->setSuffix(tr(" seconds"));
@@ -249,6 +252,7 @@ void EditorSettingsTab::setupUI()
     QGroupBox* behaviourGroup = new QGroupBox(tr("Behaviour"));
     QVBoxLayout* behaviourLayout = new QVBoxLayout(behaviourGroup);
     behaviourLayout->addWidget(d_autoBrackets);
+    behaviourLayout->addWidget(d_autoTriggerCompletions);
 
     QGroupBox* autoBackupGroup = new QGroupBox(tr("Automatically Backup Unsaved Changes"));
 

@@ -230,6 +230,7 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
 CompletionManager::CompletionManager(QTextEdit* editor)
     : QObject(editor)
     , d_editor(editor)
+    , d_implictCompletionAllowed(false)
     , d_completionsRequested(false)
 {
     d_model = new CompletionListModel(this);
@@ -250,15 +251,29 @@ bool CompletionManager::isActive() const
     return d_completer->popup()->isVisible();
 }
 
-void CompletionManager::startCompletion()
+void CompletionManager::startExplicitCompletion()
 {
+    startCompletion(false);
+}
+
+void CompletionManager::startImplicitCompletion()
+{
+    startCompletion(true);
+}
+
+void CompletionManager::startCompletion(bool implicit)
+{
+    if (implicit && !isImplictCompletionAllowed()) {
+        return;
+    }
+
     if (isActive() || d_completionsRequested) {
         return;
     }
 
     d_completionsRequested = true;
     QTextCursor cursor = d_editor->textCursor();
-    Q_EMIT completionsRequested(cursor.blockNumber(), cursor.positionInBlock());
+    Q_EMIT completionsRequested(cursor.blockNumber(), cursor.positionInBlock(), implicit);
 }
 
 void CompletionManager::completionsReady(int line, int column, QByteArray completionsJson)
@@ -359,6 +374,11 @@ void CompletionManager::suggestionSelected(const QModelIndex& index)
         cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
     }
     d_editor->setTextCursor(cursor);
+
+    // Making a completion can trigger a new completion
+    if (selectionStart < 0 || selectionStart == selectionEnd) {
+        startImplicitCompletion();
+    }
 }
 
 }

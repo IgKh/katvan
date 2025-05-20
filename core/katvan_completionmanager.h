@@ -73,13 +73,18 @@ public:
 
     bool isActive() const;
 
+    bool isImplictCompletionAllowed() const { return d_implictCompletionAllowed; }
+    void setImplictCompletionAllowed(bool allow) { d_implictCompletionAllowed = allow; }
+
 public slots:
-    void startCompletion();
+    void startExplicitCompletion();
+    void startImplicitCompletion();
+    void startCompletion(bool implicit);
     void completionsReady(int line, int column, QByteArray completionsJson);
     void updateCompletionPrefix(bool force = false);
 
 signals:
-    void completionsRequested(int blockNumber, int charOffset);
+    void completionsRequested(int blockNumber, int charOffset, bool implicit);
 
 private slots:
     void suggestionSelected(const QModelIndex& index);
@@ -89,6 +94,7 @@ private:
     QCompleter* d_completer;
     CompletionListModel* d_model;
 
+    bool d_implictCompletionAllowed;
     bool d_completionsRequested;
     int d_suggestionsStartPosition;
 };

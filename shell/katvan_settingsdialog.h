@@ -87,6 +87,7 @@ private:
     QSpinBox* d_indentWidth;
     QSpinBox* d_tabWidth;
     QCheckBox* d_autoBrackets;
+    QCheckBox* d_autoTriggerCompletions;
     QSpinBox* d_backupInterval;
 };
 

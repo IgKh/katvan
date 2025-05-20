@@ -252,6 +252,16 @@ TEST(EditorSettingsTests, AutoBrackets) {
     EXPECT_THAT(s2.hasAutoBrackets(), ::testing::IsFalse());
 }
 
+TEST(EditorSettingsTests, AutoTriggerCompletions) {
+    EditorSettings s1 { "auto-trigger-completions 1" };
+    EXPECT_THAT(s1.hasAutoTriggerCompletions(), ::testing::IsTrue());
+    EXPECT_THAT(s1.autoTriggerCompletions(), ::testing::IsTrue());
+    EXPECT_THAT(s1.toModeLine(), ::testing::Eq(QStringLiteral("auto-trigger-completions on;")));
+
+    EditorSettings s2 { "auto-brackets" };
+    EXPECT_THAT(s2.hasAutoTriggerCompletions(), ::testing::IsFalse());
+}
+
 TEST(EditorSettingsTests, AutoBackupInterval) {
     EditorSettings s1 { "backup-interval 10", EditorSettings::ModeSource::SETTINGS };
     EXPECT_THAT(s1.hasAutoBackupInterval(), ::testing::IsTrue());

@@ -101,6 +101,7 @@ private:
     void handleNewLine();
     void handleClosingBracket(const QString& bracket);
     void unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter = QTextCursor());
+    void processAutoCompletion(QKeyEvent* event);
 
     void handleToolTipEvent(QHelpEvent* event);
 

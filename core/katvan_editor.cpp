@@ -37,7 +37,8 @@ namespace katvan {
 
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
-static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::CTRL | Qt::Key_E);
+static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::CTRL | Qt::Key_Space);
+static constexpr QKeyCombination AUTOCOMPLETE_PROMPT_ALT(Qt::CTRL | Qt::Key_E);
 static constexpr QKeyCombination TOOLTIP_TRIGGER(Qt::CTRL | Qt::Key_K);
 
 static constexpr int MAX_LINE_FOR_MODELINES = 10;
@@ -125,7 +126,12 @@ Editor::Editor(Document* doc, QWidget* parent)
     QShortcut* autocompletePrompt = new QShortcut(this);
     autocompletePrompt->setKey(AUTOCOMPLETE_PROMPT);
     autocompletePrompt->setContext(Qt::WidgetShortcut);
-    connect(autocompletePrompt, &QShortcut::activated, d_completionManager, &CompletionManager::startCompletion);
+    connect(autocompletePrompt, &QShortcut::activated, d_completionManager, &CompletionManager::startExplicitCompletion);
+
+    QShortcut* autocompletePromptAlt = new QShortcut(this);
+    autocompletePromptAlt->setKey(AUTOCOMPLETE_PROMPT_ALT);
+    autocompletePromptAlt->setContext(Qt::WidgetShortcut);
+    connect(autocompletePromptAlt, &QShortcut::activated, d_completionManager, &CompletionManager::startExplicitCompletion);
 
     QShortcut* toolTipTrigger = new QShortcut(this);
     toolTipTrigger->setKey(TOOLTIP_TRIGGER);
@@ -183,6 +189,8 @@ void Editor::applyEffectiveSettings()
     }
     updateLineNumberGutters();
     updateEditorTheme();
+
+    d_completionManager->setImplictCompletionAllowed(d_effectiveSettings.autoTriggerCompletions());
 }
 
 static EditorTheme& themeForColorScheme(const QString& scheme)
@@ -740,6 +748,28 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
     cursor.endEditBlock();
 }
 
+void Editor::processAutoCompletion(QKeyEvent* event)
+{
+    auto isPossibleAutocompleteTrigger = [](QString text) {
+        if (text.isEmpty()) {
+            return false;
+        }
+
+        QChar ch = text.at(0);
+        return ch.isPrint() && !ch.isLetterOrNumber();
+    };
+
+    if (d_completionManager->isActive()) {
+        d_completionManager->updateCompletionPrefix();
+    }
+
+    // The user could have typed something that closed the suggestions list,
+    // but starts a new completion context
+    if (!d_completionManager->isActive() && isPossibleAutocompleteTrigger(event->text())) {
+        d_completionManager->startImplicitCompletion();
+    }
+}
+
 void Editor::keyPressEvent(QKeyEvent* event)
 {
     if (d_completionManager->isActive() && (
@@ -839,6 +869,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
         }
         else if (DEDENTING_CLOSING_BRACKETS->contains(event->text())) {
             handleClosingBracket(event->text());
+            processAutoCompletion(event);
             return;
         }
     }
@@ -848,6 +879,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
             auto closingBracket = d_codeModel->getMatchingCloseBracket(textCursor(), event->text().at(0));
             if (closingBracket) {
                 insertSurroundingMarks(event->text(), QString(closingBracket.value()));
+                processAutoCompletion(event);
                 return;
             }
         }
@@ -900,9 +932,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
         QTextEdit::keyPressEvent(event);
     }
 
-    if (d_completionManager->isActive()) {
-        d_completionManager->updateCompletionPrefix();
-    }
+    processAutoCompletion(event);
 }
 
 void Editor::keyReleaseEvent(QKeyEvent* event)
