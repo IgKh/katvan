@@ -1,4 +1,8 @@
-find_package(Qt6 REQUIRED COMPONENTS Widgets GuiPrivate)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
+    find_package(Qt6 COMPONENTS GuiPrivate)
+endif()
 
 find_package(Git)
 if(Git_FOUND)

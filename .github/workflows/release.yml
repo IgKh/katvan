@@ -68,7 +68,9 @@ jobs:
           cache: true
 
       - name: Install additional packages
-        run: sudo apt install -y libhunspell-dev libarchive-dev g++-10 libfuse2
+        run: |
+          sudo apt install -y libhunspell-dev libarchive-dev g++-10 libfuse2
+          pip install --user mistletoe
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable

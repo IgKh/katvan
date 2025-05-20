@@ -23,6 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgmock-dev libhunspell-dev libarchive-dev
+          pip install --user mistletoe
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
