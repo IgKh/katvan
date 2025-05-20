@@ -57,7 +57,7 @@ namespace katvan {
  * SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
  *
  * TODO:
- * - Better keyboard accessibilty (trigger tip with keyboard, navigate to links, etc)
+ * - Better keyboard accessibilty (navigate to links, etc)
  */
 
 EditorToolTipFrame::EditorToolTipFrame(QWidget* parent)

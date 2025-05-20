@@ -41,8 +41,6 @@ void OutlineView::outlineUpdated(typstdriver::OutlineNode* outline)
 
     expandToDepth(3);
     setLayoutDirection(d_model->isRightToLeft() ? Qt::RightToLeft : Qt::LeftToRight);
-
-    // TODOS - refresh correctly, reverse location selections
 }
 
 void OutlineView::itemActivated(const QModelIndex& index)

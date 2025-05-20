@@ -107,7 +107,11 @@ void BackupHandler::saveContent()
     if (d_backupFile == nullptr) {
         QFileInfo info(d_sourceFile);
         d_backupFile = new QTemporaryFile(info.absolutePath() + "/.katvan_XXXXXX.typ", this);
-        d_backupFile->open();
+        if (!d_backupFile->open()) {
+            qWarning() << "Failed to open temporary file" << d_backupFile->fileName();
+            delete d_backupFile;
+            return;
+        }
 
         QSettings settings;
         settings.setValue(settingsKeyForFile(d_sourceFile), d_backupFile->fileName());

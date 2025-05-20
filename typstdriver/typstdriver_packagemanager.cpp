@@ -197,9 +197,14 @@ QList<PackageDetails> PackageManager::getPreviewPackagesListing()
 
     QByteArray data;
     QBuffer buffer(&data);
+    if (!buffer.open(QIODevice::ReadWrite)) {
+        // Though it really shouldn't happen...
+        d_error = Error::IO_ERROR;
+        d_errorMessage = QStringLiteral("failed to open in-memory buffer (out of memory?)");
+        return QList<PackageDetails>();
+    }
 
-    //DownloadResult result = downloadFile(PREVIEW_REPOSITORY_BASE + "index.json", &buffer, lastModified);
-    DownloadResult result = DownloadResult::NOT_MODIFIED; // FIXME
+    DownloadResult result = downloadFile(PREVIEW_REPOSITORY_BASE + "index.json", &buffer, lastModified);
     if (result == DownloadResult::FAILED) {
         return QList<PackageDetails>();
     }
@@ -428,7 +433,7 @@ rust::String PackageManagerProxy::getPackageLocalPath(
 
 rust::Vec<PackageEntry> PackageManagerProxy::getPreviewPackagesListing()
 {
-    QList<PackageDetails> packages = d_manager.getPreviewPackagesListing();
+    const QList<PackageDetails> packages = d_manager.getPreviewPackagesListing();
 
     rust::Vec<PackageEntry> result;
     result.reserve(packages.size());

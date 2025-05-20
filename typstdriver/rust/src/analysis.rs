@@ -252,7 +252,7 @@ fn find_text_position_for_span(source: &Source, span: Span) -> Option<ffi::Sourc
     })
 }
 
-fn find_first_text_node<'a>(node: LinkedNode<'a>) -> Option<LinkedNode<'a>> {
+fn find_first_text_node(node: LinkedNode<'_>) -> Option<LinkedNode<'_>> {
     if node.kind() == SyntaxKind::Text {
         return Some(node.clone());
     }

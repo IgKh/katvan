@@ -34,8 +34,6 @@
 
 namespace katvan::utils {
 
-static constexpr char XATTR_HOST_PATH[] = "user.document-portal.host-path";
-
 QString getApplicationDir(bool& isInstalled)
 {
 #if defined(Q_OS_MACOS)
@@ -75,6 +73,8 @@ static QString getHostPath(QString path)
 #if !defined(KATVAN_FLATPAK_BUILD)
     return path;
 #else
+    static constexpr char XATTR_HOST_PATH[] = "user.document-portal.host-path";
+
     ssize_t size = getxattr(qPrintable(path), XATTR_HOST_PATH, nullptr, 0);
     if (size < 0) {
         return path;

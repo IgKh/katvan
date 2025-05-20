@@ -399,8 +399,5 @@ fn calc_fingerprint<H: Hash>(item: &H) -> u64 {
 }
 
 fn is_in_sandbox() -> bool {
-    if Path::new(OsStr::new("/.flatpak-info")).exists() {
-        return true;
-    }
-    return false;
+    Path::new(OsStr::new("/.flatpak-info")).exists()
 }

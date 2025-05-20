@@ -19,7 +19,7 @@ use std::{
     collections::HashMap,
     path::PathBuf,
     pin::Pin,
-    sync::{LazyLock, Mutex, OnceLock},
+    sync::{LazyLock, Mutex},
 };
 
 use time::{format_description::well_known::Iso8601, OffsetDateTime};
@@ -41,7 +41,7 @@ pub static MAIN_ID: LazyLock<FileId> = LazyLock::new(|| FileId::new_fake(Virtual
 pub struct KatvanWorld<'a> {
     path_mapper: pathmap::PathMapper,
     package_manager: Mutex<PackageManagerWrapper<'a>>,
-    packages_list: OnceLock<Vec<(PackageSpec, Option<EcoString>)>>,
+    packages_list: once_cell::sync::OnceCell<Vec<(PackageSpec, Option<EcoString>)>>,
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Vec<FontSlot>,
@@ -57,7 +57,7 @@ impl<'a> KatvanWorld<'a> {
         KatvanWorld {
             path_mapper: pathmap::PathMapper::new(root),
             package_manager: Mutex::new(PackageManagerWrapper::new(package_manager)),
-            packages_list: OnceLock::new(),
+            packages_list: once_cell::sync::OnceCell::new(),
             library: LazyHash::new(Library::default()),
             book: LazyHash::new(fonts.book),
             fonts: fonts.fonts,
@@ -169,14 +169,14 @@ impl typst_ide::IdeWorld for KatvanWorld<'_> {
     }
 
     fn packages(&self) -> &[(PackageSpec, Option<EcoString>)] {
-        // TODO - getting the package index is fallible, and failure is often
-        // transient. Ideally there should be a way to retry next time, but
-        // it is unclear how to do so as OnceLock::get_or_try_init is unstable
-        // and not really reproducible with regular stable & safe code.
-        self.packages_list.get_or_init(|| {
-            let mut manager = self.package_manager.lock().unwrap();
-            manager.get_all_packages()
-        })
+        // TODO - Replace with OnceLock::get_or_try_init when it is stablized
+        self.packages_list
+            .get_or_try_init(|| {
+                let mut manager = self.package_manager.lock().unwrap();
+                manager.get_all_packages()
+            })
+            .map(|v| &v[..])
+            .unwrap_or(&[])
     }
 }
 
@@ -213,13 +213,13 @@ impl<'a> PackageManagerWrapper<'a> {
         Ok(root)
     }
 
-    fn get_all_packages(&mut self) -> Vec<(PackageSpec, Option<EcoString>)> {
+    fn get_all_packages(&mut self) -> Result<Vec<(PackageSpec, Option<EcoString>)>, ()> {
         let entries = self.proxy.as_mut().get_preview_packages_listing();
         if self.proxy.error() != ffi::PackageManagerError::Success {
-            return Vec::new();
+            return Err(());
         }
 
-        entries
+        let entries = entries
             .iter()
             .filter_map(|entry| {
                 let spec = PackageSpec {
@@ -230,7 +230,9 @@ impl<'a> PackageManagerWrapper<'a> {
 
                 Some((spec, Some(EcoString::from(&entry.description))))
             })
-            .collect()
+            .collect();
+
+        Ok(entries)
     }
 
     fn check_package_manager_error(&self, pkg: &PackageSpec) -> Result<(), PackageError> {

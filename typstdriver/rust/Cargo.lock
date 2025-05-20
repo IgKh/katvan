@@ -2173,6 +2173,7 @@ dependencies = [
  "anyhow",
  "cxx",
  "idna_adapter",
+ "once_cell",
  "pulldown-cmark",
  "serde_json",
  "time",
