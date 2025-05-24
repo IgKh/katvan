@@ -51,7 +51,11 @@ pub struct KatvanWorld<'a> {
 
 impl<'a> KatvanWorld<'a> {
     pub fn new(package_manager: Pin<&'a mut ffi::PackageManagerProxy>, root: &str) -> Self {
-        let fonts = Fonts::searcher().search();
+        let font_dirs: Vec<PathBuf> = std::env::var_os("TYPST_FONT_PATHS")
+            .map(|p| std::env::split_paths(&p).collect())
+            .unwrap_or_default();
+
+        let fonts = Fonts::searcher().search_with(font_dirs);
         let source = Source::new(*MAIN_ID, String::new());
 
         KatvanWorld {
