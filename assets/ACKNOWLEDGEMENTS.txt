@@ -1,0 +1,13 @@
+Katvan contains various third party assets, used under open source licenses.
+
+Includes icons taken from the Breeze icon theme (https://invent.kde.org/frameworks/breeze-icons):
+
+Copyright (C) 2014 Uri Herrera <uri_herrera@nitrux.in> and others. Available under the terms of the GNU Lesser General Public License version 3 or later.
+
+Includes the Noto Sans Math font:
+
+Copyright 2022 The Noto Project Authors (https://github.com/notofonts/math). Available under the terms of the SIL Open Font License, Version 1.1.
+
+Includes the Adobe Blank font:
+
+Copyright 2013, 2015 Adobe Systems Incorporated (http://www.adobe.com/). Available under the terms of the SIL Open Font License, Version 1.1.

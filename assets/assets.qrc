@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/assets/">
+        <file>ACKNOWLEDGEMENTS.txt</file>
         <file>katvan.svg</file>
         <file>spinner.gif</file>
         <file>KatvanControl.otf</file>

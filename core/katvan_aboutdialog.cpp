@@ -21,6 +21,7 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QOperatingSystemVersion>
+#include <QTextStream>
 
 namespace katvan {
 
@@ -50,6 +51,18 @@ static QString operatingSystemDescription()
 #endif
 }
 
+static QString acknowledgements()
+{
+    QFile file(":/assets/ACKNOWLEDGEMENTS.txt");
+    if (!file.open(QFile::ReadOnly)) {
+        qDebug() << file.errorString();
+        return QString();
+    }
+
+    QTextStream stream(&file);
+    return stream.readAll().trimmed();
+}
+
 AboutDialog::AboutDialog(QWidget* parent)
     : QMessageBox(parent)
 {
@@ -68,17 +81,16 @@ AboutDialog::AboutDialog(QWidget* parent)
 
     QString informativeText = tr(
         "<p>Katvan is offered under the terms of the <a href=\"%1\">GNU General Public License Version 3</a>. "
-        "Contains icons taken from the <a href=\"%2\">Breeze</a> icon theme.</p>"
+        "Includes third party assets, see more details below.</p>"
     )
-    .arg(
-        QStringLiteral("https://www.gnu.org/licenses/gpl-3.0.en.html"),
-        QStringLiteral("https://invent.kde.org/frameworks/breeze-icons"));
+    .arg(QStringLiteral("https://www.gnu.org/licenses/gpl-3.0.en.html"));
 
     setWindowTitle(tr("About Katvan"));
     setIconPixmap(QIcon(":/assets/katvan.svg").pixmap(QSize(128, 128)));
     setStandardButtons(QMessageBox::Ok);
     setText(mainText);
     setInformativeText(informativeText);
+    setDetailedText(acknowledgements());
 }
 
 }
