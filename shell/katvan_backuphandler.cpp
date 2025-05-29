@@ -102,11 +102,20 @@ void BackupHandler::editorContentChanged()
     saveContent();
 }
 
+static QString getBackupFileTemplate(const QString& sourceFile)
+{
+#ifdef KATVAN_FLATPAK_BUILD
+    return QDir::tempPath() + "/.katvan_XXXXXX.typ";
+#else
+    QFileInfo info(sourceFile);
+    return info.absolutePath() + "/.katvan_XXXXXX.typ";
+#endif
+}
+
 void BackupHandler::saveContent()
 {
     if (d_backupFile == nullptr) {
-        QFileInfo info(d_sourceFile);
-        d_backupFile = new QTemporaryFile(info.absolutePath() + "/.katvan_XXXXXX.typ", this);
+        d_backupFile = new QTemporaryFile(getBackupFileTemplate(d_sourceFile), this);
         if (!d_backupFile->open()) {
             qWarning() << "Failed to open temporary file" << d_backupFile->fileName();
             delete d_backupFile;
