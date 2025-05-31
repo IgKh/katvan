@@ -44,8 +44,8 @@ OutlineNode::OutlineNode(std::span<OutlineEntry> entries)
         node->d_title = title;
 
         if (entry.has_position) {
-            node->d_line = entry.position.line;
-            node->d_column = entry.position.column;
+            node->d_line = static_cast<int>(entry.position.line);
+            node->d_column = static_cast<int>(entry.position.column);
         }
 
         if (entry.level > previous->level()) {

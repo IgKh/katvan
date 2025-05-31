@@ -15,10 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::{
-    ffi::OsString,
-    path::{Component, Path, PathBuf},
-};
+use std::path::{Component, Path, PathBuf};
 
 use typst::{
     diag::{FileError, FileResult},
@@ -76,8 +73,9 @@ struct PathMapEntry {
 }
 
 impl PathMapEntry {
-    #[cfg(target_os = "linux")]
+    #[cfg(feature = "flatpak")]
     fn new<S: AsRef<str>>(path: S) -> Self {
+        use std::ffi::OsString;
         use std::os::unix::ffi::OsStringExt;
 
         let actual = PathBuf::from(path.as_ref());
@@ -93,7 +91,7 @@ impl PathMapEntry {
         Self { actual, displayed }
     }
 
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(feature = "flatpak"))]
     fn new<S: AsRef<str>>(path: S) -> Self {
         Self {
             actual: PathBuf::from(path.as_ref()),

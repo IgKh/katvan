@@ -36,6 +36,10 @@ corrosion_import_crate(
     FROZEN
 )
 
+if(KATVAN_FLATPAK_BUILD)
+    corrosion_set_features(typstdriver_rs FEATURES flatpak)
+endif()
+
 if(CMAKE_OSX_DEPLOYMENT_TARGET)
     # Until fix merged upstream to Corrosion
     corrosion_set_env_vars(typstdriver_rs MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})

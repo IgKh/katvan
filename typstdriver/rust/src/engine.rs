@@ -15,9 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::path::Path;
 use std::pin::Pin;
 
 use anyhow::{Context, Result};
@@ -399,5 +397,5 @@ fn calc_fingerprint<H: Hash>(item: &H) -> u64 {
 }
 
 fn is_in_sandbox() -> bool {
-    Path::new(OsStr::new("/.flatpak-info")).exists()
+    cfg!(feature = "flatpak")
 }
