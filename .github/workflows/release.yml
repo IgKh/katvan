@@ -63,7 +63,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.8.3
+          version: 6.9.1
           arch: linux_gcc_64
           cache: true
 
@@ -124,7 +124,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.8.3
+          version: 6.9.1
           cache: true
 
       - name: Setup vcpkg
@@ -180,7 +180,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.8.3
+          version: 6.9.1
           cache: true
 
       - name: Setup vcpkg
