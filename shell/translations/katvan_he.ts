@@ -15,16 +15,16 @@
 <context>
     <name>katvan::AboutDialog</name>
     <message>
-        <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Contains icons taken from the &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt; icon theme.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל צלמיות שנלקחו מן סט הצלמיות &lt;a href=&quot;%2&quot;&gt;Breeze&lt;/a&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>About Katvan</source>
         <translation>אודות כתבן</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Katvan&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;A bare-bones editor for &lt;i&gt;Typst&lt;/i&gt; files, with a bias for RTL&lt;/p&gt;&lt;p&gt;Version %2 (Qt %3; Typst %4) on %5&lt;/p&gt;</source>
         <translation>&lt;h3&gt;כתבן&lt;/h3&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;p&gt;עורך ענייני לקבצי &lt;i&gt;Typst&lt;/i&gt;, עם דגש על כתיבה מימין לשמאל&lt;/p&gt;&lt;p&gt;גרסא %2 (על בסיס גרסת Qt %3 וגרסת Typst %4) על גבי %5&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Katvan is offered under the terms of the &lt;a href=&quot;%1&quot;&gt;GNU General Public License Version 3&lt;/a&gt;. Includes third party assets, see more details below.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;השימוש בכתבן הוא בכפוף לתנאי &lt;a href=&quot;%1&quot;&gt;גרסא 3 של הרשיון הציבורי הכללי של GNU&lt;/a&gt;. מכיל רכיבי צד שלישי, ראה פרטים נוספים.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -195,7 +195,7 @@
     </message>
     <message>
         <source>Tab &amp;Display Width:</source>
-        <translation>רוחב &amp;טאב:</translation>
+        <translation>רוחב טא&amp;ב:</translation>
     </message>
     <message>
         <source> seconds</source>
@@ -231,7 +231,7 @@
     </message>
     <message>
         <source>&amp;Backup Interval:</source>
-        <translation>תדירות ה&amp;גיבוי:</translation>
+        <translation>&amp;תדירות הגיבוי:</translation>
     </message>
     <message>
         <source>Show BiDi Control Characters</source>
@@ -244,6 +244,26 @@
     <message>
         <source>Automatically insert &amp;closing brackets</source>
         <translation>הוסף &amp;סוגרים באופן אוטומטי</translation>
+    </message>
+    <message>
+        <source>Follow System Settings</source>
+        <translation>לפי הגדרות המערכת</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>בהירה</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>כהה</translation>
+    </message>
+    <message>
+        <source>C&amp;olor Scheme:</source>
+        <translation>ערכת &amp;צבעים:</translation>
+    </message>
+    <message>
+        <source>Automatically show &amp;autocomplete suggestions</source>
+        <translation>הצג הצעות ה&amp;שלמה באופן אוטומטי</translation>
     </message>
 </context>
 <context>
@@ -335,12 +355,8 @@
         <translation>ה&amp;כנס</translation>
     </message>
     <message>
-        <source>&amp;Go to Line...</source>
-        <translation>&amp;עבור לשורה...</translation>
-    </message>
-    <message>
         <source>&amp;Jump to Preview</source>
-        <translation>&amp;קפוץ לתצוגה מקדימה</translation>
+        <translation>קפוץ ל&amp;תצוגה מקדימה</translation>
     </message>
     <message>
         <source>Compilation status</source>
@@ -511,6 +527,62 @@ To export the document, please correct them.</source>
     <message>
         <source>Errors</source>
         <translation>עם שגיאות</translation>
+    </message>
+    <message>
+        <source>&amp;Go</source>
+        <translation>&amp;מעבר</translation>
+    </message>
+    <message>
+        <source>&amp;Back</source>
+        <translation>&amp;אחורה</translation>
+    </message>
+    <message>
+        <source>&amp;Forward</source>
+        <translation>&amp;קדימה</translation>
+    </message>
+    <message>
+        <source>&amp;Enlarge Font</source>
+        <translation>ה&amp;גדל גודל גופן</translation>
+    </message>
+    <message>
+        <source>&amp;Shrink Font</source>
+        <translation>ה&amp;קטן גודל גופן</translation>
+    </message>
+    <message>
+        <source>&amp;Reset Font Size</source>
+        <translation>&amp;איפוס גודל גופן</translation>
+    </message>
+    <message>
+        <source>Font Zoom</source>
+        <translation>הגדלת גופן</translation>
+    </message>
+    <message>
+        <source>The file %1 was modified on disk</source>
+        <translation>בקובץ %1 בוצעו שינויים על הדיסק</translation>
+    </message>
+    <message>
+        <source>The file %1 was deleted or moved on disk</source>
+        <translation>הקובץ %1 נמחק או הוזז מהדיסק</translation>
+    </message>
+    <message>
+        <source>&amp;Reload</source>
+        <translation>&amp;טעינה חוזרת</translation>
+    </message>
+    <message>
+        <source>&amp;Ignore</source>
+        <translation>&amp;התעלם</translation>
+    </message>
+    <message>
+        <source>Go to &amp;Line...</source>
+        <translation>עבור ל&amp;שורה...</translation>
+    </message>
+    <message>
+        <source>Go to &amp;Definition</source>
+        <translation>עבור ל&amp;הגדרה</translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation>תוכן עניינים</translation>
     </message>
 </context>
 <context>

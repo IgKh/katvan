@@ -7,12 +7,22 @@
     <project_license>GPL-3.0-or-later</project_license>
 
     <name>Katvan</name>
+    <name xml:lang="he">כתבן</name>
+
     <summary>Editor for Typst files, with a bias for Right-to-Left</summary>
+    <summary xml:lang="he">עורך לקבצי Typst, עם דגש על כתיבה מימין לשמאל</summary>
+
     <description>
         <p>
-            Katvan is an editor for the Typst typesetting system, designed for working with documents
-            whose primary language is written from right to left. Features include live previews, syntax
-            highlighting, spell checking, auto-completion, forward/inverse search and more.
+            Katvan is a bare-bones editor for the Typst typesetting system, designed for working with
+            documents whose primary language is written from right to left. Features include live
+            previews, syntax highlighting, spell checking, auto-completion, forward/inverse search
+            and more.
+        </p>
+        <p xml:lang="he">
+            כתבן הוא עורך ענייני עבור קבצי מקור למערכת ההכנה לדפוס Typst, המתוכנן במיוחד עבור עבודה עם מסמכים הכתובים
+            בשפות הנכתבות מימין לשמאל. היכולות שלו כוללות תצוגה מקדימה בזמן אמת, הדגשת תחביר, בדיקת איות, השלמה
+            אוטומטית, דילוג קדימה ואחורה בין התוכן לבין התצוגה המקדימה ועוד.
         </p>
     </description>
 
@@ -24,8 +34,8 @@
     <url type="bugtracker">https://github.com/IgKh/katvan/issues</url>
     <url type="vcs-browser">https://github.com/IgKh/katvan</url>
 
-    <developer id="io.github.IgKh">
-        <name>Igor Khanin</name>
+    <developer id="biz.khanin.igor">
+        <name translate="no">Igor Khanin</name>
     </developer>
 
     <branding>
@@ -35,12 +45,16 @@
 
     <screenshots>
         <screenshot type="default">
-            <caption>Main window</caption>  
             <image type="source">https://katvan.app/assets/screenshot-main.png</image>
+
+            <caption>Main window</caption>
+            <caption xml:lang="he">המסך הראשי</caption>
         </screenshot>
         <screenshot>
-            <caption>Main window in dark mode</caption>
             <image type="source">https://katvan.app/assets/screenshot-main-dark.png</image>
+
+            <caption>Main window in dark mode</caption>
+            <caption xml:lang="he">המסך הראשי תחת ערכת נושא כהה</caption>
         </screenshot>
     </screenshots>
 
