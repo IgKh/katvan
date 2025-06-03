@@ -1,3 +1,34 @@
+## v0.10.0 (2025-06-03)
+
+### Typst Version
+
+- The included Typst compiler version remains `0.13.1`.
+
+### New Features
+
+- Indentation is now preserved in continuations of wrapped lines.
+- Explicitly inserted BiDi control characters are now visible and can be easily interacted with. This requires Qt 6.9 and above, and can be turned off through the settings dialog.
+- A new Outline page shows all sections in the edited files based on their headings, and allows quick navigation among them.
+- Cursor location history is now tracked through various jump commands. You can go back and forth through the cursor location history using the commands in the new `Go` menu and their corresponding shortcuts.
+- You can now go to the definition of a Typst symbol, as long as it is defined inside the edited document. For symbols provided in the Typst standard library, the documentation tooltip is shown instead. Trigger this by `Ctrl`-clicking the symbol in the editor, or by pressing `F12`.
+- Auto-completion can now be triggered using the more common `Ctrl+Space` shortcut, in addition to the previously available `Ctrl+E`.
+- Auto-completion will automatically show some suggestions as you type. This can be disabled in the settings dialog.
+- Typst universe `@preview` packages now show up in the auto-completion suggestions for the `#import` statement.
+- Editor font size can be temporarily zoomed in and out using the `View` menu, the corresponding shortcuts, or by using the mouse wheel or trackpad while holding `Ctrl`.
+- The editor theme can be explicitly changed to be always dark or always light in the settings dialog. Note that this affects only the editing area, not the entire UI.
+- The edited file being externally modified or moved on disk is now detected, and the editor offers appropriate actions.
+- Using the arrow keys while holding `Ctrl+Alt` will perform a visual cursor move, regardless of the default move style selected.
+- The `TYPST_FONT_PATHS` environment variable used by Typst CLI is now respected by Katvan as well. It can be used to make non-installed fonts available to the Typst compiler.
+
+### Fixes
+
+- Line directionality heuristics that are affected by Typst syntax now re-apply correctly immediately after edits.
+
+### Packaging Changes
+
+- Bundled Qt version in pre-built packages is now `6.9.1`.
+- Preparatory work was done to make Katvan behave well in the Flatpak sandbox. A build is expected to be submitted to Flathub in the near future.
+
 ## v0.9.0 (2025-03-30)
 
 ### Typst Version
