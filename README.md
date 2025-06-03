@@ -22,6 +22,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
     - But also specific additional functionality, for example:
       - Syntax-aware line directionality heuristc
       - Automatic directionality isolation of inline math and code
+      - Displaying BiDi control characters with a special custom font[^1]
       - Toggling between logical and visual cursor movement
       - Manually flipping paragraph direction (using both Windows style `Ctrl+RShift`/`LShift`, or Firefox style `Ctrl+Shift+X`)
       - Handy commands to manually insert BiDi control marks and isolates for when the algorithm doesn't quite lead to the right result (e.g. for some instances of inline raw text)
@@ -60,13 +61,14 @@ Due to various reasons, there are no pre-built binaries available for macOS. Use
 To compile and install Katvan from source code, you'll need:
 - A C++ compiler toolchain that supports C++20, and is [supported by Qt](https://doc.qt.io/qt-6/supported-platforms.html)
 - A recent stable Rust toolchain
-- Development files for Qt 6.5 (or any later 6.x release)
+- Development files for Qt 6.5 (or any later 6.x release - Qt 6.9.1 or above is highly recommended).
 - CMake 3.19 or later
 - [Corrosion](https://github.com/corrosion-rs/corrosion) (optional, will be automatically downloaded if missing)
 - A working `pkg-config`
 - [hunspell](http://hunspell.github.io/) (required only on Linux)
 - [libarchive](https://libarchive.org/)
 - [GoogleTest](https://google.github.io/googletest/) (optional, for running unit tests)
+- [python3-mistletoe](https://github.com/miyuchina/mistletoe) (optional, only on Linux, for generating AppStream metainfo)
 
 Get those from your distribution repositories, vcpkg, Homebrew, or wherever.
 
@@ -102,3 +104,5 @@ Issues detailing bug reports and suggestions are welcome, but please don't expec
 ## Roadmap
 
 See the dedicated [ROADMAP.md](ROADMAP.md) file.
+
+[^1]: Requires Qt 6.9 or above, if building from source.
