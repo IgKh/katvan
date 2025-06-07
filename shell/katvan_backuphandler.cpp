@@ -105,6 +105,7 @@ void BackupHandler::editorContentChanged()
 static QString getBackupFileTemplate(const QString& sourceFile)
 {
 #ifdef KATVAN_FLATPAK_BUILD
+    Q_UNUSED(sourceFile);
     return QDir::tempPath() + "/.katvan_XXXXXX.typ";
 #else
     QFileInfo info(sourceFile);

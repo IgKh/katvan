@@ -241,15 +241,20 @@ impl<'a> EngineImpl<'a> {
         let elapsed = format!("{:.2?}", start.elapsed());
 
         if let Ok(data) = result {
+            let display_path = crate::pathmap::get_display_path(&path)
+                .to_string_lossy()
+                .into_owned();
+
             match std::fs::write(path, data) {
                 Ok(_) => {
-                    self.logger
-                        .log_note(&format!("PDF exported successfully to {path} in {elapsed}"));
+                    self.logger.log_note(&format!(
+                        "PDF exported successfully to {display_path} in {elapsed}"
+                    ));
                     Ok(true)
                 }
                 Err(err) => {
                     self.logger.log_error(
-                        &format!("Unable to write to {path}: {err}"),
+                        &format!("Unable to write to {display_path}: {err}"),
                         "",
                         -1,
                         -1,
@@ -326,7 +331,12 @@ impl<'a> EngineImpl<'a> {
             .context("No available tooltip")
     }
 
-    pub fn get_completions(&self, line: usize, column: usize, implicit: bool) -> Result<ffi::Completions> {
+    pub fn get_completions(
+        &self,
+        line: usize,
+        column: usize,
+        implicit: bool,
+    ) -> Result<ffi::Completions> {
         let main = self.world.main_source();
         let cursor = main
             .line_column_to_byte(line, column)

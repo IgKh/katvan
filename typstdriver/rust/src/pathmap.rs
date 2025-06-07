@@ -73,31 +73,31 @@ struct PathMapEntry {
 }
 
 impl PathMapEntry {
-    #[cfg(feature = "flatpak")]
     fn new<S: AsRef<str>>(path: S) -> Self {
-        use std::ffi::OsString;
-        use std::os::unix::ffi::OsStringExt;
-
         let actual = PathBuf::from(path.as_ref());
-
-        let displayed = match xattr::get(&actual, "user.document-portal.host-path")
-            .ok()
-            .flatten()
-        {
-            Some(buf) => OsString::from_vec(buf).into(),
-            None => actual.clone(),
-        };
+        let displayed = get_display_path(&actual);
 
         Self { actual, displayed }
     }
+}
 
-    #[cfg(not(feature = "flatpak"))]
-    fn new<S: AsRef<str>>(path: S) -> Self {
-        Self {
-            actual: PathBuf::from(path.as_ref()),
-            displayed: PathBuf::from(path.as_ref()),
-        }
+#[cfg(feature = "flatpak")]
+pub fn get_display_path<P: AsRef<Path>>(path: P) -> PathBuf {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    match xattr::get(path.as_ref(), "user.document-portal.host-path")
+        .ok()
+        .flatten()
+    {
+        Some(buf) => OsString::from_vec(buf).into(),
+        None => path.as_ref().to_owned(),
     }
+}
+
+#[cfg(not(feature = "flatpak"))]
+pub fn get_display_path<P: AsRef<Path>>(path: P) -> PathBuf {
+    path.as_ref().to_owned()
 }
 
 fn join_and_normalize_path(base: &Path, path: &Path) -> PathBuf {
