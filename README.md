@@ -38,13 +38,38 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 
 ## Installation
 
-For **versions 0.6.0 and prior** only: in addition to Katvan itself, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details. _This is not required for the latest release_.
+<details>
+
+<summary>For versions 0.6.0 and prior only</summary>
+
+In addition to Katvan itself, it is required to install the `typst` CLI and make it available via the system path or by placing it next to the `katvan` executable. Without it previews and PDF export will not work. [See here](https://github.com/typst/typst#installation) for details. _This is not required for the latest release_.
+
+</details>
 
 ### Linux
 
-A pre-built AppImage for the `x86_64` architecture is available from the project releases page. If it isn't suitable, you'll need to compile from source. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
+There are several options available. If not sure, the AppImage format is recommended.
 
-There is also an [AUR package](https://aur.archlinux.org/packages/katvan) for Arch Linux users.
+#### AppImage
+
+A pre-built AppImage for the `x86_64` architecture is available from the project releases page. This is a single executable file containing everything needed to run Katvan and start working with Typst on most contemporary Linux distributions. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
+
+#### Flatpak
+
+For those who prefer using Flatpak, Katvan is available to install from [Flathub](https://flathub.org/apps/app.katvan.Katvan) for the `x86_64` and `aarch64` architectures.
+
+[![Get it on Flathub](https://flathub.org/api/badge?locale=en)](https://flathub.org/apps/app.katvan.Katvan)
+
+> [!IMPORTANT]
+> Apps installed by Flatpak run inside a sandbox which isolates them from the host system and limits their access to resources such as the file system. The Katvan Flatpak package contains a modified build which attempts to streamline this. However, there are still differences - in particular, to include any external files in your documents, you must allow access to a directory tree containing them via `Tools > Settings > Compiler > Allowed Paths`. There may also be some issues with using files stored on external media.
+>
+> Users which do not specifically require or prefer using Flatpak should default to using the AppImage build of Katvan.
+
+#### Other Options
+
+If none of the above options is suitable, you'll need to build from source code. See below for instructions.
+
+There is also an [AUR package](https://aur.archlinux.org/packages/katvan) to automate this for Arch Linux users.
 
 ### Windows
 
