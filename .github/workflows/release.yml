@@ -53,7 +53,15 @@ jobs:
           if-no-files-found: error
 
   build-linux-appimage:
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            suffix: x86_64
+          - os: ubuntu-24.04-arm
+            suffix: aarch64
+    runs-on: ${{ matrix.os }}
     needs: [prepare]
 
     steps:
@@ -64,7 +72,6 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.9.1
-          arch: linux_gcc_64
           cache: true
 
       - name: Install additional packages
@@ -75,8 +82,9 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install AppImage tools
-        uses: miurahr/install-linuxdeploy-action@v1
+      - id: install-linuxdeploy
+        name: Install AppImage tools
+        uses: miurahr/install-linuxdeploy-action@4ba2b840a42ead143a719366bde4cee1dd45e700
         with:
           plugins: qt appimage
 
@@ -93,28 +101,28 @@ jobs:
 
       - name: Generate AppImage
         run: |
-          linuxdeploy-x86_64.AppImage --appdir build/AppDir --plugin qt --output appimage
+          ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} --appdir build/AppDir --plugin qt --output appimage
         env:
           EXTRA_QT_MODULES: waylandcompositor;svg
           EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so;libqwayland-egl.so
           DEPLOY_PLATFORM_THEMES: 1
           LINUXDEPLOY_OUTPUT_VERSION: ${{ needs.prepare.outputs.katvan_version }}
-          LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*x86_64.AppImage.zsync
+          LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*${{ matrix.suffix }}.AppImage.zsync
 
       - name: Create attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: Katvan-${{ needs.prepare.outputs.katvan_version }}-x86_64.AppImage
+          subject-path: Katvan-${{ needs.prepare.outputs.katvan_version }}-${{ matrix.suffix }}.AppImage
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
           name: AppImage
-          path: Katvan-${{ needs.prepare.outputs.katvan_version }}-x86_64.AppImage*
+          path: Katvan-${{ needs.prepare.outputs.katvan_version }}-${{ matrix.suffix }}.AppImage*
           if-no-files-found: error
 
   build-windows-zip:
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [prepare]
 
     steps:
@@ -170,7 +178,7 @@ jobs:
           if-no-files-found: error
 
   build-windows-installer:
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [prepare]
 
     steps:
