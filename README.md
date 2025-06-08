@@ -52,7 +52,7 @@ There are several options available. If not sure, the AppImage format is recomme
 
 #### AppImage
 
-A pre-built AppImage for the `x86_64` architecture is available from the project releases page. This is a single executable file containing everything needed to run Katvan and start working with Typst on most contemporary Linux distributions. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
+A pre-built AppImage for the `x86_64` architecture is available from the project [releases page](https://github.com/IgKh/katvan/releases). This is a single executable file containing everything needed to run Katvan and start working with Typst on most contemporary Linux distributions. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
 
 #### Flatpak
 
@@ -73,7 +73,7 @@ There is also an [AUR package](https://aur.archlinux.org/packages/katvan) to aut
 
 ### Windows
 
-Builds for 64-bit Windows 10/11 are available from the project releases page. There is a traditional installer, as well as a portable build. The portable build will store settings and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
+Builds for 64-bit Windows 10/11 are available from the project [releases page](https://github.com/IgKh/katvan/releases). There is a traditional installer, as well as a portable build. The portable build will store settings and the cache for downloaded Universe packages in the same directory as the main executable, so make sure to extract the archive in a writable location. To write settings to the registry instead, run the `katvan.exe` binary with the `--no-portable` flag.
 
 Both builds use the built-in Windows spell checker, and will therefore make use of the language packs available on the host.
 
