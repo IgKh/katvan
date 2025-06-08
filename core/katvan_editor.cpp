@@ -91,6 +91,7 @@ Editor::Editor(Document* doc, QWidget* parent)
 {
     setAcceptRichText(false);
     setMinimumSize(300, 100);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     setDocument(doc);
     doc->setDocumentLayout(new EditorLayout(doc, d_codeModel));
@@ -160,6 +161,8 @@ void Editor::applyEffectiveSettings()
         return;
     }
 
+    document()->setLayoutEnabled(false);
+
     QFont font = d_effectiveSettings.font();
     QFontMetricsF fontMetrics { font };
 
@@ -189,6 +192,8 @@ void Editor::applyEffectiveSettings()
     }
     updateLineNumberGutters();
     updateEditorTheme();
+
+    document()->setLayoutEnabled(true);
 
     d_completionManager->setImplictCompletionAllowed(d_effectiveSettings.autoTriggerCompletions());
 }
@@ -1350,3 +1355,5 @@ void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
 }
 
 }
+
+#include "moc_katvan_editor.cpp"

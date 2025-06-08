@@ -29,6 +29,7 @@
 #include <QLibraryInfo>
 #include <QSettings>
 #include <QStyle>
+#include <QTimer>
 #include <QTranslator>
 
 void setupPortableMode()
@@ -143,12 +144,14 @@ int main(int argc, char** argv)
 
     wnd.show();
 
-    if (!parser.positionalArguments().isEmpty()) {
-        wnd.loadFile(parser.positionalArguments().at(0));
-    }
-    else {
-        wnd.newFile();
-    }
+    QTimer::singleShot(0, &wnd, [&parser, &wnd]() {
+        if (!parser.positionalArguments().isEmpty()) {
+            wnd.loadFile(parser.positionalArguments().at(0));
+        }
+        else {
+            wnd.newFile();
+        }
+    });
 
     return app.exec();
 }

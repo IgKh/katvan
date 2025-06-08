@@ -25,6 +25,7 @@
 #include <QPainter>
 #include <QStyle>
 #include <QTextDocument>
+#include <QTimer>
 
 #include <memory>
 
@@ -113,6 +114,12 @@ EditorLayout::EditorLayout(QTextDocument* document, CodeModel* codeModel)
     , d_cursorWidth(1)
     , d_documentSize(0, 0)
 {
+    d_fullLayoutDebounceTimer = new QTimer(this);
+    d_fullLayoutDebounceTimer->setSingleShot(true);
+    d_fullLayoutDebounceTimer->setInterval(25);
+    d_fullLayoutDebounceTimer->callOnTimeout(this, [this, document]() {
+        doDocumentLayout(document->firstBlock(), document->lastBlock());
+    });
 }
 
 QSizeF EditorLayout::documentSize() const
@@ -136,7 +143,7 @@ QRectF EditorLayout::frameBoundingRect(QTextFrame* frame) const
 
 QRectF EditorLayout::blockBoundingRect(const QTextBlock& block) const
 {
-    if (!block.isValid()) {
+    if (!block.isValid() || !document()->isLayoutEnabled()) {
         return QRectF();
     }
 
@@ -277,12 +284,27 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
 
 void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdded)
 {
+    if (!document()->isLayoutEnabled()) {
+        return;
+    }
+
     QTextBlock startBlock = document()->findBlock(position);
     QTextBlock endBlock = document()->findBlock(qMax(0, position + charsAdded + charsRemoved));
     if (!endBlock.isValid()) {
         endBlock = document()->lastBlock();
     }
 
+    bool fullRelayoutNeeded = startBlock.blockNumber() == 0 && endBlock == document()->lastBlock();
+    if (fullRelayoutNeeded) {
+        d_fullLayoutDebounceTimer->start();
+    }
+    else {
+        doDocumentLayout(startBlock, endBlock);
+    }
+}
+
+void EditorLayout::doDocumentLayout(const QTextBlock& startBlock, const QTextBlock& endBlock)
+{
     qreal y;
     if (startBlock.previous().isValid()) {
         QRectF prevBoundingRect = blockBoundingRect(startBlock.previous());
@@ -622,3 +644,5 @@ void EditorLayout::recalculateDocumentSize()
 }
 
 }
+
+#include "moc_katvan_editorlayout.cpp"

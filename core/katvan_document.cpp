@@ -45,7 +45,9 @@ QString Document::textForPreview() const
 void Document::setDocumentText(const QString& text)
 {
     QScopedValueRollback guard { d_suppressContentChangeHandling, true };
+    setLayoutEnabled(false);
     setPlainText(text);
+    setLayoutEnabled(true);
 
     Q_EMIT contentReset();
 }
@@ -84,5 +86,6 @@ void Document::propagateDocumentEdit(int from, int charsRemoved, int charsAdded)
     d_debounceTimer->start();
 }
 
-
 }
+
+#include "moc_katvan_document.cpp"

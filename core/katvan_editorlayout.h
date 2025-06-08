@@ -20,6 +20,10 @@
 #include <QAbstractTextDocumentLayout>
 #include <QTextBlock>
 
+QT_BEGIN_NAMESPACE
+class QTimer;
+QT_END_NAMESPACE
+
 namespace katvan {
 
 class CodeModel;
@@ -48,6 +52,7 @@ protected:
     void documentChanged(int position, int charsRemoved, int charsAdded) override;
 
 private:
+    void doDocumentLayout(const QTextBlock& startBlock, const QTextBlock& endBlock);
     void layoutBlock(QTextBlock& block, qreal topY);
     void doBlockLayout(QTextLayout* layout, const QTextOption& option, qreal wrappingIndentWidth, qreal topY);
     Qt::LayoutDirection getBlockDirection(const QTextBlock& block, const QString& blockText);
@@ -55,6 +60,7 @@ private:
     void recalculateDocumentSize();
 
     CodeModel* d_codeModel;
+    QTimer* d_fullLayoutDebounceTimer;
 
     int d_cursorWidth;
     QSizeF d_documentSize;
