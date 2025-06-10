@@ -76,7 +76,7 @@ jobs:
 
       - name: Install additional packages
         run: |
-          sudo apt install -y libhunspell-dev libarchive-dev g++-10 libfuse2
+          sudo apt install -y libhunspell-dev libarchive-dev
           pip install --user mistletoe
 
       - name: Setup Rust toolchain
@@ -84,14 +84,12 @@ jobs:
 
       - id: install-linuxdeploy
         name: Install AppImage tools
-        uses: miurahr/install-linuxdeploy-action@4ba2b840a42ead143a719366bde4cee1dd45e700
+        uses: miurahr/install-linuxdeploy-action@v1
         with:
           plugins: qt appimage
 
       - name: Configure
         run: cmake -S . -B build -DKATVAN_DISABLE_PORTABLE=ON -DAPPIMAGE_INSTALL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-        env:
-          CXX: g++-10
 
       - name: Build
         run: cmake --build build -j $(nproc)
@@ -103,6 +101,7 @@ jobs:
         run: |
           ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} --appdir build/AppDir --plugin qt --output appimage
         env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
           EXTRA_QT_MODULES: waylandcompositor;svg
           EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so;libqwayland-egl.so
           DEPLOY_PLATFORM_THEMES: 1
@@ -117,7 +116,7 @@ jobs:
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: AppImage
+          name: AppImage-${{ matrix.suffix }}
           path: Katvan-${{ needs.prepare.outputs.katvan_version }}-${{ matrix.suffix }}.AppImage*
           if-no-files-found: error
 
@@ -266,6 +265,6 @@ jobs:
             --notes-file notes.md \
             --verify-tag \
             ${{ github.ref_name }} \
-            tarball/* AppImage/* WindowsZip/* WindowsInstaller/*
+            tarball/* AppImage*/* WindowsZip/* WindowsInstaller/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
