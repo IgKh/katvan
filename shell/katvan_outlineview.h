@@ -34,6 +34,7 @@ public:
 
 public slots:
     void outlineUpdated(katvan::typstdriver::OutlineNode* outline);
+    void currentLineChanged(int line);
 
 private slots:
     void itemActivated(const QModelIndex& index);
@@ -43,6 +44,7 @@ signals:
 
 private:
     OutlineModel* d_model;
+    int d_currentLine;
 };
 
 }

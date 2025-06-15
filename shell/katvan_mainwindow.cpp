@@ -461,6 +461,8 @@ void MainWindow::loadFile(const QString& fileName)
 
     QTextStream stream(&file);
     d_document->setDocumentText(stream.readAll());
+    d_editor->setTextCursor(QTextCursor(d_document));
+
     d_previewer->reset();
 
     setCurrentFile(fileName);
@@ -968,6 +970,8 @@ void MainWindow::cursorPositionChanged()
     if (d_previewer->shouldFollowEditorCursor()) {
         d_driver->forwardSearch(line, column, d_previewer->currentPage());
     }
+
+    d_outlineView->currentLineChanged(line);
 }
 
 void MainWindow::editorFontZoomFactorChanged(qreal factor)
@@ -1070,3 +1074,5 @@ void MainWindow::compilationStatusChanged()
 }
 
 }
+
+#include "moc_katvan_mainwindow.cpp"

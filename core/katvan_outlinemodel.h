@@ -42,6 +42,7 @@ public:
     QVariant data(const QModelIndex& index, int role) const override;
 
     bool isRightToLeft() const;
+    QModelIndex indexForDocumentLine(int line) const;
 
 public slots:
     void setOutline(katvan::typstdriver::OutlineNode* outline);

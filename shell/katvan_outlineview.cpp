@@ -23,6 +23,7 @@ namespace katvan {
 
 OutlineView::OutlineView(QWidget* parent)
     : QTreeView(parent)
+    , d_currentLine(-1)
 {
     d_model = new OutlineModel(this);
     setModel(d_model);
@@ -30,7 +31,6 @@ OutlineView::OutlineView(QWidget* parent)
     setHeaderHidden(true);
     setUniformRowHeights(true);
     setExpandsOnDoubleClick(false);
-    setSelectionMode(QAbstractItemView::NoSelection);
 
     connect(this, &QTreeView::activated, this, &OutlineView::itemActivated);
 }
@@ -38,9 +38,25 @@ OutlineView::OutlineView(QWidget* parent)
 void OutlineView::outlineUpdated(typstdriver::OutlineNode* outline)
 {
     d_model->setOutline(outline);
+    d_currentLine = -1;
 
     expandToDepth(3);
     setLayoutDirection(d_model->isRightToLeft() ? Qt::RightToLeft : Qt::LeftToRight);
+}
+
+void OutlineView::currentLineChanged(int line)
+{
+    if (d_currentLine == line) {
+        return;
+    }
+    d_currentLine = line;
+
+    QModelIndex index = d_model->indexForDocumentLine(line);
+    if (!index.isValid()) {
+        return;
+    }
+
+    setCurrentIndex(index);
 }
 
 void OutlineView::itemActivated(const QModelIndex& index)
@@ -60,3 +76,5 @@ void OutlineView::itemActivated(const QModelIndex& index)
 }
 
 }
+
+#include "moc_katvan_outlineview.cpp"

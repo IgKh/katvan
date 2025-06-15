@@ -126,6 +126,45 @@ QVariant OutlineModel::data(const QModelIndex& index, int role) const
     return QVariant();
 }
 
+static const typstdriver::OutlineNode* getOutlineNodeForDocumentLine(const typstdriver::OutlineNode* parent, int line)
+{
+    if (!parent) {
+        return nullptr;
+    }
+    const typstdriver::OutlineNode* result = nullptr;
+
+    const QList<typstdriver::OutlineNode*> children = parent->children();
+    for (const auto* node : children) {
+        if (node->line() > line) {
+            break;
+        }
+        result = node;
+    }
+
+    if (result) {
+        const typstdriver::OutlineNode* subtreeResult = getOutlineNodeForDocumentLine(result, line);
+        if (subtreeResult) {
+            result = subtreeResult;
+        }
+    }
+    return result;
+}
+
+QModelIndex OutlineModel::indexForDocumentLine(int line) const
+{
+    const auto* node = getOutlineNodeForDocumentLine(d_root.get(), line);
+    if (!node) {
+        return QModelIndex();
+    }
+
+    int row = node->parent()->children().indexOf(node);
+    if (row < 0) {
+        return QModelIndex();
+    }
+
+    return createIndex(row, 0, node);
+}
+
 bool OutlineModel::isRightToLeft() const
 {
     // Determine this based on plurality of top level heading titles
@@ -149,3 +188,5 @@ bool OutlineModel::isRightToLeft() const
 }
 
 }
+
+#include "moc_katvan_outlinemodel.cpp"
