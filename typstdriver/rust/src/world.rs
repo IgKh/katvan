@@ -149,7 +149,7 @@ impl typst::World for KatvanWorld<'_> {
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts.get(index).and_then(|slot| slot.get())
+        self.fonts.get(index).and_then(FontSlot::get)
     }
 
     fn today(&self, offset: Option<i64>) -> Option<typst::foundations::Datetime> {
@@ -198,23 +198,21 @@ impl<'a> PackageManagerWrapper<'a> {
     }
 
     fn get_package_root(&mut self, pkg: &PackageSpec) -> FileResult<PathBuf> {
-        let root = match self.roots_cache.get(pkg) {
-            Some(root) => root.clone(),
-            None => {
-                let path = self.proxy.as_mut().get_package_local_path(
-                    &pkg.namespace,
-                    &pkg.name,
-                    &pkg.version.to_string(),
-                );
+        if let Some(root) = self.roots_cache.get(pkg) {
+            return Ok(root.clone());
+        }
 
-                self.check_package_manager_error(pkg)?;
+        let path = self.proxy.as_mut().get_package_local_path(
+            &pkg.namespace,
+            &pkg.name,
+            &pkg.version.to_string(),
+        );
 
-                let path = PathBuf::from(path);
-                self.roots_cache.insert(pkg.clone(), path.clone());
-                path
-            }
-        };
-        Ok(root)
+        self.check_package_manager_error(pkg)?;
+
+        let path = PathBuf::from(path);
+        self.roots_cache.insert(pkg.clone(), path.clone());
+        Ok(path)
     }
 
     fn get_all_packages(&mut self) -> Result<Vec<(PackageSpec, Option<EcoString>)>, ()> {

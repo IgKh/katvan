@@ -19,6 +19,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::pin::Pin;
 
 use anyhow::{Context, Result};
+use typst::ecow::EcoString;
 use typst::layout::{Abs, PagedDocument, Point};
 use typst::World;
 
@@ -159,9 +160,8 @@ impl<'a> EngineImpl<'a> {
     }
 
     fn span_to_location(&self, span: typst::syntax::Span) -> DiagnosticLocation {
-        let id = match span.id() {
-            Some(id) => id,
-            None => return DiagnosticLocation::default(),
+        let Some(id) = span.id() else {
+            return DiagnosticLocation::default();
         };
 
         let source = self.world.source(id).unwrap();
@@ -177,7 +177,7 @@ impl<'a> EngineImpl<'a> {
         let end = position_to_file_location(&source, range.end).unwrap_or_default();
 
         DiagnosticLocation {
-            file: format!("{}{}", package, file),
+            file: format!("{package}{file}"),
             start,
             end,
         }
@@ -198,7 +198,7 @@ impl<'a> EngineImpl<'a> {
                 ]
             }
         } else {
-            diag.hints.iter().map(|hint| hint.as_str()).collect()
+            diag.hints.iter().map(EcoString::as_str).collect()
         }
     }
 
@@ -241,12 +241,12 @@ impl<'a> EngineImpl<'a> {
         let elapsed = format!("{:.2?}", start.elapsed());
 
         if let Ok(data) = result {
-            let display_path = crate::pathmap::get_display_path(&path)
+            let display_path = crate::pathmap::get_display_path(path)
                 .to_string_lossy()
                 .into_owned();
 
             match std::fs::write(path, data) {
-                Ok(_) => {
+                Ok(()) => {
                     self.logger.log_note(&format!(
                         "PDF exported successfully to {display_path} in {elapsed}"
                     ));
@@ -395,8 +395,8 @@ fn position_to_file_location(
     let column = source.byte_to_column(byte_idx)?;
 
     Some(DiagnosticFileLocation {
-        line: line as i64,
-        column: column as i64,
+        line: i64::try_from(line).unwrap_or(-1),
+        column: i64::try_from(column).unwrap_or(-1),
     })
 }
 

@@ -171,12 +171,9 @@ fn get_reference_link(world: &dyn IdeWorld, f: &Func) -> Option<String> {
 
 fn get_reference_link_by_name(world: &dyn IdeWorld, name: &str) -> Option<String> {
     let binding = world.library().global.scope().get(name)?;
-    let categoy = binding.category()?.name();
+    let category = binding.category()?.name();
 
-    Some(format!(
-        "{}/reference/{}/{}",
-        ONLINE_DOCS_PREFIX, categoy, name
-    ))
+    Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{name}"))
 }
 
 pub fn get_definition(
