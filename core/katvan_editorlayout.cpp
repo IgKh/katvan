@@ -156,6 +156,10 @@ QRectF EditorLayout::blockBoundingRect(const QTextBlock& block) const
         ? layoutData->displayLayout.get()
         : block.layout();
 
+    if (layout->lineCount() == 0) {
+        return QRectF();
+    }
+
     QRectF rect = layout->boundingRect();
     rect.moveTopLeft(layout->position());
     return rect;
@@ -223,6 +227,12 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
         QTextLayout* layout = layoutData->displayLayout
             ? layoutData->displayLayout.get()
             : block.layout();
+
+        if (layout->lineCount() == 0) {
+            // Not layed out yet. Could happen if we de-bounced a full document
+            // re-layout. A repaint will happen later.
+            return;
+        }
 
         if (layout->position().y() > clip.bottom()) {
             break;
@@ -294,7 +304,10 @@ void EditorLayout::documentChanged(int position, int charsRemoved, int charsAdde
         endBlock = document()->lastBlock();
     }
 
-    bool fullRelayoutNeeded = startBlock.blockNumber() == 0 && endBlock == document()->lastBlock();
+    bool fullRelayoutNeeded = startBlock.blockNumber() == 0
+        && endBlock == document()->lastBlock()
+        && startBlock != endBlock;
+
     if (fullRelayoutNeeded) {
         d_fullLayoutDebounceTimer->start();
     }
