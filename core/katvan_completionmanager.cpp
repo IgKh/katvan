@@ -276,6 +276,11 @@ void CompletionManager::startCompletion(bool implicit)
     Q_EMIT completionsRequested(cursor.blockNumber(), cursor.positionInBlock(), implicit);
 }
 
+void CompletionManager::close()
+{
+    d_completer->popup()->hide();
+}
+
 void CompletionManager::completionsReady(int line, int column, QByteArray completionsJson)
 {
     d_completionsRequested = false;
@@ -382,3 +387,5 @@ void CompletionManager::suggestionSelected(const QModelIndex& index)
 }
 
 }
+
+#include "moc_katvan_completionmanager.cpp"

@@ -36,16 +36,10 @@ using HighlightingMarkerKind = parsing::HighlightingMarker::Kind;
 
 bool EditorTheme::isAppInDarkMode()
 {
-    QApplication* app = qobject_cast<QApplication *>(QCoreApplication::instance());
-    if (!app) {
-        // Happens in test suite
-        return false;
-    }
-
-    if (app->styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
+    if (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
         // Qt Vista style correctly reports dark mode setting on Windows 10,
         // but doesn't actually respect it - the default palette is light.
-        if (app->style()->name() == "windowsvista") {
+        if (qApp->style()->name() == "windowsvista") {
             return false;
         }
         return true;
@@ -53,7 +47,7 @@ bool EditorTheme::isAppInDarkMode()
 
     // If the Qt platform integration doesn't support signaling a color scheme,
     // sniff it from the global palette.
-    QPalette palette = app->palette();
+    QPalette palette = qApp->palette();
     return palette.color(QPalette::WindowText).lightness() > palette.color(QPalette::Window).lightness();
 }
 

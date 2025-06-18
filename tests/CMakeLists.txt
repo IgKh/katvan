@@ -8,6 +8,7 @@ find_package(Qt6 REQUIRED COMPONENTS Test)
 
 add_executable(katvan_tests
     katvan_codemodel.t.cpp
+    katvan_editor.t.cpp
     katvan_editorsettings.t.cpp
     katvan_parsing.t.cpp
     katvan_testutils.cpp

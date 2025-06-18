@@ -647,7 +647,8 @@ static bool cursorInLeadingWhitespace(const QTextCursor& cursor)
 {
     QString blockText = cursor.block().text();
     QString textBeforeCursor = blockText.sliced(0, cursor.positionInBlock());
-    return utils::isAllWhitespace(textBeforeCursor);
+    bool onBidiMark = !textBeforeCursor.isEmpty() && utils::isSingleBidiMark(textBeforeCursor.back());
+    return utils::isAllWhitespace(textBeforeCursor) && !onBidiMark;
 }
 
 void Editor::handleNewLine()
@@ -1049,6 +1050,10 @@ void Editor::popupInsertMenu()
 {
     QMenu* insertMenu = createInsertMenu();
     insertMenu->setAttribute(Qt::WA_DeleteOnClose);
+
+    if (d_completionManager->isActive()) {
+        d_completionManager->close();
+    }
 
     QPoint globalPos = viewport()->mapToGlobal(cursorRect().topLeft());
     insertMenu->exec(globalPos);

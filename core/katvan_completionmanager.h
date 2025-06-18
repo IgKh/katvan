@@ -80,6 +80,7 @@ public slots:
     void startExplicitCompletion();
     void startImplicitCompletion();
     void startCompletion(bool implicit);
+    void close();
     void completionsReady(int line, int column, QByteArray completionsJson);
     void updateCompletionPrefix(bool force = false);
 
