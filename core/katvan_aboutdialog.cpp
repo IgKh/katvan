@@ -18,22 +18,20 @@
 #include "katvan_aboutdialog.h"
 #include "katvan_typstdriverwrapper.h"
 
-#include <QCoreApplication>
 #include <QFile>
+#include <QGuiApplication>
 #include <QOperatingSystemVersion>
 #include <QTextStream>
 
 namespace katvan {
 
-static QString operatingSystemDescription()
+#ifdef Q_OS_LINUX
+
+static QByteArray getLinuxRelease()
 {
-#ifndef Q_OS_LINUX
-    QOperatingSystemVersion os = QOperatingSystemVersion::current();
-    return QString("%1 %2").arg(os.name(), os.version().toString());
-#else
     QFile f { "/etc/os-release" };
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        return QStringLiteral("<unknown>");
+        return QByteArray();
     }
 
     QByteArray prefix = QByteArrayLiteral("PRETTY_NAME=");
@@ -43,11 +41,56 @@ static QString operatingSystemDescription()
 
         if (line.startsWith(prefix)) {
             // Strip prefix and quotes
-            QByteArray os = line.sliced(prefix.size() + 1, line.size() - prefix.size() - 2);
-            return QString::fromLatin1(os);
+            return line.sliced(prefix.size() + 1, line.size() - prefix.size() - 2);
         }
     }
-    return QStringLiteral("<unknown>");
+    return QByteArray();
+}
+
+static QByteArray getLinuxDesktop()
+{
+    QByteArray result = qgetenv("XDG_CURRENT_DESKTOP");
+    if (!result.isEmpty()) {
+        return result.split(';').first().trimmed();
+    }
+
+    return qgetenv("XDG_SESSION_DESKTOP");
+}
+
+static bool isOnWayland()
+{
+    auto* iface = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
+    return iface != nullptr;
+}
+
+#endif
+
+static QString operatingSystemDescription()
+{
+#ifndef Q_OS_LINUX
+    QOperatingSystemVersion os = QOperatingSystemVersion::current();
+    return QString("%1 %2").arg(os.name(), os.version().toString());
+#else
+    QByteArray release = getLinuxRelease();
+    if (release.isEmpty()) {
+        return QStringLiteral("<unknown>");
+    }
+
+    QString result = QString::fromLatin1(release);
+    QStringList details;
+
+    QByteArray desktop = getLinuxDesktop();
+    if (!desktop.isEmpty()) {
+        details.append(QString::fromLatin1(desktop));
+    }
+    if (isOnWayland()) {
+        details.append(QStringLiteral("Wayland"));
+    }
+
+    if (!details.isEmpty()) {
+        result += QStringLiteral(" (%1)").arg(details.join("; "));
+    }
+    return result;
 #endif
 }
 
