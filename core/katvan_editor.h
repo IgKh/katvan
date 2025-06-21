@@ -74,6 +74,7 @@ public slots:
     void showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl);
 
     void insertSymbol(const QString& symbolName);
+    void insertColor(const QColor& color);
 
 protected:
     bool event(QEvent* event) override;
@@ -132,6 +133,7 @@ signals:
     void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
     void goToDefinitionRequested(int blockNumber, int charOffset);
     void showSymbolPicker();
+    void showColorPicker();
 
 private:
     QWidget* d_leftLineNumberGutter;

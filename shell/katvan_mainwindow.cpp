@@ -41,6 +41,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
+#include <QColorDialog>
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QFileDialog>
@@ -120,6 +121,7 @@ void MainWindow::setupUI()
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor, &Editor::fontZoomFactorChanged, this, &MainWindow::editorFontZoomFactorChanged);
     connect(d_editor, &Editor::showSymbolPicker, this, &MainWindow::showSymbolPicker);
+    connect(d_editor, &Editor::showColorPicker, this, &MainWindow::showColorPicker);
 
     d_infoBar = new InfoBar();
     d_infoBar->setVisible(false);
@@ -1045,6 +1047,19 @@ void MainWindow::showSymbolPicker()
     }
 
     d_symbolPickerDialog->open();
+}
+
+void MainWindow::showColorPicker()
+{
+    QColor result = QColorDialog::getColor(
+        Qt::black,
+        this,
+        tr("Color Picker"),
+        QColorDialog::ShowAlphaChannel);
+
+    if (result.isValid()) {
+        d_editor->insertColor(result);
+    }
 }
 
 void MainWindow::previewReady()

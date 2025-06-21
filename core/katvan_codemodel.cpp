@@ -512,6 +512,22 @@ QString CodeModel::getSymbolExpression(const QString& symbolName, int pos) const
     return QLatin1Char('#') + symbolName;
 }
 
+QString CodeModel::getColorExpression(const QColor& color, int pos) const
+{
+    EnvironmentType env = classifyEnvironment(pos);
+    if (env == EnvironmentType::UNKNOWN || !color.isValid()) {
+        return QString();
+    }
+
+    QString name = color.name(color.alpha() != 255 ? QColor::HexArgb : QColor::HexRgb);
+    QString expresion = QStringLiteral("rgb(\"%1\")").arg(name);
+
+    if (env == EnvironmentType::CODE) {
+        return expresion;
+    }
+    return QLatin1Char('#') + expresion;
+}
+
 }
 
 #include "moc_katvan_codemodel.cpp"

@@ -78,6 +78,7 @@ private slots:
     void showSettingsDialog();
     void settingsDialogAccepted();
     void showSymbolPicker();
+    void showColorPicker();
     void previewReady();
     void compilationStatusChanged();
 

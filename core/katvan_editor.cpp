@@ -252,6 +252,7 @@ QMenu* Editor::createInsertMenu()
     insertInlineMathAction->setIcon(utils::fontIcon(QLatin1Char('$')));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
+    menu->addAction("&Color...", this, &Editor::showColorPicker);
     menu->addAction("&Symbol...", this, &Editor::showSymbolPicker);
 
     return menu;
@@ -1160,6 +1161,15 @@ void Editor::insertSymbol(const QString& symbolName)
 {
     QTextCursor cursor = textCursor();
     QString expression = d_codeModel->getSymbolExpression(symbolName, cursor.position());
+
+    cursor.insertText(expression);
+    setTextCursor(cursor);
+}
+
+void Editor::insertColor(const QColor& color)
+{
+    QTextCursor cursor = textCursor();
+    QString expression = d_codeModel->getColorExpression(color, cursor.position());
 
     cursor.insertText(expression);
     setTextCursor(cursor);

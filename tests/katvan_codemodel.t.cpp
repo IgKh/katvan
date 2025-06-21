@@ -339,6 +339,49 @@ TEST(CodeModelTests, GetSymbolExpression)
     EXPECT_THAT(res, ::testing::Eq(QStringLiteral("emoji.man.levitate")));
 }
 
+TEST(CodeModelTests, getColorExpression)
+{
+    auto doc = buildDocument({
+        /* 0 */ "== Heading",
+        /* 1 */ "#{  }",
+    });
+
+    CodeModel model(doc.get());
+    QString res;
+
+    QColor c1 = Qt::red;
+
+    res = model.getColorExpression(c1, globalPos(*doc, 0, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#rgb(\"#ff0000\")")));
+
+    res = model.getColorExpression(c1, globalPos(*doc, 1, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("rgb(\"#ff0000\")")));
+
+    QColor c2(10, 5, 12, 8);
+
+    res = model.getColorExpression(c2, globalPos(*doc, 0, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#rgb(\"#080a050c\")")));
+
+    res = model.getColorExpression(c2, globalPos(*doc, 1, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("rgb(\"#080a050c\")")));
+
+    QColor c3 = QColor::fromHsv(20, 20, 20);
+
+    res = model.getColorExpression(c3, globalPos(*doc, 0, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#rgb(\"#141312\")")));
+
+    res = model.getColorExpression(c3, globalPos(*doc, 1, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("rgb(\"#141312\")")));
+
+    QColor c4;
+
+    res = model.getColorExpression(c4, globalPos(*doc, 0, 3));
+    EXPECT_TRUE(res.isEmpty());
+
+    res = model.getColorExpression(c4, globalPos(*doc, 1, 3));
+    EXPECT_TRUE(res.isEmpty());
+}
+
 Q_GLOBAL_STATIC(QStringList, GET_MATCHING_CLOSE_BRACKET_TEST_DOC, {
     /* 0 */ "== English \\content",
     /* 1 */ "תוכן *מודגש* _כזה_ בעברית",

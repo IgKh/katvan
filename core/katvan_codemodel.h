@@ -134,6 +134,10 @@ public:
     // global position
     QString getSymbolExpression(const QString& symbolName, int pos) const;
 
+    // Get the correct Typst expression for representing the given color at the
+    // given global position
+    QString getColorExpression(const QColor& color, int pos) const;
+
 private:
     // Find the inner most state span still in effect at the given global position
     std::optional<StateSpan> spanAtPosition(QTextBlock block, int globalPos) const;
