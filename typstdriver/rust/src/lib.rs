@@ -20,4 +20,5 @@ mod bridge;
 mod darkifier;
 mod engine;
 mod pathmap;
+mod symbols;
 mod world;

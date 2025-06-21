@@ -81,9 +81,23 @@ class CodeModel : public QObject
     Q_OBJECT
 
 public:
+    enum class EnvironmentType
+    {
+        UNKNOWN = 0,
+        CONTENT,
+        CODE,
+        MATH,
+        OTHER,
+    };
+    Q_ENUM(EnvironmentType);
+
     CodeModel(QTextDocument* document)
         : QObject(document)
         , d_document(document) {}
+
+    // Perform rough classification on the type of environment (content, math,
+    // etc) that the given global position is in.
+    EnvironmentType classifyEnvironment(int pos) const;
 
     // If there is a delimiting bracket at the given global position,
     // find the position of the matching (opening/closing) bracket.
@@ -115,6 +129,10 @@ public:
     // Find closing bracket character that should be automatically appended
     // if _openBracket_ is inserted at the given cursor's position.
     std::optional<QChar> getMatchingCloseBracket(QTextCursor cursor, QChar openBracket) const;
+
+    // Get the correct Typst expression to insert the given symbol at the given
+    // global position
+    QString getSymbolExpression(const QString& symbolName, int pos) const;
 
 private:
     // Find the inner most state span still in effect at the given global position

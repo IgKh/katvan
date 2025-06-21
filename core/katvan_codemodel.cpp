@@ -220,6 +220,30 @@ static bool isLeftLeaningState(State state)
         || state == State::CONTENT_RAW_BLOCK;
 }
 
+CodeModel::EnvironmentType CodeModel::classifyEnvironment(int pos) const
+{
+    QTextBlock block = d_document->findBlock(pos);
+    if (!block.isValid()) {
+        return EnvironmentType::UNKNOWN;
+    }
+
+    auto span = spanAtPosition(block, pos);
+    if (!span) {
+        return EnvironmentType::CONTENT;
+    }
+
+    if (parsing::isContentHolderStateKind(span->state)) {
+        return EnvironmentType::CONTENT;
+    }
+    else if (parsing::isCodeHolderStateKind(span->state)) {
+        return EnvironmentType::CODE;
+    }
+    else if (parsing::isMathHolderStateKind(span->state)) {
+        return EnvironmentType::MATH;
+    }
+    return EnvironmentType::OTHER;
+}
+
 std::optional<int> CodeModel::findMatchingBracket(int pos) const
 {
     QTextBlock block = d_document->findBlock(pos);
@@ -415,21 +439,12 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
         prevChar = cursor.block().text().at(cursor.positionInBlock() - 1);
     }
 
-    bool isInCode = state == State::CODE_BLOCK
-                    || state == State::CODE_ARGUMENTS
-                    || state == State::CODE_LINE;
+    bool isInCode = parsing::isCodeHolderStateKind(state);
+    bool isInMath = parsing::isMathHolderStateKind(state);
+    bool isInContent = parsing::isContentHolderStateKind(state);
 
     bool isCodeFunctionCall = state == State::CODE_VARIABLE_NAME  // Possibly part of a function call
                                 || state == State::CODE_FUNCTION_NAME; // Definitely part of a function call
-
-    bool isInMath = state == State::MATH
-                    || state == State::MATH_ARGUMENTS;
-
-    bool isInContent = state == State::CONTENT
-                        || state == State::CONTENT_BLOCK
-                        || state == State::CONTENT_HEADING
-                        || state == State::CONTENT_EMPHASIS
-                        || state == State::CONTENT_STRONG_EMPHASIS;
 
     bool isInRaw = state == State::CONTENT_RAW
                     || state == State::CONTENT_RAW_BLOCK;
@@ -481,4 +496,22 @@ std::optional<QChar> CodeModel::getMatchingCloseBracket(QTextCursor cursor, QCha
     return std::nullopt;
 }
 
+QString CodeModel::getSymbolExpression(const QString& symbolName, int pos) const
+{
+    EnvironmentType env = classifyEnvironment(pos);
+    if (env == EnvironmentType::UNKNOWN || symbolName.isEmpty()) {
+        return QString();
+    }
+
+    if (env == EnvironmentType::OTHER || env == EnvironmentType::CODE) {
+        return symbolName;
+    }
+    if (env == EnvironmentType::MATH && symbolName.startsWith("sym.")) {
+        return symbolName.sliced(4);
+    }
+    return QLatin1Char('#') + symbolName;
 }
+
+}
+
+#include "moc_katvan_codemodel.cpp"

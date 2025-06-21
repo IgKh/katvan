@@ -63,6 +63,7 @@ signals:
     void toolTipForLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
     void outlineUpdated(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline);
+    void symbolsJsonReady(QByteArray symbols);
 
 public slots:
     void init();
@@ -77,6 +78,7 @@ public slots:
     void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
     void requestOutline(quint64 previousFingerprint);
+    void requestAllSymbolsJson();
     void setAllowedPaths(const QStringList& allowedPaths);
     void discardLookupCaches();
 

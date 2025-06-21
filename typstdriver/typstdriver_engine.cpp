@@ -303,6 +303,19 @@ void Engine::requestOutline(quint64 previousFingerprint)
     }
 }
 
+void Engine::requestAllSymbolsJson()
+{
+    try {
+        rust::String symbolsJson = get_all_symbols_json();
+        QByteArray result { symbolsJson.data(), static_cast<qsizetype>(symbolsJson.size()) };
+
+        Q_EMIT symbolsJsonReady(result);
+    }
+    catch (rust::Error& e) {
+        qWarning() << "Error getting supported symbols:" << e.what();
+    }
+}
+
 void Engine::setAllowedPaths(const QStringList& allowedPaths)
 {
     Q_ASSERT(d_ptr->engine.has_value());
@@ -323,3 +336,5 @@ void Engine::discardLookupCaches()
 }
 
 }
+
+#include "moc_typstdriver_engine.cpp"

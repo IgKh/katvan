@@ -22,7 +22,6 @@
 
 #include <concepts>
 #include <functional>
-#include <optional>
 #include <span>
 #include <vector>
 
@@ -142,6 +141,11 @@ struct ParserState
 };
 
 using ParserStateStack = QList<ParserState>;
+
+bool isContentHolderStateKind(ParserState::Kind state);
+bool isMathHolderStateKind(ParserState::Kind state);
+bool isCodeHolderStateKind(ParserState::Kind state);
+bool isCodeStateKind(ParserState::Kind state);
 
 class ParsingListener
 {

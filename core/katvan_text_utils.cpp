@@ -101,10 +101,27 @@ Qt::LayoutDirection naturalTextDirection(const QString& text)
     return Qt::LayoutDirectionAuto;
 }
 
+char32_t firstCodepointOf(const QString& str)
+{
+    if (str.isEmpty()) {
+        return 0;
+    }
+
+    ushort codepoint = str[0].unicode();
+
+    if (QChar::isHighSurrogate(codepoint) && str.size() > 1) {
+        ushort low = str[1].unicode();
+        if (QChar::isLowSurrogate(low)) {
+            return QChar::surrogateToUcs4(codepoint, low);
+        }
+    }
+    return codepoint;
+}
+
 class FontIconEngine : public QIconEngine
 {
 public:
-    FontIconEngine(QChar ch, QFont font) : d_char(ch), d_font(font) {}
+    FontIconEngine(char32_t codepoint, QFont font) : d_codepoint(codepoint), d_font(font) {}
 
     QIconEngine* clone() const override;
     bool isNull() override;
@@ -112,19 +129,19 @@ public:
     QPixmap pixmap(const QSize& size, QIcon::Mode mode, QIcon::State state) override;
 
 private:
-    QChar d_char;
+    char32_t d_codepoint;
     QFont d_font;
 };
 
 QIconEngine* FontIconEngine::clone() const
 {
-    return new FontIconEngine(d_char, d_font);
+    return new FontIconEngine(d_codepoint, d_font);
 }
 
 bool FontIconEngine::isNull()
 {
     QFontMetrics fm { d_font };
-    return !fm.inFont(d_char);
+    return !fm.inFontUcs4(d_codepoint);
 }
 
 void FontIconEngine::paint(QPainter* painter, const QRect& rect, QIcon::Mode mode, QIcon::State state)
@@ -151,7 +168,7 @@ void FontIconEngine::paint(QPainter* painter, const QRect& rect, QIcon::Mode mod
     painter->save();
     painter->setFont(font);
     painter->setPen(QApplication::palette().color(cg, QPalette::ButtonText));
-    painter->drawText(rect, QString(d_char), option);
+    painter->drawText(rect, QString::fromUcs4(&d_codepoint, 1), option);
     painter->restore();
 }
 
@@ -169,12 +186,17 @@ QPixmap FontIconEngine::pixmap(const QSize& size, QIcon::Mode mode, QIcon::State
 
 QIcon fontIcon(QChar ch)
 {
-    return fontIcon(ch, QFont());
+    return fontIcon(ch.unicode(), QFont());
 }
 
 QIcon fontIcon(QChar ch, const QFont& font)
 {
-    return QIcon(new FontIconEngine(ch, font));
+    return fontIcon(ch.unicode(), font);
+}
+
+QIcon fontIcon(char32_t codepoint, const QFont& font)
+{
+    return QIcon(new FontIconEngine(codepoint, font));
 }
 
 }

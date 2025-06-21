@@ -41,6 +41,7 @@ class SearchBar;
 class Document;
 class Editor;
 class SettingsDialog;
+class SymbolPicker;
 class TypstDriverWrapper;
 
 class MainWindow : public QMainWindow
@@ -76,6 +77,7 @@ private slots:
     void toggleCursorMovementStyle();
     void showSettingsDialog();
     void settingsDialogAccepted();
+    void showSymbolPicker();
     void previewReady();
     void compilationStatusChanged();
 
@@ -113,7 +115,8 @@ private:
     CompilerOutput* d_compilerOutput;
     OutlineView* d_outlineView;
 
-    SettingsDialog* d_settingsDialog;
+    SettingsDialog* d_settingsDialog = nullptr;
+    SymbolPicker* d_symbolPickerDialog = nullptr;
 
     QFileSystemWatcher* d_fileWatcher;
     QMovie* d_compilingMovie;

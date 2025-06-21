@@ -370,6 +370,68 @@ void TokenStream::releaseConsumedTokens()
     d_pos = 0;
 }
 
+bool isContentHolderStateKind(ParserState::Kind state)
+{
+    // States that can have nested content states in them
+    return state == ParserState::Kind::CONTENT
+        || state == ParserState::Kind::CONTENT_BLOCK
+        || state == ParserState::Kind::CONTENT_HEADING
+        || state == ParserState::Kind::CONTENT_EMPHASIS
+        || state == ParserState::Kind::CONTENT_STRONG_EMPHASIS;
+}
+
+bool isMathHolderStateKind(ParserState::Kind state)
+{
+    return state == ParserState::Kind::MATH
+        || state == ParserState::Kind::MATH_ARGUMENTS;
+}
+
+bool isCodeHolderStateKind(ParserState::Kind state)
+{
+    return state == ParserState::Kind::CODE_BLOCK
+        || state == ParserState::Kind::CODE_LINE
+        || state == ParserState::Kind::CODE_ARGUMENTS;
+}
+
+bool isCodeStateKind(ParserState::Kind state)
+{
+    return isCodeHolderStateKind(state)
+        || state == ParserState::Kind::CODE_VARIABLE_NAME
+        || state == ParserState::Kind::CODE_FUNCTION_NAME
+        || state == ParserState::Kind::CODE_NUMERIC_LITERAL
+        || state == ParserState::Kind::CODE_KEYWORD
+        || state == ParserState::Kind::CODE_EXPRESSION_CHAIN
+        || state == ParserState::Kind::CODE_STRING_EXPRESSION;
+}
+
+static bool isBlockScopedState(const ParserState& state)
+{
+    return state.kind == ParserState::Kind::COMMENT_LINE
+        || state.kind == ParserState::Kind::CONTENT_HEADING
+        || state.kind == ParserState::Kind::CONTENT_URL
+        || state.kind == ParserState::Kind::CODE_LINE;
+}
+
+static bool isContentHolderState(const ParserState& state)
+{
+    return isContentHolderStateKind(state.kind);
+}
+
+static bool isMathHolderState(const ParserState& state)
+{
+    return isMathHolderStateKind(state.kind);
+}
+
+static bool isCodeHolderState(const ParserState& state)
+{
+    return isCodeHolderStateKind(state.kind);
+}
+
+static bool isCodeState(const ParserState& state)
+{
+    return isCodeStateKind(state.kind);
+}
+
 Parser::Parser(QStringView text, const QList<ParserState::Kind>& initialStates)
     : d_text(text)
     , d_tokenStream(text)
@@ -389,48 +451,6 @@ void Parser::addListener(ParsingListener& listener, bool finalizeOnEnd)
     if (finalizeOnEnd) {
         d_finalizingListeners.append(std::ref(listener));
     }
-}
-
-static bool isBlockScopedState(const ParserState& state)
-{
-    return state.kind == ParserState::Kind::COMMENT_LINE
-        || state.kind == ParserState::Kind::CONTENT_HEADING
-        || state.kind == ParserState::Kind::CONTENT_URL
-        || state.kind == ParserState::Kind::CODE_LINE;
-}
-
-static bool isContentHolderState(const ParserState& state)
-{
-    // States that can have nested content states in them
-    return state.kind == ParserState::Kind::CONTENT
-        || state.kind == ParserState::Kind::CONTENT_BLOCK
-        || state.kind == ParserState::Kind::CONTENT_HEADING
-        || state.kind == ParserState::Kind::CONTENT_EMPHASIS
-        || state.kind == ParserState::Kind::CONTENT_STRONG_EMPHASIS;
-}
-
-static bool isMathHolderState(const ParserState& state)
-{
-    return state.kind == ParserState::Kind::MATH
-        || state.kind == ParserState::Kind::MATH_ARGUMENTS;
-}
-
-static bool isCodeHolderState(const ParserState& state)
-{
-    return state.kind == ParserState::Kind::CODE_BLOCK
-        || state.kind == ParserState::Kind::CODE_LINE
-        || state.kind == ParserState::Kind::CODE_ARGUMENTS;
-}
-
-static bool isCodeState(const ParserState& state)
-{
-    return isCodeHolderState(state)
-        || state.kind == ParserState::Kind::CODE_VARIABLE_NAME
-        || state.kind == ParserState::Kind::CODE_FUNCTION_NAME
-        || state.kind == ParserState::Kind::CODE_NUMERIC_LITERAL
-        || state.kind == ParserState::Kind::CODE_KEYWORD
-        || state.kind == ParserState::Kind::CODE_EXPRESSION_CHAIN
-        || state.kind == ParserState::Kind::CODE_STRING_EXPRESSION;
 }
 
 void Parser::parse()

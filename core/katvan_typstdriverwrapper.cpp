@@ -130,6 +130,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::toolTipForLocation, this, &TypstDriverWrapper::showEditorToolTipAtLocation);
     connect(d_engine, &typstdriver::Engine::completionsReady, this, &TypstDriverWrapper::completionsReady);
     connect(d_engine, &typstdriver::Engine::outlineUpdated, this, &TypstDriverWrapper::outlineUpdatedInternal);
+    connect(d_engine, &typstdriver::Engine::symbolsJsonReady, this, &TypstDriverWrapper::symbolsJsonReady);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
     QMetaObject::invokeMethod(d_engine, "init");
@@ -214,6 +215,11 @@ void TypstDriverWrapper::searchDefinition(int line, int column)
     QMetaObject::invokeMethod(d_engine, "searchDefinition", line, column);
 }
 
+void TypstDriverWrapper::requestAllSymbolsJson()
+{
+    QMetaObject::invokeMethod(d_engine, "requestAllSymbolsJson");
+}
+
 void TypstDriverWrapper::discardLookupCaches()
 {
     QMetaObject::invokeMethod(d_engine, "discardLookupCaches");
@@ -243,3 +249,5 @@ void TypstDriverWrapper::outlineUpdatedInternal(quint64 fingerprint, katvan::typ
 }
 
 }
+
+#include "moc_katvan_typstdriverwrapper.cpp"

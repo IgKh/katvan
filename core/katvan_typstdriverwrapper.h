@@ -77,6 +77,7 @@ signals:
     void showEditorToolTipAtLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
     void outlineUpdated(katvan::typstdriver::OutlineNode* outline);
+    void symbolsJsonReady(QByteArray symbols);
 
 public slots:
     void setSource(const QString& text);
@@ -89,6 +90,7 @@ public slots:
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
+    void requestAllSymbolsJson();
     void discardLookupCaches();
 
 private slots:

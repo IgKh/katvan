@@ -33,8 +33,9 @@ set(SOURCES
     katvan_parsing.cpp
     katvan_previewerview.cpp
     katvan_spellchecker.cpp
-    katvan_typstdriverwrapper.cpp
+    katvan_symbolpicker.cpp
     katvan_text_utils.cpp
+    katvan_typstdriverwrapper.cpp
 )
 
 qt_add_resources(SOURCES themes/themes.qrc)

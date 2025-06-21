@@ -252,6 +252,8 @@ QMenu* Editor::createInsertMenu()
     insertInlineMathAction->setIcon(utils::fontIcon(QLatin1Char('$')));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
+    menu->addAction("&Symbol...", this, &Editor::showSymbolPicker);
+
     return menu;
 }
 
@@ -1151,6 +1153,15 @@ void Editor::insertSurroundingMarks(QString before, QString after)
     cursor.insertText(before + cursor.selectedText() + after);
     cursor.setPosition(selectionStart + before.length(), QTextCursor::MoveAnchor);
     cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, selectionEnd - selectionStart);
+    setTextCursor(cursor);
+}
+
+void Editor::insertSymbol(const QString& symbolName)
+{
+    QTextCursor cursor = textCursor();
+    QString expression = d_codeModel->getSymbolExpression(symbolName, cursor.position());
+
+    cursor.insertText(expression);
     setTextCursor(cursor);
 }
 

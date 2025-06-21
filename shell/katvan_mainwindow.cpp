@@ -33,6 +33,7 @@
 #include "katvan_editor.h"
 #include "katvan_editorsettings.h"
 #include "katvan_spellchecker.h"
+#include "katvan_symbolpicker.h"
 #include "katvan_typstdriverwrapper.h"
 
 #include "typstdriver_compilersettings.h"
@@ -118,6 +119,7 @@ void MainWindow::setupUI()
     connect(d_editor->completionManager(), &CompletionManager::completionsRequested, d_driver, &TypstDriverWrapper::requestCompletions);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor, &Editor::fontZoomFactorChanged, this, &MainWindow::editorFontZoomFactorChanged);
+    connect(d_editor, &Editor::showSymbolPicker, this, &MainWindow::showSymbolPicker);
 
     d_infoBar = new InfoBar();
     d_infoBar->setVisible(false);
@@ -134,9 +136,6 @@ void MainWindow::setupUI()
     centralLayout->addWidget(d_searchBar, 0);
 
     setCentralWidget(centralWidget);
-
-    d_settingsDialog = new SettingsDialog(this);
-    connect(d_settingsDialog, &QDialog::accepted, this, &MainWindow::settingsDialogAccepted);
 
     d_previewer = new Previewer(d_driver);
     connect(d_previewer, &Previewer::followCursorEnabled, this, &MainWindow::cursorPositionChanged);
@@ -1000,6 +999,11 @@ void MainWindow::toggleCursorMovementStyle()
 
 void MainWindow::showSettingsDialog()
 {
+    if (!d_settingsDialog) {
+        d_settingsDialog = new SettingsDialog(this);
+        connect(d_settingsDialog, &QDialog::accepted, this, &MainWindow::settingsDialogAccepted);
+    }
+
     QSettings settings;
 
     QString mode = settings.value(SETTING_EDITOR_MODE).toString();
@@ -1029,6 +1033,18 @@ void MainWindow::settingsDialogAccepted()
     QSettings settings;
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
     compilerSettings.save(settings);
+}
+
+void MainWindow::showSymbolPicker()
+{
+    if (!d_symbolPickerDialog) {
+        d_symbolPickerDialog = new SymbolPicker(d_driver, this);
+        connect(d_symbolPickerDialog, &QDialog::accepted, this, [this]() {
+            d_editor->insertSymbol(d_symbolPickerDialog->selectedSymbolName());
+        });
+    }
+
+    d_symbolPickerDialog->open();
 }
 
 void MainWindow::previewReady()

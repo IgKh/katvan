@@ -302,6 +302,43 @@ TEST(CodeModelTests, FindMatchingIndentBlockByBlock)
     EXPECT_THAT(res.blockNumber(), ::testing::Eq(1));
 }
 
+TEST(CodeModelTests, GetSymbolExpression)
+{
+    auto doc = buildDocument({
+        /* 0 */ "",
+        /* 1 */ "$ sqrt() $",
+        /* 2 */ "#{  }",
+        /* 3 */ "``"
+    });
+
+    CodeModel model(doc.get());
+    QString res;
+
+    res = model.getSymbolExpression("sym.RR", globalPos(*doc, 0, 0));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#sym.RR")));
+
+    res = model.getSymbolExpression("sym.RR", globalPos(*doc, 1, 7));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("RR")));
+
+    res = model.getSymbolExpression("sym.RR", globalPos(*doc, 2, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("sym.RR")));
+
+    res = model.getSymbolExpression("sym.RR", globalPos(*doc, 3, 1));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("sym.RR")));
+
+    res = model.getSymbolExpression("emoji.man.levitate", globalPos(*doc, 0, 0));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#emoji.man.levitate")));
+
+    res = model.getSymbolExpression("emoji.man.levitate", globalPos(*doc, 1, 7));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#emoji.man.levitate")));
+
+    res = model.getSymbolExpression("emoji.man.levitate", globalPos(*doc, 2, 3));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("emoji.man.levitate")));
+
+    res = model.getSymbolExpression("emoji.man.levitate", globalPos(*doc, 3, 1));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("emoji.man.levitate")));
+}
+
 Q_GLOBAL_STATIC(QStringList, GET_MATCHING_CLOSE_BRACKET_TEST_DOC, {
     /* 0 */ "== English \\content",
     /* 1 */ "תוכן *מודגש* _כזה_ בעברית",

@@ -172,7 +172,12 @@ pub(crate) mod ffi {
 
         fn get_tooltip(&self, line: usize, column: usize) -> Result<ToolTip>;
 
-        fn get_completions(&self, line: usize, column: usize, implicit: bool) -> Result<Completions>;
+        fn get_completions(
+            &self,
+            line: usize,
+            column: usize,
+            implicit: bool,
+        ) -> Result<Completions>;
 
         fn get_definition(&self, line: usize, column: usize) -> Result<DefinitionLocation>;
 
@@ -189,6 +194,8 @@ pub(crate) mod ffi {
         ) -> Box<EngineImpl<'a>>;
 
         fn typst_version() -> String;
+
+        fn get_all_symbols_json() -> Result<String>;
     }
 }
 
@@ -204,4 +211,8 @@ fn create_engine_impl<'a>(
 
 fn typst_version() -> String {
     typst::syntax::package::PackageVersion::compiler().to_string()
+}
+
+fn get_all_symbols_json() -> anyhow::Result<String> {
+    crate::symbols::symbols_json()
 }

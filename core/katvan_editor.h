@@ -73,6 +73,8 @@ public slots:
     void showToolTip(QPoint windowPos, const QString& text, const QUrl& detailsUrl);
     void showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl);
 
+    void insertSymbol(const QString& symbolName);
+
 protected:
     bool event(QEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
@@ -129,6 +131,7 @@ signals:
     void fontZoomFactorChanged(qreal factor);
     void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
     void goToDefinitionRequested(int blockNumber, int charOffset);
+    void showSymbolPicker();
 
 private:
     QWidget* d_leftLineNumberGutter;

@@ -24,6 +24,7 @@ namespace katvan::utils {
 
 static constexpr QLatin1StringView CONTROL_FONT_FAMILY = QLatin1StringView("KatvanControl");
 static constexpr QLatin1StringView BLANK_FONT_FAMILY = QLatin1StringView("Adobe Blank");
+static constexpr QLatin1StringView SYMBOL_FONT_FAMILY = QLatin1StringView("Noto Sans Math");
 
 static constexpr QChar ALM_MARK = (ushort)0x061c;
 static constexpr QChar LRM_MARK = (ushort)0x200e;
@@ -40,7 +41,10 @@ bool isAllWhitespace(const QString& text);
 
 Qt::LayoutDirection naturalTextDirection(const QString& text);
 
+char32_t firstCodepointOf(const QString& str);
+
 QIcon fontIcon(QChar ch);
 QIcon fontIcon(QChar ch, const QFont& font);
+QIcon fontIcon(char32_t codepoint, const QFont& font);
 
 }
