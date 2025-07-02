@@ -38,6 +38,7 @@ namespace katvan {
 
 class EditorSettingsTab;
 class CompilerSettingsTab;
+class PathList;
 
 class SettingsDialog : public QDialog
 {
@@ -102,9 +103,6 @@ public:
     void setSettings(const typstdriver::TypstCompilerSettings& settings);
 
 private slots:
-    void addAllowedPath();
-    void removeAllowedPath();
-    void currentAllowedPathChanged();
     void updateCacheSize();
     void browseCache();
 
@@ -115,10 +113,29 @@ private:
     void setupUI();
 
     QCheckBox* d_allowPreviewPackages;
-    QStringListModel* d_allowedPathsModel;
-    QListView* d_allowedPathsList;
-    QPushButton* d_removeAllowedPathButton;
+    PathList* d_allowedPaths;
     QLabel* d_cacheSize;
+};
+
+class PathList : public QWidget
+{
+    Q_OBJECT
+
+public:
+    PathList(QWidget* parent = nullptr);
+
+    QStringList paths() const;
+    void setPaths(const QStringList& paths);
+
+private slots:
+    void addPath();
+    void removePath();
+    void currentPathChanged();
+
+private:
+    QStringListModel* d_pathsModel;
+    QListView* d_pathsListView;
+    QPushButton* d_removePathButton;
 };
 
 }

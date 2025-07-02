@@ -311,28 +311,6 @@ void EditorSettingsTab::updateFontSizes()
     }
 }
 
-class PathProxyModel : public QIdentityProxyModel
-{
-public:
-    PathProxyModel(QObject* parent = nullptr): QIdentityProxyModel(parent)
-    {
-    }
-
-    QVariant data(const QModelIndex& index, int role) const override
-    {
-        if (role == Qt::DisplayRole) {
-            QModelIndex sourceIndex = mapToSource(index);
-            QString origPath = sourceModel()->data(sourceIndex, Qt::DisplayRole).toString();
-            return utils::formatFilePath(std::move(origPath));
-        }
-        else if (role == Qt::ToolTipRole) {
-            QModelIndex sourceIndex = mapToSource(index);
-            return sourceModel()->data(sourceIndex, Qt::DisplayRole).toString();
-        }
-        return QIdentityProxyModel::data(index, role);
-    }
-};
-
 CompilerSettingsTab::CompilerSettingsTab(QWidget* parent)
     : QWidget(parent)
 {
@@ -341,29 +319,8 @@ CompilerSettingsTab::CompilerSettingsTab(QWidget* parent)
 
 void CompilerSettingsTab::setupUI()
 {
-    d_allowPreviewPackages = new QCheckBox(tr("&Allow preview packages"));
-
-    d_allowedPathsModel = new QStringListModel(this);
-
-    PathProxyModel* proxyModel = new PathProxyModel();
-    proxyModel->setSourceModel(d_allowedPathsModel);
-
-    d_allowedPathsList = new QListView();
-    d_allowedPathsList->setModel(proxyModel);
-    d_allowedPathsList->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    connect(d_allowedPathsList->selectionModel(), &QItemSelectionModel::currentChanged, this, &CompilerSettingsTab::currentAllowedPathChanged);
-
-    QPushButton* addAllowedPathButton = new QPushButton();
-    addAllowedPathButton->setIcon(utils::themeIcon("list-add"));
-    addAllowedPathButton->setToolTip(tr("Add an allowed path"));
-    connect(addAllowedPathButton, &QPushButton::clicked, this, &CompilerSettingsTab::addAllowedPath);
-
-    d_removeAllowedPathButton = new QPushButton();
-    d_removeAllowedPathButton->setIcon(utils::themeIcon("list-remove"));
-    d_removeAllowedPathButton->setToolTip(tr("Remove the selected path from the list"));
-    d_removeAllowedPathButton->setEnabled(false);
-    connect(d_removeAllowedPathButton, &QPushButton::clicked, this, &CompilerSettingsTab::removeAllowedPath);
-
+    d_allowPreviewPackages = new QCheckBox(tr("&Allow download and use of @preview packages"));
+    d_allowedPaths = new PathList();
     d_cacheSize = new QLabel();
 
     QPushButton* browseCacheButton = new QPushButton(tr("&Browse..."));
@@ -378,14 +335,8 @@ void CompilerSettingsTab::setupUI()
     QGroupBox* allowedPathsGroup = new QGroupBox(tr("Allowed Paths"));
     QVBoxLayout* allowedPathsLayout = new QVBoxLayout(allowedPathsGroup);
 
-    QHBoxLayout* allowedPathsButtonLayout = new QHBoxLayout();
-    allowedPathsButtonLayout->addStretch(1);
-    allowedPathsButtonLayout->addWidget(addAllowedPathButton);
-    allowedPathsButtonLayout->addWidget(d_removeAllowedPathButton);
-
     allowedPathsLayout->addWidget(new QLabel(tr("Allow including resources also from the following directories and their subdirectories:")));
-    allowedPathsLayout->addWidget(d_allowedPathsList, 1);
-    allowedPathsLayout->addLayout(allowedPathsButtonLayout);
+    allowedPathsLayout->addWidget(d_allowedPaths, 1);
 
     QFormLayout* downloadCacheTopLayout = new QFormLayout();
     downloadCacheTopLayout->addRow(tr("Cache size: "), d_cacheSize);
@@ -409,7 +360,7 @@ typstdriver::TypstCompilerSettings CompilerSettingsTab::settings() const
 {
     typstdriver::TypstCompilerSettings settings;
     settings.setAllowPreviewPackages(d_allowPreviewPackages->isChecked());
-    settings.setAllowedPaths(d_allowedPathsModel->stringList());
+    settings.setAllowedPaths(d_allowedPaths->paths());
 
     return settings;
 }
@@ -417,41 +368,13 @@ typstdriver::TypstCompilerSettings CompilerSettingsTab::settings() const
 void CompilerSettingsTab::setSettings(const typstdriver::TypstCompilerSettings& settings)
 {
     d_allowPreviewPackages->setChecked(settings.allowPreviewPackages());
-    d_allowedPathsModel->setStringList(settings.allowedPaths());
+    d_allowedPaths->setPaths(settings.allowedPaths());
 }
 
 void CompilerSettingsTab::showEvent(QShowEvent* event)
 {
     QWidget::showEvent(event);
     updateCacheSize();
-}
-
-void CompilerSettingsTab::addAllowedPath()
-{
-    QString dirName = QFileDialog::getExistingDirectory(this);
-    if (dirName.isEmpty()) {
-        return;
-    }
-
-    QStringList values = d_allowedPathsModel->stringList();
-    if (!values.contains(dirName)) {
-        values.append(dirName);
-        d_allowedPathsModel->setStringList(values);
-    }
-}
-
-void CompilerSettingsTab::removeAllowedPath()
-{
-    QModelIndex current = d_allowedPathsList->currentIndex();
-    if (!current.isValid()) {
-        return;
-    }
-    d_allowedPathsModel->removeRow(current.row());
-}
-
-void CompilerSettingsTab::currentAllowedPathChanged()
-{
-    d_removeAllowedPathButton->setEnabled(d_allowedPathsList->currentIndex().isValid());
 }
 
 void CompilerSettingsTab::updateCacheSize()
@@ -472,4 +395,101 @@ void CompilerSettingsTab::browseCache()
     QDesktopServices::openUrl(url);
 }
 
+class PathProxyModel : public QIdentityProxyModel
+{
+public:
+    PathProxyModel(QObject* parent = nullptr): QIdentityProxyModel(parent)
+    {
+    }
+
+    QVariant data(const QModelIndex& index, int role) const override
+    {
+        if (role == Qt::DisplayRole) {
+            QModelIndex sourceIndex = mapToSource(index);
+            QString origPath = sourceModel()->data(sourceIndex, Qt::DisplayRole).toString();
+            return utils::formatFilePath(std::move(origPath));
+        }
+        else if (role == Qt::ToolTipRole) {
+            QModelIndex sourceIndex = mapToSource(index);
+            return sourceModel()->data(sourceIndex, Qt::DisplayRole).toString();
+        }
+        return QIdentityProxyModel::data(index, role);
+    }
+};
+
+PathList::PathList(QWidget* parent)
+    : QWidget(parent)
+{
+    d_pathsModel = new QStringListModel(this);
+
+    PathProxyModel* proxyModel = new PathProxyModel();
+    proxyModel->setSourceModel(d_pathsModel);
+
+    d_pathsListView = new QListView();
+    d_pathsListView->setModel(proxyModel);
+    d_pathsListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    connect(d_pathsListView->selectionModel(), &QItemSelectionModel::currentChanged, this, &PathList::currentPathChanged);
+
+    QPushButton* addPathButton = new QPushButton();
+    addPathButton->setIcon(utils::themeIcon("list-add"));
+    addPathButton->setToolTip(tr("Add a path"));
+    connect(addPathButton, &QPushButton::clicked, this, &PathList::addPath);
+
+    d_removePathButton = new QPushButton();
+    d_removePathButton->setIcon(utils::themeIcon("list-remove"));
+    d_removePathButton->setToolTip(tr("Remove the selected path from the list"));
+    d_removePathButton->setEnabled(false);
+    connect(d_removePathButton, &QPushButton::clicked, this, &PathList::removePath);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(addPathButton);
+    buttonLayout->addWidget(d_removePathButton);
+
+    layout->addWidget(d_pathsListView, 1);
+    layout->addLayout(buttonLayout);
 }
+
+QStringList PathList::paths() const
+{
+    return d_pathsModel->stringList();
+}
+
+void PathList::setPaths(const QStringList& paths)
+{
+    d_pathsModel->setStringList(paths);
+}
+
+void PathList::addPath()
+{
+    QString dirName = QFileDialog::getExistingDirectory(window());
+    if (dirName.isEmpty()) {
+        return;
+    }
+
+    QStringList values = d_pathsModel->stringList();
+    if (!values.contains(dirName)) {
+        values.append(dirName);
+        d_pathsModel->setStringList(values);
+    }
+}
+
+void PathList::removePath()
+{
+    QModelIndex current = d_pathsListView->currentIndex();
+    if (!current.isValid()) {
+        return;
+    }
+    d_pathsModel->removeRow(current.row());
+}
+
+void PathList::currentPathChanged()
+{
+    d_removePathButton->setEnabled(d_pathsListView->currentIndex().isValid());
+}
+
+}
+
+#include "moc_katvan_settingsdialog.cpp"
