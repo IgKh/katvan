@@ -133,7 +133,7 @@ void SymbolPicker::setupUI()
     d_symbolListView->setResizeMode(QListView::Adjust);
     d_symbolListView->setLayoutMode(QListView::Batched);
     d_symbolListView->setGridSize(QSize(96, 96));
-    d_symbolListView->setIconSize(QSize(32, 32));
+    d_symbolListView->setIconSize(QSize(48, 48));
     d_symbolListView->setSpacing(5);
     d_symbolListView->setUniformItemSizes(true);
     d_symbolListView->setItemDelegate(new SymbolDelegate(this));

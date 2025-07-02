@@ -121,7 +121,10 @@ char32_t firstCodepointOf(const QString& str)
 class FontIconEngine : public QIconEngine
 {
 public:
-    FontIconEngine(char32_t codepoint, QFont font) : d_codepoint(codepoint), d_font(font) {}
+    FontIconEngine(char32_t codepoint, QFont font)
+        : d_valid(QFontMetrics(font).inFontUcs4(codepoint))
+        , d_codepoint(codepoint)
+        , d_font(font) {}
 
     QIconEngine* clone() const override;
     bool isNull() override;
@@ -129,6 +132,7 @@ public:
     QPixmap pixmap(const QSize& size, QIcon::Mode mode, QIcon::State state) override;
 
 private:
+    bool d_valid;
     char32_t d_codepoint;
     QFont d_font;
 };
@@ -140,8 +144,7 @@ QIconEngine* FontIconEngine::clone() const
 
 bool FontIconEngine::isNull()
 {
-    QFontMetrics fm { d_font };
-    return !fm.inFontUcs4(d_codepoint);
+    return !d_valid;
 }
 
 void FontIconEngine::paint(QPainter* painter, const QRect& rect, QIcon::Mode mode, QIcon::State state)
@@ -159,6 +162,20 @@ void FontIconEngine::paint(QPainter* painter, const QRect& rect, QIcon::Mode mod
     QFont font = d_font;
     font.setPixelSize(rect.height());
 
+    QString text = QString::fromUcs4(&d_codepoint, 1);
+
+    QFontMetrics fm { font };
+    QRect actualRect = fm.boundingRect(rect, Qt::AlignCenter, text);
+    if (actualRect.width() > 0 && !rect.contains(actualRect)) {
+        // If due to font features, the character will overflow the paint rect,
+        // scale it down...
+        qreal xoverflow = qMax(static_cast<qreal>(actualRect.width()) / rect.width(), 1.0);
+        qreal yoverflow = qMax(static_cast<qreal>(actualRect.height()) / rect.height(), 1.0);
+
+        int size = qRound(rect.height() / qMax(xoverflow, yoverflow));
+        font.setPixelSize(size);
+    }
+
     QTextOption option;
     option.setAlignment(Qt::AlignCenter);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
@@ -168,7 +185,7 @@ void FontIconEngine::paint(QPainter* painter, const QRect& rect, QIcon::Mode mod
     painter->save();
     painter->setFont(font);
     painter->setPen(QApplication::palette().color(cg, QPalette::ButtonText));
-    painter->drawText(rect, QString::fromUcs4(&d_codepoint, 1), option);
+    painter->drawText(rect, text, option);
     painter->restore();
 }
 

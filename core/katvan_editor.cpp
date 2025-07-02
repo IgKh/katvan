@@ -249,7 +249,7 @@ QMenu* Editor::createInsertMenu()
     QAction* insertInlineMathAction = menu->addAction(tr("Inline &Math"), this, [this]() {
         insertSurroundingMarks(QStringLiteral("$"), QStringLiteral("$"));
     });
-    insertInlineMathAction->setIcon(utils::fontIcon(QLatin1Char('$')));
+    insertInlineMathAction->setIcon(utils::fontIcon(QChar(0x221a)));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
     menu->addAction("&Color...", this, &Editor::showColorPicker);
