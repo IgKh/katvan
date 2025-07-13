@@ -265,3 +265,5 @@ void Previewer::setCustomZoom(qreal factor)
 }
 
 }
+
+#include "moc_katvan_previewer.cpp"

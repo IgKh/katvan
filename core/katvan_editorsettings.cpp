@@ -328,3 +328,5 @@ void EditorSettings::mergeSettings(const EditorSettings& other)
 }
 
 }
+
+#include "moc_katvan_editorsettings.cpp"

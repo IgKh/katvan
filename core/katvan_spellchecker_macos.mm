@@ -117,3 +117,5 @@ void MacOsSpellChecker::requestSuggestionsImpl(const QString& word, int position
 }
 
 }
+
+#include "moc_katvan_spellchecker_macos.cpp"

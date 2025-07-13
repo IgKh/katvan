@@ -489,3 +489,5 @@ void SearchBar::keyPressEvent(QKeyEvent* event)
 }
 
 }
+
+#include "moc_katvan_searchbar.cpp"

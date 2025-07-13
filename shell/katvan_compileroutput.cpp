@@ -137,3 +137,5 @@ void CompilerOutput::indexClicked(const QModelIndex& index)
 }
 
 }
+
+#include "moc_katvan_compileroutput.cpp"

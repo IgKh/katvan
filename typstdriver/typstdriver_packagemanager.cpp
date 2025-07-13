@@ -469,3 +469,5 @@ rust::String PackageManagerProxy::errorMessage() const
 }
 
 }
+
+#include "moc_typstdriver_packagemanager.cpp"

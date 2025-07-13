@@ -137,3 +137,5 @@ AboutDialog::AboutDialog(QWidget* parent)
 }
 
 }
+
+#include "moc_katvan_aboutdialog.cpp"

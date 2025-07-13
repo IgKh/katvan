@@ -391,3 +391,5 @@ void SpellingSuggestionsWorker::process()
 }
 
 }
+
+#include "moc_katvan_spellchecker_hunspell.cpp"

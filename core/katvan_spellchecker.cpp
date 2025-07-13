@@ -107,3 +107,5 @@ void SpellChecker::suggestionsCalculated(const QString& word, int position, cons
 }
 
 }
+
+#include "moc_katvan_spellchecker.cpp"

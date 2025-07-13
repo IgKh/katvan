@@ -491,3 +491,5 @@ void PreviewerView::updateCurrentPage()
 }
 
 }
+
+#include "moc_katvan_previewerview.cpp"

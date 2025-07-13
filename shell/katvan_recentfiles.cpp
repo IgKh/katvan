@@ -103,3 +103,5 @@ void RecentFiles::rebuildMenu()
 }
 
 }
+
+#include "moc_katvan_recentfiles.cpp"

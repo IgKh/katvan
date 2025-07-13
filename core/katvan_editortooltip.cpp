@@ -394,3 +394,5 @@ void EditorToolTip::hide()
 }
 
 }
+
+#include "moc_katvan_editortooltip.cpp"

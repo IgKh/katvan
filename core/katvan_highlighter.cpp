@@ -222,3 +222,5 @@ void Highlighter::doSpellChecking(
 }
 
 }
+
+#include "moc_katvan_highlighter.cpp"

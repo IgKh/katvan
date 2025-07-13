@@ -111,3 +111,5 @@ void LoggerProxy::logError(
 }
 
 }
+
+#include "moc_typstdriver_logger.cpp"

@@ -186,3 +186,5 @@ void WindowsSpellChecker::requestSuggestionsImpl(const QString& word, int positi
 }
 
 }
+
+#include "moc_katvan_spellchecker_windows.cpp"

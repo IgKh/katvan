@@ -140,3 +140,5 @@ void BackupHandler::saveContent()
 }
 
 }
+
+#include "moc_katvan_backuphandler.cpp"

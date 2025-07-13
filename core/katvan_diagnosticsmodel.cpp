@@ -196,3 +196,5 @@ void DiagnosticsModel::addDiagnostic(const typstdriver::Diagnostic& diagnostic)
 }
 
 }
+
+#include "moc_katvan_diagnosticsmodel.cpp"

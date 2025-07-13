@@ -66,3 +66,5 @@ void InfoBar::showMessage(const QString& message)
 }
 
 }
+
+#include "moc_katvan_infobar.cpp"
