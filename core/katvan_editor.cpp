@@ -294,7 +294,8 @@ void Editor::resetNavigationData()
 
 void Editor::goToBlock(const QTextCursor& targetCursor)
 {
-    if (targetCursor.isNull()) {
+    QTextCursor cursor = textCursor();
+    if (targetCursor.isNull() || cursor == targetCursor) {
         return;
     }
 
@@ -302,7 +303,7 @@ void Editor::goToBlock(const QTextCursor& targetCursor)
         d_backLandmarks.append(d_currentLandmark.value());
     }
 
-    EditorLocation current { textCursor() };
+    EditorLocation current { cursor };
     if (!d_currentLandmark || *d_currentLandmark != current) {
         d_backLandmarks.append(current);
     }

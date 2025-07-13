@@ -4,6 +4,7 @@ set(SOURCES
     katvan_backuphandler.cpp
     katvan_compileroutput.cpp
     katvan_infobar.cpp
+    katvan_labelsview.cpp
     katvan_mainwindow.cpp
     katvan_outlineview.cpp
     katvan_previewer.cpp

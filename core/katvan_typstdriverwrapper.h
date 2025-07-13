@@ -77,6 +77,7 @@ signals:
     void showEditorToolTipAtLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
     void outlineUpdated(katvan::typstdriver::OutlineNode* outline);
+    void labelsUpdated(QList<katvan::typstdriver::DocumentLabel> labels);
     void symbolsJsonReady(QByteArray symbols);
 
 public slots:
@@ -96,7 +97,7 @@ public slots:
 private slots:
     void compilationFinished();
     void pageRenderComplete(int page, QImage renderedPage);
-    void outlineUpdatedInternal(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline);
+    void metadataUpdatedInternal(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline, QList<katvan::typstdriver::DocumentLabel> labels);
 
 private:
     struct PendingEdit
@@ -117,7 +118,7 @@ private:
     std::shared_ptr<typstdriver::TypstCompilerSettings> d_settings;
     std::optional<QString> d_pendingSource;
     QList<PendingEdit> d_pendingEdits;
-    quint64 d_lastOutlineFingerprint;
+    quint64 d_lastMetadataFingerprint;
 
     QSet<int> d_pendingPagesToRender;
 };

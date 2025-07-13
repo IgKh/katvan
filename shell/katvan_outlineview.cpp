@@ -35,6 +35,11 @@ OutlineView::OutlineView(QWidget* parent)
     connect(this, &QTreeView::activated, this, &OutlineView::itemActivated);
 }
 
+void OutlineView::resetView()
+{
+    d_model->setOutline(nullptr);
+}
+
 void OutlineView::outlineUpdated(typstdriver::OutlineNode* outline)
 {
     d_model->setOutline(outline);

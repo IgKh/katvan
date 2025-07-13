@@ -41,8 +41,10 @@
         <file>icons/help-contents.svg</file>
         <file>icons/list-add.svg</file>
         <file>icons/list-remove.svg</file>
+        <file>icons/open-link.svg</file>
         <file>icons/package.svg</file>
         <file>icons/settings-configure.svg</file>
+        <file>icons/tag.svg</file>
         <file>icons/tools-check-spelling.svg</file>
         <file>icons/view-refresh.svg</file>
         <file>icons/window-close.svg</file>
@@ -78,8 +80,10 @@
         <file>icons-dark/help-contents.svg</file>
         <file>icons-dark/list-add.svg</file>
         <file>icons-dark/list-remove.svg</file>
+        <file>icons-dark/open-link.svg</file>
         <file>icons-dark/package.svg</file>
         <file>icons-dark/settings-configure.svg</file>
+        <file>icons-dark/tag.svg</file>
         <file>icons-dark/tools-check-spelling.svg</file>
         <file>icons-dark/view-refresh.svg</file>
         <file>icons-dark/window-close.svg</file>

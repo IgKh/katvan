@@ -18,6 +18,7 @@
 #include "katvan_backuphandler.h"
 #include "katvan_compileroutput.h"
 #include "katvan_infobar.h"
+#include "katvan_labelsview.h"
 #include "katvan_mainwindow.h"
 #include "katvan_outlineview.h"
 #include "katvan_previewer.h"
@@ -98,6 +99,7 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::showEditorToolTipAtLocation, d_editor, &Editor::showToolTipAtLocation);
     connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
     connect(d_driver, &TypstDriverWrapper::outlineUpdated, d_outlineView, &OutlineView::outlineUpdated);
+    connect(d_driver, &TypstDriverWrapper::labelsUpdated, d_labelsView, &LabelsView::labelsUpdated);
 
     d_backupHandler = new BackupHandler(d_editor, this);
     connect(d_document, &Document::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
@@ -148,6 +150,9 @@ void MainWindow::setupUI()
     d_outlineView = new OutlineView();
     connect(d_outlineView, &OutlineView::goToPosition, d_editor, qOverload<int, int>(&Editor::goToBlock));
 
+    d_labelsView = new LabelsView();
+    connect(d_labelsView, &LabelsView::goToPosition, d_editor, qOverload<int, int>(&Editor::goToBlock));
+
     setDockOptions(QMainWindow::AnimatedDocks);
 
     d_previewDock = new QDockWidget(tr("Preview"));
@@ -165,8 +170,20 @@ void MainWindow::setupUI()
 
     d_outlineDock = new QDockWidget(tr("Outline"));
     d_outlineDock->setObjectName("outlineDockPanel");
+    d_outlineDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable);
     d_outlineDock->setWidget(d_outlineView);
     addDockWidget(Qt::LeftDockWidgetArea, d_outlineDock);
+
+    d_labelsDock = new QDockWidget(tr("Labels"));
+    d_labelsDock->setObjectName("labelsDockPanel");
+    d_labelsDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable);
+    d_labelsDock->setWidget(d_labelsView);
+
+    // TODO - Ideally, I'd tabify the outline and labels docks together, but Qt
+    // 6.9.1 has a pretty terrible regression (QTBUG-137755) that causes a
+    // crash on exit. Once 6.9.2 is released - change this to be tabbed by
+    // default.
+    addDockWidget(Qt::LeftDockWidgetArea, d_labelsDock);
 }
 
 void MainWindow::setupActions()
@@ -334,6 +351,7 @@ void MainWindow::setupActions()
     viewMenu->addAction(d_previewDock->toggleViewAction());
     viewMenu->addAction(d_compilerOutputDock->toggleViewAction());
     viewMenu->addAction(d_outlineDock->toggleViewAction());
+    viewMenu->addAction(d_labelsDock->toggleViewAction());
 
     /*
      * Tools Menu
@@ -465,6 +483,8 @@ void MainWindow::loadFile(const QString& fileName)
     d_editor->setTextCursor(QTextCursor(d_document));
 
     d_previewer->reset();
+    d_outlineView->resetView();
+    d_labelsView->resetView();
 
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("Loaded %1").arg(utils::formatFilePath(d_currentFileName)));
@@ -697,6 +717,8 @@ void MainWindow::newFile()
     }
     d_document->setDocumentText(QString());
     d_previewer->reset();
+    d_outlineView->resetView();
+    d_labelsView->resetView();
     setCurrentFile(QString());
 }
 

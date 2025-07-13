@@ -17,25 +17,31 @@
  */
 #pragma once
 
-#include <QTreeView>
+#include "typstdriver_engine.h"
+
+#include <QList>
+#include <QWidget>
+
+QT_BEGIN_NAMESPACE
+class QLineEdit;
+class QListView;
+class QSortFilterProxyModel;
+QT_END_NAMESPACE
 
 namespace katvan {
 
-namespace typstdriver { class OutlineNode; }
+class LabelsModel;
 
-class OutlineModel;
-
-class OutlineView : public QTreeView
+class LabelsView : public QWidget
 {
     Q_OBJECT
 
 public:
-    OutlineView(QWidget* parent = nullptr);
+    LabelsView(QWidget* parent = nullptr);
 
 public slots:
     void resetView();
-    void outlineUpdated(katvan::typstdriver::OutlineNode* outline);
-    void currentLineChanged(int line);
+    void labelsUpdated(QList<katvan::typstdriver::DocumentLabel> labels);
 
 private slots:
     void itemActivated(const QModelIndex& index);
@@ -44,8 +50,11 @@ signals:
     void goToPosition(int blockNum, int charOffset);
 
 private:
-    OutlineModel* d_model;
-    int d_currentLine;
+    LabelsModel* d_model;
+    QSortFilterProxyModel* d_proxyModel;
+
+    QLineEdit* d_filterEdit;
+    QListView* d_listView;
 };
 
 }

@@ -27,6 +27,7 @@
 #include <QUrl>
 
 #include <memory>
+#include <utility>
 
 namespace katvan::typstdriver {
 
@@ -40,6 +41,8 @@ struct TYPSTDRIVER_EXPORT PreviewPageData
     QSizeF sizeInPoints;
     quint64 fingerprint;
 };
+
+using DocumentLabel = std::tuple<QString, int, int>;
 
 class TYPSTDRIVER_EXPORT Engine : public QObject
 {
@@ -62,7 +65,7 @@ signals:
     void toolTipReady(QPoint pos, QString toolTip, QUrl detailsUrl);
     void toolTipForLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
-    void outlineUpdated(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline);
+    void metadataUpdated(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline, QList<katvan::typstdriver::DocumentLabel> labels);
     void symbolsJsonReady(QByteArray symbols);
 
 public slots:
@@ -77,7 +80,7 @@ public slots:
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
-    void requestOutline(quint64 previousFingerprint);
+    void requestMetadata(quint64 previousFingerprint);
     void requestAllSymbolsJson();
     void setAllowedPaths(const QStringList& allowedPaths);
     void discardLookupCaches();

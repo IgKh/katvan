@@ -17,11 +17,11 @@
  */
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
-    foundations::{Func, NativeElement, StyleChain, Value},
+    foundations::{Func, StyleChain, Value},
     layout::PagedDocument,
     model::HeadingElem,
     syntax::{ast, LinkedNode, Side, Source, Span, SyntaxKind},
-    Document, WorldExt,
+    Document,
 };
 use typst_ide::{analyze_expr, IdeWorld, Tooltip};
 
@@ -192,13 +192,9 @@ pub fn get_definition(
         typst_ide::Definition::Span(span) => {
             let id = span.id().unwrap();
             if id == source.id() {
-                let start = world.range(span)?.start;
                 Some(ffi::DefinitionLocation {
                     in_std: false,
-                    position: ffi::SourcePosition {
-                        line: source.byte_to_line(start).unwrap(),
-                        column: source.byte_to_column(start).unwrap(),
-                    },
+                    position: span_location(source, span)?,
                 })
             } else {
                 // TODO try to at least find the import in the current file
@@ -208,26 +204,42 @@ pub fn get_definition(
     }
 }
 
-pub fn get_outline(document: &PagedDocument, source: &Source) -> Vec<ffi::OutlineEntry> {
+pub fn get_metadata(
+    document: &PagedDocument,
+    source: &Source,
+) -> (Vec<ffi::OutlineEntry>, Vec<ffi::LabelEntry>) {
     let introspector = document.introspector();
-    let headings = introspector.query(&HeadingElem::elem().select());
     let styles = StyleChain::default();
 
-    headings
-        .iter()
-        .map(|content| content.to_packed::<HeadingElem>().unwrap())
-        .filter(|heading| heading.outlined(styles))
-        .map(|heading| {
-            let position = find_text_position_for_span(source, heading.span());
+    let mut outline: Vec<ffi::OutlineEntry> = Vec::new();
+    let mut labels: Vec<ffi::LabelEntry> = Vec::new();
 
-            ffi::OutlineEntry {
+    for item in introspector.all() {
+        if let Some(label) = item.label() {
+            let position = span_location(source, item.span());
+            labels.push(ffi::LabelEntry {
+                name: label.resolve().as_str().to_owned(),
+                has_position: position.is_some(),
+                position: position.unwrap_or_default(),
+            });
+        }
+
+        if let Some(heading) = item.to_packed::<HeadingElem>() {
+            if !heading.outlined(styles) {
+                continue;
+            }
+
+            let position = find_text_position_for_span(source, heading.span());
+            outline.push(ffi::OutlineEntry {
                 level: heading.resolve_level(styles).into(),
                 title: heading.body.plain_text().to_string(),
                 has_position: position.is_some(),
                 position: position.unwrap_or_default(),
-            }
-        })
-        .collect()
+            });
+        }
+    }
+
+    (outline, labels)
 }
 
 fn find_text_position_for_span(source: &Source, span: Span) -> Option<ffi::SourcePosition> {
@@ -240,7 +252,10 @@ fn find_text_position_for_span(source: &Source, span: Span) -> Option<ffi::Sourc
         .map(|node| node.span());
 
     let span = text_span.unwrap_or(span);
+    span_location(source, span)
+}
 
+fn span_location(source: &Source, span: Span) -> Option<ffi::SourcePosition> {
     source.range(span).and_then(|span| {
         Some(ffi::SourcePosition {
             line: source.byte_to_line(span.start)?,

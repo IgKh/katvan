@@ -155,7 +155,7 @@ impl<'a> EngineImpl<'a> {
                     location.end.column,
                     hints,
                 ),
-            };
+            }
         }
     }
 
@@ -172,7 +172,7 @@ impl<'a> EngineImpl<'a> {
             .unwrap_or_default();
         let file = id.vpath().as_rootless_path().to_string_lossy();
 
-        let range = source.range(span).unwrap();
+        let range = source.range(span).unwrap_or_default();
         let start = position_to_file_location(&source, range.start).unwrap_or_default();
         let end = position_to_file_location(&source, range.end).unwrap_or_default();
 
@@ -365,15 +365,17 @@ impl<'a> EngineImpl<'a> {
             .context("Definition not found")
     }
 
-    pub fn get_outline(&self) -> Result<ffi::Outline> {
+    pub fn get_metadata(&self) -> Result<ffi::DocumentMetadata> {
         let doc = self.result.as_ref().context("Not compiled yet")?;
         let main = self.world.main_source();
 
-        let entries = analysis::get_outline(doc, &main);
-        let fingerprint = calc_fingerprint(&entries);
+        let (outline, labels) = analysis::get_metadata(doc, &main);
 
-        Ok(ffi::Outline {
-            entries,
+        let fingerprint = calc_fingerprint(&(&outline, &labels));
+
+        Ok(ffi::DocumentMetadata {
+            outline,
+            labels,
             fingerprint,
         })
     }

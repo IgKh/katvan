@@ -284,20 +284,34 @@ void Engine::searchDefinition(int line, int column)
     }
 }
 
-void Engine::requestOutline(quint64 previousFingerprint)
+void Engine::requestMetadata(quint64 previousFingerprint)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        Outline outline = d_ptr->engine.value()->get_outline();
-        if (outline.fingerprint == previousFingerprint) {
+        DocumentMetadata metadata = d_ptr->engine.value()->get_metadata();
+        if (metadata.fingerprint == previousFingerprint) {
             return;
         }
 
-        std::span entries { outline.entries.data(), outline.entries.size() };
-        OutlineNode* tree = new OutlineNode(entries);
+        std::span outlineEntries { metadata.outline.data(), metadata.outline.size() };
+        OutlineNode* outline = new OutlineNode(outlineEntries);
 
-        Q_EMIT outlineUpdated(outline.fingerprint, tree);
+        QList<DocumentLabel> labels;
+        labels.reserve(metadata.labels.size());
+
+        for (const auto& label : metadata.labels) {
+            QString name = QString::fromUtf8(label.name.data(), label.name.size());
+
+            if (label.has_position) {
+                labels.push_back(std::make_tuple(name, label.position.line, label.position.column));
+            }
+            else {
+                labels.push_back(std::make_tuple(name, -1, -1));
+            }
+        }
+
+        Q_EMIT metadataUpdated(metadata.fingerprint, outline, labels);
     }
     catch (rust::Error&) {
     }

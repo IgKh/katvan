@@ -33,7 +33,7 @@ TypstDriverWrapper::TypstDriverWrapper(QObject* parent)
     , d_engine(nullptr)
     , d_status(Status::INITIALIZING)
     , d_settings(std::make_shared<typstdriver::TypstCompilerSettings>())
-    , d_lastOutlineFingerprint(0)
+    , d_lastMetadataFingerprint(0)
 {
     d_thread = new QThread(this);
     d_thread->setObjectName("TypstDriverThread");
@@ -129,7 +129,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::toolTipReady, this, &TypstDriverWrapper::showEditorToolTip);
     connect(d_engine, &typstdriver::Engine::toolTipForLocation, this, &TypstDriverWrapper::showEditorToolTipAtLocation);
     connect(d_engine, &typstdriver::Engine::completionsReady, this, &TypstDriverWrapper::completionsReady);
-    connect(d_engine, &typstdriver::Engine::outlineUpdated, this, &TypstDriverWrapper::outlineUpdatedInternal);
+    connect(d_engine, &typstdriver::Engine::metadataUpdated, this, &TypstDriverWrapper::metadataUpdatedInternal);
     connect(d_engine, &typstdriver::Engine::symbolsJsonReady, this, &TypstDriverWrapper::symbolsJsonReady);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
@@ -232,7 +232,7 @@ void TypstDriverWrapper::compilationFinished()
 
     if (d_status == Status::SUCCESS || d_status == Status::SUCCESS_WITH_WARNINGS) {
         // TODO: Possibly throttle this
-        QMetaObject::invokeMethod(d_engine, "requestOutline", d_lastOutlineFingerprint);
+        QMetaObject::invokeMethod(d_engine, "requestMetadata", d_lastMetadataFingerprint);
     }
 }
 
@@ -242,10 +242,15 @@ void TypstDriverWrapper::pageRenderComplete(int page, QImage renderedPage)
     Q_EMIT pageRendered(page, renderedPage);
 }
 
-void TypstDriverWrapper::outlineUpdatedInternal(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline)
+void TypstDriverWrapper::metadataUpdatedInternal(
+    quint64 fingerprint,
+    katvan::typstdriver::OutlineNode* outline,
+    QList<katvan::typstdriver::DocumentLabel> labels)
 {
-    d_lastOutlineFingerprint = fingerprint;
+    d_lastMetadataFingerprint = fingerprint;
     Q_EMIT outlineUpdated(outline);
+    Q_EMIT labelsUpdated(labels);
+
 }
 
 }

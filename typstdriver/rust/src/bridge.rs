@@ -86,8 +86,16 @@ pub(crate) mod ffi {
         position: SourcePosition,
     }
 
-    struct Outline {
-        entries: Vec<OutlineEntry>,
+    #[derive(Hash)]
+    struct LabelEntry {
+        name: String,
+        has_position: bool,
+        position: SourcePosition,
+    }
+
+    struct DocumentMetadata {
+        outline: Vec<OutlineEntry>,
+        labels: Vec<LabelEntry>,
         fingerprint: u64,
     }
 
@@ -181,7 +189,7 @@ pub(crate) mod ffi {
 
         fn get_definition(&self, line: usize, column: usize) -> Result<DefinitionLocation>;
 
-        fn get_outline(&self) -> Result<Outline>;
+        fn get_metadata(&self) -> Result<DocumentMetadata>;
 
         fn set_allowed_paths(&mut self, paths: Vec<String>);
 
