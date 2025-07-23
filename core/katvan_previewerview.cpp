@@ -28,6 +28,7 @@
 #include "katvan_previewerview.h"
 #include "katvan_typstdriverwrapper.h"
 
+#include <QHash>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
@@ -260,7 +261,7 @@ void PreviewerView::paintEvent(QPaintEvent* event)
             painter.drawImage(pageGeometry, renderedPage->image);
         }
         if (renderedPage == nullptr || renderedPage->invalidated) {
-            d_driver->renderPage(i, d_pointSize * effectiveZoom(i) * devicePixelRatio(), d_invertColors);
+            d_driver->renderPage(i, d_pointSize * effectiveZoom(i) * devicePixelRatio());
         }
     }
 
@@ -322,10 +323,47 @@ void PreviewerView::scrollContentsBy(int dx, int dy)
     updateCurrentPage();
 }
 
+static void invertPageColors(QImage& image)
+{
+    static QHash<QRgb, QRgb> cache;
+
+    int height = image.height();
+    int width = image.width();
+
+    for (int i = 0; i < height; i++) {
+        QRgb* line = reinterpret_cast<QRgb*>(image.scanLine(i));
+        for (int j = 0; j < width; j++) {
+            QRgb* pixel = &line[j];
+            QRgb result;
+
+            auto it = cache.find(*pixel);
+            if (it != cache.end()) {
+                result = it.value();
+            }
+            else {
+                QColor color = QColor::fromRgba(*pixel).toHsl();
+                color.setHsl(
+                    color.hue(),
+                    color.saturation(),
+                    255 - color.lightness(),
+                    color.alpha());
+
+                result = color.rgba();
+                cache[*pixel] = result;
+            }
+            *pixel = result;
+        }
+    }
+}
+
 void PreviewerView::pageRendered(int page, QImage image)
 {
     if (page >= d_pages.size()) {
         return;
+    }
+
+    if (d_invertColors) {
+        invertPageColors(image);
     }
 
     // When asking to render a page we give typst-render a higher DPI that

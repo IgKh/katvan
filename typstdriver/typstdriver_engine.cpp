@@ -137,12 +137,12 @@ static void cleanupBuffer(void* buffer)
     delete buf;
 }
 
-void Engine::renderPage(int page, qreal pointSize, bool invertColors)
+void Engine::renderPage(int page, qreal pointSize)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        RenderedPage result = d_ptr->engine.value()->render_page(page, pointSize, invertColors);
+        RenderedPage result = d_ptr->engine.value()->render_page(page, pointSize);
         rust::Vec<uint8_t>* buffer = new rust::Vec<uint8_t>(std::move(result.buffer));
 
         QImage image {

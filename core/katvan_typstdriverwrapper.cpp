@@ -175,14 +175,14 @@ void TypstDriverWrapper::updatePreview()
     QMetaObject::invokeMethod(d_engine, "compile");
 }
 
-void TypstDriverWrapper::renderPage(int page, qreal pointSize, bool invertColors)
+void TypstDriverWrapper::renderPage(int page, qreal pointSize)
 {
     if (d_pendingPagesToRender.contains(page)) {
         return;
     }
 
     d_pendingPagesToRender.insert(page);
-    QMetaObject::invokeMethod(d_engine, "renderPage", page, pointSize, invertColors);
+    QMetaObject::invokeMethod(d_engine, "renderPage", page, pointSize);
 }
 
 void TypstDriverWrapper::exportToPdf(const QString& filePath)
