@@ -66,6 +66,7 @@ signals:
     void toolTipForLocation(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
     void metadataUpdated(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline, QList<katvan::typstdriver::DocumentLabel> labels);
+    void pageWordCountUpdated(int page, size_t wordCount);
     void symbolsJsonReady(QByteArray symbols);
 
 public slots:
@@ -81,6 +82,7 @@ public slots:
     void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
     void requestMetadata(quint64 previousFingerprint);
+    void requestPageWordCount(int page);
     void requestAllSymbolsJson();
     void setAllowedPaths(const QStringList& allowedPaths);
     void discardLookupCaches();

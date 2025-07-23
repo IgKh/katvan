@@ -119,7 +119,9 @@ void SymbolPicker::setupUI()
     d_categoryCombo = new QComboBox();
 
     d_categoryCombo->addItem(tr("Any"), QVariant());
-    for (const char* category : *SYMBOL_CATEGORIES) {
+
+    const auto& categories = *SYMBOL_CATEGORIES;
+    for (const char* category : categories) {
         d_categoryCombo->addItem(tr(category), category);
     }
 

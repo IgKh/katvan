@@ -130,6 +130,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::toolTipForLocation, this, &TypstDriverWrapper::showEditorToolTipAtLocation);
     connect(d_engine, &typstdriver::Engine::completionsReady, this, &TypstDriverWrapper::completionsReady);
     connect(d_engine, &typstdriver::Engine::metadataUpdated, this, &TypstDriverWrapper::metadataUpdatedInternal);
+    connect(d_engine, &typstdriver::Engine::pageWordCountUpdated, this, &TypstDriverWrapper::pageWordCountUpdated);
     connect(d_engine, &typstdriver::Engine::symbolsJsonReady, this, &TypstDriverWrapper::symbolsJsonReady);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
@@ -213,6 +214,11 @@ void TypstDriverWrapper::requestCompletions(int line, int column, bool implicit)
 void TypstDriverWrapper::searchDefinition(int line, int column)
 {
     QMetaObject::invokeMethod(d_engine, "searchDefinition", line, column);
+}
+
+void TypstDriverWrapper::requestPageWordCount(int page)
+{
+    QMetaObject::invokeMethod(d_engine, "requestPageWordCount", page);
 }
 
 void TypstDriverWrapper::requestAllSymbolsJson()

@@ -317,6 +317,19 @@ void Engine::requestMetadata(quint64 previousFingerprint)
     }
 }
 
+void Engine::requestPageWordCount(int page)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        size_t count = d_ptr->engine.value()->count_page_words(static_cast<size_t>(page));
+
+        Q_EMIT pageWordCountUpdated(page, count);
+    }
+    catch (rust::Error&) {
+    }
+}
+
 void Engine::requestAllSymbolsJson()
 {
     try {

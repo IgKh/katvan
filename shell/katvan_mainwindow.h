@@ -44,6 +44,7 @@ class Editor;
 class SettingsDialog;
 class SymbolPicker;
 class TypstDriverWrapper;
+class WordCounter;
 
 class MainWindow : public QMainWindow
 {
@@ -82,6 +83,7 @@ private slots:
     void showColorPicker();
     void previewReady();
     void compilationStatusChanged();
+    void updateWordCount(size_t wordCount);
 
 private:
     void setupUI();
@@ -109,6 +111,7 @@ private:
     RecentFiles* d_recentFiles;
     TypstDriverWrapper* d_driver;
     BackupHandler* d_backupHandler;
+    WordCounter* d_wordCounter;
 
     Editor* d_editor;
     InfoBar* d_infoBar;
@@ -125,6 +128,7 @@ private:
     QMovie* d_compilingMovie;
 
     QToolButton* d_compilationStatusButton;
+    QToolButton* d_wordCountButton;
     QToolButton* d_cursorPosButton;
     QToolButton* d_fontZoomFactorButton;
     QToolButton* d_spellingButton;

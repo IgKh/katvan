@@ -366,7 +366,7 @@ impl<'a> EngineImpl<'a> {
     }
 
     pub fn get_metadata(&self) -> Result<ffi::DocumentMetadata> {
-        let doc = self.result.as_ref().context("Not compiled yet")?;
+        let doc = self.result.as_ref().context("Invalid state")?;
         let main = self.world.main_source();
 
         let (outline, labels) = analysis::get_metadata(doc, &main);
@@ -378,6 +378,13 @@ impl<'a> EngineImpl<'a> {
             labels,
             fingerprint,
         })
+    }
+
+    pub fn count_page_words(&self, page: usize) -> Result<usize> {
+        let doc = self.result.as_ref().context("Invalid state")?;
+        let page = doc.pages.get(page).context("No such page")?;
+
+        Ok(analysis::count_words(&page.frame))
     }
 
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {

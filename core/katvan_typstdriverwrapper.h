@@ -78,6 +78,7 @@ signals:
     void completionsReady(int line, int column, QByteArray completionsJson);
     void outlineUpdated(katvan::typstdriver::OutlineNode* outline);
     void labelsUpdated(QList<katvan::typstdriver::DocumentLabel> labels);
+    void pageWordCountUpdated(int page, size_t wordCount);
     void symbolsJsonReady(QByteArray symbols);
 
 public slots:
@@ -91,6 +92,7 @@ public slots:
     void requestToolTip(int line, int column, QPoint pos);
     void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
+    void requestPageWordCount(int page);
     void requestAllSymbolsJson();
     void discardLookupCaches();
 

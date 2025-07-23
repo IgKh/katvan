@@ -191,6 +191,8 @@ pub(crate) mod ffi {
 
         fn get_metadata(&self) -> Result<DocumentMetadata>;
 
+        fn count_page_words(&self, page: usize) -> Result<usize>;
+
         fn set_allowed_paths(&mut self, paths: Vec<String>);
 
         fn discard_lookup_caches(&mut self);

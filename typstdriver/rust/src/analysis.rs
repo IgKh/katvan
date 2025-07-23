@@ -18,7 +18,7 @@
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
     foundations::{Func, StyleChain, Value},
-    layout::PagedDocument,
+    layout::{Frame, PagedDocument},
     model::HeadingElem,
     syntax::{ast, LinkedNode, Side, Source, Span, SyntaxKind},
     Document,
@@ -275,4 +275,24 @@ fn find_first_text_node(node: LinkedNode<'_>) -> Option<LinkedNode<'_>> {
         }
     }
     None
+}
+
+pub fn count_words(frame: &Frame) -> usize {
+    use unicode_segmentation::UnicodeSegmentation;
+
+    let mut count: usize = 0;
+
+    for (_, item) in frame.items() {
+        match item {
+            typst::layout::FrameItem::Group(group) => {
+                count += count_words(&group.frame);
+            }
+            typst::layout::FrameItem::Text(text) => {
+                // FIXME: Wrong counts due to https://github.com/typst/typst/issues/6596
+                count += text.text.unicode_words().count();
+            }
+            _ => {}
+        }
+    }
+    count
 }

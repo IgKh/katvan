@@ -36,6 +36,7 @@ set(SOURCES
     katvan_symbolpicker.cpp
     katvan_text_utils.cpp
     katvan_typstdriverwrapper.cpp
+    katvan_wordcounter.cpp
 )
 
 qt_add_resources(SOURCES themes/themes.qrc)

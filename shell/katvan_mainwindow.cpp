@@ -36,6 +36,7 @@
 #include "katvan_spellchecker.h"
 #include "katvan_symbolpicker.h"
 #include "katvan_typstdriverwrapper.h"
+#include "katvan_wordcounter.h"
 
 #include "typstdriver_compilersettings.h"
 
@@ -79,6 +80,7 @@ MainWindow::MainWindow()
 
     d_document = new Document(this);
     d_driver = new TypstDriverWrapper(this);
+    d_wordCounter = new WordCounter(d_driver, this);
 
     setIconTheme();
     setupUI();
@@ -100,6 +102,8 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
     connect(d_driver, &TypstDriverWrapper::outlineUpdated, d_outlineView, &OutlineView::outlineUpdated);
     connect(d_driver, &TypstDriverWrapper::labelsUpdated, d_labelsView, &LabelsView::labelsUpdated);
+
+    connect(d_wordCounter, &WordCounter::wordCountChanged, this, &MainWindow::updateWordCount);
 
     d_backupHandler = new BackupHandler(d_editor, this);
     connect(d_document, &Document::contentModified, d_backupHandler, &BackupHandler::editorContentChanged);
@@ -403,6 +407,10 @@ void MainWindow::setupStatusBar()
         d_compilationStatusButton->setIcon(d_compilingMovie->currentPixmap());
     });
 
+    d_wordCountButton = buildStatusBarButton();
+
+    statusBar()->addPermanentWidget(d_wordCountButton);
+
     d_cursorPosButton = buildStatusBarButton();
     connect(d_cursorPosButton, &QToolButton::clicked, this, &MainWindow::goToLine);
 
@@ -483,6 +491,7 @@ void MainWindow::loadFile(const QString& fileName)
     d_editor->setTextCursor(QTextCursor(d_document));
 
     d_previewer->reset();
+    d_wordCounter->reset();
     d_outlineView->resetView();
     d_labelsView->resetView();
 
@@ -717,6 +726,7 @@ void MainWindow::newFile()
     }
     d_document->setDocumentText(QString());
     d_previewer->reset();
+    d_wordCounter->reset();
     d_outlineView->resetView();
     d_labelsView->resetView();
     setCurrentFile(QString());
@@ -1124,6 +1134,11 @@ void MainWindow::compilationStatusChanged()
         d_compilationStatusButton->setText(QString());
         d_compilationStatusButton->setIcon(QIcon());
     }
+}
+
+void MainWindow::updateWordCount(size_t wordCount)
+{
+    d_wordCountButton->setText(tr("%n Word(s)", "", wordCount));
 }
 
 }
