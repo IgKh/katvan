@@ -43,7 +43,7 @@
 
 namespace katvan {
 
-Q_GLOBAL_STATIC(QRegularExpression, APPLY_PLACEHOLDER_REGEX, QStringLiteral("\\${(\\S*)}"))
+Q_GLOBAL_STATIC(QRegularExpression, APPLY_PLACEHOLDER_REGEX, QStringLiteral("\\${(\\S*?)}"))
 
 enum CompletionModelRoles {
     COMPLETION_DETAIL_ROLE = Qt::UserRole + 1,
