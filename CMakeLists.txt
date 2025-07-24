@@ -47,7 +47,8 @@ elseif(UNIX)
     install(TARGETS katvan DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES assets/katvan.desktop DESTINATION share/applications)
     install(FILES assets/katvan.svg DESTINATION share/icons/hicolor/scalable/apps)
-    install(FILES assets/katvan_48x48.png DESTINATION share/icons/hicolor/48x48/apps RENAME katvan.png)
+    install(FILES assets/katvan-48.png DESTINATION share/icons/hicolor/48x48/apps RENAME katvan.png)
+    install(FILES assets/katvan-256.png DESTINATION share/icons/hicolor/256x256/apps RENAME katvan.png)
 
     # Generate AppStream release data
     find_package(Python3 COMPONENTS Interpreter)
