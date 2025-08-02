@@ -151,6 +151,10 @@ void FontIconEngine::paint(QPainter* painter, const QRect& rect, QIcon::Mode mod
 {
     Q_UNUSED(state)
 
+    if (!d_valid) {
+        return;
+    }
+
     QPalette::ColorGroup cg = QPalette::Normal;
     switch (mode) {
         case QIcon::Normal:     cg = QPalette::Normal; break;
