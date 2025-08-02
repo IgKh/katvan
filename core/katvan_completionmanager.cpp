@@ -230,7 +230,7 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
 CompletionManager::CompletionManager(QTextEdit* editor)
     : QObject(editor)
     , d_editor(editor)
-    , d_implictCompletionAllowed(false)
+    , d_implicitCompletionAllowed(false)
     , d_completionsRequested(false)
 {
     d_model = new CompletionListModel(this);
@@ -263,7 +263,7 @@ void CompletionManager::startImplicitCompletion()
 
 void CompletionManager::startCompletion(bool implicit)
 {
-    if (implicit && !isImplictCompletionAllowed()) {
+    if (implicit && !isImplicitCompletionAllowed()) {
         return;
     }
 

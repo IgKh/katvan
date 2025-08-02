@@ -50,7 +50,7 @@ void setupPortableMode()
     katvan::typstdriver::PackageManager::setDownloadCacheLocation(settingsPath + "/Katvan/cache");
 }
 
-void loadAuxillaryFonts()
+void loadAuxiliaryFonts()
 {
     int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
     if (rc < 0) {
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
         QCoreApplication::installTranslator(&qtTranslator);
     }
 
-    loadAuxillaryFonts();
+    loadAuxiliaryFonts();
 
 #ifdef Q_OS_WINDOWS
     // Starting from Qt 6.8.1 the Windows11 style works on Windows 10 too. Prefer

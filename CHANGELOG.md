@@ -168,7 +168,7 @@ _This release is dedicated to all those who are still wet from this October Rain
 ### New Features
 
 - Matching brackets are highlighted.
-- Closing brackets are automatically inserted in a sytnax aware way when an opening bracket is typed.
+- Closing brackets are automatically inserted in a syntax aware way when an opening bracket is typed.
 - It is now possible to set an auto-indentation mode if desired - Normal for simply maintaining the previous line's indentation, or Smart which will automatically increase or decrease indentation based on the relevant Typst syntax mode.
 - `Home` and `Shift+Home` keys now work as is typical in code editors and will skip over initial indentation.
 - Added a compilation status indicator in the status bar.
@@ -178,7 +178,7 @@ _This release is dedicated to all those who are still wet from this October Rain
 
 - Fixed the editor scroll position jerking when saving a document with a modeline.
 - Fixed UI freeze when indenting or unindenting the last line.
-- Horizonal scroll position of the preview pane is maintained when preview is updated.
+- Horizontal scroll position of the preview pane is maintained when preview is updated.
 - If a word is added to the personal dictionary, all other instances of it are also not marked as spelling errors.
 - Fixed Windows-style text direction toggle keys to work under recent KDE version.
 

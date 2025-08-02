@@ -128,7 +128,7 @@ Token Tokenizer::readWord()
     size_t len = 0;
 
     // readWord() also matches code mode identifiers, so we eat any underscores
-    // and hypens, as long as they are not the leading character
+    // and hyphens, as long as they are not the leading character
     while (!atEnd() && (d_text[d_pos].isLetterOrNumber()
                         || d_text[d_pos].isMark()
                         || d_text[d_pos] == QLatin1Char('_')
@@ -138,7 +138,7 @@ Token Tokenizer::readWord()
     }
 
     // No trailing underscores, though (actually, they are allowed in
-    // identifiers, but catching it at this level messes up empahsis markers)
+    // identifiers, but catching it at this level messes up emphasis markers)
     while (len > 0 && d_text[start + len - 1] == QLatin1Char('_')) {
         d_pos--;
         len--;
@@ -264,7 +264,7 @@ Token Tokenizer::readPossibleEscape()
 
     size_t mark = d_pos;
 
-    // Special form of escape - Unicode codepoint espace, e.g \u{1f600}
+    // Special form of escape - Unicode codepoint escape, e.g \u{1f600}
     if (!atEnd() && d_text[d_pos] == QLatin1Char('u')) {
         if (!tryUnicodeEscape()) {
             d_pos = mark;
@@ -1111,7 +1111,7 @@ void ContentWordsListener::handleLooseToken(const Token& t, const ParserState& s
 
     // Try to create the segments as long as possible, and include all real token
     // types (not just words, but also symbols, whitespace, etc). This is to provide
-    // the word boundry detection algorithm that will run on natural text segments
+    // the word boundary detection algorithm that will run on natural text segments
     // later as much context to work with as possible.
     if (d_prevToken.type != TokenType::INVALID && t.startPos == d_prevToken.startPos + d_prevToken.length) {
         d_segments.last().length += t.length;

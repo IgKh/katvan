@@ -173,7 +173,7 @@ impl typst_ide::IdeWorld for KatvanWorld<'_> {
     }
 
     fn packages(&self) -> &[(PackageSpec, Option<EcoString>)] {
-        // TODO - Replace with OnceLock::get_or_try_init when it is stablized
+        // TODO - Replace with OnceLock::get_or_try_init when it is stabilized
         self.packages_list
             .get_or_try_init(|| {
                 let mut manager = self.package_manager.lock().unwrap();

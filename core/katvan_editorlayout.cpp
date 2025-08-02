@@ -229,7 +229,7 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
             : block.layout();
 
         if (layout->lineCount() == 0) {
-            // Not layed out yet. Could happen if we de-bounced a full document
+            // Not laid out yet. Could happen if we de-bounced a full document
             // re-layout. A repaint will happen later.
             return;
         }

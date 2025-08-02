@@ -20,7 +20,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 - Reasonably good RTL editing
     - Mostly thanks to Qt's excellent Rich Text Framework
     - But also specific additional functionality, for example:
-      - Syntax-aware line directionality heuristc
+      - Syntax-aware line directionality heuristic
       - Automatic directionality isolation of inline math and code
       - Displaying BiDi control characters with a special custom font[^1]
       - Toggling between logical and visual cursor movement

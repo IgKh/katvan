@@ -162,7 +162,7 @@ QString PackageManager::getLocalPackagePath(const QString& packageNamespace, con
 
 #if defined(Q_OS_LINUX)
     // Also explicitly look in the home directory (in case we are in flatpak or
-    // another enviroment that overrides XDG_DATA_HOME)
+    // another environment that overrides XDG_DATA_HOME)
     locations.append(QDir::homePath() + "/.local/share");
     locations.removeDuplicates();
 #endif

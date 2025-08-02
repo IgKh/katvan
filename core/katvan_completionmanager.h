@@ -73,8 +73,8 @@ public:
 
     bool isActive() const;
 
-    bool isImplictCompletionAllowed() const { return d_implictCompletionAllowed; }
-    void setImplictCompletionAllowed(bool allow) { d_implictCompletionAllowed = allow; }
+    bool isImplicitCompletionAllowed() const { return d_implicitCompletionAllowed; }
+    void setImplicitCompletionAllowed(bool allow) { d_implicitCompletionAllowed = allow; }
 
 public slots:
     void startExplicitCompletion();
@@ -95,7 +95,7 @@ private:
     QCompleter* d_completer;
     CompletionListModel* d_model;
 
-    bool d_implictCompletionAllowed;
+    bool d_implicitCompletionAllowed;
     bool d_completionsRequested;
     int d_suggestionsStartPosition;
 };

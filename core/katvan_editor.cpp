@@ -195,7 +195,7 @@ void Editor::applyEffectiveSettings()
 
     document()->setLayoutEnabled(true);
 
-    d_completionManager->setImplictCompletionAllowed(d_effectiveSettings.autoTriggerCompletions());
+    d_completionManager->setImplicitCompletionAllowed(d_effectiveSettings.autoTriggerCompletions());
 }
 
 static EditorTheme& themeForColorScheme(const QString& scheme)
@@ -736,7 +736,7 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
         return;
     }
 
-    // Remove up to one tab or indentWidth spaces from begining of block
+    // Remove up to one tab or indentWidth spaces from beginning of block
     cursor.beginEditBlock();
     if (d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::TABS) {
         if (document()->characterAt(cursor.position()) == QLatin1Char('\t')) {

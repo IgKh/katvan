@@ -225,16 +225,16 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
 
     QChar::Script dictScript = getDictionaryScript(currentDictionaryName());
 
-    QTextBoundaryFinder boundryFinder(QTextBoundaryFinder::Word, text);
+    QTextBoundaryFinder boundaryFinder(QTextBoundaryFinder::Word, text);
 
     qsizetype prevPos = 0;
-    while (boundryFinder.toNextBoundary() >= 0) {
-        qsizetype pos = boundryFinder.position();
-        if (boundryFinder.boundaryReasons() & QTextBoundaryFinder::EndOfItem) {
+    while (boundaryFinder.toNextBoundary() >= 0) {
+        qsizetype pos = boundaryFinder.position();
+        if (boundaryFinder.boundaryReasons() & QTextBoundaryFinder::EndOfItem) {
             QString word = text.sliced(prevPos, pos - prevPos);
 
             // Rule WB4 of UAX #29 says that format characters aren't a word
-            // break boundry, but we still don't want to feed Hunspell with
+            // break boundary, but we still don't want to feed Hunspell with
             // BiDi control characters.
             word.removeIf(utils::isBidiControlChar);
 
