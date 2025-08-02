@@ -699,6 +699,10 @@ void Parser::parse()
                 popState();
                 continue;
             }
+            else if (state.kind != ParserState::Kind::CODE_BLOCK && match(m::Symbol(QLatin1Char(';')))) {
+                popState();
+                continue;
+            }
             else if (state.kind == ParserState::Kind::CODE_ARGUMENTS && match(m::Symbol(QLatin1Char(')')))) {
                 popState();
 

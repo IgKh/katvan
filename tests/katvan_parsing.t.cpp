@@ -512,6 +512,33 @@ TEST(HiglightingParserTests, Lists) {
     ));
 }
 
+TEST(HiglightingParserTests, CodeLineBreaks) {
+    auto markers = highlightText(QStringLiteral(
+        "#let a = 2\n"
+        "while\n"
+        "#let b = foo(); bar()"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,         0,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::NUMBER_LITERAL,  9,  1 },
+        HighlightingMarker{ HighlightingMarker::Kind::KEYWORD,        17,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,  26,  3 }
+    ));
+}
+
+TEST(HiglightingParserTests, RawContentInCode) {
+    auto markers = highlightText(QStringLiteral(
+        "#par(\"foo\" + `bar` + ```baz\n"
+        "  bong```"));
+
+    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
+        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    0,  4 },
+        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,   5,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW,             13,  5 },
+        HighlightingMarker{ HighlightingMarker::Kind::RAW,             21, 16 }
+    ));
+}
+
 /*
  * Test cases taken from Typst documentation
  */
@@ -733,19 +760,6 @@ TEST(HiglightingParserTests, MathInCode) {
         HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   76,  3 },
         HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   85,  3 },
         HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,   89,  3 }
-    ));
-}
-
-TEST(HiglightingParserTests, RawContentInCode) {
-    auto markers = highlightText(QStringLiteral(
-        "#par(\"foo\" + `bar` + ```baz\n"
-        "  bong```"));
-
-    EXPECT_THAT(markers, ::testing::UnorderedElementsAre(
-        HighlightingMarker{ HighlightingMarker::Kind::FUNCTION_NAME,    0,  4 },
-        HighlightingMarker{ HighlightingMarker::Kind::STRING_LITERAL,   5,  5 },
-        HighlightingMarker{ HighlightingMarker::Kind::RAW,             13,  5 },
-        HighlightingMarker{ HighlightingMarker::Kind::RAW,             21, 16 }
     ));
 }
 
