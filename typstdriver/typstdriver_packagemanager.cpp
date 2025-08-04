@@ -28,6 +28,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLockFile>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QSet>
@@ -132,6 +133,12 @@ QString PackageManager::getPreviewPackageLocalPath(const QString& name, const QS
     }
 
     QDir cacheDir = ensurePreviewCacheDir();
+
+    auto cacheLock = lockCacheDir(cacheDir);
+    if (!cacheLock) {
+        return QString();
+    }
+
     QDir packageDir = cacheDir.filesystemPath() / qPrintable(name) / qPrintable(version);
     if (packageDir.exists()) {
         return packageDir.path();
@@ -162,7 +169,7 @@ QString PackageManager::getLocalPackagePath(const QString& packageNamespace, con
 
 #if defined(Q_OS_LINUX)
     // Also explicitly look in the home directory (in case we are in flatpak or
-    // another enviroment that overrides XDG_DATA_HOME)
+    // another environment that overrides XDG_DATA_HOME)
     locations.append(QDir::homePath() + "/.local/share");
     locations.removeDuplicates();
 #endif
@@ -187,6 +194,12 @@ QString PackageManager::getLocalPackagePath(const QString& packageNamespace, con
 QList<PackageDetails> PackageManager::getPreviewPackagesListing()
 {
     QDir cacheDir = ensurePreviewCacheDir();
+
+    auto cacheLock = lockCacheDir(cacheDir);
+    if (!cacheLock) {
+        return QList<PackageDetails>();
+    }
+
     QString indexPath = cacheDir.filePath("index.json");
 
     QDateTime lastModified;
@@ -271,6 +284,21 @@ QDir PackageManager::ensurePreviewCacheDir()
         cacheDir.mkpath(".");
     }
     return cacheDir;
+}
+
+std::unique_ptr<QLockFile> PackageManager::lockCacheDir(const QDir& cacheDir)
+{
+    QString lockFile = cacheDir.filePath(".lock");
+
+    auto lock = std::make_unique<QLockFile>(lockFile);
+
+    if (!lock->tryLock(30000)) { // 30 seconds
+        d_error = Error::IO_ERROR;
+        d_errorMessage = QStringLiteral("failed to lock the package cache directory");
+
+        lock.reset();
+    }
+    return lock;
 }
 
 PackageManager::DownloadResult PackageManager::downloadFile(const QString& url, const QString& targetPath, const QDateTime& lastModified)

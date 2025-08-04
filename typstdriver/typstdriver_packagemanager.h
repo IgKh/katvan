@@ -29,6 +29,7 @@
 
 QT_BEGIN_NAMESPACE
 class QDateTime;
+class QLockFile;
 class QNetworkAccessManager;
 QT_END_NAMESPACE
 
@@ -90,6 +91,7 @@ private:
     QString getLocalPackagePath(const QString& packageNamespace, const QString& packageName, const QString& version);
 
     QDir ensurePreviewCacheDir();
+    std::unique_ptr<QLockFile> lockCacheDir(const QDir& cacheDir);
 
     QList<PackageDetails> parsePackageIndex(const QByteArray& indexData);
 
