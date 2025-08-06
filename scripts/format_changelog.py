@@ -34,6 +34,23 @@ def extract_version(doc, version, keep_header=False):
     return doc
 
 
+def limit_versions(doc, limit):
+    seen = 0
+    filtered = []
+
+    for elem in doc.children:
+        if isinstance(elem, mistletoe.block_token.Heading) and elem.level == 2:
+            seen += 1
+            if seen > limit:
+                break
+
+        filtered.append(elem)
+
+    doc.children = filtered
+
+    return doc
+
+
 def format_appstream_xml(doc):
     HEADING_REGEX = re.compile(r'v(?P<version>\d+\.\d+\.\d+) \((?P<date>.+)\)')
 
@@ -60,7 +77,7 @@ def format_appstream_xml(doc):
             url.text = f'https://github.com/IgKh/katvan/releases/tag/v{version}'
 
     ET.indent(root, space='    ', level=1)
-    return ET.tostring(root)
+    return ET.tostring(root, encoding='unicode')
 
 
 def handle_format(doc, fmt, fout):
@@ -68,7 +85,7 @@ def handle_format(doc, fmt, fout):
         with MarkdownRenderer() as renderer:
             fout.write(renderer.render(doc))
     elif fmt == 'appstream':
-        fout.write(format_appstream_xml(doc).decode('utf-8'))
+        fout.write(format_appstream_xml(doc))
 
 
 def main():
@@ -77,6 +94,7 @@ def main():
     parser.add_argument('--output', '-o', help='File to write into')
     parser.add_argument('--format', choices=['markdown', 'appstream'], default='markdown', help='Output format')
     parser.add_argument('--pick', metavar='VERSION', help='Extract changelog for one version')
+    parser.add_argument('--limit', type=int, help='Only emit last LIMIT versions')
 
     args = parser.parse_args()
 
@@ -85,6 +103,9 @@ def main():
 
     if args.pick is not None:
         doc = extract_version(doc, args.pick, keep_header=(args.format != 'markdown'))
+
+    if args.limit is not None:
+        doc = limit_versions(doc, args.limit)
 
     if args.output:
         with open(args.output, 'wt') as fout:

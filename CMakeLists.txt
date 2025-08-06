@@ -54,7 +54,7 @@ elseif(UNIX)
     find_package(Python3 COMPONENTS Interpreter)
     if(Python3_FOUND)
         execute_process(
-            COMMAND ${Python3_EXECUTABLE} scripts/format_changelog.py --format appstream CHANGELOG.md
+            COMMAND ${Python3_EXECUTABLE} scripts/format_changelog.py --format appstream --limit 5 CHANGELOG.md
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE METAINFO_RELEASES_XML
         )
