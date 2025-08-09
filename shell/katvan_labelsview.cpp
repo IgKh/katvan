@@ -18,9 +18,12 @@
 #include "katvan_labelsview.h"
 #include "katvan_utils.h"
 
+#include "katvan_constants.h"
+
 #include <QAbstractListModel>
 #include <QLineEdit>
 #include <QListView>
+#include <QMimeData>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
 
@@ -31,22 +34,10 @@ enum LabelsModelRoles {
     POSITION_COLUMN_ROLE,
 };
 
-class LabelsModel : public QAbstractListModel
+LabelsModel::LabelsModel(QObject* parent)
+    : QAbstractListModel(parent)
 {
-public:
-    LabelsModel(QObject* parent = nullptr)
-        : QAbstractListModel(parent)
-    {
-    }
-
-    void setLabels(QList<katvan::typstdriver::DocumentLabel> labels);
-
-    int rowCount(const QModelIndex& parent) const override;
-    QVariant data(const QModelIndex& index, int role) const override;
-
-private:
-    QList<katvan::typstdriver::DocumentLabel> d_labels;
-};
+}
 
 void LabelsModel::setLabels(QList<katvan::typstdriver::DocumentLabel> labels)
 {
@@ -61,6 +52,16 @@ int LabelsModel::rowCount(const QModelIndex& parent) const
         return 0;
     }
     return d_labels.size();
+}
+
+Qt::ItemFlags LabelsModel::flags(const QModelIndex& index) const
+{
+    Qt::ItemFlags defaultFlags = QAbstractListModel::flags(index);
+
+    if (index.isValid()) {
+        defaultFlags |= Qt::ItemIsDragEnabled;
+    }
+    return defaultFlags;
 }
 
 QVariant LabelsModel::data(const QModelIndex& index, int role) const
@@ -86,6 +87,32 @@ QVariant LabelsModel::data(const QModelIndex& index, int role) const
     return QVariant();
 }
 
+Qt::DropActions LabelsModel::supportedDragActions() const
+{
+    return Qt::LinkAction;
+}
+
+QStringList LabelsModel::mimeTypes() const
+{
+    QStringList types;
+    types << LABEL_REF_MIME_TYPE;
+    return types;
+}
+
+QMimeData* LabelsModel::mimeData(const QModelIndexList& indexes) const
+{
+    QModelIndex index = indexes.value(0, QModelIndex());
+    if (!index.isValid()) {
+        return nullptr;
+    }
+
+    QString name = index.data().toString();
+
+    QMimeData* data = new QMimeData();
+    data->setData(LABEL_REF_MIME_TYPE, name.toUtf8());
+    return data;
+}
+
 LabelsView::LabelsView(QWidget* parent)
     : QWidget(parent)
 {
@@ -96,6 +123,7 @@ LabelsView::LabelsView(QWidget* parent)
 
     d_listView = new QListView();
     d_listView->setModel(d_proxyModel);
+    d_listView->setDragEnabled(true);
 
     connect(d_listView, &QListView::activated, this, &LabelsView::itemActivated);
 

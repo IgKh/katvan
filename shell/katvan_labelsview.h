@@ -19,6 +19,7 @@
 
 #include "typstdriver_engine.h"
 
+#include <QAbstractListModel>
 #include <QList>
 #include <QWidget>
 
@@ -30,7 +31,25 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
-class LabelsModel;
+class LabelsModel : public QAbstractListModel
+{
+    Q_OBJECT
+
+public:
+    LabelsModel(QObject* parent = nullptr);
+
+    void setLabels(QList<katvan::typstdriver::DocumentLabel> labels);
+
+    int rowCount(const QModelIndex& parent) const override;
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
+    Qt::DropActions supportedDragActions() const override;
+    QStringList mimeTypes() const override;
+    QMimeData* mimeData(const QModelIndexList& indexes) const override;
+
+private:
+    QList<katvan::typstdriver::DocumentLabel> d_labels;
+};
 
 class LabelsView : public QWidget
 {

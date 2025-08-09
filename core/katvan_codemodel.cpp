@@ -520,12 +520,25 @@ QString CodeModel::getColorExpression(const QColor& color, int pos) const
     }
 
     QString name = color.name(color.alpha() != 255 ? QColor::HexArgb : QColor::HexRgb);
-    QString expresion = QStringLiteral("rgb(\"%1\")").arg(name);
+    QString expression = QStringLiteral("rgb(\"%1\")").arg(name);
 
     if (env == EnvironmentType::CODE) {
-        return expresion;
+        return expression;
     }
-    return QLatin1Char('#') + expresion;
+    return QLatin1Char('#') + expression;
+}
+
+QString CodeModel::getLabelRefExpression(const QString& label, int pos) const
+{
+    EnvironmentType env = classifyEnvironment(pos);
+    if (env == EnvironmentType::UNKNOWN || label.isEmpty()) {
+        return QString();
+    }
+
+    if (env == EnvironmentType::CONTENT) {
+        return QStringLiteral("@%1").arg(label);
+    }
+    return QStringLiteral("\"%1\"").arg(label);
 }
 
 }

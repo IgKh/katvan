@@ -17,6 +17,7 @@
  */
 #include "katvan_codemodel.h"
 #include "katvan_completionmanager.h"
+#include "katvan_constants.h"
 #include "katvan_document.h"
 #include "katvan_editor.h"
 #include "katvan_editorlayout.h"
@@ -26,6 +27,7 @@
 #include "katvan_text_utils.h"
 
 #include <QMenu>
+#include <QMimeData>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QScrollBar>
@@ -1174,6 +1176,34 @@ void Editor::insertColor(const QColor& color)
 
     cursor.insertText(expression);
     setTextCursor(cursor);
+}
+
+void Editor::insertLabelRef(const QString& label)
+{
+    QTextCursor cursor = textCursor();
+    QString expression = d_codeModel->getLabelRefExpression(label, cursor.position());
+
+    cursor.insertText(expression);
+    setTextCursor(cursor);
+}
+
+bool Editor::canInsertFromMimeData(const QMimeData* source) const
+{
+    return QTextEdit::canInsertFromMimeData(source)
+        || source->hasFormat(LABEL_REF_MIME_TYPE);
+}
+
+void Editor::insertFromMimeData(const QMimeData* source)
+{
+    if (source->hasFormat(LABEL_REF_MIME_TYPE)) {
+        QString label = QString::fromUtf8(source->data(LABEL_REF_MIME_TYPE));
+        if (!label.isEmpty()) {
+            insertLabelRef(label);
+        }
+    }
+    else {
+        QTextEdit::insertFromMimeData(source);
+    }
 }
 
 int Editor::lineNumberGutterWidth()
