@@ -28,6 +28,7 @@
 #include <QFontDatabase>
 #include <QLibraryInfo>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStyle>
 #include <QTimer>
 #include <QTranslator>
@@ -50,7 +51,44 @@ void setupPortableMode()
     katvan::typstdriver::PackageManager::setDownloadCacheLocation(settingsPath + "/Katvan/cache");
 }
 
-void loadAuxillaryFonts()
+void loadTranslations(const QLocale& locale)
+{
+    QStringList translationPaths;
+    translationPaths.append(":/i18n");
+
+#if defined(Q_OS_WINDOWS)
+    translationPaths.append(QCoreApplication::applicationDirPath() + "/translations");
+#elif defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+    const QStringList locations = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
+    for (const QString& dir : locations) {
+        translationPaths.append(dir + "/katvan/translations");
+    }
+#endif
+
+    static QTranslator translator;
+    for (const QString& directory : std::as_const(translationPaths)) {
+        if (translator.load(locale, "katvan", "_", directory)) {
+            qDebug() << "Loaded application translations from" << translator.filePath();
+            QCoreApplication::installTranslator(&translator);
+            break;
+        }
+    }
+
+    QString qtTranslationPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+
+    static QTranslator qtTranslator;
+    bool ok = qtTranslator.load(locale, "qtbase", "_", qtTranslationPath);
+    if (!ok) {
+        ok = qtTranslator.load(locale, "qt", "_", qtTranslationPath);
+    }
+
+    if (ok) {
+        qDebug() << "Loaded Qt translations from" << qtTranslator.filePath();
+        QCoreApplication::installTranslator(&qtTranslator);
+    }
+}
+
+void loadAuxiliaryFonts()
 {
     int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
     if (rc < 0) {
@@ -117,17 +155,8 @@ int main(int argc, char** argv)
         locale = QLocale(QLocale::Hebrew);
     }
 
-    QTranslator translator;
-    if (translator.load(locale, "katvan", "_", ":/i18n")) {
-        QCoreApplication::installTranslator(&translator);
-    }
-
-    QTranslator qtTranslator;
-    if (qtTranslator.load(locale, "qtbase", "_", QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        QCoreApplication::installTranslator(&qtTranslator);
-    }
-
-    loadAuxillaryFonts();
+    loadTranslations(locale);
+    loadAuxiliaryFonts();
 
 #ifdef Q_OS_WINDOWS
     // Starting from Qt 6.8.1 the Windows11 style works on Windows 10 too. Prefer
