@@ -42,10 +42,6 @@
         <translation>&amp;סיור...</translation>
     </message>
     <message>
-        <source>&amp;Allow preview packages</source>
-        <translation>אפשר שימוש בחבילות &amp;חיצוניות</translation>
-    </message>
-    <message>
         <source>Show the download cache folder in a file browser</source>
         <translation>הצג את תקיית מטמון ההורדות בסייר קבצים</translation>
     </message>
@@ -58,20 +54,16 @@
         <translation>%2 גרסאות שונות של %1 חבילות (סה&quot;כ %3)</translation>
     </message>
     <message>
-        <source>Add an allowed path</source>
-        <translation>הוספת נתיב מותר</translation>
-    </message>
-    <message>
-        <source>Remove the selected path from the list</source>
-        <translation>הסרת הנתיב המסומן מהרשימה</translation>
-    </message>
-    <message>
         <source>Allowed Paths</source>
         <translation>נתיבים מותרים</translation>
     </message>
     <message>
         <source>Allow including resources also from the following directories and their subdirectories:</source>
         <translation>אפשר הכללת משאבים גם מהנתיבים הבאים:</translation>
+    </message>
+    <message>
+        <source>&amp;Allow download and use of @preview packages</source>
+        <translation>אפשר הורדה ושימוש בחבילות &amp;חיצוניות</translation>
     </message>
 </context>
 <context>
@@ -282,6 +274,13 @@
     <message>
         <source>Loading personal dictionary from %1 failed: %2</source>
         <translation>טעינת מילון אישי מ-%1 נכשלה: %2</translation>
+    </message>
+</context>
+<context>
+    <name>katvan::LabelsView</name>
+    <message>
+        <source>Filter</source>
+        <translation>סינון</translation>
     </message>
 </context>
 <context>
@@ -584,6 +583,32 @@ To export the document, please correct them.</source>
         <source>Outline</source>
         <translation>תוכן עניינים</translation>
     </message>
+    <message>
+        <source>Color Picker</source>
+        <translation>בחירת צבע</translation>
+    </message>
+    <message>
+        <source>Labels</source>
+        <translation>תוויות</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n Word(s)</source>
+        <translation>
+            <numerusform>מילה אחת</numerusform>
+            <numerusform>%n מילים</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>katvan::PathList</name>
+    <message>
+        <source>Add a path</source>
+        <translation>הוספת נתיב</translation>
+    </message>
+    <message>
+        <source>Remove the selected path from the list</source>
+        <translation>הסרת הנתיב המסומן מהרשימה</translation>
+    </message>
 </context>
 <context>
     <name>katvan::Previewer</name>
@@ -729,6 +754,85 @@ To export the document, please correct them.</source>
     <message>
         <source>Unknown</source>
         <translation>שפה לא ידועה</translation>
+    </message>
+</context>
+<context>
+    <name>katvan::SymbolPicker</name>
+    <message>
+        <source>Symbol Picker</source>
+        <translation>בחירת סמלים</translation>
+    </message>
+    <message>
+        <source>Filter:</source>
+        <translation>סינון:</translation>
+    </message>
+    <message>
+        <source>Enter partial symbol name or description in English</source>
+        <translation>שם חלקי של הסמל או תיאורו באנגלית</translation>
+    </message>
+    <message>
+        <source>Category:</source>
+        <translation>קטגוריה:</translation>
+    </message>
+    <message>
+        <source>Any</source>
+        <translation>הכל</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <translation>רגיל</translation>
+    </message>
+    <message>
+        <source>Emoji</source>
+        <translation>אימוג&apos;י</translation>
+    </message>
+    <message>
+        <source>Alphabetic</source>
+        <translation>אלפבתי</translation>
+    </message>
+    <message>
+        <source>Relation</source>
+        <translation>יחסים</translation>
+    </message>
+    <message>
+        <source>Unary</source>
+        <translation>אונארי</translation>
+    </message>
+    <message>
+        <source>Binary</source>
+        <translation>בינארי</translation>
+    </message>
+    <message>
+        <source>Opening</source>
+        <translation>פותחים</translation>
+    </message>
+    <message>
+        <source>Closing</source>
+        <translation>סוגרים</translation>
+    </message>
+    <message>
+        <source>Large</source>
+        <translation>גדולים</translation>
+    </message>
+    <message>
+        <source>Fence</source>
+        <translation>גדרות</translation>
+    </message>
+    <message>
+        <source>Diacritic</source>
+        <translation>דיאקריטיקה</translation>
+    </message>
+    <message>
+        <source>Punctuation</source>
+        <translation>ניקוד</translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation>רווחים</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>אחר</translation>
     </message>
 </context>
 </TS>

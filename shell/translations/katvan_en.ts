@@ -12,6 +12,16 @@
     </message>
 </context>
 <context>
+    <name>katvan::MainWindow</name>
+    <message numerus="yes">
+        <source>%n Word(s)</source>
+        <translation>
+            <numerusform>One Word</numerusform>
+            <numerusform>%n Words</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>katvan::SearchBar</name>
     <message numerus="yes">
         <source>%n replacements were performed</source>
