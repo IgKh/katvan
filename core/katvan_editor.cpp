@@ -874,7 +874,9 @@ void Editor::keyPressEvent(QKeyEvent* event)
 
     if (CLOSING_BRACKETS->contains(event->text())) {
         QTextCursor cursor = textCursor();
-        if (!cursor.atBlockEnd() && cursor.block().text().at(cursor.positionInBlock()) == event->text().at(0)) {
+        if (!cursor.atBlockEnd()
+                && d_effectiveSettings.autoBrackets()
+                && cursor.block().text().at(cursor.positionInBlock()) == event->text().at(0)) {
             cursor.movePosition(QTextCursor::NextCharacter);
             setTextCursor(cursor);
             return;

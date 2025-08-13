@@ -30,6 +30,14 @@
 
 using namespace katvan;
 
+static QString keyToAscii(int key)
+{
+    switch (key) {
+        case Qt::Key_ParenRight: return QStringLiteral(")");
+        default: return QString();
+    }
+}
+
 struct EditorHolder
 {
     EditorHolder(const QString& text, const EditorSettings& settings = EditorSettings())
@@ -50,13 +58,19 @@ struct EditorHolder
         return document->toPlainText();
     }
 
+    int cursorPosition()
+    {
+        return editor->textCursor().position();
+    }
+
     void sendKeyPress(int pos, int key, Qt::KeyboardModifiers modifiers)
     {
         QTextCursor cursor { document.get() };
         cursor.setPosition(pos);
         editor->setTextCursor(cursor);
 
-        QKeyEvent e(QEvent::KeyPress, key, modifiers);
+        QString text = keyToAscii(key);
+        QKeyEvent e(QEvent::KeyPress, key, modifiers, text);
         QApplication::sendEvent(editor.get(), &e);
     }
 
@@ -78,4 +92,28 @@ TEST(EditorTests, BackspaceToBidiMark) {
     holder.setText(text);
     holder.sendKeyPress(4, Qt::Key_Backspace, Qt::NoModifier);
     EXPECT_THAT(holder.text(), ::testing::Eq(utils::RLM_MARK + QStringLiteral("foo")));
+}
+
+TEST(EditorTests, InsertClosingBracketSkip) {
+    EditorSettings settings;
+    settings.setAutoBrackets(true);
+
+    QString text = QStringLiteral("#text() ");
+    EditorHolder holder(text, settings);
+
+    holder.sendKeyPress(6, Qt::Key_ParenRight, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(text));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(7));
+}
+
+TEST(EditorTests, InsertClosingBracketInsertAnyway) {
+    EditorSettings settings;
+    settings.setAutoBrackets(false);
+
+    QString text = QStringLiteral("#text()");
+    EditorHolder holder(text, settings);
+
+    holder.sendKeyPress(6, Qt::Key_ParenRight, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("#text())")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(7));
 }
