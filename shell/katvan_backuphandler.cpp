@@ -72,6 +72,8 @@ QString BackupHandler::resetSourceFile(const QString& sourceFileName)
         d_backupFile = nullptr;
     }
 
+    d_timer->stop();
+
     d_sourceFile = sourceFileName;
     if (sourceFileName.isEmpty()) {
         return QString();
