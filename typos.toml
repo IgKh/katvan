@@ -1,0 +1,6 @@
+[default.extend-words]
+typ = "typ"
+
+[type.typ]
+extend-glob = ["*.typ"]
+check-file = false

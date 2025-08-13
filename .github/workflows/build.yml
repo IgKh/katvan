@@ -152,3 +152,12 @@ jobs:
       - name: Run clippy
         run: |
           cargo clippy --no-deps --manifest-path typstdriver/rust/Cargo.toml --target-dir build/cargo/build
+
+      - name: Install typos
+        uses: taiki-e/install-action@v2
+        with:
+          tool: typos
+
+      - name: Check for typos
+        run: |
+          typos || true
