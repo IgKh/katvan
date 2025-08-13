@@ -26,7 +26,6 @@
 QT_BEGIN_NAMESPACE
 class QCompleter;
 class QJsonObject;
-class QTextEdit;
 QT_END_NAMESPACE
 
 namespace katvan {
@@ -69,12 +68,12 @@ class CompletionManager : public QObject
     Q_OBJECT
 
 public:
-    CompletionManager(QTextEdit* editor);
+    CompletionManager(Editor* editor);
 
     bool isActive() const;
 
-    bool isImplictCompletionAllowed() const { return d_implictCompletionAllowed; }
-    void setImplictCompletionAllowed(bool allow) { d_implictCompletionAllowed = allow; }
+    bool isImplicitCompletionAllowed() const { return d_implicitCompletionAllowed; }
+    void setImplicitCompletionAllowed(bool allow) { d_implicitCompletionAllowed = allow; }
 
 public slots:
     void startExplicitCompletion();
@@ -91,11 +90,11 @@ private slots:
     void suggestionSelected(const QModelIndex& index);
 
 private:
-    QTextEdit* d_editor;
+    Editor* d_editor;
     QCompleter* d_completer;
     CompletionListModel* d_model;
 
-    bool d_implictCompletionAllowed;
+    bool d_implicitCompletionAllowed;
     bool d_completionsRequested;
     int d_suggestionsStartPosition;
 };

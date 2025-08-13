@@ -197,7 +197,7 @@ void Editor::applyEffectiveSettings()
 
     document()->setLayoutEnabled(true);
 
-    d_completionManager->setImplictCompletionAllowed(d_effectiveSettings.autoTriggerCompletions());
+    d_completionManager->setImplicitCompletionAllowed(d_effectiveSettings.autoTriggerCompletions());
 }
 
 static EditorTheme& themeForColorScheme(const QString& scheme)
@@ -473,7 +473,7 @@ void Editor::showToolTipAtLocation(int line, int column, const QString& text, co
 
     d_pendingTooltipPos.reset();
 
-    QRect r = cursorRect(cursor);
+    QRect r = adjustedCursorRect(cursor);
     r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
 
     EditorToolTip::showByKeyboard(r, this, text, detailsUrl);
@@ -485,7 +485,7 @@ void Editor::triggerToolTipByKeyboard()
 
     QString tooltip = predefinedTooltipAtPosition(cursor.position());
     if (!tooltip.isEmpty()) {
-        QRect r = cursorRect(cursor);
+        QRect r = adjustedCursorRect(cursor);
         r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
 
         EditorToolTip::showByKeyboard(r, this, tooltip);
@@ -1054,6 +1054,25 @@ void Editor::resizeEvent(QResizeEvent* event)
     }
 }
 
+QRect Editor::adjustedCursorRect(const QTextCursor& cursor)
+{
+    EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
+    QRect orig = cursorRect(cursor);
+
+    // Correct the top-left position of the cursor bounding rectangle to
+    // accommodate for automatic isolates which are invisible to
+    // QWidgetTextControlPrivate::rectForPosition.
+    QPointF adjPos = layout->cursorPositionPoint(cursor.position());
+    if (adjPos.isNull()) {
+        return orig;
+    }
+
+    orig.setX(qRound(adjPos.x()) - horizontalScrollBar()->value());
+    orig.setY(qRound(adjPos.y()) - verticalScrollBar()->value());
+
+    return orig;
+}
+
 void Editor::popupInsertMenu()
 {
     QMenu* insertMenu = createInsertMenu();
@@ -1063,7 +1082,8 @@ void Editor::popupInsertMenu()
         d_completionManager->close();
     }
 
-    QPoint globalPos = viewport()->mapToGlobal(cursorRect().topLeft());
+    QRect r = adjustedCursorRect(textCursor());
+    QPoint globalPos = viewport()->mapToGlobal(r.topLeft());
     insertMenu->exec(globalPos);
 }
 

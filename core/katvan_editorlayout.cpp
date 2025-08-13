@@ -116,7 +116,7 @@ EditorLayout::EditorLayout(QTextDocument* document, CodeModel* codeModel)
 {
     d_fullLayoutDebounceTimer = new QTimer(this);
     d_fullLayoutDebounceTimer->setSingleShot(true);
-    d_fullLayoutDebounceTimer->setInterval(25);
+    d_fullLayoutDebounceTimer->setInterval(5);
     d_fullLayoutDebounceTimer->callOnTimeout(this, [this, document]() {
         doDocumentLayout(document->firstBlock(), document->lastBlock());
     });
@@ -229,7 +229,7 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
             : block.layout();
 
         if (layout->lineCount() == 0) {
-            // Not layed out yet. Could happen if we de-bounced a full document
+            // Not laid out yet. Could happen if we de-bounced a full document
             // re-layout. A repaint will happen later.
             return;
         }
@@ -635,6 +635,31 @@ QTextBlock EditorLayout::findContainingBlock(qreal y) const
         }
     }
     return QTextBlock();
+}
+
+QPointF EditorLayout::cursorPositionPoint(int pos) const
+{
+    QTextBlock block = document()->findBlock(pos);
+    if (!block.isValid()) {
+        return QPointF();
+    }
+
+    LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
+    QTextLayout* layout = layoutData->displayLayout
+        ? layoutData->displayLayout.get()
+        : block.layout();
+
+    int posInBlock = adjustPosToDisplay(layoutData->displayOffsets, pos - block.position());
+    QTextLine line = layout->lineForTextPosition(posInBlock);
+    if (!line.isValid()) {
+        return QPointF();
+    }
+
+    // In document coordinates
+    qreal x = layout->position().x() + line.x() + line.cursorToX(posInBlock);
+    qreal y = layout->position().y() + line.y();
+
+    return QPointF(x, y);
 }
 
 void EditorLayout::recalculateDocumentSize()

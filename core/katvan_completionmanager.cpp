@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_completionmanager.h"
+#include "katvan_editor.h"
 #include "katvan_text_utils.h"
 
 #include <QAbstractItemView>
@@ -27,7 +28,6 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QTextBlock>
-#include <QTextEdit>
 
 /*
  * Samples:
@@ -227,10 +227,10 @@ QSize CompletionSuggestionDelegate::sizeHint(const QStyleOptionViewItem& option,
     return QSize(width, height);
 }
 
-CompletionManager::CompletionManager(QTextEdit* editor)
+CompletionManager::CompletionManager(Editor* editor)
     : QObject(editor)
     , d_editor(editor)
-    , d_implictCompletionAllowed(false)
+    , d_implicitCompletionAllowed(false)
     , d_completionsRequested(false)
 {
     d_model = new CompletionListModel(this);
@@ -263,7 +263,7 @@ void CompletionManager::startImplicitCompletion()
 
 void CompletionManager::startCompletion(bool implicit)
 {
-    if (implicit && !isImplictCompletionAllowed()) {
+    if (implicit && !isImplicitCompletionAllowed()) {
         return;
     }
 
@@ -325,7 +325,7 @@ void CompletionManager::updateCompletionPrefix(bool force)
         d_completer->popup()->setCurrentIndex(d_completer->completionModel()->index(0, 0));
     }
 
-    QRect popupRect = d_editor->cursorRect();
+    QRect popupRect = d_editor->adjustedCursorRect(d_editor->textCursor());
     popupRect.setWidth(
         d_completer->popup()->sizeHintForColumn(0) +
         d_completer->popup()->verticalScrollBar()->sizeHint().width());

@@ -304,7 +304,10 @@ void Engine::requestMetadata(quint64 previousFingerprint)
             QString name = QString::fromUtf8(label.name.data(), label.name.size());
 
             if (label.has_position) {
-                labels.push_back(std::make_tuple(name, label.position.line, label.position.column));
+                labels.push_back(std::make_tuple(
+                    name,
+                    static_cast<int>(label.position.line),
+                    static_cast<int>(label.position.column)));
             }
             else {
                 labels.push_back(std::make_tuple(name, -1, -1));

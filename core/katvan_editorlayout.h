@@ -47,6 +47,7 @@ public:
     void draw(QPainter* painter, const QAbstractTextDocumentLayout::PaintContext& context) override;
 
     QTextBlock findContainingBlock(qreal y) const;
+    QPointF cursorPositionPoint(int pos) const;
 
 protected:
     void documentChanged(int position, int charsRemoved, int charsAdded) override;

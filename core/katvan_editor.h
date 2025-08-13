@@ -54,6 +54,8 @@ public:
     void updateEditorTheme();
     void setSourceDiagnostics(QList<typstdriver::Diagnostic> diagnostics);
 
+    QRect adjustedCursorRect(const QTextCursor& cursor);
+
     QMenu* createInsertMenu();
 
 public slots:
