@@ -1,3 +1,35 @@
+## v0.11.0 (2025-08-14)
+
+### Typst Version
+
+- The included Typst compiler version remains `0.13.1`.
+
+### New Features
+
+- A new Symbol Picker dialog is now available through the Insert menu, allowing to quickly search though the symbols supported by Typst and insert them while automatically using the correct syntax based on the insert location.
+- A Color Picker is now available through the Insert menu, to easily choose a color and generate the correct Typst expression for it.
+- A new labels panel in the main window shows a list of all Typst labels used in the current document, allowing to go to their definition (if defined directly in the edited document), and insert references to them by dragging a label to the editor.
+- The status bar now contains a basic word count indicator.
+- Additional translation files can be independently added to an existing installation.
+
+### Fixes
+
+- Inverting document preview colors correctly handles external images and fill patterns.
+- Fixed using the backspace key on BiDi marks at the start of a line.
+- Typing a closing bracket when auto-brackets mode is off now works as expected.
+- Performance of laying out very large documents was improved.
+- The package download cache is now protected by a lock to avoid corruption if more than one instance of Katvan is downloading a package at the same time.
+- Edge cases related to syntax highlighting after semicolons in code mode were fixed.
+- Some autocomplete suggestion snippets that were incorrectly applied were fixed.
+
+### Packaging Changes
+
+- A pre-built AppImage for Linux on 64-bit ARM (`aarch64`) is now available.
+
+### Other
+
+- Katvan has a new application icon, courtesy of Noam Sahar.
+
 ## v0.10.0 (2025-06-03)
 
 ### Typst Version
@@ -8,9 +40,9 @@
 
 - Indentation is now preserved in continuations of wrapped lines.
 - Explicitly inserted BiDi control characters are now visible and can be easily interacted with. This requires Qt 6.9 and above, and can be turned off through the settings dialog.
-- A new Outline page shows all sections in the edited files based on their headings, and allows quick navigation among them.
+- A new Outline pane shows all sections in the edited files based on their headings, and allows quick navigation among them.
 - Cursor location history is now tracked through various jump commands. You can go back and forth through the cursor location history using the commands in the new `Go` menu and their corresponding shortcuts.
-- You can now go to the definition of a Typst symbol, as long as it is defined inside the edited document. For symbols provided in the Typst standard library, the documentation tooltip is shown instead. Trigger this by `Ctrl`-clicking the symbol in the editor, or by pressing `F12`.
+- You can now go to the definition of a Typst symbol, as long as it is defined inside the edited document. For symbols provided by the Typst standard library, the documentation tooltip is shown instead. Trigger this by `Ctrl`-clicking the symbol in the editor, or by pressing `F12`.
 - Auto-completion can now be triggered using the more common `Ctrl+Space` shortcut, in addition to the previously available `Ctrl+E`.
 - Auto-completion will automatically show some suggestions as you type. This can be disabled in the settings dialog.
 - Typst universe `@preview` packages now show up in the auto-completion suggestions for the `#import` statement.
@@ -18,7 +50,7 @@
 - The editor theme can be explicitly changed to be always dark or always light in the settings dialog. Note that this affects only the editing area, not the entire UI.
 - The edited file being externally modified or moved on disk is now detected, and the editor offers appropriate actions.
 - Using the arrow keys while holding `Ctrl+Alt` will perform a visual cursor move, regardless of the default move style selected.
-- The `TYPST_FONT_PATHS` environment variable used by Typst CLI is now respected by Katvan as well. It can be used to make non-installed fonts available to the Typst compiler.
+- The `TYPST_FONT_PATHS` environment variable used by the Typst CLI is now respected by Katvan as well. It can be used to make non-installed fonts available to the Typst compiler.
 
 ### Fixes
 
@@ -168,7 +200,7 @@ _This release is dedicated to all those who are still wet from this October Rain
 ### New Features
 
 - Matching brackets are highlighted.
-- Closing brackets are automatically inserted in a sytnax aware way when an opening bracket is typed.
+- Closing brackets are automatically inserted in a syntax aware way when an opening bracket is typed.
 - It is now possible to set an auto-indentation mode if desired - Normal for simply maintaining the previous line's indentation, or Smart which will automatically increase or decrease indentation based on the relevant Typst syntax mode.
 - `Home` and `Shift+Home` keys now work as is typical in code editors and will skip over initial indentation.
 - Added a compilation status indicator in the status bar.
@@ -178,7 +210,7 @@ _This release is dedicated to all those who are still wet from this October Rain
 
 - Fixed the editor scroll position jerking when saving a document with a modeline.
 - Fixed UI freeze when indenting or unindenting the last line.
-- Horizonal scroll position of the preview pane is maintained when preview is updated.
+- Horizontal scroll position of the preview pane is maintained when preview is updated.
 - If a word is added to the personal dictionary, all other instances of it are also not marked as spelling errors.
 - Fixed Windows-style text direction toggle keys to work under recent KDE version.
 
