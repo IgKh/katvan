@@ -20,7 +20,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 - Reasonably good RTL editing
     - Mostly thanks to Qt's excellent Rich Text Framework
     - But also specific additional functionality, for example:
-      - Syntax-aware line directionality heuristc
+      - Syntax-aware line directionality heuristic
       - Automatic directionality isolation of inline math and code
       - Displaying BiDi control characters with a special custom font[^1]
       - Toggling between logical and visual cursor movement
@@ -52,7 +52,7 @@ There are several options available. If not sure, the AppImage format is recomme
 
 #### AppImage
 
-A pre-built AppImage for the `x86_64` architecture is available from the project [releases page](https://github.com/IgKh/katvan/releases). This is a single executable file containing everything needed to run Katvan and start working with Typst on most contemporary Linux distributions. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
+Pre-built AppImage packages for the `x86_64` and `aarch64` architectures are available from the project [releases page](https://github.com/IgKh/katvan/releases). An AppImage is a single executable file containing everything needed to run Katvan and start working with Typst on most contemporary Linux distributions. Note that it contains the spell checker library, but not any dictionaries; install any required hunspell dictionaries system-wide from your distribution's repositories.
 
 #### Flatpak
 

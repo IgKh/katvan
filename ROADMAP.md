@@ -8,7 +8,7 @@ Legend:
 
 ## RTL Editing
 
-- [ ] :arrow_up: Make BiDi control characters visible in the editor with custom glyphs.
+- [X] :arrow_up: Make BiDi control characters visible in the editor with custom glyphs.
     - Using a patch that will hopefully be upstreamed to Qt, but that will happen no earlier than Qt 6.9.
 - [X] :arrow_up: Make line direction overrides persistent by inserting the proper control character.
 - [X] :arrow_up: Give blank lines the base direction of the previous line, rather than the application's default.
@@ -20,29 +20,29 @@ Legend:
 - [ ] :arrow_up: True live preview.
 - [X] :arrow_up: Configuration panel for monitoring and pruning download cache.
 - [X] :arrow_right: Highlight errors directly on the editor.
-- [ ] :arrow_right: Auto-complete.
+- [X] :arrow_right: Auto-complete.
 - [X] :arrow_right: Compiler-assisted tool tips.
-- [ ] :arrow_right: Go to definition (as long as it is in the same file).
+- [X] :arrow_right: Go to definition (as long as it is in the same file).
 
 ## General Editing
 
 - [X] :arrow_up: Make automatic backups configurable.
 - [X] :arrow_up: Use regex capture groups in text find and replace.
-- [ ] :arrow_down: Outline pane.
+- [X] :arrow_down: Outline pane.
 - [ ] :arrow_down: Code folding.
 - [ ] :arrow_down: Indentation guides.
-- [ ] :arrow_down: Symbol picker.
+- [X] :arrow_down: Symbol picker.
 
 ## Platform Integrations
 
 - [ ] :arrow_right: macOS version.
-- [ ] :arrow_right: Flatpak package.
+- [X] :arrow_right: Flatpak package.
     - In Flathub, and with as much sandboxing as possible.
 - [X] :arrow_right: Windows installer.
 
 ## Sandbox Readiness
 
-- [ ] :arrow_right: Save auto-backups in an app-local location when sandboxed.
+- [X] :arrow_right: Save auto-backups in an app-local location when sandboxed.
 - [ ] :arrow_down: Support a format similar to TextBundle.
 
 ## Other
