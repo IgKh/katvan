@@ -95,8 +95,10 @@ Editor::Editor(Document* doc, QWidget* parent)
     setMinimumSize(300, 100);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+    EditorLayout* layout = new EditorLayout(doc, d_codeModel);
+
     setDocument(doc);
-    doc->setDocumentLayout(new EditorLayout(doc, d_codeModel));
+    doc->setDocumentLayout(layout);
 
     connect(SpellChecker::instance(), &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
     connect(SpellChecker::instance(), &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
@@ -108,6 +110,7 @@ Editor::Editor(Document* doc, QWidget* parent)
     d_rightLineNumberGutter = new LineNumberGutter(this);
 
     connect(doc, &QTextDocument::blockCountChanged, this, &Editor::updateLineNumberGutterWidth);
+    connect(layout, &EditorLayout::fullRelayoutDone, this, &Editor::updateLineNumberGutters);
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::textChanged, this, &Editor::updateLineNumberGutters);
     connect(this, &QTextEdit::cursorPositionChanged, this, &Editor::updateLineNumberGutters);

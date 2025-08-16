@@ -119,6 +119,7 @@ EditorLayout::EditorLayout(QTextDocument* document, CodeModel* codeModel)
     d_fullLayoutDebounceTimer->setInterval(5);
     d_fullLayoutDebounceTimer->callOnTimeout(this, [this, document]() {
         doDocumentLayout(document->firstBlock(), document->lastBlock());
+        Q_EMIT fullRelayoutDone();
     });
 }
 
