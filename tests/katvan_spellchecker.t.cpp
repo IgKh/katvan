@@ -28,11 +28,7 @@
 
 using namespace katvan;
 
-#ifdef Q_OS_WINDOWS
 static constexpr int SIGNAL_WAIT_TIMEOUT_MSEC = 500;
-#else
-static constexpr int SIGNAL_WAIT_TIMEOUT_MSEC = 100;
-#endif
 
 static QString getDictionaryPath(const char* name)
 {
