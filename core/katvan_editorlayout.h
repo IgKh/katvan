@@ -48,6 +48,7 @@ public:
 
     QTextBlock findContainingBlock(qreal y) const;
     QPointF cursorPositionPoint(int pos) const;
+    int getLineEdgePosition(int pos, QTextLine::Edge edge) const;
 
 signals:
     void fullRelayoutDone();

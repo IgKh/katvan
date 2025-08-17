@@ -663,6 +663,36 @@ QPointF EditorLayout::cursorPositionPoint(int pos) const
     return QPointF(x, y);
 }
 
+int EditorLayout::getLineEdgePosition(int pos, QTextLine::Edge edge) const
+{
+    QTextBlock block = document()->findBlock(pos);
+    if (!block.isValid()) {
+        return -1;
+    }
+
+    LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
+    QTextLayout* layout = layoutData->displayLayout
+        ? layoutData->displayLayout.get()
+        : block.layout();
+
+    int posInBlock = adjustPosToDisplay(layoutData->displayOffsets, pos - block.position());
+    QTextLine line = layout->lineForTextPosition(posInBlock);
+    if (!line.isValid()) {
+        return -1;
+    }
+
+    int edgePos = line.textStart();
+    if (edge == QTextLine::Trailing) {
+        edgePos += line.textLength();
+        if (line.lineNumber() != layout->lineCount() - 1) {
+            edgePos -= 1;
+        }
+    }
+
+    int origLayoutPos = adjustPosFromDisplay(layoutData->displayOffsets, edgePos);
+    return block.position() + origLayoutPos;
+}
+
 void EditorLayout::recalculateDocumentSize()
 {
     // TODO: This way (recalculating from scratch after every change) ensures

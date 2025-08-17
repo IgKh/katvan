@@ -24,6 +24,7 @@
 
 #include <QPointer>
 #include <QTextEdit>
+#include <QTextLine>
 
 #include <optional>
 
@@ -109,6 +110,7 @@ private:
     void handleNewLine();
     void handleClosingBracket(const QString& bracket);
     void unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter = QTextCursor());
+    void handleMoveToEdge(QTextLine::Edge edge, bool select);
     void processAutoCompletion(QKeyEvent* event);
 
     void handleToolTipEvent(QHelpEvent* event);

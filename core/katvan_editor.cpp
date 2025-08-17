@@ -741,7 +741,7 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
         return;
     }
 
-    // Remove up to one tab or indentWidth spaces from begining of block
+    // Remove up to one tab or indentWidth spaces from beginning of block
     cursor.beginEditBlock();
     if (d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::TABS) {
         if (document()->characterAt(cursor.position()) == QLatin1Char('\t')) {
@@ -761,6 +761,40 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
         }
     }
     cursor.endEditBlock();
+}
+
+void Editor::handleMoveToEdge(QTextLine::Edge edge, bool select)
+{
+    EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
+    QTextCursor cursor = textCursor();
+    QTextBlock block = cursor.block();
+
+    int edgePos = layout->getLineEdgePosition(cursor.position(), edge);
+    if (edgePos < 0) {
+        return;
+    }
+
+    // If we are already at the edge of the text line, go to the start/end of
+    // the block
+    if (cursor.position() == edgePos) {
+        edgePos = (edge == QTextLine::Leading)
+            ? block.position()
+            : block.position() + block.length() - 1;
+    }
+
+    // If we are going to the start of the block - we want to be after the initial
+    // indentation
+    if (edge == QTextLine::Leading && edgePos == block.position()) {
+        if (cursor.atBlockStart() || !cursorInLeadingWhitespace(cursor)) {
+            QTextCursor c { block };
+            cursorSkipWhite(c);
+
+            edgePos = c.position();
+        }
+    }
+
+    cursor.setPosition(edgePos, select ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor);
+    setTextCursor(cursor);
 }
 
 void Editor::processAutoCompletion(QKeyEvent* event)
@@ -858,21 +892,16 @@ void Editor::keyPressEvent(QKeyEvent* event)
         }
     }
 
-    if (event->matches(QKeySequence::MoveToStartOfLine) || event->matches(QKeySequence::SelectStartOfLine)) {
-        QTextCursor cursor = textCursor();
-        if (cursor.atBlockStart() || !cursorInLeadingWhitespace(cursor)) {
-            QTextCursor c { cursor.block() };
-            cursorSkipWhite(c);
+    if (event->matches(QKeySequence::MoveToStartOfLine) || event->matches(QKeySequence::SelectStartOfLine) ||
+        event->matches(QKeySequence::MoveToEndOfLine) || event->matches(QKeySequence::SelectEndOfLine)) {
+        QTextLine::Edge edge = (event->matches(QKeySequence::MoveToStartOfLine) || event->matches(QKeySequence::SelectStartOfLine))
+            ? QTextLine::Leading
+            : QTextLine::Trailing;
 
-            if (event->matches(QKeySequence::SelectStartOfLine)) {
-                cursor.setPosition(c.position(), QTextCursor::KeepAnchor);
-                setTextCursor(cursor);
-            }
-            else {
-                setTextCursor(c);
-            }
-            return;
-        }
+        bool select = (event->matches(QKeySequence::SelectStartOfLine) || event->matches(QKeySequence::SelectEndOfLine));
+
+        handleMoveToEdge(edge, select);
+        return;
     }
 
     if (CLOSING_BRACKETS->contains(event->text())) {
