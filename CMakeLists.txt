@@ -26,8 +26,12 @@ qt_standard_project_setup(REQUIRES 6.5)
 
 add_subdirectory(typstdriver)
 add_subdirectory(core)
-add_subdirectory(shell)
 add_subdirectory(tests)
+
+add_subdirectory(shell)
+if(APPLE)
+    add_subdirectory(macshell)
+endif()
 
 if(APPLE)
     set_property(TARGET katvan PROPERTY INSTALL_RPATH "@executable_path/../Frameworks/")

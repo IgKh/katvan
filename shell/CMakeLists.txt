@@ -16,6 +16,7 @@ set(SOURCES
 )
 
 qt_add_resources(SOURCES ${PROJECT_SOURCE_DIR}/assets/assets.qrc)
+qt_add_resources(SOURCES ${PROJECT_SOURCE_DIR}/assets/icons.qrc)
 if(WIN32)
     file(COPY ${PROJECT_SOURCE_DIR}/assets/katvan.ico DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     configure_file(${PROJECT_SOURCE_DIR}/assets/katvan.rc.in katvan.rc @ONLY)

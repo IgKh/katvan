@@ -359,7 +359,7 @@ void EditorLayout::doDocumentLayout(const QTextBlock& startBlock, const QTextBlo
         layout->setPosition(newPos);
 
         LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
-        if (layoutData->displayLayout) {
+        if (layoutData && layoutData->displayLayout) {
             layoutData->displayLayout->setPosition(newPos);
             y += layoutData->displayLayout->boundingRect().height();
         }

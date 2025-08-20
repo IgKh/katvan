@@ -47,4 +47,6 @@ QIcon fontIcon(QChar ch);
 QIcon fontIcon(QChar ch, const QFont& font);
 QIcon fontIcon(char32_t codepoint, const QFont& font);
 
+void loadAuxiliaryFonts();
+
 }

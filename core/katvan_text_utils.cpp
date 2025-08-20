@@ -18,6 +18,7 @@
 #include "katvan_text_utils.h"
 
 #include <QApplication>
+#include <QFontDatabase>
 #include <QIconEngine>
 #include <QPainter>
 #include <QPalette>
@@ -116,6 +117,24 @@ char32_t firstCodepointOf(const QString& str)
         }
     }
     return codepoint;
+}
+
+void loadAuxiliaryFonts()
+{
+    int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load control character font";
+    }
+
+    rc = QFontDatabase::addApplicationFont(":/assets/fonts/AdobeBlank.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load blank font";
+    }
+
+    rc = QFontDatabase::addApplicationFont(":/assets/fonts/NotoSansMath-Regular.otf");
+    if (rc < 0) {
+        qWarning() << "Failed to load math symbol font";
+    }
 }
 
 class FontIconEngine : public QIconEngine

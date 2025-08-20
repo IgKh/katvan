@@ -19,13 +19,13 @@
 #include "katvan_spellchecker.h"
 #include "katvan_utils.h"
 
+#include "katvan_text_utils.h"
 #include "katvan_version.h"
 
 #include "typstdriver_packagemanager.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QFontDatabase>
 #include <QLibraryInfo>
 #include <QSettings>
 #include <QStandardPaths>
@@ -88,24 +88,6 @@ void loadTranslations(const QLocale& locale)
     }
 }
 
-void loadAuxiliaryFonts()
-{
-    int rc = QFontDatabase::addApplicationFont(":/assets/KatvanControl.otf");
-    if (rc < 0) {
-        qWarning() << "Failed to load control character font";
-    }
-
-    rc = QFontDatabase::addApplicationFont(":/assets/fonts/AdobeBlank.otf");
-    if (rc < 0) {
-        qWarning() << "Failed to load blank font";
-    }
-
-    rc = QFontDatabase::addApplicationFont(":/assets/fonts/NotoSansMath-Regular.otf");
-    if (rc < 0) {
-        qWarning() << "Failed to load math symbol font";
-    }
-}
-
 int main(int argc, char** argv)
 {
 #ifdef Q_OS_MACOS
@@ -156,7 +138,7 @@ int main(int argc, char** argv)
     }
 
     loadTranslations(locale);
-    loadAuxiliaryFonts();
+    katvan::utils::loadAuxiliaryFonts();
 
 #ifdef Q_OS_WINDOWS
     // Starting from Qt 6.8.1 the Windows11 style works on Windows 10 too. Prefer
