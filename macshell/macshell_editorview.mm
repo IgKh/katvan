@@ -38,6 +38,8 @@
 
 - (void)dealloc
 {
+    [self.view removeObserver:self forKeyPath:@"effectiveAppearance"];
+
     delete self.editor;
 }
 
@@ -48,6 +50,7 @@
     NSView* editorView = (__bridge NSView *)reinterpret_cast<void*>(self.editor->winId());
 
     [self.view addSubview:editorView];
+    [self.view addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:nil];
 
     editorView.translatesAutoresizingMaskIntoConstraints = NO;
 
@@ -61,6 +64,16 @@
     ]];
 
     self.editor->show();
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context
+{
+    if ([keyPath isEqualToString:@"effectiveAppearance"]) {
+        self.editor->updateEditorTheme();
+    }
+    else {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+    }
 }
 
 - (NSMenu*)createInsertMenu
