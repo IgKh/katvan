@@ -35,4 +35,9 @@
     dialog.exec();
 }
 
+- (void)openTypstDocs:(id)sender
+{
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://typst.app/docs/"]];
+}
+
 @end

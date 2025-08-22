@@ -37,9 +37,16 @@
 
 namespace katvan {
 
+#if defined(Q_OS_MACOS)
+static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::ALT | Qt::Key_Escape);
+static constexpr QKeyCombination INSERT_COLOR(Qt::CTRL | Qt::SHIFT | Qt::Key_C);
+#else
+static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::CTRL | Qt::Key_Space);
+static constexpr QKeyCombination INSERT_COLOR;
+#endif
+
 static constexpr QKeyCombination TEXT_DIRECTION_TOGGLE(Qt::CTRL | Qt::SHIFT | Qt::Key_X);
 static constexpr QKeyCombination INSERT_POPUP(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
-static constexpr QKeyCombination AUTOCOMPLETE_PROMPT(Qt::CTRL | Qt::Key_Space);
 static constexpr QKeyCombination AUTOCOMPLETE_PROMPT_ALT(Qt::CTRL | Qt::Key_E);
 static constexpr QKeyCombination TOOLTIP_TRIGGER(Qt::CTRL | Qt::Key_K);
 
@@ -257,7 +264,9 @@ QMenu* Editor::createInsertMenu()
     insertInlineMathAction->setIcon(utils::fontIcon(QChar(0x221a)));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
-    menu->addAction("&Color...", this, &Editor::showColorPicker);
+    QAction* insertColorAction = menu->addAction("&Color...", this, &Editor::showColorPicker);
+    insertColorAction->setShortcut(INSERT_COLOR);
+
     menu->addAction("&Symbol...", this, &Editor::showSymbolPicker);
 
     return menu;
@@ -283,8 +292,8 @@ void Editor::setCurrentLandmark(const QTextCursor& target)
     setTextCursor(target);
     setFocus();
 
-    Q_EMIT goBackAvailable(!d_backLandmarks.empty());
-    Q_EMIT goForwardAvailable(!d_forwardLandmarks.empty());
+    Q_EMIT goBackAvailable(isGoBackAvailable());
+    Q_EMIT goForwardAvailable(isGoForwardAvailable());
 }
 
 void Editor::resetNavigationData()
@@ -1244,6 +1253,7 @@ void Editor::insertLabelRef(const QString& label)
 bool Editor::canInsertFromMimeData(const QMimeData* source) const
 {
     return QTextEdit::canInsertFromMimeData(source)
+        || source->hasColor()
         || source->hasFormat(LABEL_REF_MIME_TYPE);
 }
 
@@ -1254,6 +1264,9 @@ void Editor::insertFromMimeData(const QMimeData* source)
         if (!label.isEmpty()) {
             insertLabelRef(label);
         }
+    }
+    else if (source->hasColor()) {
+        insertColor(source->colorData().value<QColor>());
     }
     else {
         QTextEdit::insertFromMimeData(source);

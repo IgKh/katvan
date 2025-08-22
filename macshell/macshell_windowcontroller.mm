@@ -16,7 +16,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #import "macshell_editorview.h"
-#include <Foundation/Foundation.h>
 #import "macshell_previewer.h"
 #import "macshell_typstdocument.h"
 #import "macshell_windowcontroller.h"
@@ -24,6 +23,7 @@
 #include "katvan_completionmanager.h"
 #include "katvan_diagnosticsmodel.h"
 #include "katvan_editor.h"
+#include "katvan_symbolpicker.h"
 #include "katvan_typstdriverwrapper.h"
 
 @interface KatvanWindowController ()
@@ -34,6 +34,7 @@
 
 @property katvan::Document* textDocument;
 @property katvan::TypstDriverWrapper* driver;
+@property katvan::SymbolPicker* symbolPicker;
 
 @property QString documentFilePath;
 
@@ -51,10 +52,12 @@
 
     self = [super initWithWindow:window];
     if (self) {
+        [window setTabbingMode:NSWindowTabbingModeDisallowed];
         [window center];
 
         self.textDocument = textDocument;
         self.driver = new katvan::TypstDriverWrapper();
+        self.symbolPicker = nullptr;
 
         [self setupViewsWithDocument:textDocument];
         [self setupUI];
@@ -74,6 +77,8 @@
     self.editorView = [[KatvanEditorView alloc] initWithDocument:textDocument];
     self.previewer = [[KatvanPreviewer alloc] initWithDriver:self.driver];
 
+    __weak __typeof__(self) weakSelf = self;
+
     QObject::connect(self.textDocument, &katvan::Document::contentEdited,
                     self.driver, &katvan::TypstDriverWrapper::applyContentEdit);
     QObject::connect(self.textDocument, &katvan::Document::contentModified,
@@ -90,11 +95,10 @@
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::completionsReady,
                     self.editorView.editor->completionManager(), &katvan::CompletionManager::completionsReady);
 
-    __weak __typeof__(self) weakSelf = self;
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::compilationStatusChanged,
                      self.driver, [weakSelf]() {
-                        weakSelf.editorView.editor->setSourceDiagnostics(weakSelf.driver->diagnosticsModel()->sourceDiagnostics());
-                     });
+        weakSelf.editorView.editor->setSourceDiagnostics(weakSelf.driver->diagnosticsModel()->sourceDiagnostics());
+    });
 
     QObject::connect(self.editorView.editor, &katvan::Editor::toolTipRequested,
                     self.driver, &katvan::TypstDriverWrapper::requestToolTip);
@@ -102,6 +106,15 @@
                     self.driver, &katvan::TypstDriverWrapper::searchDefinition);
     QObject::connect(self.editorView.editor->completionManager(), &katvan::CompletionManager::completionsRequested,
                     self.driver, &katvan::TypstDriverWrapper::requestCompletions);
+
+    QObject::connect(self.editorView.editor, &katvan::Editor::showSymbolPicker,
+                     self.editorView.editor, [weakSelf]() {
+        [weakSelf showSymbolPicker];
+    });
+    QObject::connect(self.editorView.editor, &katvan::Editor::showColorPicker,
+                     self.editorView.editor, [weakSelf]() {
+        [weakSelf.editorView showColorPicker];
+    });
 }
 
 - (void)setupUI
@@ -191,6 +204,55 @@
     }
 
     self.editorView.editor->checkForModelines();
+}
+
+- (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)item
+{
+    SEL action = [item action];
+
+    if (action == @selector(goToPreview:) || action == @selector(goToDefinition:)) {
+        // These actions are specific to the editor view, but are implemented in the
+        // window controller due to needing state from the driver and previewer. For
+        // consistency, we only enable them when the editor is first responder.
+        NSResponder* firstResponder = self.window.firstResponder;
+        if ([firstResponder isKindOfClass:[NSView class]]) {
+            return [(NSView*)firstResponder isDescendantOf:self.editorView.view] || firstResponder == self.editorView.view;
+        }
+        return NO;
+    }
+    return YES;
+}
+
+- (void)goToPreview:(id)sender
+{
+    QTextCursor cursor = self.editorView.editor->textCursor();
+    self.driver->forwardSearch(
+        cursor.blockNumber(),
+        cursor.positionInBlock(),
+        self.previewer.previewerView->currentPage());
+}
+
+- (void)goToDefinition:(id)sender
+{
+    QTextCursor cursor = self.editorView.editor->textCursor();
+    self.driver->searchDefinition(cursor.blockNumber(), cursor.positionInBlock());
+}
+
+- (void)showSymbolPicker
+{
+    if (!self.symbolPicker) {
+        self.symbolPicker = new katvan::SymbolPicker(self.driver, self.editorView.editor);
+        self.symbolPicker->setWindowFlag(Qt::Sheet);
+
+        __weak __typeof__(self) weakSelf = self;
+        QObject::connect(self.symbolPicker, &katvan::SymbolPicker::accepted,
+                         self.symbolPicker, [weakSelf]() {
+            QString symbol = weakSelf.symbolPicker->selectedSymbolName();
+            weakSelf.editorView.editor->insertSymbol(symbol);
+        });
+    }
+
+    self.symbolPicker->open();
 }
 
 @end

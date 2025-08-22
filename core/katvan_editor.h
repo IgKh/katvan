@@ -51,6 +51,9 @@ public:
 
     CompletionManager* completionManager() const { return d_completionManager; }
 
+    bool isGoBackAvailable() const { return !d_backLandmarks.isEmpty(); }
+    bool isGoForwardAvailable() const { return !d_forwardLandmarks.isEmpty(); }
+
     void applySettings(const EditorSettings& settings);
     void updateEditorTheme();
     void setSourceDiagnostics(QList<typstdriver::Diagnostic> diagnostics);

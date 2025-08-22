@@ -47,6 +47,11 @@
     [self setupViewMenu: submenu];
     [mainMenu setSubmenu:submenu forItem:menuItem];
 
+    menuItem = [mainMenu addItemWithTitle:@"Go" action:nil keyEquivalent:@""];
+    submenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Go", nil)];
+    [self setupGoMenu: submenu];
+    [mainMenu setSubmenu:submenu forItem:menuItem];
+
     menuItem = [mainMenu addItemWithTitle:@"Window" action:nil keyEquivalent:@""];
     submenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Window", nil)];
     [self setupWindowMenu: submenu];
@@ -62,7 +67,7 @@
     [NSApp setMainMenu: mainMenu];
 }
 
-+ (void)setupApplicationMenu: (NSMenu *)menu
++ (void)setupApplicationMenu: (NSMenu*)menu
 {
     NSMenuItem* menuItem;
 
@@ -98,7 +103,7 @@
     [menuItem setTarget:NSApp];
 }
 
-+ (void)setupFileMenu: (NSMenu *)menu
++ (void)setupFileMenu: (NSMenu*)menu
 {
     [menu addItemWithTitle:NSLocalizedString(@"New", nil) action:@selector(newDocument:) keyEquivalent:@"n"];
 
@@ -121,7 +126,7 @@
     [menu addItemWithTitle:NSLocalizedString(@"Export as PDF...", nil) action:@selector(exportAsPdf:) keyEquivalent:@""];
 }
 
-+ (void)setupEditMenu:(NSMenu *)menu
++ (void)setupEditMenu:(NSMenu*)menu
 {
     NSMenuItem* menuItem;
 
@@ -167,7 +172,7 @@
     [menu addItemWithTitle:NSLocalizedString(@"Spell Checking...", nil) action:nil keyEquivalent:@""];
 }
 
-+ (void)setupViewMenu:(NSMenu *)menu
++ (void)setupViewMenu:(NSMenu*)menu
 {
     NSMenuItem* menuItem;
 
@@ -182,7 +187,24 @@
     [menu addItem:[NSMenuItem separatorItem]];
 }
 
-+ (void)setupWindowMenu:(NSMenu *)menu
++ (void)setupGoMenu:(NSMenu*)menu
+{
+    NSMenuItem* menuItem;
+
+    [menu addItemWithTitle:NSLocalizedString(@"Back", nil) action:@selector(goBack:) keyEquivalent:@"["];
+    [menu addItemWithTitle:NSLocalizedString(@"Forward", nil) action:@selector(goForward:) keyEquivalent:@"]"];
+
+    [menu addItem:[NSMenuItem separatorItem]];
+
+    [menu addItemWithTitle:NSLocalizedString(@"Go to Line...", nil) action:@selector(goToLine:) keyEquivalent:@"l"];
+    [menu addItemWithTitle:NSLocalizedString(@"Jump to Preview", nil) action:@selector(goToPreview:) keyEquivalent:@"j"];
+
+    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Go to Definition", nil) action:@selector(goToDefinition:) keyEquivalent:@""];
+    [menuItem setKeyEquivalent:@"\uF70F"]; // F12
+    [menuItem setKeyEquivalentModifierMask:0];
+}
+
++ (void)setupWindowMenu:(NSMenu*)menu
 {
     NSMenuItem* menuItem;
 
@@ -196,12 +218,14 @@
     [menuItem setTarget:NSApp];
 }
 
-+ (void)setupHelpMenu:(NSMenu *)menu
++ (void)setupHelpMenu:(NSMenu*)menu
 {
     NSMenuItem* menuItem;
 
     menuItem = [menu addItemWithTitle:NSLocalizedString(@"Katvan Help", nil) action:@selector(showHelp:) keyEquivalent:@"?"];
     [menuItem setTarget:NSApp];
+
+    [menu addItemWithTitle:NSLocalizedString(@"Typst Documentation...", nil) action:@selector(openTypstDocs:) keyEquivalent:@""];
 }
 
 @end

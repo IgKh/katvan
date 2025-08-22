@@ -16,18 +16,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "katvan_document.h"
-#include "katvan_editor.h"
+#include <QUtiMimeConverter>
 
-#import <AppKit/AppKit.h>
-
-@interface KatvanEditorView : NSViewController
-
-@property (readonly) katvan::Editor* editor;
-
-- (instancetype)initWithDocument:(katvan::Document*)textDocument;
-
-- (NSMenu*)createInsertMenu;
-- (void)showColorPicker;
-
-@end
+class ColorUtiMimeConverter : public QUtiMimeConverter
+{
+public:
+    QString mimeForUti(const QString& uti) const override;
+    QString utiForMime(const QString& mime) const override;
+    QVariant convertToMime(const QString& mime, const QList<QByteArray>& data, const QString& uti) const override;
+    QList<QByteArray> convertFromMime(const QString& mime, const QVariant& data, const QString& uti) const override;
+};

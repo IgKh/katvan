@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #import "macshell_appdelegate.h"
+#import "macshell_colorconverter.h"
 
 #include "katvan_text_utils.h"
 
@@ -42,6 +43,7 @@ int main(int argc, char** argv)
     QCoreApplication::setOrganizationName("Katvan");
     QCoreApplication::setApplicationName("Katvan");
 
+    ColorUtiMimeConverter cvt;
     katvan::utils::loadAuxiliaryFonts();
 
     app.setQuitOnLastWindowClosed(false);
