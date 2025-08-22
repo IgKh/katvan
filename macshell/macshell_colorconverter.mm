@@ -24,7 +24,7 @@
 
 QString ColorUtiMimeConverter::mimeForUti(const QString& uti) const
 {
-    if (uti == [NSPasteboardTypeColor UTF8String]) {
+    if (uti == QLatin1StringView([NSPasteboardTypeColor UTF8String])) {
         return "application/x-color";
     }
     return QString();
@@ -41,7 +41,7 @@ QString ColorUtiMimeConverter::utiForMime(const QString& mime) const
 QVariant ColorUtiMimeConverter::convertToMime(const QString& mime, const QList<QByteArray>& data, const QString& uti) const
 {
     Q_UNUSED(mime);
-    if (uti != [NSPasteboardTypeColor UTF8String] || data.isEmpty()) {
+    if (uti != QLatin1StringView([NSPasteboardTypeColor UTF8String]) || data.isEmpty()) {
         return QVariant();
     }
 
