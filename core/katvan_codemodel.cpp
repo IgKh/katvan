@@ -182,7 +182,7 @@ static std::optional<int> findSpanStartPosition(unsigned long spanId, QTextBlock
 static QTextBlock findSpanStartBlock(QTextDocument* doc, const StateSpan& span, QTextBlock untilBlock)
 {
     if (span.startPos) {
-        // Assuption - span was started in untilBlock
+        // Assumption - span was started in untilBlock
         return untilBlock;
     }
 
@@ -519,7 +519,16 @@ QString CodeModel::getColorExpression(const QColor& color, int pos) const
         return QString();
     }
 
-    QString name = color.name(color.alpha() != 255 ? QColor::HexArgb : QColor::HexRgb);
+    QString name;
+    if (color.alpha() == 255) {
+        name = color.name(QColor::HexRgb);
+    }
+    else {
+        // Qt emits hex in #AARRGGBB format, but Typst expects #RRGGBBAA
+        name = color.name(QColor::HexArgb);
+        name = QStringLiteral("#%1%2").arg(name.sliced(3), name.sliced(1, 2));
+    }
+
     QString expression = QStringLiteral("rgb(\"%1\")").arg(name);
 
     if (env == EnvironmentType::CODE) {

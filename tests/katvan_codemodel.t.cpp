@@ -360,10 +360,10 @@ TEST(CodeModelTests, getColorExpression)
     QColor c2(10, 5, 12, 8);
 
     res = model.getColorExpression(c2, globalPos(*doc, 0, 3));
-    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#rgb(\"#080a050c\")")));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("#rgb(\"#0a050c08\")")));
 
     res = model.getColorExpression(c2, globalPos(*doc, 1, 3));
-    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("rgb(\"#080a050c\")")));
+    EXPECT_THAT(res, ::testing::Eq(QStringLiteral("rgb(\"#0a050c08\")")));
 
     QColor c3 = QColor::fromHsv(20, 20, 20);
 

@@ -105,7 +105,7 @@ impl<'a> EngineImpl<'a> {
                     page_num: page.number,
                     width_pts: page.frame.width().abs().to_pt(),
                     height_pts: page.frame.height().abs().to_pt(),
-                    fingerprint: calc_fingerprint(&page.frame),
+                    fingerprint: calc_fingerprint(&(&page.frame, &page.fill)),
                 })
                 .collect();
 
