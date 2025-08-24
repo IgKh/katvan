@@ -286,11 +286,13 @@ QTextCursor Editor::cursorAt(int blockNum, int charOffset) const
     return cursor;
 }
 
-void Editor::setCurrentLandmark(const QTextCursor& target)
+void Editor::setCurrentLandmark(const QTextCursor& target, bool takeFocus)
 {
     d_currentLandmark = EditorLocation { target };
     setTextCursor(target);
-    setFocus();
+    if (takeFocus) {
+        setFocus();
+    }
 
     Q_EMIT goBackAvailable(isGoBackAvailable());
     Q_EMIT goForwardAvailable(isGoForwardAvailable());
@@ -306,7 +308,7 @@ void Editor::resetNavigationData()
     Q_EMIT goForwardAvailable(false);
 }
 
-void Editor::goToBlock(const QTextCursor& targetCursor)
+void Editor::goToBlock(const QTextCursor& targetCursor, bool takeFocus)
 {
     QTextCursor cursor = textCursor();
     if (targetCursor.isNull() || cursor == targetCursor) {
@@ -323,7 +325,7 @@ void Editor::goToBlock(const QTextCursor& targetCursor)
     }
 
     d_forwardLandmarks.clear();
-    setCurrentLandmark(targetCursor);
+    setCurrentLandmark(targetCursor, takeFocus);
 }
 
 void Editor::goToBlock(int blockNum, int charOffset)
@@ -347,7 +349,7 @@ void Editor::goBack()
         d_forwardLandmarks.append(d_currentLandmark.value());
     }
 
-    setCurrentLandmark(targetCursor);
+    setCurrentLandmark(targetCursor, true);
 }
 
 void Editor::goForward()
@@ -366,7 +368,7 @@ void Editor::goForward()
         d_backLandmarks.append(d_currentLandmark.value());
     }
 
-    setCurrentLandmark(targetCursor);
+    setCurrentLandmark(targetCursor, true);
 }
 
 void Editor::setFontZoomFactor(qreal factor)

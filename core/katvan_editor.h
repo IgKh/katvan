@@ -63,7 +63,7 @@ public:
     QMenu* createInsertMenu();
 
 public slots:
-    void goToBlock(const QTextCursor& targetCursor);
+    void goToBlock(const QTextCursor& targetCursor, bool takeFocus = true);
     void goToBlock(int blockNum, int charOffset);
     void goBack();
     void goForward();
@@ -105,7 +105,7 @@ private:
     void insertSurroundingMarks(QString before, QString after);
 
     QTextCursor cursorAt(int blockNum, int charOffset) const;
-    void setCurrentLandmark(const QTextCursor& target);
+    void setCurrentLandmark(const QTextCursor& target, bool takeFocus);
 
     QString predefinedTooltipAtPosition(int position) const;
     std::tuple<QTextBlock, QTextBlock, bool> selectedBlockRange() const;

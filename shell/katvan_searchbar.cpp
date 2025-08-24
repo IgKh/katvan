@@ -387,7 +387,7 @@ void SearchBar::find(bool forward)
     if (!found.isNull()) {
         QScopedValueRollback scope { d_resultSettingInProgress, true };
         d_lastMatch = found;
-        d_editor->goToBlock(found);
+        d_editor->goToBlock(found, false);
     }
     else {
         QMessageBox::warning(window(), QCoreApplication::applicationName(), tr("No matches found"));
