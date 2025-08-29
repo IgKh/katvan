@@ -16,37 +16,45 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #import "macshell_appdelegate.h"
-#import "macshell_colorconverter.h"
 
-#include "katvan_text_utils.h"
-
-#include <QApplication>
+#include <QString>
+#include <QtLogging>
 
 #import <AppKit/AppKit.h>
 
+void logToNsLog(QtMsgType type, const QMessageLogContext& context, const QString& msg)
+{
+    Q_UNUSED(context);
+
+    NSString* nsMsg = msg.toNSString();
+    switch (type) {
+        case QtDebugMsg:
+            NSLog(@"Debug: %@", nsMsg);
+            break;
+        case QtInfoMsg:
+            NSLog(@"Info: %@", nsMsg);
+            break;
+        case QtWarningMsg:
+            NSLog(@"Warning: %@", nsMsg);
+            break;
+        case QtCriticalMsg:
+            NSLog(@"Critical: %@", nsMsg);
+            break;
+        case QtFatalMsg:
+            NSLog(@"Fatal: %@", nsMsg);
+            abort();
+    }
+}
+
 int main(int argc, char** argv)
 {
-    // Set our delegate (and implicitly create the NSApplication instance)
-    // before Qt does any initialization
-    KatvanAppDelegate* delegate = [[KatvanAppDelegate alloc] init];
-    [NSApplication sharedApplication].delegate = delegate;
+    qInstallMessageHandler(logToNsLog);
 
-    // Our application isn't actually a plugin, but AA_PluginApplication ensures
-    // that Qt's application delegate and menu bar are not installed. We depend
-    // on AppKit handling all lifecycle events as per default, otherwise some
-    // of the Cocoa Document Framework magic doesn't happen.
-    QCoreApplication::setAttribute(Qt::AA_PluginApplication);
-    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
+    NSApplication* app = [NSApplication sharedApplication];
+    KatvanAppDelegate* delegate = [[KatvanAppDelegate alloc] initWithArgc:argc Argv:argv];
 
-    QApplication app(argc, argv);
-    QCoreApplication::setOrganizationDomain("katvan.app");
-    QCoreApplication::setOrganizationName("Katvan");
-    QCoreApplication::setApplicationName("Katvan");
+    app.delegate = delegate;
 
-    ColorUtiMimeConverter cvt;
-    katvan::utils::loadAuxiliaryFonts();
-
-    app.setQuitOnLastWindowClosed(false);
-
-    return app.exec();
+    [app run];
+    return 0;
 }

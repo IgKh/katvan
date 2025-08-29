@@ -19,4 +19,7 @@
 #import <AppKit/AppKit.h>
 
 @interface KatvanAppDelegate : NSObject <NSApplicationDelegate>
+
+- (instancetype)initWithArgc:(int)argc Argv:(char**)argv;
+
 @end
