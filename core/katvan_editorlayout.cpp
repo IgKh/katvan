@@ -181,7 +181,7 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
     }
 
     LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
-    QTextLayout* layout = layoutData->displayLayout
+    QTextLayout* layout = (layoutData && layoutData->displayLayout)
         ? layoutData->displayLayout.get()
         : block.layout();
 

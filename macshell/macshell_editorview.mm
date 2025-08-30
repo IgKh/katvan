@@ -16,18 +16,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #import "macshell_editorview.h"
+#import "macshell_textfinderclient.h"
 
 #include <QInputDialog>
 #include <QMenu>
 
 @interface KatvanEditorView ()
 
-@property katvan::Editor* editor;
-@property QInputDialog* goToLineDialog;
+@property (nonatomic) katvan::Editor* editor;
+@property (nonatomic) QInputDialog* goToLineDialog;
 
+@property (nonatomic) NSTextFinder* textFinder;
+@property (nonatomic) KatvanTextFinderClient* textFinderClient;
+@property (nonatomic) NSView* findBarContainerView;
+@property (nonatomic) NSLayoutConstraint* findBarContainerHeightConstraint;
 @end
 
-@implementation KatvanEditorView
+@implementation KatvanEditorView {
+    CGFloat d_findBarHeight;
+}
 
 - (instancetype)initWithDocument:(katvan::Document*)textDocument
 {
@@ -35,6 +42,11 @@
     if (self) {
         self.editor = new katvan::Editor(textDocument);
         self.goToLineDialog = nullptr;
+
+        self.textFinderClient = [[KatvanTextFinderClient alloc] initWithEditor:self.editor];
+        self.textFinder = [[NSTextFinder alloc] init];
+        self.textFinder.client = self.textFinderClient;
+        self.textFinder.findBarContainer = self;
     }
     return self;
 }
@@ -50,20 +62,30 @@
 {
     [super viewDidLoad];
 
-    NSView* editorView = (__bridge NSView *)reinterpret_cast<void*>(self.editor->winId());
-
-    [self.view addSubview:editorView];
     [self.view addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:nil];
 
+    NSView* editorView = (__bridge NSView *)reinterpret_cast<void*>(self.editor->winId());
     editorView.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:editorView];
+
+    self.findBarContainerView = [[NSView alloc] init];
+    self.findBarContainerView.hidden = YES;
+    self.findBarContainerView.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.findBarContainerView];
+
+    self.findBarContainerHeightConstraint = [self.findBarContainerView.heightAnchor constraintEqualToConstant:0];
 
     [NSLayoutConstraint activateConstraints:@[
+        [self.findBarContainerView.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor],
+        [self.findBarContainerView.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor],
+        [self.findBarContainerView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
         [editorView.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor],
         [editorView.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor],
-        [editorView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
+        [editorView.topAnchor constraintEqualToAnchor:self.findBarContainerView.bottomAnchor],
         [editorView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor],
         [self.view.widthAnchor constraintGreaterThanOrEqualToConstant:self.editor->minimumWidth()],
         [self.view.heightAnchor constraintGreaterThanOrEqualToConstant:self.editor->minimumHeight()],
+        self.findBarContainerHeightConstraint,
     ]];
 
     self.editor->show();
@@ -89,6 +111,9 @@
 {
     SEL action = [item action];
 
+    if (action == @selector(performTextFinderAction:)) {
+        return [self.textFinder validateAction:(NSTextFinderAction)[item tag]];
+    }
     if (action == @selector(performUndo:)) {
         return self.editor->document()->isUndoAvailable();
     }
@@ -109,6 +134,15 @@
         return self.editor->isGoForwardAvailable();
     }
     return YES;
+}
+
+- (void)performTextFinderAction:(id)sender
+{
+    NSTextFinderAction action = (NSTextFinderAction)[sender tag];
+    if (action == NSTextFinderActionShowFindInterface || action == NSTextFinderActionShowReplaceInterface) {
+        [self setFindBarVisible:YES];
+    }
+    [self.textFinder performAction:action];
 }
 
 - (void)performUndo:(id)sender
@@ -199,6 +233,56 @@
     NSColorPanel* panel = [NSColorPanel sharedColorPanel];
     [panel setContinuous:NO];
     [panel makeKeyAndOrderFront:self];
+}
+
+//
+// NSTextFinderBarContainer protocol methods
+//
+
+- (NSView*)findBarView
+{
+    return self.findBarContainerView.subviews.firstObject;
+}
+
+- (void)setFindBarView:(NSView*)view
+{
+    for (NSView* subview in self.findBarContainerView.subviews) {
+        [subview removeFromSuperview];
+    }
+
+    if (view) {
+        [self.findBarContainerView addSubview:view];
+
+        view.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+            [view.leadingAnchor constraintEqualToAnchor:self.findBarContainerView.leadingAnchor],
+            [view.trailingAnchor constraintEqualToAnchor:self.findBarContainerView.trailingAnchor],
+            [view.topAnchor constraintEqualToAnchor:self.findBarContainerView.topAnchor],
+            [view.bottomAnchor constraintEqualToAnchor:self.findBarContainerView.bottomAnchor],
+        ]];
+    }
+}
+
+- (BOOL)isFindBarVisible
+{
+    return !self.findBarContainerView.hidden;
+}
+
+- (void)setFindBarVisible:(BOOL)visible
+{
+    self.findBarContainerView.hidden = !visible;
+    if (self.findBarView && visible) {
+        self.findBarContainerHeightConstraint.constant = d_findBarHeight;
+    }
+    else {
+        self.findBarContainerHeightConstraint.constant = 0;
+    }
+}
+
+- (void) findBarViewDidChangeHeight
+{
+    d_findBarHeight = self.findBarView ? self.findBarView.frame.size.height : 0;
+    self.findBarContainerHeightConstraint.constant = d_findBarHeight;
 }
 
 @end
