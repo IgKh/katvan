@@ -17,9 +17,48 @@
  */
 #import "macshell_previewer.h"
 
+static const NSInteger kZoomLevelFitPage = -1;
+static const NSInteger kZoomLevelFitWidth = -2;
+static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
+
+@interface PageNumberLabelCell : NSTextFieldCell
+@end
+
+@implementation PageNumberLabelCell
+
+- (NSSize)cellSizeForBounds:(NSRect)rect
+{
+    NSSize size = [super cellSizeForBounds:rect];
+    size.height += 2 * kPageNumberLabelPadding.height;
+    size.width += 2 * kPageNumberLabelPadding.width;
+    return size;
+}
+
+- (NSRect)drawingRectForBounds:(NSRect)rect
+{
+    NSRect drawingRect = [super drawingRectForBounds:rect];
+    return NSInsetRect(drawingRect, kPageNumberLabelPadding.width, kPageNumberLabelPadding.height);
+}
+
+- (void)drawWithFrame:(NSRect)cellFrame inView:(NSView*)controlView
+{
+    CGFloat radius = 10.0;
+    NSBezierPath* path = [NSBezierPath bezierPathWithRoundedRect:cellFrame xRadius:radius yRadius:radius];
+
+    [[NSColor controlAccentColor] setFill];
+    [path fill];
+    [path setClip];
+
+    [super drawWithFrame:cellFrame inView:controlView];
+}
+
+@end
+
 @interface KatvanPreviewer ()
 
-@property katvan::PreviewerView* previewerView;
+@property (nonatomic) katvan::PreviewerView* previewerView;
+@property (nonatomic) NSPopUpButton* zoomLevelsPopUp;
+@property (nonatomic) NSTextField* currentPageLabel;
 
 @end
 
@@ -31,7 +70,18 @@
     if (self) {
         self.previewerView = new katvan::PreviewerView(driver);
 
-        QObject::connect(driver, &katvan::TypstDriverWrapper::previewReady, self.previewerView, &katvan::PreviewerView::setPages);
+        __weak __typeof__(self) weakSelf = self;
+
+        QObject::connect(driver, &katvan::TypstDriverWrapper::previewReady,
+                         self.previewerView, [weakSelf](QList<katvan::typstdriver::PreviewPageData> pages) {
+                            weakSelf.previewerView->setPages(pages);
+                            [weakSelf updatePageLabel];
+                         });
+
+        QObject::connect(self.previewerView, &katvan::PreviewerView::currentPageChanged,
+                         self.previewerView, [weakSelf]() {
+                            [weakSelf updatePageLabel];
+                         });
     }
     return self;
 }
@@ -51,16 +101,61 @@
 
     previewerNsView.translatesAutoresizingMaskIntoConstraints = NO;
 
+    self.currentPageLabel = [NSTextField labelWithString:@""];
+    self.currentPageLabel.cell = [[PageNumberLabelCell alloc] init];
+    self.currentPageLabel.textColor = [NSColor alternateSelectedControlTextColor]; // Contrasts with accent color
+    self.currentPageLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.currentPageLabel];
+
     [NSLayoutConstraint activateConstraints:@[
         [previewerNsView.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor],
         [previewerNsView.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor],
         [previewerNsView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
         [previewerNsView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor],
+        [self.currentPageLabel.centerXAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.centerXAnchor],
+        [self.currentPageLabel.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-20],
         [self.view.widthAnchor constraintGreaterThanOrEqualToConstant:self.previewerView->minimumWidth()],
         [self.view.heightAnchor constraintGreaterThanOrEqualToConstant:self.previewerView->minimumHeight()],
     ]];
 
     self.previewerView->show();
+}
+
+- (NSPopUpButton*)makeZoomLevelPopup
+{
+    NSMenu* levelsMenu = [[NSMenu alloc] init];
+    NSMenuItem* item;
+
+    // A pull-down button always displays its menu's first item on the button
+    // itself, so create a placeholder
+    [levelsMenu addItemWithTitle:@"[Placeholder]" action:nil keyEquivalent:@""];
+
+    item = [levelsMenu addItemWithTitle:@"Fit Page" action:@selector(setZoomLevel:) keyEquivalent:@""];
+    [item setTarget:self];
+    [item setTag:kZoomLevelFitPage];
+
+    item = [levelsMenu addItemWithTitle:@"Fit Width" action:@selector(setZoomLevel:) keyEquivalent:@""];
+    [item setTarget:self];
+    [item setTag:kZoomLevelFitWidth];
+
+    [levelsMenu addItem:[NSMenuItem separatorItem]];
+
+    NSArray* levels = @[@(50), @(75), @(100), @(125), @(150), @(200)];
+    for (NSNumber* level in levels) {
+        NSString* title = [NSString stringWithFormat:@"%d%%", [level intValue]];
+
+        item = [levelsMenu addItemWithTitle:title action:@selector(setZoomLevel:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setTag:[level intValue]];
+    }
+
+    self.zoomLevelsPopUp = [[NSPopUpButton alloc] init];
+    self.zoomLevelsPopUp.pullsDown = YES;
+    self.zoomLevelsPopUp.menu = levelsMenu;
+
+    [self.zoomLevelsPopUp setTitle:@"100%"];
+
+    return self.zoomLevelsPopUp;
 }
 
 - (qreal)currentRoundZoomFactor
@@ -69,16 +164,59 @@
     return qRound(factor * 20) / 20.0; // Round to nearest multiple of 5%
 }
 
+- (void)setCustomZoom:(qreal)factor
+{
+    self.previewerView->setCustomZoomFactor(factor);
+    if (self.zoomLevelsPopUp != nil) {
+        NSString* title = [NSString stringWithFormat:@"%d%%", qRound(factor * 100)];
+        [self.zoomLevelsPopUp setTitle:title];
+    }
+}
+
+- (void)updatePageLabel
+{
+    int pageCount = self.previewerView->pageCount();
+    int currentPage = self.previewerView->currentPage();
+    NSString* page = self.previewerView->pageLabel(currentPage).toNSString();
+
+    NSString* label = [NSString stringWithFormat:NSLocalizedString(@"Page %@ of %d", nil), page, pageCount];
+    self.currentPageLabel.stringValue = label;
+}
+
+- (void)zoomToActualSize:(id)sender
+{
+    [self setCustomZoom:1.0];
+}
+
 - (void)zoomIn:(id)sender
 {
     qreal factor = [self currentRoundZoomFactor] + 0.05;
-    self.previewerView->setCustomZoomFactor(factor);
+    [self setCustomZoom:factor];
 }
 
 - (void)zoomOut:(id)sender
 {
     qreal factor = [self currentRoundZoomFactor] - 0.05;
-    self.previewerView->setCustomZoomFactor(factor);
+    [self setCustomZoom:factor];
+}
+
+- (void)setZoomLevel:(id)sender
+{
+    NSInteger tag = [sender tag];
+    if (tag >= 0) {
+        qreal factor = tag / 100.0;
+        [self setCustomZoom:factor];
+    }
+    else {
+        if (tag == kZoomLevelFitPage) {
+            self.previewerView->setZoomMode(katvan::PreviewerView::ZoomMode::FitToPage);
+        }
+        else if (tag == kZoomLevelFitWidth) {
+            self.previewerView->setZoomMode(katvan::PreviewerView::ZoomMode::FitToWidth);
+        }
+
+        [self.zoomLevelsPopUp setTitle:[sender title]];
+    }
 }
 
 @end

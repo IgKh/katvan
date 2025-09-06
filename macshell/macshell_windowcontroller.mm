@@ -144,7 +144,10 @@
         @"katvan.toolbar.editor.insert",
         @"katvan.toolbar.separator",
         @"katvan.toolbar.previewer.zoomout",
+        @"katvan.toolbar.previewer.zoomlevel",
         @"katvan.toolbar.previewer.zoomin",
+        NSToolbarFlexibleSpaceItemIdentifier,
+        @"katvan.toolbar.previewer.invertcolors",
     ];
 }
 
@@ -179,12 +182,25 @@
         item.action = @selector(zoomOut:);
         return item;
     }
+    if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.zoomlevel"]) {
+        NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
+        item.view = [self.previewer makeZoomLevelPopup];
+        return item;
+    }
     if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.zoomin"]) {
         NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
         item.label = NSLocalizedString(@"Zoom In", "Zoom in the preview");
         item.image = [NSImage imageWithSystemSymbolName:@"plus.magnifyingglass" accessibilityDescription:@"Magnifying glass with plus"];
         item.target = self.previewer;
         item.action = @selector(zoomIn:);
+        return item;
+    }
+    if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.invertcolors"]) {
+        NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
+        item.label = NSLocalizedString(@"Invert Colors", "Invert colors of the preview");
+        item.image = [NSImage imageWithSystemSymbolName:@"circle.lefthalf.filled" accessibilityDescription:@"Circle half filled"];
+        item.target = self;
+        item.action = @selector(invertPreviewColors:);
         return item;
     }
     return nil;
@@ -236,6 +252,12 @@
 {
     QTextCursor cursor = self.editorView.editor->textCursor();
     self.driver->searchDefinition(cursor.blockNumber(), cursor.positionInBlock());
+}
+
+- (void)invertPreviewColors:(id)sender
+{
+    bool inverted = !self.previewer.previewerView->areColorsInverted();
+    self.previewer.previewerView->setInvertColors(inverted);
 }
 
 - (void)showSymbolPicker

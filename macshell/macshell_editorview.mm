@@ -181,17 +181,17 @@
     self.editor->selectAll();
 }
 
-- (void)zoomFontToActualSize:(id)sender
+- (void)zoomToActualSize:(id)sender
 {
     self.editor->resetFontSize();
 }
 
-- (void)zoomInFont:(id)sender
+- (void)zoomIn:(id)sender
 {
     self.editor->increaseFontSize();
 }
 
-- (void)zoomOutFont:(id)sender
+- (void)zoomOut:(id)sender
 {
     self.editor->decreaseFontSize();
 }

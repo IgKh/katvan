@@ -54,6 +54,8 @@ public:
     ZoomMode zoomMode() const { return d_zoomMode; }
     qreal zoomFactor() const { return d_zoomFactor; }
 
+    bool areColorsInverted() const { return d_invertColors; }
+
     QString pageLabel(int page) const;
 
     qreal effectiveZoom(int page) const;

@@ -26,5 +26,6 @@
 @property (readonly) katvan::PreviewerView* previewerView;
 
 - (instancetype)initWithDriver:(katvan::TypstDriverWrapper*)driver;
+- (NSPopUpButton*)makeZoomLevelPopup;
 
 @end

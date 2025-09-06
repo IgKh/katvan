@@ -157,17 +157,17 @@
     [menu setSubmenu:findMenu forItem:menuItem];
 
     menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find...", nil) action:@selector(performTextFinderAction:) keyEquivalent:@"f"];
-    [menuItem setTag: NSTextFinderActionShowFindInterface];
+    [menuItem setTag:NSTextFinderActionShowFindInterface];
 
     menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find and Replace...", nil) action:@selector(performTextFinderAction:) keyEquivalent:@"f"];
     [menuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand | NSEventModifierFlagOption];
-    [menuItem setTag: NSTextFinderActionShowReplaceInterface];
+    [menuItem setTag:NSTextFinderActionShowReplaceInterface];
 
     menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find Next", nil) action:@selector(performTextFinderAction:) keyEquivalent:@"g"];
-    [menuItem setTag: NSTextFinderActionNextMatch];
+    [menuItem setTag:NSTextFinderActionNextMatch];
 
     menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find Previous", nil) action:@selector(performTextFinderAction:) keyEquivalent:@"G"];
-    [menuItem setTag: NSTextFinderActionPreviousMatch];
+    [menuItem setTag:NSTextFinderActionPreviousMatch];
 
     [menu addItemWithTitle:NSLocalizedString(@"Spell Checking...", nil) action:nil keyEquivalent:@""];
 }
@@ -176,13 +176,17 @@
 {
     NSMenuItem* menuItem;
 
-    [menu addItemWithTitle:NSLocalizedString(@"Actual Size", nil) action:@selector(zoomFontToActualSize:) keyEquivalent:@"0"];
+    [menu addItemWithTitle:NSLocalizedString(@"Actual Size", nil) action:@selector(zoomToActualSize:) keyEquivalent:@"0"];
 
-    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Zoom In", nil) action:@selector(zoomInFont:) keyEquivalent:@"."];
+    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Zoom In", nil) action:@selector(zoomIn:) keyEquivalent:@"."];
     [menuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand | NSEventModifierFlagShift];
 
-    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Zoom In", nil) action:@selector(zoomOutFont:) keyEquivalent:@","];
+    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Zoom In", nil) action:@selector(zoomOut:) keyEquivalent:@","];
     [menuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand | NSEventModifierFlagShift];
+
+    [menu addItem:[NSMenuItem separatorItem]];
+
+    [menu addItemWithTitle:NSLocalizedString(@"Invert Preview Colors", nil) action:@selector(invertPreviewColors:) keyEquivalent:@""];
 
     [menu addItem:[NSMenuItem separatorItem]];
 }
