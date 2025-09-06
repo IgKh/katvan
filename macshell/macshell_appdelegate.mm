@@ -27,7 +27,8 @@
 
 #include <AppKit/AppKit.h>
 
-@implementation KatvanAppDelegate {
+@implementation KatvanAppDelegate
+{
     QApplication* d_app;
 }
 
@@ -69,6 +70,11 @@
 - (void)applicationWillTerminate:(NSNotification*)notification
 {
     delete d_app;
+}
+
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication*)app
+{
+    return YES;
 }
 
 - (void)showAboutDialog:(id)sender

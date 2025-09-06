@@ -40,6 +40,7 @@
 {
     self = [super init];
     if (self) {
+        self.identifier = [self className];
         self.editor = new katvan::Editor(textDocument);
         self.goToLineDialog = nullptr;
 
@@ -47,6 +48,13 @@
         self.textFinder = [[NSTextFinder alloc] init];
         self.textFinder.client = self.textFinderClient;
         self.textFinder.findBarContainer = self;
+
+        __weak __typeof__(self) weakSelf = self;
+
+        QObject::connect(self.editor, &QTextEdit::cursorPositionChanged,
+                         self.editor, [weakSelf]() {
+            [weakSelf invalidateRestorableState];
+        });
     }
     return self;
 }
@@ -91,6 +99,31 @@
     self.editor->show();
 }
 
+- (void)restoreStateWithCoder:(NSCoder*)coder
+{
+    // Decode text cursor position
+    if ([coder containsValueForKey:@"cursorPos"]) {
+        NSInteger pos = [coder decodeIntegerForKey:@"cursorPos"];
+
+        if (pos >= 0 && pos <= self.editor->document()->characterCount()) {
+            QTextCursor cursor { self.editor->document() };
+            cursor.setPosition(pos);
+            self.editor->setTextCursor(cursor);
+        }
+    }
+
+    [super restoreStateWithCoder:coder];
+}
+
+- (void)encodeRestorableStateWithCoder:(NSCoder*)coder
+{
+    // Encode text cursor position
+    NSInteger cursorPos = self.editor->textCursor().position();
+    [coder encodeInteger:cursorPos forKey:@"cursorPos"];
+
+    [super encodeRestorableStateWithCoder:coder];
+}
+
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context
 {
     if ([keyPath isEqualToString:@"effectiveAppearance"]) {
@@ -103,7 +136,6 @@
 
 - (NSMenu*)createInsertMenu
 {
-    // FIXME Does this leak?
     return self.editor->createInsertMenu()->toNSMenu();
 }
 

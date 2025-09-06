@@ -17,6 +17,8 @@
  */
 #import "macshell_previewer.h"
 
+#include <QScrollBar>
+
 static const NSInteger kZoomLevelFitPage = -1;
 static const NSInteger kZoomLevelFitWidth = -2;
 static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
@@ -59,6 +61,7 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
 @property (nonatomic) katvan::PreviewerView* previewerView;
 @property (nonatomic) NSPopUpButton* zoomLevelsPopUp;
 @property (nonatomic) NSTextField* currentPageLabel;
+@property (nonatomic) QPointF pendingScrollPosition;
 
 @end
 
@@ -68,20 +71,30 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
 {
     self = [super init];
     if (self) {
+        self.identifier = [self className];
         self.previewerView = new katvan::PreviewerView(driver);
 
         __weak __typeof__(self) weakSelf = self;
 
         QObject::connect(driver, &katvan::TypstDriverWrapper::previewReady,
                          self.previewerView, [weakSelf](QList<katvan::typstdriver::PreviewPageData> pages) {
-                            weakSelf.previewerView->setPages(pages);
-                            [weakSelf updatePageLabel];
-                         });
+            [weakSelf setPreviewPages:pages];
+        });
 
         QObject::connect(self.previewerView, &katvan::PreviewerView::currentPageChanged,
                          self.previewerView, [weakSelf]() {
-                            [weakSelf updatePageLabel];
-                         });
+            [weakSelf updatePageLabel];
+        });
+
+        QObject::connect(self.previewerView->verticalScrollBar(), &QScrollBar::valueChanged,
+                         self.previewerView, [weakSelf]() {
+            [weakSelf invalidateRestorableState];
+        });
+
+        QObject::connect(self.previewerView->horizontalScrollBar(), &QScrollBar::valueChanged,
+                         self.previewerView, [weakSelf]() {
+            [weakSelf invalidateRestorableState];
+        });
     }
     return self;
 }
@@ -121,6 +134,58 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
     self.previewerView->show();
 }
 
+- (void)restoreStateWithCoder:(NSCoder*)coder
+{
+    // Decode zoom level
+    if ([coder containsValueForKey:@"zoomLevel"]) {
+        NSInteger level = [coder decodeIntegerForKey:@"zoomLevel"];
+        [self setZoomLevelByLevel:level];
+    }
+
+    // Decode color invert flag
+    if ([coder containsValueForKey:@"invertColors"]) {
+        BOOL invert = [coder decodeBoolForKey:@"invertColors"];
+        self.previewerView->setInvertColors(invert);
+    }
+
+    // Decode scroll position
+    if ([coder containsValueForKey:@"scrollPos"]) {
+        NSPoint scrollPos = [coder decodePointForKey:@"scrollPos"];
+        self.pendingScrollPosition = QPointF::fromCGPoint(scrollPos);
+    }
+
+    [super restoreStateWithCoder:coder];
+}
+
+- (void)encodeRestorableStateWithCoder:(NSCoder*)coder
+{
+    // Encode zoom level
+    NSInteger zoomLevel;
+    switch (self.previewerView->zoomMode()) {
+        case katvan::PreviewerView::ZoomMode::Custom:
+            zoomLevel = qRound(self.previewerView->zoomFactor() * 100);
+            break;
+        case katvan::PreviewerView::ZoomMode::FitToPage:
+            zoomLevel = kZoomLevelFitPage;
+            break;
+        case katvan::PreviewerView::ZoomMode::FitToWidth:
+            zoomLevel = kZoomLevelFitWidth;
+            break;
+    }
+
+    [coder encodeInteger:zoomLevel forKey:@"zoomLevel"];
+
+    // Encode color invert flag
+    [coder encodeBool:self.previewerView->areColorsInverted() forKey:@"invertColors"];
+
+    // Encode scroll position
+    int scrollX = self.previewerView->horizontalScrollBar()->value();
+    int scrollY = self.previewerView->verticalScrollBar()->value();
+    [coder encodePoint:NSMakePoint(scrollX, scrollY) forKey:@"scrollPos"];
+
+    [super encodeRestorableStateWithCoder:coder];
+}
+
 - (NSPopUpButton*)makeZoomLevelPopup
 {
     NSMenu* levelsMenu = [[NSMenu alloc] init];
@@ -130,11 +195,11 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
     // itself, so create a placeholder
     [levelsMenu addItemWithTitle:@"[Placeholder]" action:nil keyEquivalent:@""];
 
-    item = [levelsMenu addItemWithTitle:@"Fit Page" action:@selector(setZoomLevel:) keyEquivalent:@""];
+    item = [levelsMenu addItemWithTitle:NSLocalizedString(@"Fit Page", nil) action:@selector(setZoomLevel:) keyEquivalent:@""];
     [item setTarget:self];
     [item setTag:kZoomLevelFitPage];
 
-    item = [levelsMenu addItemWithTitle:@"Fit Width" action:@selector(setZoomLevel:) keyEquivalent:@""];
+    item = [levelsMenu addItemWithTitle:NSLocalizedString(@"Fit Width", nil) action:@selector(setZoomLevel:) keyEquivalent:@""];
     [item setTarget:self];
     [item setTag:kZoomLevelFitWidth];
 
@@ -158,6 +223,19 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
     return self.zoomLevelsPopUp;
 }
 
+- (void)setPreviewPages:(QList<katvan::typstdriver::PreviewPageData>)pages
+{
+    self.previewerView->setPages(pages);
+
+    QPointF scrollPos = self.pendingScrollPosition;
+    if (!scrollPos.isNull()) {
+        self.previewerView->horizontalScrollBar()->setValue(scrollPos.x());
+        self.previewerView->verticalScrollBar()->setValue(scrollPos.y());
+        self.pendingScrollPosition = QPointF();
+    }
+    [self updatePageLabel];
+}
+
 - (qreal)currentRoundZoomFactor
 {
     qreal factor = self.previewerView->effectiveZoom(self.previewerView->currentPage());
@@ -170,6 +248,24 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
     if (self.zoomLevelsPopUp != nil) {
         NSString* title = [NSString stringWithFormat:@"%d%%", qRound(factor * 100)];
         [self.zoomLevelsPopUp setTitle:title];
+    }
+}
+
+- (void)setZoomLevelByLevel:(NSInteger)level
+{
+    if (level >= 0) {
+        qreal factor = level / 100.0;
+        [self setCustomZoom:factor];
+    }
+    else {
+        if (level == kZoomLevelFitPage) {
+            self.previewerView->setZoomMode(katvan::PreviewerView::ZoomMode::FitToPage);
+            [self.zoomLevelsPopUp setTitle:NSLocalizedString(@"Fit Page", nil)];
+        }
+        else if (level == kZoomLevelFitWidth) {
+            self.previewerView->setZoomMode(katvan::PreviewerView::ZoomMode::FitToWidth);
+            [self.zoomLevelsPopUp setTitle:NSLocalizedString(@"Fit Width", nil)];
+        }
     }
 }
 
@@ -186,37 +282,35 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
 - (void)zoomToActualSize:(id)sender
 {
     [self setCustomZoom:1.0];
+    [self invalidateRestorableState];
 }
 
 - (void)zoomIn:(id)sender
 {
     qreal factor = [self currentRoundZoomFactor] + 0.05;
     [self setCustomZoom:factor];
+    [self invalidateRestorableState];
 }
 
 - (void)zoomOut:(id)sender
 {
     qreal factor = [self currentRoundZoomFactor] - 0.05;
     [self setCustomZoom:factor];
+    [self invalidateRestorableState];
 }
 
 - (void)setZoomLevel:(id)sender
 {
-    NSInteger tag = [sender tag];
-    if (tag >= 0) {
-        qreal factor = tag / 100.0;
-        [self setCustomZoom:factor];
-    }
-    else {
-        if (tag == kZoomLevelFitPage) {
-            self.previewerView->setZoomMode(katvan::PreviewerView::ZoomMode::FitToPage);
-        }
-        else if (tag == kZoomLevelFitWidth) {
-            self.previewerView->setZoomMode(katvan::PreviewerView::ZoomMode::FitToWidth);
-        }
+    [self setZoomLevelByLevel:[sender tag]];
+    [self invalidateRestorableState];
+}
 
-        [self.zoomLevelsPopUp setTitle:[sender title]];
-    }
+- (void)invertPreviewColors:(id)sender
+{
+    bool inverted = !self.previewerView->areColorsInverted();
+    self.previewerView->setInvertColors(inverted);
+
+    [self invalidateRestorableState];
 }
 
 @end
