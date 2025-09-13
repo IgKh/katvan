@@ -16,20 +16,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "katvan_document.h"
+#import "macshell_windowcontroller.h"
 
 #import <AppKit/AppKit.h>
 
-@protocol KatvanGoToBlockTarget <NSObject>
+namespace katvan::typstdriver { class OutlineNode; }
 
-- (void)goToBlock:(int)line column:(int)column;
+@interface KatvanOutlineView : NSViewController <NSOutlineViewDataSource, NSOutlineViewDelegate>
 
-@end
+@property (nonatomic, weak) id<KatvanGoToBlockTarget> target;
 
-@interface KatvanWindowController : NSWindowController <NSToolbarDelegate, KatvanGoToBlockTarget>
-
-- (instancetype)initWithDocument:(katvan::Document*)textDocument initialURL:(NSURL*)url;
-
-- (void)documentDidExplicitlySaveInURL:(NSURL*)url forced:(BOOL)forced;
+- (void)setOutline:(katvan::typstdriver::OutlineNode*)outline;
+- (void)selectEntryForLine:(int)line;
 
 @end

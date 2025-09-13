@@ -16,7 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #import "macshell_editorview.h"
+#import "macshell_outlineview.h"
 #import "macshell_previewer.h"
+#import "macshell_sidebar.h"
 #import "macshell_typstdocument.h"
 #import "macshell_windowcontroller.h"
 
@@ -28,15 +30,17 @@
 
 @interface KatvanWindowController ()
 
-@property NSSplitViewController* splitViewController;
-@property KatvanEditorView* editorView;
-@property KatvanPreviewer* previewer;
+@property (nonatomic) NSSplitViewController* splitViewController;
+@property (nonatomic) KatvanEditorView* editorView;
+@property (nonatomic) KatvanPreviewer* previewer;
+@property (nonatomic) KatvanSidebar* sidebar;
+@property (nonatomic) KatvanOutlineView* outlineView;
 
-@property katvan::Document* textDocument;
-@property katvan::TypstDriverWrapper* driver;
-@property katvan::SymbolPicker* symbolPicker;
+@property (nonatomic) katvan::Document* textDocument;
+@property (nonatomic) katvan::TypstDriverWrapper* driver;
+@property (nonatomic) katvan::SymbolPicker* symbolPicker;
 
-@property QString documentFilePath;
+@property (nonatomic) QString documentFilePath;
 
 @end
 
@@ -45,10 +49,12 @@
 - (instancetype)initWithDocument:(katvan::Document*)textDocument initialURL:(NSURL*)url
 {
     NSRect frame = NSMakeRect(0, 0, 800, 500);
-    NSWindow* window  = [[NSWindow alloc] initWithContentRect:frame
-                        styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView
-                        backing:NSBackingStoreBuffered
-                        defer:NO];
+    NSWindowStyleMask styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
+                                  NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView;
+    NSWindow* window = [[NSWindow alloc] initWithContentRect:frame
+                                         styleMask:styleMask
+                                         backing:NSBackingStoreBuffered
+                                         defer:NO];
 
     self = [super initWithWindow:window];
     if (self) {
@@ -77,36 +83,48 @@
     self.editorView = [[KatvanEditorView alloc] initWithDocument:textDocument];
     self.previewer = [[KatvanPreviewer alloc] initWithDriver:self.driver];
 
+    self.outlineView = [[KatvanOutlineView alloc] init];
+    self.outlineView.target = self;
+
     __weak __typeof__(self) weakSelf = self;
 
     QObject::connect(self.textDocument, &katvan::Document::contentEdited,
-                    self.driver, &katvan::TypstDriverWrapper::applyContentEdit);
+                     self.driver, &katvan::TypstDriverWrapper::applyContentEdit);
     QObject::connect(self.textDocument, &katvan::Document::contentModified,
-                    self.driver, &katvan::TypstDriverWrapper::updatePreview);
+                     self.driver, &katvan::TypstDriverWrapper::updatePreview);
 
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::jumpToPreview,
-                    self.previewer.previewerView, &katvan::PreviewerView::jumpTo);
+                     self.previewer.previewerView, &katvan::PreviewerView::jumpTo);
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::jumpToEditor,
-                    self.editorView.editor, qOverload<int, int>(&katvan::Editor::goToBlock));
+                     self.editorView.editor, qOverload<int, int>(&katvan::Editor::goToBlock));
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::showEditorToolTip,
-                    self.editorView.editor, &katvan::Editor::showToolTip);
+                     self.editorView.editor, &katvan::Editor::showToolTip);
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::showEditorToolTipAtLocation,
-                    self.editorView.editor, &katvan::Editor::showToolTipAtLocation);
+                     self.editorView.editor, &katvan::Editor::showToolTipAtLocation);
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::completionsReady,
-                    self.editorView.editor->completionManager(), &katvan::CompletionManager::completionsReady);
+                     self.editorView.editor->completionManager(), &katvan::CompletionManager::completionsReady);
 
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::compilationStatusChanged,
                      self.driver, [weakSelf]() {
         weakSelf.editorView.editor->setSourceDiagnostics(weakSelf.driver->diagnosticsModel()->sourceDiagnostics());
     });
+    QObject::connect(self.driver, &katvan::TypstDriverWrapper::outlineUpdated,
+                     self.driver, [weakSelf](katvan::typstdriver::OutlineNode* outline) {
+        [weakSelf.outlineView setOutline:outline];
+    });
 
     QObject::connect(self.editorView.editor, &katvan::Editor::toolTipRequested,
-                    self.driver, &katvan::TypstDriverWrapper::requestToolTip);
+                     self.driver, &katvan::TypstDriverWrapper::requestToolTip);
     QObject::connect(self.editorView.editor, &katvan::Editor::goToDefinitionRequested,
-                    self.driver, &katvan::TypstDriverWrapper::searchDefinition);
+                     self.driver, &katvan::TypstDriverWrapper::searchDefinition);
     QObject::connect(self.editorView.editor->completionManager(), &katvan::CompletionManager::completionsRequested,
-                    self.driver, &katvan::TypstDriverWrapper::requestCompletions);
+                     self.driver, &katvan::TypstDriverWrapper::requestCompletions);
 
+    QObject::connect(self.editorView.editor, &QTextEdit::cursorPositionChanged,
+                     self.editorView.editor, [weakSelf]() {
+        int line = weakSelf.editorView.editor->textCursor().blockNumber();
+        [weakSelf.outlineView selectEntryForLine:line];
+    });
     QObject::connect(self.editorView.editor, &katvan::Editor::showSymbolPicker,
                      self.editorView.editor, [weakSelf]() {
         [weakSelf showSymbolPicker];
@@ -119,13 +137,22 @@
 
 - (void)setupUI
 {
+    [self setupSidebar];
+
     self.splitViewController = [[NSSplitViewController alloc] init];
     self.splitViewController.splitView.dividerStyle = NSSplitViewDividerStyleThin;
 
+    NSSplitViewItem* sidebarItem = [NSSplitViewItem sidebarWithViewController:self.sidebar];
+    [sidebarItem setPreferredThicknessFraction:0.2];
+    [sidebarItem setTitlebarSeparatorStyle:NSTitlebarSeparatorStyleLine];
+    [self.splitViewController addSplitViewItem:sidebarItem];
+
     NSSplitViewItem* editorItem = [NSSplitViewItem splitViewItemWithViewController:self.editorView];
+    [editorItem setPreferredThicknessFraction:0.4];
     [self.splitViewController addSplitViewItem:editorItem];
 
     NSSplitViewItem* previewerItem = [NSSplitViewItem splitViewItemWithViewController:self.previewer];
+    [previewerItem setPreferredThicknessFraction:0.4];
     [previewerItem setCanCollapse:YES];
     [self.splitViewController addSplitViewItem:previewerItem];
 
@@ -138,9 +165,24 @@
     self.window.toolbar = toolbar;
 }
 
+- (void)setupSidebar
+{
+    self.sidebar = [[KatvanSidebar alloc] init];
+
+    [self.sidebar addTabController:self.outlineView
+                  icon:[NSImage imageWithSystemSymbolName:@"document.viewfinder.fill"
+                                accessibilityDescription:@"Document page in a targeting frame"]
+                  toolTip:NSLocalizedString(@"Document Outline", nil)];
+
+    // TODO persist as part of restorable UI state
+    [self.sidebar ensureControllerSelected:self.outlineView];
+}
+
 - (NSArray<NSString*>*)toolbarAllowedItemIdentifiers:(NSToolbar*)toolbar
 {
     return @[
+        NSToolbarToggleSidebarItemIdentifier,
+        NSToolbarSidebarTrackingSeparatorItemIdentifier,
         @"katvan.toolbar.editor.insert",
         @"katvan.toolbar.separator",
         @"katvan.toolbar.previewer.zoomout",
@@ -163,6 +205,7 @@
     if ([itemIdentifier isEqualToString:@"katvan.toolbar.editor.insert"]) {
         NSMenuToolbarItem* item = [[NSMenuToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
         item.label = NSLocalizedString(@"Insert", "Opens insert menu for the editor");
+        item.toolTip = NSLocalizedString(@"Insert", nil);
         item.image = [NSImage imageWithSystemSymbolName:@"plus" accessibilityDescription:@"Plus sign"];
         item.menu = [self.editorView createInsertMenu];
         return item;
@@ -171,25 +214,29 @@
         NSTrackingSeparatorToolbarItem* item = [NSTrackingSeparatorToolbarItem
             trackingSeparatorToolbarItemWithIdentifier:itemIdentifier
             splitView:self.splitViewController.splitView
-            dividerIndex:0];
+            dividerIndex:(self.splitViewController.splitViewItems.count - 2)];
         return item;
     }
     if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.zoomout"]) {
         NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
-        item.label = NSLocalizedString(@"Zoom Out", "Zoom out the preview");
-        item.image = [NSImage imageWithSystemSymbolName:@"minus.magnifyingglass" accessibilityDescription:@"Maginfying glass with minus"];
+        item.label = NSLocalizedString(@"Zoom Out", nil);
+        item.toolTip = NSLocalizedString(@"Zoom out the preview", nil);
+        item.image = [NSImage imageWithSystemSymbolName:@"minus.magnifyingglass" accessibilityDescription:@"Magnifying glass with minus"];
         item.target = self.previewer;
         item.action = @selector(zoomOut:);
         return item;
     }
     if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.zoomlevel"]) {
         NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
+        item.label = NSLocalizedString(@"Zoom Level", nil);
+        item.toolTip = NSLocalizedString(@"Set the zoom level of the preview", nil);
         item.view = [self.previewer makeZoomLevelPopup];
         return item;
     }
     if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.zoomin"]) {
         NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
-        item.label = NSLocalizedString(@"Zoom In", "Zoom in the preview");
+        item.label = NSLocalizedString(@"Zoom In", nil);
+        item.toolTip = NSLocalizedString(@"Zoom in the preview", nil);
         item.image = [NSImage imageWithSystemSymbolName:@"plus.magnifyingglass" accessibilityDescription:@"Magnifying glass with plus"];
         item.target = self.previewer;
         item.action = @selector(zoomIn:);
@@ -197,7 +244,8 @@
     }
     if ([itemIdentifier isEqualToString:@"katvan.toolbar.previewer.invertcolors"]) {
         NSToolbarItem* item = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
-        item.label = NSLocalizedString(@"Invert Colors", "Invert colors of the preview");
+        item.label = NSLocalizedString(@"Invert Colors", nil);
+        item.toolTip = NSLocalizedString(@"Invert the colors of the document preview", nil);
         item.image = [NSImage imageWithSystemSymbolName:@"circle.lefthalf.filled" accessibilityDescription:@"Circle half filled"];
         item.target = self.previewer;
         item.action = @selector(invertPreviewColors:);
@@ -252,6 +300,11 @@
 {
     QTextCursor cursor = self.editorView.editor->textCursor();
     self.driver->searchDefinition(cursor.blockNumber(), cursor.positionInBlock());
+}
+
+- (void)goToBlock:(int)line column:(int)column
+{
+    self.editorView.editor->goToBlock(line, column);
 }
 
 - (void)showSymbolPicker

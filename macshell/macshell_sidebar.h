@@ -16,20 +16,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "katvan_document.h"
-
 #import <AppKit/AppKit.h>
 
-@protocol KatvanGoToBlockTarget <NSObject>
+@interface KatvanSidebar : NSViewController
 
-- (void)goToBlock:(int)line column:(int)column;
-
-@end
-
-@interface KatvanWindowController : NSWindowController <NSToolbarDelegate, KatvanGoToBlockTarget>
-
-- (instancetype)initWithDocument:(katvan::Document*)textDocument initialURL:(NSURL*)url;
-
-- (void)documentDidExplicitlySaveInURL:(NSURL*)url forced:(BOOL)forced;
+- (void)addTabController:(NSViewController*)controller icon:(NSImage*)icon toolTip:(NSString*)toolTip;
+- (void)ensureControllerSelected:(NSViewController*)controller;
 
 @end

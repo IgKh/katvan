@@ -3,7 +3,9 @@ set(SOURCES
     macshell_colorconverter.mm
     macshell_editorview.mm
     macshell_mainmenu.mm
+    macshell_outlineview.mm
     macshell_previewer.mm
+    macshell_sidebar.mm
     macshell_textfinderclient.mm
     macshell_typstdocument.mm
     macshell_windowcontroller.mm
