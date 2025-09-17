@@ -157,7 +157,7 @@ void MainWindow::setupUI()
     d_labelsView = new LabelsView();
     connect(d_labelsView, &LabelsView::goToPosition, d_editor, qOverload<int, int>(&Editor::goToBlock));
 
-    setDockOptions(QMainWindow::AnimatedDocks);
+    setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::VerticalTabs);
 
     d_previewDock = new QDockWidget(tr("Preview"));
     d_previewDock->setObjectName("previewDockPanel");
@@ -182,12 +182,8 @@ void MainWindow::setupUI()
     d_labelsDock->setObjectName("labelsDockPanel");
     d_labelsDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable);
     d_labelsDock->setWidget(d_labelsView);
-
-    // TODO - Ideally, I'd tabify the outline and labels docks together, but Qt
-    // 6.9.1 has a pretty terrible regression (QTBUG-137755) that causes a
-    // crash on exit. Once 6.9.2 is released - change this to be tabbed by
-    // default.
     addDockWidget(Qt::LeftDockWidgetArea, d_labelsDock);
+    tabifyDockWidget(d_outlineDock, d_labelsDock);
 }
 
 void MainWindow::setupActions()

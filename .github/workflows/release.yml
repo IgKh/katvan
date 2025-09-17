@@ -71,7 +71,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.9.1
+          version: 6.9.2
           cache: true
 
       - name: Install additional packages
@@ -131,7 +131,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.9.1
+          version: 6.9.2
           cache: true
 
       - name: Setup vcpkg
@@ -187,7 +187,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.9.1
+          version: 6.9.2
           cache: true
 
       - name: Setup vcpkg
@@ -254,6 +254,8 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: false
 
       - name: Extract release notes
         run: uv run scripts/format_changelog.py --format markdown --pick ${{ github.ref_name }} -o notes.md CHANGELOG.md
