@@ -60,6 +60,7 @@ private slots:
     void zoomOut();
     void zoomOptionSelected(int index);
     void manualZoomEntered();
+    void zoomedByScrolling(int units);
     void currentPageChanged(int page);
     void followEditorCursorChanged(bool checked);
 

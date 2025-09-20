@@ -35,6 +35,8 @@ namespace katvan {
 
 class TypstDriverWrapper;
 
+namespace utils { class WheelTracker; }
+
 class PreviewerView : public QAbstractScrollArea {
     Q_OBJECT
 
@@ -62,6 +64,7 @@ public:
 
 signals:
     void currentPageChanged(int page);
+    void zoomedByScrolling(int units);
 
 public slots:
     void setPages(QList<katvan::typstdriver::PreviewPageData> pages);
@@ -75,6 +78,7 @@ protected:
     void paintEvent(QPaintEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
     void scrollContentsBy(int dx, int dy) override;
 
 private slots:
@@ -98,6 +102,7 @@ private:
 
     TypstDriverWrapper* d_driver;
     QTimer* d_invalidationTimer;
+    utils::WheelTracker* d_wheelTracker;
 
     QList<typstdriver::PreviewPageData> d_pages;
     QList<QRect> d_pageGeometries;

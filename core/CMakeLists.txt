@@ -21,6 +21,7 @@ set(SOURCES
     katvan_aboutdialog.cpp
     katvan_codemodel.cpp
     katvan_completionmanager.cpp
+    katvan_coreutils.cpp
     katvan_diagnosticsmodel.cpp
     katvan_document.cpp
     katvan_editor.cpp

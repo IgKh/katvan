@@ -322,7 +322,7 @@ void MainWindow::setupActions()
     jumpToPreviewAction->setShortcut(Qt::CTRL | Qt::Key_J);
     jumpToPreviewAction->setMenuRole(QAction::NoRole);
 
-    QAction* gotoDefinitionAction = goMenu->addAction(tr("Go to &Definition"), this, &MainWindow::goToDefintion);
+    QAction* gotoDefinitionAction = goMenu->addAction(tr("Go to &Definition"), this, &MainWindow::goToDefinition);
     gotoDefinitionAction->setShortcut(Qt::Key_F12);
     gotoDefinitionAction->setMenuRole(QAction::NoRole);
 
@@ -896,7 +896,7 @@ void MainWindow::jumpToPreview()
     d_driver->forwardSearch(cursor.blockNumber(), cursor.positionInBlock(), d_previewer->currentPage());
 }
 
-void MainWindow::goToDefintion()
+void MainWindow::goToDefinition()
 {
     QTextCursor cursor = d_editor->textCursor();
     d_driver->searchDefinition(cursor.blockNumber(), cursor.positionInBlock());
@@ -1134,7 +1134,7 @@ void MainWindow::compilationStatusChanged()
 
 void MainWindow::updateWordCount(size_t wordCount)
 {
-    d_wordCountButton->setText(tr("%n Word(s)", "", wordCount));
+    d_wordCountButton->setText(tr("%n Word(s)", "", static_cast<int>(wordCount)));
 }
 
 }

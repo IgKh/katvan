@@ -39,6 +39,28 @@ static constexpr QLatin1StringView SETTING_PREVIEW_FOLLOW_CURSOR("preview/follow
 
 namespace katvan {
 
+static QString stripTrailingPercent(const QString& value)
+{
+    QString result = value;
+    if (value.endsWith(QLatin1Char('%'))) {
+        result.chop(1);
+    }
+    return result;
+}
+
+class ZoomValidator : public QIntValidator
+{
+public:
+    ZoomValidator(QObject* parent = nullptr) : QIntValidator(1, 1000, parent) {}
+
+    QValidator::State validate(QString& input, int& pos) const override
+    {
+        QString value = stripTrailingPercent(input);
+        int p = qMin(pos, value.size());
+        return QIntValidator::validate(value, p);
+    }
+};
+
 Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     : QWidget(parent)
 {
@@ -46,10 +68,11 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
 
     connect(driver, &TypstDriverWrapper::previewReady, this, &Previewer::updatePreview);
     connect(d_view, &PreviewerView::currentPageChanged, this, &Previewer::currentPageChanged);
+    connect(d_view, &PreviewerView::zoomedByScrolling, this, &Previewer::zoomedByScrolling);
 
     d_zoomComboBox = new QComboBox();
     d_zoomComboBox->setEditable(true);
-    d_zoomComboBox->setValidator(new QIntValidator(1, 999, this));
+    d_zoomComboBox->setValidator(new ZoomValidator(this));
     d_zoomComboBox->setInsertPolicy(QComboBox::NoInsert);
 
     connect(d_zoomComboBox, &QComboBox::activated, this, &Previewer::zoomOptionSelected);
@@ -212,7 +235,7 @@ void Previewer::zoomOptionSelected(int index)
 
 void Previewer::manualZoomEntered()
 {
-    QString value = d_zoomComboBox->lineEdit()->text();
+    QString value = stripTrailingPercent(d_zoomComboBox->lineEdit()->text());
 
     bool ok = false;
     int factor = value.toInt(&ok);
@@ -222,6 +245,12 @@ void Previewer::manualZoomEntered()
 
     d_zoomComboBox->setCurrentIndex(-1);
     setCustomZoom(factor / 100.0);
+}
+
+void Previewer::zoomedByScrolling(int units)
+{
+    qreal zoom = roundFactor(d_view->effectiveZoom(d_view->currentPage()));
+    setCustomZoom(zoom + units * 0.05);
 }
 
 void Previewer::currentPageChanged(int page)
@@ -260,6 +289,8 @@ void Previewer::setZoom(QVariant zoomValue)
 
 void Previewer::setCustomZoom(qreal factor)
 {
+    factor = qBound(0.05, factor, 10.0);
+
     d_view->setCustomZoomFactor(factor);
     d_zoomComboBox->setEditText(QString("%1%").arg(qRound(factor * 100)));
 }

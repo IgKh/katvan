@@ -25,6 +25,7 @@
  * SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
  */
 
+#include "katvan_coreutils.h"
 #include "katvan_previewerview.h"
 #include "katvan_typstdriverwrapper.h"
 
@@ -66,6 +67,9 @@ PreviewerView::PreviewerView(TypstDriverWrapper* driver, QWidget* parent)
     d_invalidationTimer->setSingleShot(true);
     d_invalidationTimer->setInterval(100);
     d_invalidationTimer->callOnTimeout(this, &PreviewerView::invalidateAllRenderCache);
+
+    d_wheelTracker = new utils::WheelTracker(this);
+    connect(d_wheelTracker, &utils::WheelTracker::scrolled, this, &PreviewerView::zoomedByScrolling);
 
     QScroller::grabGesture(viewport(), QScroller::LeftMouseButtonGesture);
 
@@ -159,6 +163,10 @@ void PreviewerView::setZoomMode(ZoomMode mode)
 
 void PreviewerView::setCustomZoomFactor(qreal factor)
 {
+    if (factor <= 0.0) {
+        return;
+    }
+
     if (d_zoomMode != ZoomMode::Custom || factor != d_zoomFactor) {
         d_zoomMode = ZoomMode::Custom;
         d_zoomFactor = factor;
@@ -315,6 +323,15 @@ void PreviewerView::mouseReleaseEvent(QMouseEvent* event)
     QPoint posInPage = click - d_pageGeometries[page].topLeft();
     QPointF posInPts = posInPage.toPointF() / (d_pointSize * zoom);
     d_driver->inverseSearch(page, posInPts);
+}
+
+void PreviewerView::wheelEvent(QWheelEvent* event)
+{
+    if (event->modifiers() == Qt::ControlModifier) {
+        d_wheelTracker->processEvent(event);
+        return;
+    }
+    QAbstractScrollArea::wheelEvent(event);
 }
 
 void PreviewerView::scrollContentsBy(int dx, int dy)
