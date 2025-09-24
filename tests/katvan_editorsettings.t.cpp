@@ -170,7 +170,7 @@ TEST(EditorSettingsTests, IndentStyle) {
     EXPECT_THAT(s3.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(s3.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs on;")));
 
-    EditorSettings s4 { "replace-tabs TrUe" };
+    EditorSettings s4 { "replace-tabs TrUe" }; // spellchecker:disable-line
     EXPECT_THAT(s4.hasIndentStyle(), ::testing::IsTrue());
     EXPECT_THAT(s4.indentStyle(), ::testing::Eq(EditorSettings::IndentStyle::SPACES));
     EXPECT_THAT(s4.toModeLine(), ::testing::Eq(QStringLiteral("replace-tabs on;")));

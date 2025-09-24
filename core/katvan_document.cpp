@@ -64,7 +64,7 @@ void Document::propagateDocumentEdit(int from, int charsRemoved, int charsAdded)
     // or other such marker. Global character positions (like the from parameter
     // here) take this into account, however QTextBlock::text() strips them away.
     // To make sure that our and the Typst compiler's character positions are
-    // always in sync, we explcitly add a line feed in each place where a
+    // always in sync, we explicitly add a line feed in each place where a
     // separator character would be in the document's internal buffer.
     QString blockText = block.text().sliced(from - block.position()) + QChar::LineFeed;
 

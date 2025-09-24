@@ -44,7 +44,7 @@ namespace katvan {
  *   tool tip content with scrolling, links, etc.
  *
  * - Allows for a "See More" link for pointing at a relevant web page (in Typst
- *   online documentation, or otherwise) at a fixed poisition on the tool tip.
+ *   online documentation, or otherwise) at a fixed position on the tool tip.
  *
  * - Slightly different behaviour which is more like hover tips in other code
  *   editors, i.e no expiration timer and the tip is only dismissed on explicit
@@ -57,7 +57,7 @@ namespace katvan {
  * SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
  *
  * TODO:
- * - Better keyboard accessibilty (navigate to links, etc)
+ * - Better keyboard accessibility (navigate to links, etc)
  */
 
 EditorToolTipFrame::EditorToolTipFrame(QWidget* parent)
@@ -113,7 +113,7 @@ void EditorToolTipFrame::setContent(const QString& text, const QUrl& link)
     d_browser->setDocument(doc);
 }
 
-static QSizeF doucmentNaturalSize(QTextDocument* doc)
+static QSizeF documentNaturalSize(QTextDocument* doc)
 {
     qreal width = 0;
 
@@ -137,7 +137,7 @@ static QSize calculateBrowserSize(QTextDocument* doc, bool& needsScrollBar)
 
     doc->setTextWidth(MAX_WIDTH);
 
-    QSizeF documentSize = doucmentNaturalSize(doc);
+    QSizeF documentSize = documentNaturalSize(doc);
 
     int width = qCeil(documentSize.width());
     int height = qCeil(documentSize.height());

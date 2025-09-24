@@ -331,14 +331,14 @@ impl<'a> EngineImpl<'a> {
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
-        let (start_crusor, completions) =
+        let (start_cursor, completions) =
             typst_ide::autocomplete(&self.world, self.result.as_ref(), &main, cursor, !implicit)
                 .context("No available completions")?;
 
         Ok(ffi::Completions {
             from: ffi::SourcePosition {
-                line: main.byte_to_line(start_crusor).unwrap(),
-                column: main.byte_to_column(start_crusor).unwrap(),
+                line: main.byte_to_line(start_cursor).unwrap(),
+                column: main.byte_to_column(start_cursor).unwrap(),
             },
             completions_json: serde_json::to_string(&completions)?,
         })

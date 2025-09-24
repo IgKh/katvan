@@ -299,14 +299,14 @@ static QList<HighlightingMarker> highlightText(QStringView text)
     return listener.markers();
 }
 
-TEST(HiglightingParserTests, LineComment) {
+TEST(HighlightingParserTests, LineComment) {
     auto markers = highlightText(QStringLiteral("a // comment line\nb"));
     EXPECT_THAT(markers, ::testing::ElementsAre(
         HighlightingMarker{ HighlightingMarker::Kind::COMMENT, 2, 16 }
     ));
 }
 
-TEST(HiglightingParserTests, BlockComment) {
+TEST(HighlightingParserTests, BlockComment) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("a /* comment\ncomment\ncomment*/ b"));
@@ -321,7 +321,7 @@ TEST(HiglightingParserTests, BlockComment) {
     ));
 }
 
-TEST(HiglightingParserTests, StringLiteral) {
+TEST(HighlightingParserTests, StringLiteral) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("\"not a literal\" $ \"yesliteral\" + 1$"));
@@ -349,7 +349,7 @@ TEST(HiglightingParserTests, StringLiteral) {
     ));
 }
 
-TEST(HiglightingParserTests, Escapes) {
+TEST(HighlightingParserTests, Escapes) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("_\\$ \\_ foo _ \\ More: \"\\u{1f600}\""));
@@ -371,7 +371,7 @@ TEST(HiglightingParserTests, Escapes) {
     ));
 }
 
-TEST(HiglightingParserTests, Heading) {
+TEST(HighlightingParserTests, Heading) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("=== this is a heading\nthis is not.\n \t= but this is"));
@@ -384,7 +384,7 @@ TEST(HiglightingParserTests, Heading) {
     EXPECT_THAT(markers, ::testing::IsEmpty());
 }
 
-TEST(HiglightingParserTests, Emphasis) {
+TEST(HighlightingParserTests, Emphasis) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("a *bold* _underline_ and _*nested*_"));
@@ -408,7 +408,7 @@ TEST(HiglightingParserTests, Emphasis) {
     ));
 }
 
-TEST(HiglightingParserTests, URL) {
+TEST(HighlightingParserTests, URL) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("This is from #footnote[https://foo.bar.com/there] here"));
@@ -430,7 +430,7 @@ TEST(HiglightingParserTests, URL) {
     ));
 }
 
-TEST(HiglightingParserTests, RawContent) {
+TEST(HighlightingParserTests, RawContent) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("`` `some $raw$ with _emph_` `raw with\nnewline`"));
@@ -447,7 +447,7 @@ TEST(HiglightingParserTests, RawContent) {
     ));
 }
 
-TEST(HiglightingParserTests, ReferenceAndLabel) {
+TEST(HighlightingParserTests, ReferenceAndLabel) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("@ref123 foo <a_label> <not a label> //<also_not_label"));
@@ -478,7 +478,7 @@ TEST(HiglightingParserTests, ReferenceAndLabel) {
     ));
 }
 
-TEST(HiglightingParserTests, Lists) {
+TEST(HighlightingParserTests, Lists) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("- A- this\n- this\n\t- that"));
@@ -512,7 +512,7 @@ TEST(HiglightingParserTests, Lists) {
     ));
 }
 
-TEST(HiglightingParserTests, CodeLineBreaks) {
+TEST(HighlightingParserTests, CodeLineBreaks) {
     auto markers = highlightText(QStringLiteral(
         "#let a = 2\n"
         "while\n"
@@ -526,7 +526,7 @@ TEST(HiglightingParserTests, CodeLineBreaks) {
     ));
 }
 
-TEST(HiglightingParserTests, RawContentInCode) {
+TEST(HighlightingParserTests, RawContentInCode) {
     auto markers = highlightText(QStringLiteral(
         "#par(\"foo\" + `bar` + ```baz\n"
         "  bong```"));
@@ -543,7 +543,7 @@ TEST(HiglightingParserTests, RawContentInCode) {
  * Test cases taken from Typst documentation
  */
 
-TEST(HiglightingParserTests, MathExpressions) {
+TEST(HighlightingParserTests, MathExpressions) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral("$x^2$"));
@@ -607,7 +607,7 @@ TEST(HiglightingParserTests, MathExpressions) {
     ));
 }
 
-TEST(HiglightingParserTests, SetRules) {
+TEST(HighlightingParserTests, SetRules) {
     QList<HighlightingMarker> markers;
 
     markers = highlightText(QStringLiteral(
@@ -651,7 +651,7 @@ TEST(HiglightingParserTests, SetRules) {
     ));
 }
 
-TEST(HiglightingParserTests, ShowRules) {
+TEST(HighlightingParserTests, ShowRules) {
     auto markers = highlightText(QStringLiteral(
         "#show heading: it => [\n"
         "  #set align(center)\n"
@@ -675,7 +675,7 @@ TEST(HiglightingParserTests, ShowRules) {
     ));
 }
 
-TEST(HiglightingParserTests, CodeExpressions) {
+TEST(HighlightingParserTests, CodeExpressions) {
     auto markers = highlightText(QStringLiteral(
         "#emph[Hello] \\\n"
         "#emoji.face \\\n"
@@ -701,7 +701,7 @@ TEST(HiglightingParserTests, CodeExpressions) {
     ));
 }
 
-TEST(HiglightingParserTests, Blocks) {
+TEST(HighlightingParserTests, Blocks) {
     auto markers = highlightText(QStringLiteral(
         "#{\n"
         "let a = [from]\n"
@@ -717,7 +717,7 @@ TEST(HiglightingParserTests, Blocks) {
     ));
 }
 
-TEST(HiglightingParserTests, Loops) {
+TEST(HighlightingParserTests, Loops) {
     auto markers = highlightText(QStringLiteral(
         "#for c in \"ABC\" [\n"
         "  #c is a letter.\n"
@@ -741,7 +741,7 @@ TEST(HiglightingParserTests, Loops) {
     ));
 }
 
-TEST(HiglightingParserTests, MathInCode) {
+TEST(HighlightingParserTests, MathInCode) {
     auto markers = highlightText(QStringLiteral(
         "#align(center, table(\n"
         "  columns: count,\n"
@@ -847,7 +847,7 @@ TEST(IsolatesListenerTests, CodeLine)
     EXPECT_THAT(isolates, ::testing::IsEmpty());
 }
 
-TEST(IsolatesListenerTests, FieldAcces)
+TEST(IsolatesListenerTests, FieldAccess)
 {
     auto isolates = extractIsolates(QStringLiteral("Checking #test.test.test. Like that!"));
 
