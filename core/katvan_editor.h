@@ -69,6 +69,7 @@ public slots:
     void goToBlock(int blockNum, int charOffset);
     void goBack();
     void goForward();
+    void showPosition(int charPos);
 
     void increaseFontSize();
     void decreaseFontSize();

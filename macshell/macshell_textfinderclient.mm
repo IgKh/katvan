@@ -107,20 +107,7 @@
 
 - (void)scrollRangeToVisible:(NSRange)range
 {
-    katvan::EditorLayout* layout = qobject_cast<katvan::EditorLayout*>(self.editor->document()->documentLayout());
-    QScrollBar* scrollBar = self.editor->verticalScrollBar();
-
-    QPointF pos = layout->cursorPositionPoint(range.location);
-    int y = qRound(pos.y());
-    int viewportHeight = self.editor->viewport()->height();
-    int margin = qRound(0.4 * viewportHeight);
-
-    if (y - margin < scrollBar->value()) {
-        scrollBar->setValue(qMax(0, y - margin));
-    }
-    else if (y > scrollBar->value() + viewportHeight - margin) {
-        scrollBar->setValue(qMin(y - viewportHeight + margin, scrollBar->maximum()));
-    }
+    self.editor->showPosition(range.location);
 }
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString*)string

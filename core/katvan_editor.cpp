@@ -295,6 +295,7 @@ void Editor::setCurrentLandmark(const QTextCursor& target, bool takeFocus)
 {
     d_currentLandmark = EditorLocation { target };
     setTextCursor(target);
+    showPosition(target.position());
     if (takeFocus) {
         setFocus();
     }
@@ -374,6 +375,24 @@ void Editor::goForward()
     }
 
     setCurrentLandmark(targetCursor, true);
+}
+
+void Editor::showPosition(int charPos)
+{
+    katvan::EditorLayout* layout = qobject_cast<katvan::EditorLayout*>(document()->documentLayout());
+    QScrollBar* scrollBar = verticalScrollBar();
+
+    QPointF pos = layout->cursorPositionPoint(charPos);
+    int y = qRound(pos.y());
+    int viewportHeight = viewport()->height();
+    int margin = qRound(0.6 * viewportHeight);
+
+    if (y - margin < scrollBar->value()) {
+        scrollBar->setValue(qMax(0, y - margin));
+    }
+    else if (y > scrollBar->value() + viewportHeight - margin) {
+        scrollBar->setValue(qMin(y - viewportHeight + margin, scrollBar->maximum()));
+    }
 }
 
 void Editor::setFontZoomFactor(qreal factor)
