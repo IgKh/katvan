@@ -284,7 +284,34 @@
         }
         return NO;
     }
+    else if (action == @selector(exportAsPdf:)) {
+        katvan::TypstDriverWrapper::Status status = self.driver->status();
+        return status == katvan::TypstDriverWrapper::Status::SUCCESS
+            || status == katvan::TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS;
+    }
     return YES;
+}
+
+- (void)exportAsPdf:(id)sender
+{
+    NSPDFPanel* dialog = [NSPDFPanel panel];
+    NSPDFInfo* info = [[NSPDFInfo alloc] init];
+
+    NSString* filename = self.window.representedFilename;
+    if ([filename length] > 0) {
+        NSString* base = filename.lastPathComponent.stringByDeletingPathExtension;
+        dialog.defaultFileName = base; // No .pdf suffix
+    }
+
+    [dialog beginSheetWithPDFInfo: info
+            modalForWindow: self.window
+            completionHandler: ^(NSInteger rc) {
+                if (rc) {
+                    QString path = QString::fromNSString(info.URL.path);
+                    self.driver->exportToPdf(path);
+                }
+            }
+    ];
 }
 
 - (void)goToPreview:(id)sender
