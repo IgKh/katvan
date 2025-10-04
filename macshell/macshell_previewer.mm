@@ -21,7 +21,7 @@
 
 static const NSInteger kZoomLevelFitPage = -1;
 static const NSInteger kZoomLevelFitWidth = -2;
-static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
+static const NSSize kPageNumberLabelPadding = NSMakeSize(8, 8);
 
 @interface PageNumberLabelCell : NSTextFieldCell
 @end
@@ -86,6 +86,11 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
             [weakSelf updatePageLabel];
         });
 
+        QObject::connect(self.previewerView, &katvan::PreviewerView::zoomedByScrolling,
+                         self.previewerView, [weakSelf](int units) {
+            [weakSelf zoomByScrolling:units];
+        });
+
         QObject::connect(self.previewerView->verticalScrollBar(), &QScrollBar::valueChanged,
                          self.previewerView, [weakSelf]() {
             [weakSelf invalidateRestorableState];
@@ -117,6 +122,7 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
     self.currentPageLabel = [NSTextField labelWithString:@""];
     self.currentPageLabel.cell = [[PageNumberLabelCell alloc] init];
     self.currentPageLabel.textColor = [NSColor alternateSelectedControlTextColor]; // Contrasts with accent color
+    self.currentPageLabel.hidden = YES;
     self.currentPageLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.currentPageLabel];
 
@@ -233,6 +239,8 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
         self.previewerView->verticalScrollBar()->setValue(scrollPos.y());
         self.pendingScrollPosition = QPointF();
     }
+
+    self.currentPageLabel.hidden = NO;
     [self updatePageLabel];
 }
 
@@ -244,6 +252,8 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
 
 - (void)setCustomZoom:(qreal)factor
 {
+    factor = qBound(0.05, factor, 10.0);
+
     self.previewerView->setCustomZoomFactor(factor);
     if (self.zoomLevelsPopUp != nil) {
         NSString* title = [NSString stringWithFormat:@"%d%%", qRound(factor * 100)];
@@ -277,6 +287,13 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(10, 10);
 
     NSString* label = [NSString stringWithFormat:NSLocalizedString(@"Page %@ of %d", nil), page, pageCount];
     self.currentPageLabel.stringValue = label;
+}
+
+- (void)zoomByScrolling:(int)units
+{
+    qreal factor = [self currentRoundZoomFactor] + units * 0.05;
+    [self setCustomZoom:factor];
+    [self invalidateRestorableState];
 }
 
 - (void)zoomToActualSize:(id)sender

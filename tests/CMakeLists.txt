@@ -23,8 +23,8 @@ target_include_directories(katvan_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 # Link with gmock only due to https://github.com/google/googletest/issues/2157#issuecomment-674361850
 target_link_libraries(katvan_tests PRIVATE
-    GTest::gmock
     Qt6::Test
+    GTest::gmock
     katvan_core
 )
 
