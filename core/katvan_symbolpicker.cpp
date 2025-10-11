@@ -54,7 +54,7 @@ Q_GLOBAL_STATIC(QList<const char*>, SYMBOL_CATEGORIES, {
 
 enum SymbolModelRoles {
     SYMBOL_NAME_ROLE = Qt::UserRole + 1,
-    SYMBOL_CODEPOINT_ROLE,
+    SYMBOL_VALUE_ROLE,
     SYMBOL_DESCRIPTION_ROLE,
     SYMBOL_CATEGORY_ROLE,
 };
@@ -196,16 +196,16 @@ void SymbolPicker::currentSymbolChanged(const QModelIndex& current, const QModel
         return;
     }
 
-    QString codepoint = current.data(SYMBOL_CODEPOINT_ROLE).toString();
+    QString value = current.data(SYMBOL_VALUE_ROLE).toString();
     QString name = current.data(SYMBOL_NAME_ROLE).toString();
     QString description = current.data(SYMBOL_DESCRIPTION_ROLE).toString();
 
-    ulong point = static_cast<ulong>(utils::firstCodepointOf(codepoint));
-    QString pointHex = QString::number(point, 16)
+    ulong codepoint = static_cast<ulong>(utils::firstCodepointOf(value));
+    QString codepointHex = QString::number(codepoint, 16)
         .rightJustified(4, QLatin1Char('0'))
         .toUpper();
 
-    d_detailsLabel->setText(QStringLiteral("U+%1 %2 (%3)").arg(pointHex, description, name));
+    d_detailsLabel->setText(QStringLiteral("U+%1 %2 (%3)").arg(codepointHex, description, name));
     d_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
 }
 
@@ -251,16 +251,16 @@ QVariant SymbolListModel::data(const QModelIndex& index, int role) const
         return obj["name"].toString();
     }
     else if (role == Qt::DecorationRole) {
-        QString codepoint = obj["codepoint"].toString();
-        if (!codepoint.isEmpty()) {
-            return utils::fontIcon(utils::firstCodepointOf(codepoint), d_symbolFont);
+        QString value = obj["value"].toString();
+        if (!value.isEmpty()) {
+            return utils::fontIcon(utils::firstCodepointOf(value), d_symbolFont);
         }
     }
     else if (role == Qt::ToolTipRole || role == SYMBOL_DESCRIPTION_ROLE) {
         return obj["description"].toString();
     }
-    else if (role == SYMBOL_CODEPOINT_ROLE) {
-        return obj["codepoint"].toString();
+    else if (role == SYMBOL_VALUE_ROLE) {
+        return obj["value"].toString();
     }
     else if (role == SYMBOL_CATEGORY_ROLE) {
         return obj["category"].toString();
@@ -275,8 +275,17 @@ SymbolFilterModel::SymbolFilterModel(QObject* parent)
 
 void SymbolFilterModel::setCategoryFilter(const QVariant& category)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    beginFilterChange();
+#endif
+
     d_categoryFilter = category;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else
     invalidateRowsFilter();
+#endif
 }
 
 bool SymbolFilterModel::filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const

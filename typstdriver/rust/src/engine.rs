@@ -217,12 +217,7 @@ impl<'a> EngineImpl<'a> {
     pub fn export_pdf(&self, path: &str) -> Result<bool> {
         let document = self.result.as_ref().context("Invalid state")?;
 
-        let options = typst_pdf::PdfOptions {
-            ident: typst::foundations::Smart::Auto,
-            timestamp: None,
-            page_ranges: None,
-            standards: typst_pdf::PdfStandards::default(),
-        };
+        let options = typst_pdf::PdfOptions::default();
 
         let start = std::time::Instant::now();
         let result = typst_pdf::pdf(document, &options);
@@ -265,6 +260,7 @@ impl<'a> EngineImpl<'a> {
         let main = self.world.main_source();
 
         let cursor = main
+            .lines()
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
@@ -290,8 +286,8 @@ impl<'a> EngineImpl<'a> {
                 let source = self.world.main_source();
 
                 Some(ffi::SourcePosition {
-                    line: source.byte_to_line(cursor)?,
-                    column: source.byte_to_column(cursor)?,
+                    line: source.lines().byte_to_line(cursor)?,
+                    column: source.lines().byte_to_column(cursor)?,
                 })
             }
             _ => None,
@@ -313,6 +309,7 @@ impl<'a> EngineImpl<'a> {
     pub fn get_tooltip(&self, line: usize, column: usize) -> Result<ffi::ToolTip> {
         let main = self.world.main_source();
         let cursor = main
+            .lines()
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
@@ -328,6 +325,7 @@ impl<'a> EngineImpl<'a> {
     ) -> Result<ffi::Completions> {
         let main = self.world.main_source();
         let cursor = main
+            .lines()
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
@@ -337,8 +335,8 @@ impl<'a> EngineImpl<'a> {
 
         Ok(ffi::Completions {
             from: ffi::SourcePosition {
-                line: main.byte_to_line(start_cursor).unwrap(),
-                column: main.byte_to_column(start_cursor).unwrap(),
+                line: main.lines().byte_to_line(start_cursor).unwrap(),
+                column: main.lines().byte_to_column(start_cursor).unwrap(),
             },
             completions_json: serde_json::to_string(&completions)?,
         })
@@ -347,6 +345,7 @@ impl<'a> EngineImpl<'a> {
     pub fn get_definition(&self, line: usize, column: usize) -> Result<ffi::DefinitionLocation> {
         let main = self.world.main_source();
         let cursor = main
+            .lines()
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
@@ -389,8 +388,8 @@ fn position_to_file_location(
     source: &typst::syntax::Source,
     byte_idx: usize,
 ) -> Option<DiagnosticFileLocation> {
-    let line = source.byte_to_line(byte_idx)?;
-    let column = source.byte_to_column(byte_idx)?;
+    let line = source.lines().byte_to_line(byte_idx)?;
+    let column = source.lines().byte_to_column(byte_idx)?;
 
     Some(DiagnosticFileLocation {
         line: i64::try_from(line).unwrap_or(-1),

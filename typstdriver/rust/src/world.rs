@@ -29,7 +29,7 @@ use typst::{
     syntax::{package::PackageSpec, FileId, Source, VirtualPath},
     text::{Font, FontBook},
     utils::LazyHash,
-    Library,
+    Library, LibraryExt,
 };
 use typst_kit::fonts::{FontSlot, Fonts};
 
@@ -75,8 +75,8 @@ impl<'a> KatvanWorld<'a> {
     }
 
     pub fn apply_edit(&mut self, from_utf16_idx: usize, to_utf16_idx: usize, text: &str) {
-        let from = self.source.utf16_to_byte(from_utf16_idx);
-        let to = self.source.utf16_to_byte(to_utf16_idx);
+        let from = self.source.lines().utf16_to_byte(from_utf16_idx);
+        let to = self.source.lines().utf16_to_byte(to_utf16_idx);
 
         if let (Some(from), Some(to)) = (from, to) {
             self.source.edit(from..to, text);

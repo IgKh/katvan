@@ -19,7 +19,7 @@ use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
     foundations::{Func, StyleChain, Value},
     layout::{Frame, PagedDocument},
-    model::HeadingElem,
+    model::{HeadingElem, Outlinable},
     syntax::{ast, LinkedNode, Side, Source, Span, SyntaxKind},
     Document,
 };
@@ -225,7 +225,7 @@ pub fn get_metadata(
         }
 
         if let Some(heading) = item.to_packed::<HeadingElem>() {
-            if !heading.outlined(styles) {
+            if !heading.outlined() {
                 continue;
             }
 
@@ -258,8 +258,8 @@ fn find_text_position_for_span(source: &Source, span: Span) -> Option<ffi::Sourc
 fn span_location(source: &Source, span: Span) -> Option<ffi::SourcePosition> {
     source.range(span).and_then(|span| {
         Some(ffi::SourcePosition {
-            line: source.byte_to_line(span.start)?,
-            column: source.byte_to_column(span.start)?,
+            line: source.lines().byte_to_line(span.start)?,
+            column: source.lines().byte_to_column(span.start)?,
         })
     })
 }

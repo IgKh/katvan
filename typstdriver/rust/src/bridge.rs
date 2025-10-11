@@ -39,7 +39,7 @@ pub(crate) mod ffi {
     }
 
     struct PreviewPageDataInternal {
-        page_num: usize,
+        page_num: u64,
         width_pts: f64,
         height_pts: f64,
         fingerprint: u64,

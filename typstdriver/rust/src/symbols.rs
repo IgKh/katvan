@@ -30,30 +30,34 @@ pub fn symbols_json() -> anyhow::Result<String> {
 
 #[derive(Debug, serde::Serialize)]
 struct SymbolEntry {
-    pub codepoint: char,
+    pub value: String,
     pub name: String,
     pub description: String,
     pub category: String,
 }
 
 impl SymbolEntry {
-    fn new(codepoint: char, name: &str) -> Self {
+    fn new(value: &str, name: &str) -> Self {
         let name = name.trim_matches('.').to_owned();
-        let description = unicode_names2::name(codepoint)
+        let codepoint = value.chars().next();
+
+        let description = codepoint
+            .and_then(|c| unicode_names2::name(c))
             .map(Iterator::collect)
             .unwrap_or_default();
 
         let category = if name.starts_with("emoji.") {
             String::from("Emoji")
         } else {
-            unicode_math_class::class(codepoint)
+            codepoint
+                .and_then(|c| unicode_math_class::class(c))
                 .map(math_class_name)
                 .map(String::from)
                 .unwrap_or_default()
         };
 
         Self {
-            codepoint,
+            value: String::from(value),
             name,
             description,
             category,
@@ -66,13 +70,14 @@ fn collect_symbols(module: &Module, module_name: &str, output: &mut Vec<SymbolEn
         let item_name = format!("{module_name}.{name}");
         match binding.def {
             Def::Symbol(sym) => match sym {
-                Symbol::Single(codepoint) => {
-                    output.push(SymbolEntry::new(codepoint, &item_name));
+                Symbol::Single(value) => {
+                    output.push(SymbolEntry::new(value, &item_name));
                 }
                 Symbol::Multi(chars) => {
-                    for (name, codepoint) in chars {
-                        let item_name = format!("{item_name}.{name}");
-                        output.push(SymbolEntry::new(*codepoint, &item_name));
+                    for (modifiers, value, _deprecation) in chars {
+                        let item_name = format!("{item_name}.{}", modifiers.as_str());
+                        output.push(SymbolEntry::new(*value, &item_name));
+                        // TODO report deprecations?
                     }
                 }
             },

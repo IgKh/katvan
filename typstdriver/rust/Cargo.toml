@@ -2,7 +2,7 @@
 name = "typstdriver_rs"
 edition = "2021"
 publish = false
-rust-version = "1.83"
+rust-version = "1.88"
 
 [lib]
 crate-type = ["staticlib"]
@@ -10,12 +10,12 @@ crate-type = ["staticlib"]
 [dependencies]
 cxx = "1.0"
 
-codex = "0.1.1"
-typst = "0.13.1"
-typst-pdf = "0.13.1"
-typst-render = "0.13.1"
-typst-ide = "0.13.1"
-typst-kit = { version = "0.13.1", default-features = false, features = ["embed-fonts"] }
+codex = "0.2"
+typst = "0.14.0-rc.1"
+typst-pdf = "0.14.0-rc.1"
+typst-render = "0.14.0-rc.1"
+typst-ide = "0.14.0-rc.1"
+typst-kit = { version = "0.14.0-rc.1", default-features = false, features = ["embed-fonts"] }
 
 anyhow = "1"
 once_cell = "1"
