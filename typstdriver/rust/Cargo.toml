@@ -1,6 +1,6 @@
 [package]
 name = "typstdriver_rs"
-edition = "2021"
+edition = "2024"
 publish = false
 rust-version = "1.88"
 
@@ -8,7 +8,7 @@ rust-version = "1.88"
 crate-type = ["staticlib"]
 
 [dependencies]
-cxx = "1.0"
+cxx = "1.0.186"
 
 codex = "0.2"
 typst = "0.14.0-rc.1"
