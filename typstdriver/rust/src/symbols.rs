@@ -42,7 +42,7 @@ impl SymbolEntry {
         let codepoint = value.chars().next();
 
         let description = codepoint
-            .and_then(|c| unicode_names2::name(c))
+            .and_then(unicode_names2::name)
             .map(Iterator::collect)
             .unwrap_or_default();
 
@@ -50,7 +50,7 @@ impl SymbolEntry {
             String::from("Emoji")
         } else {
             codepoint
-                .and_then(|c| unicode_math_class::class(c))
+                .and_then(unicode_math_class::class)
                 .map(math_class_name)
                 .map(String::from)
                 .unwrap_or_default()
@@ -76,7 +76,7 @@ fn collect_symbols(module: &Module, module_name: &str, output: &mut Vec<SymbolEn
                 Symbol::Multi(chars) => {
                     for (modifiers, value, _deprecation) in chars {
                         let item_name = format!("{item_name}.{}", modifiers.as_str());
-                        output.push(SymbolEntry::new(*value, &item_name));
+                        output.push(SymbolEntry::new(value, &item_name));
                         // TODO report deprecations?
                     }
                 }

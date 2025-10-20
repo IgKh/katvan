@@ -2268,9 +2268,9 @@ checksum = "6af6ae20167a9ece4bcb41af5b80f8a1f1df981f6391189ce00fd257af04126a"
 
 [[package]]
 name = "typst"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cce2e3181eaa106ca5c22a8949fcd3a3741dbd2ef56a0c59df2c2e3492b3a01"
+checksum = "7bf32780489b4bd05df57012876fef0304eaaf62210323fb17e1270f0d8db272"
 dependencies = [
  "comemo",
  "ecow",
@@ -2288,15 +2288,15 @@ dependencies = [
 
 [[package]]
 name = "typst-assets"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8077c12a0358bf74aa7ee5dbe55a6a71fbbe61fa3013d21c831750db2da26408"
+checksum = "c3851f57480f4755acc14859bb2807d417f4c74372db83cc8c6efdc0525425ee"
 
 [[package]]
 name = "typst-eval"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b34c29f80407d7d3ece18a9775724ffe5ca859d9e57ea5dcd609a3cb43affcb"
+checksum = "1b12f634464b5212724987d545bd7c6be264adafbd7b99cf0e51d0c5a56efd9c"
 dependencies = [
  "comemo",
  "ecow",
@@ -2314,9 +2314,9 @@ dependencies = [
 
 [[package]]
 name = "typst-html"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f7fae5620fe5d00cfb1c60cb739e1dc40fac94815751f7ad5605330e705d3ee"
+checksum = "25082a5aed0b427a747909f75ae8539be1233834ab3c75c401e485c3a3b3b688"
 dependencies = [
  "bumpalo",
  "comemo",
@@ -2335,9 +2335,9 @@ dependencies = [
 
 [[package]]
 name = "typst-ide"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fa6bf129515a0ee595e7099693019b7a19710c461ff071427a3758bdaeb27b8"
+checksum = "4365ff3121e799216aeec1333e3a1314c87c10aa000d0de9a5c4e312a1479b63"
 dependencies = [
  "comemo",
  "ecow",
@@ -2351,9 +2351,9 @@ dependencies = [
 
 [[package]]
 name = "typst-kit"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "503ef155e14dcab2cbcf919265682724a5663459c4ae8c6bc7c0ff2f3cf143c2"
+checksum = "43b7fd144f2cd6f94f5a988f3eb2626f2756ef02be715c135b590ac988d366e7"
 dependencies = [
  "ecow",
  "fontdb",
@@ -2369,15 +2369,16 @@ dependencies = [
 
 [[package]]
 name = "typst-layout"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c274d13135b14152132a530f8e581a39c23b6f7107571f4a17fd06f63caeb15"
+checksum = "5e16c07b54dd204f735ddac7b6ee7c5f769e6b58b80d7f801414a04cf87b9b25"
 dependencies = [
  "az",
  "bumpalo",
  "codex",
  "comemo",
  "ecow",
+ "either",
  "hypher",
  "icu_properties",
  "icu_provider",
@@ -2404,9 +2405,9 @@ dependencies = [
 
 [[package]]
 name = "typst-library"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2701bff3882554d5f253eecd87579b511f58b0f8e2b4da3a28c8dcfd7e770597"
+checksum = "19653cc30767d525e5a84884e7e6d969573328c3747baa3a20760277f391f864"
 dependencies = [
  "az",
  "bitflags 2.9.4",
@@ -2470,9 +2471,9 @@ dependencies = [
 
 [[package]]
 name = "typst-macros"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c64d8bf1e7702a2684626f74b69bf42db18ec98df181947243d49ae58f3bd6c"
+checksum = "bdd15888d7de822e2030629627175aa23c2bc40a3f40350421fa2ebddc69a9cf"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -2482,9 +2483,9 @@ dependencies = [
 
 [[package]]
 name = "typst-pdf"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99adc49d0816416236b4b76c4cfdfd4f51a0ee3c352d599bb37ae4c420f7c80e"
+checksum = "be13fa26b6e6dbc7b53fab20a4f759c9efa944f2cad40be97867f8f5492d8700"
 dependencies = [
  "az",
  "bytemuck",
@@ -2508,9 +2509,9 @@ dependencies = [
 
 [[package]]
 name = "typst-realize"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f406ca1c54733cd2169fdd2f7ac70c90ce8d15f3f647260f2fc1f96f493088d"
+checksum = "cb0d4c6d7ef707a578eed12b43a7e57f58e872f4717b633b580c6a8f8de49884"
 dependencies = [
  "arrayvec",
  "bumpalo",
@@ -2526,9 +2527,9 @@ dependencies = [
 
 [[package]]
 name = "typst-render"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6511ef37121ac28ac2f9dfb64e25553aad0d0bebe6e096da06aba253528adb7a"
+checksum = "2ffcb07f254e7e7d3ab7f38a48db15c8f5dd0acd42c2cf33975e7b7540227687"
 dependencies = [
  "bytemuck",
  "comemo",
@@ -2546,9 +2547,9 @@ dependencies = [
 
 [[package]]
 name = "typst-svg"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "374f56ddd7b1f8345cc71f98eea4c43addb82e86ce181c860b7a884d9a02b2cb"
+checksum = "495927e7fae2b36afd36a2cfeeb439b799b5ac968401d7da848690f121d8b699"
 dependencies = [
  "base64",
  "comemo",
@@ -2570,9 +2571,9 @@ dependencies = [
 
 [[package]]
 name = "typst-syntax"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f3ddf67329dd237dfa23ed753004d1a671dd6c3359d1df39c77ca9e4d917036"
+checksum = "1d6d940457284097193a9024d589d8315f5dd612e8cbeaff4b144e42b2bb20a3"
 dependencies = [
  "ecow",
  "rustc-hash",
@@ -2589,9 +2590,9 @@ dependencies = [
 
 [[package]]
 name = "typst-timing"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaa52d818fd4951fa08b4c3a3f32f27f29ea3e21c0c59ee634dbb988497aa682"
+checksum = "9967de2d845e35ad5cc867eb1183f4ba52e5ee239211b945f7a8b3d060cb73b8"
 dependencies = [
  "parking_lot",
  "serde",
@@ -2600,9 +2601,9 @@ dependencies = [
 
 [[package]]
 name = "typst-utils"
-version = "0.14.0-rc.1"
+version = "0.14.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a3fc86217c6d0c5bb3a5c46bad1a0d037b3d3af61965373a1787c3937fef1bb"
+checksum = "3fff4e0766e9ab5e797c8421a80b1f4b3fe7fe798fc1ee0c28cce71cf5afeb37"
 dependencies = [
  "once_cell",
  "portable-atomic",
