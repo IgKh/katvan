@@ -53,7 +53,7 @@ public:
     const_iterator begin() const { return d_elements.begin(); }
     const_iterator end() const { return d_elements.end(); }
 
-    int fingerprint() const;
+    size_t fingerprint() const;
 
 private:
     QList<StateSpan> d_elements;

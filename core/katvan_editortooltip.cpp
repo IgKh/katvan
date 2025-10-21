@@ -78,8 +78,9 @@ EditorToolTipFrame::EditorToolTipFrame(QWidget* parent)
     d_hideTimer->callOnTimeout(this, &EditorToolTipFrame::hideImmediately);
 
     QPalette palette = QToolTip::palette();
-    palette.setColor(QPalette::Base, palette.color(QPalette::ToolTipBase));
-    palette.setColor(QPalette::Text, palette.color(QPalette::ToolTipText));
+    palette.setColor(QPalette::Base, palette.color(QPalette::Inactive, QPalette::ToolTipBase));
+    palette.setColor(QPalette::Text, palette.color(QPalette::Inactive, QPalette::ToolTipText));
+
     setPalette(palette);
     ensurePolished();
 

@@ -86,7 +86,7 @@ void Highlighter::reparseBlock(QTextBlock block)
 
         // Do not update the user state here, we want a proper rehighlight to
         // happen later if needed.
-        if (block.userState() == blockData->stateSpans().fingerprint()) {
+        if (block.userState() == calculateBlockState(blockData)) {
             break;
         }
         block = block.next();
@@ -149,14 +149,14 @@ void Highlighter::highlightBlock(const QString& text)
     BlockData::set<StateSpansBlockData>(currentBlock(), blockData);
 
     int currentState = currentBlockState();
-    int fingerprint = blockData->stateSpans().fingerprint();
-    setCurrentBlockState(fingerprint);
+    int newState = calculateBlockState(blockData);
+    setCurrentBlockState(newState);
 
     // If the block state spans have changed, we need to re-layout the block, since
     // some layout decisions are affected by state (e.g base directionality). There
     // is no need to do it if we also set any formats, since in this case
     // QSyntaxHighlighter will call markContentDirty anyway.
-    if (!formatsChanged && currentState != fingerprint) {
+    if (!formatsChanged && currentState != newState) {
         document()->markContentsDirty(currentBlock().position(), currentBlock().length());
     }
 }
@@ -219,6 +219,21 @@ void Highlighter::doSpellChecking(
     }
 
     BlockData::set<SpellingBlockData>(currentBlock(), new SpellingBlockData(std::move(result)));
+}
+
+int Highlighter::calculateBlockState(StateSpansBlockData* data)
+{
+    // Include theme name in hash to ensure it changes when theme changes
+    size_t hash = qHashMulti(data->stateSpans().fingerprint(), d_theme.name());
+
+    // The hash is a `size_t`, which is usually 64-bit. But block user state is
+    // an `int` which is often 32-bit even on 64-bit systems. Simply truncating
+    // can worsen collisions, as I'm not sure that qHash is a particularly
+    // high quality hash function. As a mitigation, we can take the remainder
+    // from the largest prime just under 2^32.
+    static constexpr size_t MAX_PRIME = 4294967231UL;
+
+    return static_cast<int>(hash % MAX_PRIME);
 }
 
 }

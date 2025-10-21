@@ -65,18 +65,9 @@ constexpr inline size_t qHash(const StateSpan& span, size_t seed = 0) noexcept
         span.implicitlyClosed);
 }
 
-int StateSpanList::fingerprint() const
+size_t StateSpanList::fingerprint() const
 {
-    size_t elementsHash = qHashRange(d_elements.begin(), d_elements.end());
-
-    // The hash is a `size_t`, which is usually 64-bit. But block user state is
-    // an `int` which is often 32-bit even on 64-bit systems. Simply truncating
-    // can worsen collisions, as I'm aren't sure that qHash is a particularly
-    // high quality hash function. As a mitigation, we can take the remainder
-    // from the largest prime just under 2^32.
-    static constexpr size_t MAX_PRIME = 4294967231UL;
-
-    return static_cast<int>(elementsHash % MAX_PRIME);
+    return qHashRange(d_elements.begin(), d_elements.end());
 }
 
 void StateSpansListener::initializeState(const parsing::ParserState& state, size_t endMarker)

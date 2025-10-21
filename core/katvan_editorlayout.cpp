@@ -693,6 +693,16 @@ int EditorLayout::getLineEdgePosition(int pos, QTextLine::Edge edge) const
     return block.position() + origLayoutPos;
 }
 
+void EditorLayout::invalidateAllDisplayLayouts()
+{
+    for (QTextBlock block = document()->begin(); block.isValid(); block = block.next()) {
+        LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
+        if (layoutData) {
+            layoutData->displayLayout.reset();
+        }
+    }
+}
+
 void EditorLayout::recalculateDocumentSize()
 {
     // TODO: This way (recalculating from scratch after every change) ensures

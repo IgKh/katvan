@@ -94,7 +94,6 @@ private:
 Editor::Editor(Document* doc, QWidget* parent)
     : QTextEdit(parent)
     , d_codeModel(doc->codeModel())
-    , d_theme(EditorTheme::defaultTheme())
     , d_fontZoomFactor(1.0)
     , d_pendingSuggestionsPosition(-1)
 {
@@ -155,8 +154,6 @@ Editor::Editor(Document* doc, QWidget* parent)
     toolTipTrigger->setKey(TOOLTIP_TRIGGER);
     toolTipTrigger->setContext(Qt::WidgetShortcut);
     connect(toolTipTrigger, &QShortcut::activated, this, &Editor::triggerToolTipByKeyboard);
-
-    QTimer::singleShot(0, this, &Editor::updateEditorTheme);
 }
 
 void Editor::applySettings(const EditorSettings& settings)
@@ -469,7 +466,12 @@ void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
 
 void Editor::forceRehighlighting()
 {
-    QTimer::singleShot(0, d_highlighter, &QSyntaxHighlighter::rehighlight);
+    QTimer::singleShot(0, d_highlighter, [this]() {
+        EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
+        layout->invalidateAllDisplayLayouts();
+
+        d_highlighter->rehighlight();
+    });
 }
 
 void Editor::checkForModelines()

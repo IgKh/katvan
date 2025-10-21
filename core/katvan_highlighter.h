@@ -100,6 +100,8 @@ private:
         const parsing::ContentWordsListener& listener,
         QList<QTextCharFormat>& charFormats);
 
+    int calculateBlockState(StateSpansBlockData* data);
+
     const EditorTheme& d_theme;
     SpellChecker* d_spellChecker;
 };
