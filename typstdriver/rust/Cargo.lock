@@ -2268,9 +2268,9 @@ checksum = "6af6ae20167a9ece4bcb41af5b80f8a1f1df981f6391189ce00fd257af04126a"
 
 [[package]]
 name = "typst"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bf32780489b4bd05df57012876fef0304eaaf62210323fb17e1270f0d8db272"
+checksum = "2d9198018d9acb075f27abe70036e6e24302156c37f0142ea18b5e813ecb8172"
 dependencies = [
  "comemo",
  "ecow",
@@ -2288,15 +2288,15 @@ dependencies = [
 
 [[package]]
 name = "typst-assets"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3851f57480f4755acc14859bb2807d417f4c74372db83cc8c6efdc0525425ee"
+checksum = "712f5e2c4134bcf22f292086aa515caff00a21d54c8b30c77c4fc1227442a89a"
 
 [[package]]
 name = "typst-eval"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b12f634464b5212724987d545bd7c6be264adafbd7b99cf0e51d0c5a56efd9c"
+checksum = "3bb8965a12371f0ff325dedac06d14fa9dd0d4fa0588034bc99802da7af9362f"
 dependencies = [
  "comemo",
  "ecow",
@@ -2314,9 +2314,9 @@ dependencies = [
 
 [[package]]
 name = "typst-html"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25082a5aed0b427a747909f75ae8539be1233834ab3c75c401e485c3a3b3b688"
+checksum = "67d6858f22690a9d105ff2ea1ea38dbf345e1610e30f947d7c3f79da27e1dd0b"
 dependencies = [
  "bumpalo",
  "comemo",
@@ -2335,9 +2335,9 @@ dependencies = [
 
 [[package]]
 name = "typst-ide"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4365ff3121e799216aeec1333e3a1314c87c10aa000d0de9a5c4e312a1479b63"
+checksum = "448eba746bcf3d2faefaf465ee9e497f54084a405d37379926c146103adbca34"
 dependencies = [
  "comemo",
  "ecow",
@@ -2351,9 +2351,9 @@ dependencies = [
 
 [[package]]
 name = "typst-kit"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43b7fd144f2cd6f94f5a988f3eb2626f2756ef02be715c135b590ac988d366e7"
+checksum = "da3375f6680386b90a965f0c496c947fd755484b33eba4332e88192470c72eec"
 dependencies = [
  "ecow",
  "fontdb",
@@ -2369,9 +2369,9 @@ dependencies = [
 
 [[package]]
 name = "typst-layout"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e16c07b54dd204f735ddac7b6ee7c5f769e6b58b80d7f801414a04cf87b9b25"
+checksum = "80e80dfe619a391c79efa7eafbb2530fcc7090daead435a86c2eb5d53c3095ae"
 dependencies = [
  "az",
  "bumpalo",
@@ -2405,9 +2405,9 @@ dependencies = [
 
 [[package]]
 name = "typst-library"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19653cc30767d525e5a84884e7e6d969573328c3747baa3a20760277f391f864"
+checksum = "be5a858259c340407d93a5af74cad534d92548cfb702f7c8b0ef891e1d9d0d84"
 dependencies = [
  "az",
  "bitflags 2.9.4",
@@ -2471,9 +2471,9 @@ dependencies = [
 
 [[package]]
 name = "typst-macros"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdd15888d7de822e2030629627175aa23c2bc40a3f40350421fa2ebddc69a9cf"
+checksum = "207b71ed20ec736c13be07a44443417406c12f0868a6e4c40d67c32c03a599ec"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -2483,9 +2483,9 @@ dependencies = [
 
 [[package]]
 name = "typst-pdf"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be13fa26b6e6dbc7b53fab20a4f759c9efa944f2cad40be97867f8f5492d8700"
+checksum = "99160d071220909c1993d7530abe94c0bceffd6e10be7bb629eae2f73d596f26"
 dependencies = [
  "az",
  "bytemuck",
@@ -2509,9 +2509,9 @@ dependencies = [
 
 [[package]]
 name = "typst-realize"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb0d4c6d7ef707a578eed12b43a7e57f58e872f4717b633b580c6a8f8de49884"
+checksum = "a2725822b4c5a1a9d7aa46708f7a996a4cb1b15470f077c7ba3e788fb95e495d"
 dependencies = [
  "arrayvec",
  "bumpalo",
@@ -2527,9 +2527,9 @@ dependencies = [
 
 [[package]]
 name = "typst-render"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ffcb07f254e7e7d3ab7f38a48db15c8f5dd0acd42c2cf33975e7b7540227687"
+checksum = "807e2e52c1f0b35ea011a133c4bff23e854e88c8b84a98739a71b6e700bbc02f"
 dependencies = [
  "bytemuck",
  "comemo",
@@ -2547,9 +2547,9 @@ dependencies = [
 
 [[package]]
 name = "typst-svg"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "495927e7fae2b36afd36a2cfeeb439b799b5ac968401d7da848690f121d8b699"
+checksum = "b53718b9b8f4b4e2454600084eca155530ce9d30cb62fed0799671b8044e40fc"
 dependencies = [
  "base64",
  "comemo",
@@ -2571,9 +2571,9 @@ dependencies = [
 
 [[package]]
 name = "typst-syntax"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d6d940457284097193a9024d589d8315f5dd612e8cbeaff4b144e42b2bb20a3"
+checksum = "4fbfb35d79f3601057518ab5f2e3f6040b51dc098310245eee35d43b2d17fabc"
 dependencies = [
  "ecow",
  "rustc-hash",
@@ -2590,9 +2590,9 @@ dependencies = [
 
 [[package]]
 name = "typst-timing"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9967de2d845e35ad5cc867eb1183f4ba52e5ee239211b945f7a8b3d060cb73b8"
+checksum = "7f1db8164cb04d48fce0190d4a0f2fd14f3d967a456facb5dd590ba2d4158c08"
 dependencies = [
  "parking_lot",
  "serde",
@@ -2601,9 +2601,9 @@ dependencies = [
 
 [[package]]
 name = "typst-utils"
-version = "0.14.0-rc.2"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fff4e0766e9ab5e797c8421a80b1f4b3fe7fe798fc1ee0c28cce71cf5afeb37"
+checksum = "c268017d7102a752be28ea74792eedc40a35fa13a61e34b97a67de559dc4eb88"
 dependencies = [
  "once_cell",
  "portable-atomic",
