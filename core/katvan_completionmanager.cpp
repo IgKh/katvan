@@ -185,13 +185,20 @@ void CompletionSuggestionDelegate::paint(QPainter* painter, const QStyleOptionVi
         QSize { labelRect.width(), option.rect.height() - labelRect.height() }
     };
 
-    painter->setPen(option.palette.text().color());
+    if (option.state & QStyle::State_Selected) {
+        painter->setPen(option.palette.highlightedText().color());
+    }
+    else {
+        painter->setPen(option.palette.text().color());
+    }
 
     if (!icon.isNull()) {
         QRect iconRect { option.rect.topLeft(), option.decorationSize };
 
-        QPixmap pixmap = icon.pixmap(option.decorationSize, (option.state & QStyle::State_Selected) ? QIcon::Selected : QIcon::Normal);
-        painter->drawPixmap(iconRect, pixmap);
+        icon.paint(painter,
+            iconRect,
+            Qt::AlignCenter,
+            (option.state & QStyle::State_Selected) ? QIcon::Selected : QIcon::Normal);
     }
 
     painter->setFont(d_labelFont);
