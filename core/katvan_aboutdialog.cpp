@@ -134,6 +134,7 @@ AboutDialog::AboutDialog(QWidget* parent)
     setText(mainText);
     setInformativeText(informativeText);
     setDetailedText(acknowledgements());
+    setTextInteractionFlags(Qt::TextBrowserInteraction);
 }
 
 }
