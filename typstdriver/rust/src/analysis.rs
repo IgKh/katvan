@@ -17,13 +17,13 @@
  */
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
-    foundations::{Func, StyleChain, Value},
+    Document,
+    foundations::{Scope, StyleChain, Value},
     layout::{Frame, PagedDocument},
     model::{HeadingElem, Outlinable},
-    syntax::{ast, LinkedNode, Side, Source, Span, SyntaxKind},
-    Document,
+    syntax::{LinkedNode, Side, Source, Span, SyntaxKind, ast},
 };
-use typst_ide::{analyze_expr, IdeWorld, Tooltip};
+use typst_ide::{IdeWorld, Tooltip, analyze_expr};
 
 use crate::bridge::ffi;
 
@@ -69,16 +69,45 @@ fn get_documentation_tooltip(
     }
 
     let values = analyze_expr(world, ancesstor);
-    if let [(Value::Func(f), _)] = values.as_slice() {
-        let content = process_docs_markdown(world, f.docs()?);
-        let details_url = get_reference_link(world, f).unwrap_or_default();
 
-        Some(ffi::ToolTip {
-            content,
-            details_url,
-        })
-    } else {
-        None
+    let (name, docs) = match values.as_slice() {
+        [(Value::Func(f), _)] => (f.name()?, f.docs()?),
+        [(Value::Type(t), _)] => (t.short_name(), t.docs()),
+        _ => return None,
+    };
+
+    let mut path = vec![];
+    if let Some(parent) = ancesstor.parent()
+        && parent.kind() == SyntaxKind::FieldAccess
+        && ancesstor.index() > 0
+    {
+        path = extract_field_prefixes(parent.cast().unwrap()).unwrap_or_default();
+    }
+    path.push(name);
+
+    let content = process_docs_markdown(world, docs);
+    let details_url = get_reference_link(world, &path).unwrap_or_default();
+
+    Some(ffi::ToolTip {
+        content,
+        details_url,
+    })
+}
+
+/// Flattens nested field accesses into a vector of identifier names
+fn extract_field_prefixes<'a>(field: ast::FieldAccess<'a>) -> Option<Vec<&'a str>> {
+    match field.target() {
+        ast::Expr::Ident(ident) => Some(vec![ident.as_str()]),
+        ast::Expr::MathIdent(ident) => Some(vec![ident.as_str()]),
+        ast::Expr::FieldAccess(nested) => {
+            if let Some(mut prefixes) = extract_field_prefixes(nested) {
+                prefixes.push(nested.field().as_str());
+                Some(prefixes)
+            } else {
+                None
+            }
+        }
+        _ => None,
     }
 }
 
@@ -157,23 +186,51 @@ fn process_docs_broken_link<'a>(
 
     let reference = link.reference.into_string();
     let name = reference.trim_matches('`');
+    let path: Vec<_> = name.split('.').collect();
 
-    get_reference_link_by_name(world, name).map(move |url| (url.into(), reference.into()))
+    get_reference_link(world, &path).map(move |url| (url.into(), reference.into()))
 }
 
-fn get_reference_link(world: &dyn IdeWorld, f: &Func) -> Option<String> {
-    // Lookup function name in standard library
-    // FIXME: This needs extra work for functions that live in a sub-module of
-    // the stdlib, e.g. `pdf.embed` or `html.elem`. However there first needs to
-    // be some fix to https://github.com/typst/typst/issues/6115
-    get_reference_link_by_name(world, f.name()?)
+fn get_reference_link(world: &dyn IdeWorld, mut path: &[&str]) -> Option<String> {
+    // TODO look in math scope if in math mode
+    let scope = if path.first() == Some(&&"std") {
+        path = &path[1..];
+        world.library().std.read().scope()?
+    } else {
+        world.library().global.scope()
+    };
+
+    get_reference_link_in_scope(scope, path)
 }
 
-fn get_reference_link_by_name(world: &dyn IdeWorld, name: &str) -> Option<String> {
-    let binding = world.library().global.scope().get(name)?;
-    let category = binding.category()?.name();
-
-    Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{name}"))
+fn get_reference_link_in_scope(mut scope: &Scope, path: &[&str]) -> Option<String> {
+    let mut url = None;
+    for elem in path {
+        let binding = scope.get(elem)?;
+        match binding.read() {
+            Value::Module(m) => {
+                // Modules don't have full documentation attached, just move
+                // over to the next path element
+                scope = m.scope();
+            }
+            Value::Type(t) => {
+                let category = binding.category()?.name();
+                url = Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{elem}"));
+                scope = t.scope();
+            }
+            Value::Func(_) => {
+                if let Some(url) = url {
+                    // Page already set by a type, this function is a method
+                    return Some(format!("{url}#definitions-{elem}"));
+                } else {
+                    let category = binding.category()?.name();
+                    return Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{elem}"));
+                }
+            }
+            _ => return None,
+        }
+    }
+    url
 }
 
 pub fn get_definition(
@@ -295,4 +352,51 @@ pub fn count_words(frame: &Frame) -> usize {
         }
     }
     count
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::analysis::ONLINE_DOCS_PREFIX;
+
+    fn get_reference_link(world: &dyn typst_ide::IdeWorld, path: &str) -> Option<String> {
+        let path: Vec<_> = path.split('.').collect();
+
+        crate::analysis::get_reference_link(world, &path)
+            .map(|s| s.trim_start_matches(ONLINE_DOCS_PREFIX).to_string())
+    }
+
+    #[test]
+    fn test_get_reference_link_basic() {
+        let world = crate::tests::TestWorld::new("");
+
+        assert_eq!(
+            get_reference_link(&world, "page"),
+            Some(format!("/reference/layout/page"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "pdf.attach"),
+            Some(format!("/reference/pdf/attach"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "std.pdf.attach"),
+            Some(format!("/reference/pdf/attach"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "color"),
+            Some(format!("/reference/visualize/color"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "color.rgb"),
+            Some(format!("/reference/visualize/color#definitions-rgb"))
+        );
+
+        assert_eq!(
+            get_reference_link(&world, "nosuchthing"),
+            None
+        );
+        assert_eq!(
+            get_reference_link(&world, "pdf.nosuchthing"),
+            None
+        );
+    }
 }

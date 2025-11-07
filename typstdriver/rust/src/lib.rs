@@ -20,4 +20,5 @@ mod bridge;
 mod engine;
 mod pathmap;
 mod symbols;
+mod tests;
 mod world;
