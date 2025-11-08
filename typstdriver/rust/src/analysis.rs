@@ -18,10 +18,13 @@
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
     Document,
-    foundations::{Scope, StyleChain, Value},
+    foundations::{Func, Scope, StyleChain, Type, Value},
     layout::{Frame, PagedDocument},
     model::{HeadingElem, Outlinable},
-    syntax::{LinkedNode, Side, Source, Span, SyntaxKind, ast},
+    syntax::{
+        LinkedNode, Side, Source, Span, SyntaxKind,
+        ast::{self, AstNode},
+    },
 };
 use typst_ide::{IdeWorld, Tooltip, analyze_expr};
 
@@ -81,12 +84,14 @@ fn get_documentation_tooltip(
         && parent.kind() == SyntaxKind::FieldAccess
         && ancesstor.index() > 0
     {
-        path = extract_field_prefixes(parent.cast().unwrap()).unwrap_or_default();
+        path = resolve_field_target_path(world, source, parent.cast().unwrap()).unwrap_or_default();
     }
-    path.push(name);
+    path.push(name.to_string());
 
     let content = process_docs_markdown(world, docs);
-    let details_url = get_reference_link(world, &path).unwrap_or_default();
+
+    let path_refs = path.iter().map(String::as_ref).collect();
+    let details_url = get_reference_link(world, path_refs).unwrap_or_default();
 
     Some(ffi::ToolTip {
         content,
@@ -94,21 +99,31 @@ fn get_documentation_tooltip(
     })
 }
 
-/// Flattens nested field accesses into a vector of identifier names
-fn extract_field_prefixes<'a>(field: ast::FieldAccess<'a>) -> Option<Vec<&'a str>> {
-    match field.target() {
-        ast::Expr::Ident(ident) => Some(vec![ident.as_str()]),
-        ast::Expr::MathIdent(ident) => Some(vec![ident.as_str()]),
-        ast::Expr::FieldAccess(nested) => {
-            if let Some(mut prefixes) = extract_field_prefixes(nested) {
-                prefixes.push(nested.field().as_str());
-                Some(prefixes)
-            } else {
-                None
-            }
-        }
-        _ => None,
+/// Resolves the target of a (possibly nested) field access into a fully
+/// qualified search path in the standard library of its' type
+fn resolve_field_target_path(
+    world: &dyn IdeWorld,
+    source: &Source,
+    field: ast::FieldAccess<'_>,
+) -> Option<Vec<String>> {
+    let node = LinkedNode::new(source.root()).find(field.target().span())?;
+    let values = analyze_expr(world, &node);
+
+    let node_name = match values.as_slice() {
+        [(Value::Module(m), _)] => m.name()?,
+        [(Value::Func(f), _)] => f.name()?,
+        [(Value::Type(t), _)] => t.short_name(),
+        [(value, _)] => return Some(vec![value.ty().short_name().to_string()]),
+        _ => return None,
+    };
+
+    if let ast::Expr::FieldAccess(nested) = field.target() {
+        let mut prefixes = resolve_field_target_path(world, source, nested)?;
+        prefixes.push(node_name.to_string());
+        return Some(prefixes);
     }
+
+    Some(vec![node_name.to_string()])
 }
 
 fn html_escape(value: &str) -> String {
@@ -146,7 +161,7 @@ fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
             {
                 let mut url: String = dest_url.into_string();
                 if url.starts_with('$') {
-                    url = format!("{}/{}", ONLINE_DOCS_PREFIX, &url[1..]);
+                    url = process_docs_internal_link(world, &url[1..]);
                 }
 
                 Event::Start(Tag::Link {
@@ -176,6 +191,32 @@ fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
     html
 }
 
+fn process_docs_internal_link(world: &dyn IdeWorld, path: &str) -> String {
+    let (path, annex) = match path.find('/') {
+        Some(pos) => path.split_at(pos),
+        None => (path, ""),
+    };
+
+    let path_parts: Vec<_> = path.split('.').collect();
+    let url =
+        get_reference_link(world, path_parts).unwrap_or_else(|| get_well_known_page_link(path));
+
+    if !annex.is_empty() && !url.contains('#') {
+        url + annex
+    } else {
+        url
+    }
+}
+
+fn get_well_known_page_link(path: &str) -> String {
+    let page = match path {
+        "tutorial" | "guides" | "reference" => path.to_string(),
+        _ => format!("reference/{path}"),
+    };
+
+    format!("{ONLINE_DOCS_PREFIX}/{page}")
+}
+
 fn process_docs_broken_link<'a>(
     world: &dyn IdeWorld,
     link: BrokenLink,
@@ -188,43 +229,92 @@ fn process_docs_broken_link<'a>(
     let name = reference.trim_matches('`');
     let path: Vec<_> = name.split('.').collect();
 
-    get_reference_link(world, &path).map(move |url| (url.into(), reference.into()))
+    get_reference_link(world, path).map(move |url| (url.into(), reference.into()))
 }
 
-fn get_reference_link(world: &dyn IdeWorld, mut path: &[&str]) -> Option<String> {
+fn get_reference_link(world: &dyn IdeWorld, mut path: Vec<&str>) -> Option<String> {
     // TODO look in math scope if in math mode
-    let scope = if path.first() == Some(&&"std") {
-        path = &path[1..];
+    let scope = if path.first() == Some(&"std") {
+        path.remove(0);
         world.library().std.read().scope()?
     } else {
         world.library().global.scope()
     };
 
-    get_reference_link_in_scope(scope, path)
+    // Functions in standard library prelude
+    // https://github.com/typst/typst/blob/42cf5ed23a29b956ce8187235b8493476bcee826/crates/typst-library/src/lib.rs#L313
+    match path.first() {
+        Some(&"luma" | &"oklab" | &"oklch" | &"rgb" | &"cmyk") => path.insert(0, "color"),
+        Some(&"range") => path.insert(0, "array"),
+        _ => {}
+    }
+
+    get_reference_link_in_scope(scope, &path)
 }
 
-fn get_reference_link_in_scope(mut scope: &Scope, path: &[&str]) -> Option<String> {
-    let mut url = None;
+fn get_reference_link_in_scope(scope: &Scope, path: &[&str]) -> Option<String> {
+    let mut scope = scope;
+    let empty_scope = Scope::new();
+
+    let mut url: Option<String> = None;
+    let mut in_func: Option<&Func> = None;
+
     for elem in path {
-        let binding = scope.get(elem)?;
+        if let Some(f) = in_func {
+            // Look for arguments
+            if f.param(elem).is_some() {
+                let url = url.unwrap();
+                if url.contains('#') {
+                    return Some(format!("{url}-{elem}"));
+                }
+                return Some(format!("{url}#parameters-{elem}"));
+            }
+        }
+
+        let binding = {
+            let mut binding = scope.get(elem);
+            if binding.is_none() {
+                // If previous element was a function, also look at the scope of
+                // the Func type (for with, where)
+                if in_func.is_some() {
+                    binding = Type::of::<Func>().scope().get(elem);
+                }
+                if binding.is_some() {
+                    // If so - reset the url
+                    url = Some(format!("{ONLINE_DOCS_PREFIX}/reference/foundations/function"));
+                }
+            }
+            binding?
+        };
+
         match binding.read() {
             Value::Module(m) => {
                 // Modules don't have full documentation attached, just move
                 // over to the next path element
+                in_func = None;
                 scope = m.scope();
             }
             Value::Type(t) => {
+                in_func = None;
+                scope = t.scope();
+
                 let category = binding.category()?.name();
                 url = Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{elem}"));
-                scope = t.scope();
             }
-            Value::Func(_) => {
-                if let Some(url) = url {
+            Value::Func(f) => {
+                in_func = Some(f);
+                scope = f.scope().unwrap_or(&empty_scope);
+
+                if let Some(prev_url) = url {
                     // Page already set by a type, this function is a method
-                    return Some(format!("{url}#definitions-{elem}"));
+                    if prev_url.contains('#') {
+                        url = Some(format!("{prev_url}-definitions-{elem}"));
+                    } else {
+                        url = Some(format!("{prev_url}#definitions-{elem}"));
+                    }
                 } else {
                     let category = binding.category()?.name();
-                    return Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{elem}"));
+                    url = Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{elem}"));
                 }
             }
             _ => return None,
@@ -361,7 +451,7 @@ mod tests {
     fn get_reference_link(world: &dyn typst_ide::IdeWorld, path: &str) -> Option<String> {
         let path: Vec<_> = path.split('.').collect();
 
-        crate::analysis::get_reference_link(world, &path)
+        crate::analysis::get_reference_link(world, path)
             .map(|s| s.trim_start_matches(ONLINE_DOCS_PREFIX).to_string())
     }
 
@@ -389,14 +479,28 @@ mod tests {
             get_reference_link(&world, "color.rgb"),
             Some(format!("/reference/visualize/color#definitions-rgb"))
         );
+        assert_eq!(
+            get_reference_link(&world, "rgb"),
+            Some(format!("/reference/visualize/color#definitions-rgb"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "outline.depth"),
+            Some(format!("/reference/model/outline#parameters-depth"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "outline.entry.indented.prefix"),
+            Some(format!(
+                "/reference/model/outline#definitions-entry-definitions-indented-prefix"
+            ))
+        );
+        assert_eq!(
+            get_reference_link(&world, "outline.entry.where"),
+            Some(format!(
+                "/reference/foundations/function#definitions-where"
+            ))
+        );
 
-        assert_eq!(
-            get_reference_link(&world, "nosuchthing"),
-            None
-        );
-        assert_eq!(
-            get_reference_link(&world, "pdf.nosuchthing"),
-            None
-        );
+        assert_eq!(get_reference_link(&world, "nosuchthing"), None);
+        assert_eq!(get_reference_link(&world, "pdf.nosuchthing"), None);
     }
 }
