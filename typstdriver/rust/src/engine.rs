@@ -313,7 +313,7 @@ impl<'a> EngineImpl<'a> {
             .line_column_to_byte(line, column)
             .context("No such position")?;
 
-        analysis::get_tooltip(&self.world, self.result.as_ref(), &main, cursor)
+        analysis::tooltip::get_tooltip(&self.world, self.result.as_ref(), &main, cursor)
             .context("No available tooltip")
     }
 
