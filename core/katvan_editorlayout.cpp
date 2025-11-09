@@ -76,11 +76,11 @@ class LayoutBlockData : public QTextBlockUserData
 public:
     static constexpr BlockDataKind DATA_KIND = BlockDataKind::LAYOUT;
 
-    LayoutBlockData() : textHash(qHash(QStringView())) {}
+    LayoutBlockData() : contentHash(qHash(QStringView())) {}
 
     std::unique_ptr<QTextLayout> displayLayout;
     QList<ushort> displayOffsets;
-    size_t textHash;
+    size_t contentHash;
 };
 
 static int adjustPosToDisplay(const QList<ushort>& displayOffsets, int pos)
@@ -372,15 +372,37 @@ void EditorLayout::doDocumentLayout(const QTextBlock& startBlock, const QTextBlo
     Q_EMIT update();
 }
 
+static size_t hashBlockContent(const QTextBlock& block, const QString& blockText)
+{
+    size_t hash = qHash(blockText);
+
+    const QList<QTextLayout::FormatRange> formats = block.layout()->formats();
+    for (const QTextLayout::FormatRange& r : formats) {
+        // We need to hash the text formats too, to recognize theme changes and
+        // things stopping being spelling errors due to dictionary changes. The
+        // problem is that QTextFormat doesn't provide a hash function. Doing
+        // that generically for all possible properties is rather grueling,
+        // let's just pick the minimal properties that will act as proxy for the
+        // events listed above.
+        hash = qHashMulti(hash,
+            r.start,
+            r.length,
+            r.format.foreground().color().rgb(),
+            r.format.underlineColor().rgb());
+    }
+
+    return hash;
+}
+
 static void buildDisplayLayout(const QTextBlock& block, QString blockText, LayoutBlockData* blockData)
 {
-    size_t newHash = qHash(blockText);
+    size_t newHash = hashBlockContent(block, blockText);
 
     // Calculating a display layout is expensive, only do it if content actually changed
-    if (newHash == blockData->textHash) {
+    if (newHash == blockData->contentHash) {
         return;
     }
-    blockData->textHash = newHash;
+    blockData->contentHash = newHash;
 
     IsolatesBlockData* isolateData = BlockData::get<IsolatesBlockData>(block);
     if (isolateData == nullptr || isolateData->isolates().isEmpty()) {
@@ -691,16 +713,6 @@ int EditorLayout::getLineEdgePosition(int pos, QTextLine::Edge edge) const
 
     int origLayoutPos = adjustPosFromDisplay(layoutData->displayOffsets, edgePos);
     return block.position() + origLayoutPos;
-}
-
-void EditorLayout::invalidateAllDisplayLayouts()
-{
-    for (QTextBlock block = document()->begin(); block.isValid(); block = block.next()) {
-        LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
-        if (layoutData) {
-            layoutData->displayLayout.reset();
-        }
-    }
 }
 
 void EditorLayout::recalculateDocumentSize()

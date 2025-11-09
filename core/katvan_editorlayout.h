@@ -50,8 +50,6 @@ public:
     QPointF cursorPositionPoint(int pos) const;
     int getLineEdgePosition(int pos, QTextLine::Edge edge) const;
 
-    void invalidateAllDisplayLayouts();
-
 signals:
     void fullRelayoutDone();
 

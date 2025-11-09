@@ -466,12 +466,7 @@ void Editor::setTextBlockDirection(Qt::LayoutDirection dir)
 
 void Editor::forceRehighlighting()
 {
-    QTimer::singleShot(0, d_highlighter, [this]() {
-        EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
-        layout->invalidateAllDisplayLayouts();
-
-        d_highlighter->rehighlight();
-    });
+    QTimer::singleShot(0, d_highlighter, &QSyntaxHighlighter::rehighlight);
 }
 
 void Editor::checkForModelines()
