@@ -53,11 +53,14 @@ set_target_properties(katvan PROPERTIES
     XCODE_EMBED_FRAMEWORKS typstdriver
 )
 
-qt_create_translation(QM_FILES . ../core translations/katvan_en.ts OPTIONS -pluralonly -no-obsolete -locations none)
-qt_create_translation(QM_FILES . ../core translations/katvan_he.ts OPTIONS -no-obsolete -locations none)
-
-qt_add_resources(katvan "translations"
-    PREFIX "/i18n"
-    BASE "${CMAKE_CURRENT_BINARY_DIR}"
-    FILES "${QM_FILES}"
+qt_add_translations(katvan
+    SOURCE_TARGETS
+        katvan
+        katvan_core
+    TS_FILES
+        translations/katvan_he.ts
+    PLURALS_TS_FILE
+        translations/katvan_en.ts
+    LUPDATE_OPTIONS
+        -no-obsolete -locations none
 )
