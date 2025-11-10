@@ -30,7 +30,6 @@
 #include <QTextBrowser>
 #include <QTimer>
 #include <QToolTip>
-#include <QVBoxLayout>
 #include <QWindow>
 
 namespace katvan {
@@ -55,14 +54,11 @@ namespace katvan {
  * Original copyright:
  * Copyright (C) 2016 The Qt Company Ltd.
  * SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
- *
- * TODO:
- * - Better keyboard accessibility (navigate to links, etc)
  */
 
-EditorToolTipFrame::EditorToolTipFrame(QWidget* parent)
-    : QWidget(parent, Qt::ToolTip)
-    , d_byKeyboard(false)
+EditorToolTipFrame::EditorToolTipFrame(bool byKeyboard, QWidget* parent)
+    : QWidget(parent, byKeyboard ? Qt::Popup : Qt::ToolTip)
+    , d_byKeyboard(byKeyboard)
 {
     d_browser = new QTextBrowser(this);
     d_browser->setOpenExternalLinks(true);
@@ -77,12 +73,7 @@ EditorToolTipFrame::EditorToolTipFrame(QWidget* parent)
     d_hideTimer = new QTimer(this);
     d_hideTimer->callOnTimeout(this, &EditorToolTipFrame::hideImmediately);
 
-    QPalette palette = QToolTip::palette();
-    palette.setColor(QPalette::Base, palette.color(QPalette::Inactive, QPalette::ToolTipBase));
-    palette.setColor(QPalette::Text, palette.color(QPalette::Inactive, QPalette::ToolTipText));
-
-    setPalette(palette);
-    ensurePolished();
+    updatePalette();
 
     qApp->installEventFilter(this);
     setWindowOpacity(style()->styleHint(QStyle::SH_ToolTipLabel_Opacity, nullptr, this) / 255.0);
@@ -114,6 +105,16 @@ void EditorToolTipFrame::setContent(const QString& text, const QUrl& link)
     d_browser->setDocument(doc);
 }
 
+void EditorToolTipFrame::updatePalette()
+{
+    QPalette palette = QToolTip::palette();
+    palette.setColor(QPalette::Base, palette.color(QPalette::Inactive, QPalette::ToolTipBase));
+    palette.setColor(QPalette::Text, palette.color(QPalette::Inactive, QPalette::ToolTipText));
+
+    setPalette(palette);
+    ensurePolished();
+}
+
 static QSizeF documentNaturalSize(QTextDocument* doc)
 {
     qreal width = 0;
@@ -125,7 +126,8 @@ static QSizeF documentNaturalSize(QTextDocument* doc)
         QTextLayout* tl = b.layout();
         for (int i = 0; i < tl->lineCount(); i++) {
             QTextLine line = tl->lineAt(i);
-            width = qMax(width, line.naturalTextWidth());
+            // Need to consider line offsets, for e.g. list bullets (as in `color`)
+            width = qMax(width, line.naturalTextWidth() + tl->position().x() + line.position().x());
         }
     }
     return QSizeF { width, fullSize.height() };
@@ -232,8 +234,6 @@ static void adjustPosition(QPoint& pos, const QSize& size, QScreen* screen)
 
 void EditorToolTipFrame::setPlacement(const QPoint& globalMousePos)
 {
-    d_byKeyboard = false;
-
     QScreen* screen = screenForPosition(parentWidget(), globalMousePos);
     QSize cursorSize = screenCursorSize(screen);
 
@@ -248,8 +248,6 @@ void EditorToolTipFrame::setPlacement(const QPoint& globalMousePos)
 
 void EditorToolTipFrame::setPlacement(const QRect& globalCursorRect)
 {
-    d_byKeyboard = true;
-
     QPoint pos = globalCursorRect.bottomLeft();
     pos.ry() += 5;
 
@@ -311,7 +309,6 @@ bool EditorToolTipFrame::eventFilter(QObject* obj, QEvent* e)
     switch (e->type()) {
         case QEvent::Enter:
         case QEvent::WindowActivate:
-        case QEvent::FocusIn:
             if (obj == this) {
                 d_hideTimer->stop();
             }
@@ -323,11 +320,16 @@ bool EditorToolTipFrame::eventFilter(QObject* obj, QEvent* e)
             break;
         case QEvent::Leave:
         case QEvent::WindowDeactivate:
-        case QEvent::FocusOut:
             if (!isDescendant(obj, this)) {
                 if (e->type() != QEvent::Leave || !d_byKeyboard) {
                     hideDeferred();
                 }
+            }
+            break;
+        case QEvent::FocusIn:
+        case QEvent::FocusOut:
+            if (!d_byKeyboard) {
+                hideDeferred();
             }
             break;
         case QEvent::MouseButtonPress:
@@ -338,6 +340,9 @@ bool EditorToolTipFrame::eventFilter(QObject* obj, QEvent* e)
             if (obj != windowHandle() && !isDescendant(obj, this)) {
                 hideImmediately();
             }
+            break;
+        case QEvent::ApplicationPaletteChange:
+            updatePalette();
             break;
     }
     return false;
@@ -354,8 +359,13 @@ void EditorToolTip::showByMouse(const QPoint& globalPos, QWidget* parent, const 
 
     QToolTip::hideText();
 
+    if (s_frame && s_frame->isByKeyboard()) {
+        s_frame->hideImmediately();
+        s_frame.clear();
+    }
+
     if (!s_frame) {
-        s_frame = new EditorToolTipFrame(parent);
+        s_frame = new EditorToolTipFrame(false, parent);
     }
     else if (s_frame->parentWidget() != parent) {
         s_frame->setParent(parent);
@@ -375,8 +385,13 @@ void EditorToolTip::showByKeyboard(const QRect& globalCursorRect, QWidget* paren
 
     QToolTip::hideText();
 
+    if (s_frame && !s_frame->isByKeyboard()) {
+        s_frame->hideImmediately();
+        s_frame.clear();
+    }
+
     if (!s_frame) {
-        s_frame = new EditorToolTipFrame(parent);
+        s_frame = new EditorToolTipFrame(true, parent);
     }
     else if (s_frame->parentWidget() != parent) {
         s_frame->setParent(parent);
@@ -391,6 +406,7 @@ void EditorToolTip::hide()
 {
     if (s_frame) {
         s_frame->hideImmediately();
+        s_frame.clear();
     }
 }
 

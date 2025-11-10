@@ -35,7 +35,9 @@ class EditorToolTipFrame : public QWidget
     Q_OBJECT
 
 public:
-    EditorToolTipFrame(QWidget* parent = nullptr);
+    EditorToolTipFrame(bool byKeyboard, QWidget* parent = nullptr);
+
+    bool isByKeyboard() const { return d_byKeyboard; }
 
     void setContent(const QString& text, const QUrl& link);
     void setPlacement(const QPoint& globalMousePos);
@@ -51,6 +53,7 @@ protected:
     bool eventFilter(QObject* obj, QEvent* e) override;
 
 private:
+    void updatePalette();
     void updateSizeAndLayout(QTextDocument* newDocument);
     void updatePlacement(const QPoint& globalPos);
 

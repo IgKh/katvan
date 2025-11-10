@@ -50,3 +50,5 @@ void WheelTracker::processEvent(QWheelEvent* event)
 }
 
 }
+
+#include "moc_katvan_coreutils.cpp"

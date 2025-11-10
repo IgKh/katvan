@@ -332,7 +332,10 @@ void CompletionManager::updateCompletionPrefix(bool force)
         d_completer->popup()->setCurrentIndex(d_completer->completionModel()->index(0, 0));
     }
 
+    // Needs to be in widget (d_editor) coordinates, adjustedCursorRect is in
+    // viewport coordinates
     QRect popupRect = d_editor->adjustedCursorRect(d_editor->textCursor());
+    popupRect.setTopLeft(d_editor->viewport()->mapToParent(popupRect.topLeft()));
     popupRect.setWidth(
         d_completer->popup()->sizeHintForColumn(0) +
         d_completer->popup()->verticalScrollBar()->sizeHint().width());
