@@ -203,6 +203,13 @@ int EditorLayout::hitTest(const QPointF& point, Qt::HitTestAccuracy accuracy) co
 
         int pos = line.xToCursor(point.x());
         if (pos >= 0) {
+            if (layout->preeditAreaPosition() >= 0 && pos >= layout->preeditAreaPosition()) {
+                if (pos < layout->preeditAreaPosition() + layout->preeditAreaText().length()) {
+                    // Inside preedit
+                    return -1;
+                }
+                pos -= layout->preeditAreaText().length();
+            }
             return block.position() + adjustPosFromDisplay(layoutData->displayOffsets, pos);
         }
     }
@@ -279,14 +286,19 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
 
         layout->draw(painter, QPointF(), formats, clip);
 
+        int cursorPosInBlock = -1;
         if (block.contains(context.cursorPosition)) {
-            int cursorPosInBlock = context.cursorPosition - block.position();
+            cursorPosInBlock = adjustPosToDisplay(
+                layoutData->displayOffsets,
+                context.cursorPosition - block.position());
+        }
+        else if (context.cursorPosition < -1 && layout->preeditAreaPosition() >= 0) {
+            cursorPosInBlock = layout->preeditAreaPosition() + qAbs(context.cursorPosition + 2);
+        }
 
+        if (cursorPosInBlock >= 0) {
             painter->setPen(context.palette.color(QPalette::Text));
-            layout->drawCursor(painter,
-                QPointF(),
-                adjustPosToDisplay(layoutData->displayOffsets, cursorPosInBlock),
-                d_cursorWidth);
+            layout->drawCursor(painter, QPointF(), cursorPosInBlock, d_cursorWidth);
         }
 
         block = block.next();
@@ -374,9 +386,10 @@ void EditorLayout::doDocumentLayout(const QTextBlock& startBlock, const QTextBlo
 
 static size_t hashBlockContent(const QTextBlock& block, const QString& blockText)
 {
-    size_t hash = qHash(blockText);
+    QTextLayout* layout = block.layout();
+    size_t hash = qHashMulti(0, blockText, layout->preeditAreaPosition(), layout->preeditAreaText());
 
-    const QList<QTextLayout::FormatRange> formats = block.layout()->formats();
+    const QList<QTextLayout::FormatRange> formats = layout->formats();
     for (const QTextLayout::FormatRange& r : formats) {
         // We need to hash the text formats too, to recognize theme changes and
         // things stopping being spelling errors due to dictionary changes. The
@@ -417,9 +430,9 @@ static void buildDisplayLayout(const QTextBlock& block, QString blockText, Layou
 
     blockText.detach();
 
-    // Inject Unicode BiDi control characters the block's text for the needed
-    // isolate ranges, creating a different text that is used for shaping but
-    // not edit purposes. This moves around positions of visible characters
+    // Inject Unicode BiDi control characters into the block's text for the
+    // needed isolate ranges, creating a different text that is used for shaping
+    // but not edit purposes. This moves around positions of visible characters
     // relative to the editable block content stored in the QTextDocument, so
     // we need to save an offset mapping.
 
@@ -455,11 +468,36 @@ static void buildDisplayLayout(const QTextBlock& block, QString blockText, Layou
         isolatesEndingAt[end]++;
     }
 
+    // Adjust any IME pre-edit text position
+    const int origPreeditPos = defaultLayout->preeditAreaPosition();
+    const qsizetype origPreeditLen = defaultLayout->preeditAreaText().length();
+
+    int preeditPos = origPreeditPos;
+    if (origPreeditPos >= 0) {
+        if (origPreeditPos == offsets.length()) {
+            preeditPos = blockText.length();
+        }
+        else {
+            preeditPos += offsets[origPreeditPos];
+        }
+    }
+
     // Patch format ranges to be be correct for adjusted text
+    // QSyntaxHighlighter already made the ranges consider any pre-edit
     for (QTextLayout::FormatRange& r : formats) {
-        auto startOffset = offsets[r.start];
-        r.length += (offsets[r.start + r.length - 1] - startOffset);
-        r.start += startOffset;
+        if (origPreeditPos >= 0 && r.start >= origPreeditPos && r.start < origPreeditPos + origPreeditLen) {
+            r.start = preeditPos + (r.start - origPreeditPos);
+        }
+        else {
+            auto start = r.start;
+            if (origPreeditPos >= 0 && start > origPreeditPos) {
+                start -= origPreeditLen;
+            }
+
+            auto startOffset = offsets[start];
+            r.length += (offsets[start + r.length - 1] - startOffset);
+            r.start += startOffset;
+        }
     }
 
     // Ensure that we use an invisible font for all injected control characters,
@@ -471,16 +509,23 @@ static void buildDisplayLayout(const QTextBlock& block, QString blockText, Layou
     for (const auto& [pos, count] : isolatesStartingAt.asKeyValueRange()) {
         r.start = pos + offsets[pos] - count;
         r.length = count;
+        if (origPreeditPos >= 0 && pos >= origPreeditPos) {
+            r.start += origPreeditLen;
+        }
         formats.append(r);
     }
     for (const auto& [pos, count] : isolatesEndingAt.asKeyValueRange()) {
         r.start = pos + offsets[pos] + 1;
         r.length = count;
+        if (origPreeditPos >= 0 && pos >= origPreeditPos) {
+            r.start += origPreeditLen;
+        }
         formats.append(r);
     }
 
     blockData->displayLayout = std::make_unique<QTextLayout>(blockText);
     blockData->displayLayout->setFormats(formats);
+    blockData->displayLayout->setPreeditArea(preeditPos, defaultLayout->preeditAreaText());
 }
 
 void EditorLayout::layoutBlock(QTextBlock& block, qreal topY)
