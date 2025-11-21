@@ -1421,7 +1421,7 @@ void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
 
     // The visible part of the document, in document coordinates
     QRect viewportGeometry = viewport()->geometry();
-    QRect documentVisibleRect = viewport()->geometry()
+    QRect documentVisibleRect = viewportGeometry
         .translated(-viewportGeometry.topLeft())
         .translated(horizontalScrollBar()->value(), verticalScrollBar()->value());
 
@@ -1437,11 +1437,16 @@ void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
     }
 
     QRectF blockRect = layout->blockBoundingRect(block);
-    qreal top = viewportGeometry.top() + additionalMargin;
+    qreal top = qMax(viewportGeometry.top() + additionalMargin, (qreal)viewportGeometry.top());
     qreal bottom = top + blockRect.intersected(documentVisibleRect).height();
+
+    QFontMetricsF metrics { painter.fontMetrics() };
+    const qreal lineHeight = metrics.height();
+    const qreal fontAscent = metrics.ascent();
 
     while (block.isValid() && top <= event->rect().bottom()) {
         Qt::LayoutDirection blockDirection = block.layout()->textOption().textDirection();
+        QTextLine firstLine = block.layout()->lineAt(0);
 
         QBrush bgBrush;
         int textFlags;
@@ -1473,7 +1478,11 @@ void Editor::lineNumberGutterPaintEvent(QWidget* gutter, QPaintEvent* event)
             painter.setFont(f);
             painter.setPen(fgColor);
 
-            QRectF textRect(textOffset, top, gutter->width(), painter.fontMetrics().height());
+            QRectF textRect(textOffset, top, gutter->width(), lineHeight);
+            if (firstLine.isValid()) {
+                // Align baseline of line number with that of the actual line
+                textRect.translate(0, qMax(qRound(firstLine.ascent() - fontAscent), 0));
+            }
             painter.drawText(textRect, textFlags, number);
         }
 
