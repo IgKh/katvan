@@ -1,3 +1,4 @@
 build*/
 typstdriver/rust/target/
+.cache
 .DS_Store

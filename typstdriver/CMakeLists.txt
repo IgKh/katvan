@@ -17,14 +17,14 @@ if(APPLE AND NOT LibArchive_INCLUDE_DIR)
 endif()
 find_package(LibArchive REQUIRED)
 
-find_package(Corrosion QUIET)
+find_package(Corrosion 0.6.0 QUIET)
 if(NOT Corrosion_FOUND)
     include(FetchContent)
 
     FetchContent_Declare(
         Corrosion
         GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
-        GIT_TAG v0.5.1
+        GIT_TAG v0.6.0
     )
 
     FetchContent_MakeAvailable(Corrosion)
@@ -38,11 +38,6 @@ corrosion_import_crate(
 
 if(KATVAN_FLATPAK_BUILD)
     corrosion_set_features(typstdriver_rs FEATURES flatpak)
-endif()
-
-if(CMAKE_OSX_DEPLOYMENT_TARGET)
-    # Until fix merged upstream to Corrosion
-    corrosion_set_env_vars(typstdriver_rs MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
 endif()
 
 corrosion_add_cxxbridge(typstdriver_ffi

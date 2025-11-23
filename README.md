@@ -86,8 +86,8 @@ Due to various reasons, there are no pre-built binaries available for macOS. Use
 To compile and install Katvan from source code, you'll need:
 - A C++ compiler toolchain that supports C++20, and is [supported by Qt](https://doc.qt.io/qt-6/supported-platforms.html)
 - A recent stable Rust toolchain
-- Development files for Qt 6.5 (or any later 6.x release - Qt 6.9.1 or above is highly recommended).
-- CMake 3.19 or later
+- Development files for Qt 6.8 (or any later 6.x release - Qt 6.9.1 or above is highly recommended).
+- CMake 3.22 or later
 - [Corrosion](https://github.com/corrosion-rs/corrosion) (optional, will be automatically downloaded if missing)
 - A working `pkg-config`
 - [hunspell](http://hunspell.github.io/) (required only on Linux)
