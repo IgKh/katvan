@@ -160,12 +160,17 @@ void Engine::renderPage(int page, qreal pointSize)
     }
 }
 
-void Engine::exportToPdf(const QString& outputFile, const QString& pdfVersion, bool tagged)
+void Engine::exportToPdf(const QString& outputFile, const QString& pdfVersion, const QString& pdfaStandard, bool tagged)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
     try {
-        bool ok = d_ptr->engine.value()->export_pdf(qstringToRust(outputFile), qstringToRust(pdfVersion), tagged);
+        bool ok = d_ptr->engine.value()->export_pdf(
+            qstringToRust(outputFile),
+            qstringToRust(pdfVersion),
+            qstringToRust(pdfaStandard),
+            tagged);
+
         Q_EMIT exportFinished(ok);
     }
     catch (rust::Error& e) {

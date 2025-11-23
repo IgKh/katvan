@@ -34,6 +34,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSet>
 #include <QVBoxLayout>
 
 namespace katvan {
@@ -44,11 +45,42 @@ static constexpr bool IS_SANDBOXED = true;
 static constexpr bool IS_SANDBOXED = false;
 #endif
 
+struct PdfAStandard
+{
+    const char* name;
+    QString code;
+    QString minPdfVersion;
+    QString maxPdfVersion;
+};
+
+Q_GLOBAL_STATIC(QList<PdfAStandard>, PDFA_STANDARDS, {
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-1b"), "a-1b", "", "1.4" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-1a"), "a-1a", "", "1.4" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-2b"), "a-2b", "", "1.7" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-2u"), "a-2u", "", "1.7" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-2a"), "a-2a", "", "1.7" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-3b"), "a-3b", "", "1.7" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-3u"), "a-3u", "", "1.7" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-3a"), "a-3a", "", "1.7" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-4"), "a-4", "2.0", "2.0" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-4f"), "a-4f", "2.0", "2.0" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-4e"), "a-4e", "2.0", "2.0" },
+    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/UA-1"), "ua-1", "", "1.7" },
+});
+
+Q_GLOBAL_STATIC(QSet<QString>, PDFA_STANDARDS_REQUIRING_TAGGING, {
+    "a-1a",
+    "a-2a",
+    "a-3a",
+    "ua-1",
+});
+
 ExportDialog::ExportDialog(TypstDriverWrapper* driver, QWidget* parent)
     : QDialog(parent)
     , d_driver(driver)
 {
     setupUI();
+    pdfVersionChanged();
 }
 
 void ExportDialog::setupUI()
@@ -83,6 +115,10 @@ void ExportDialog::setupUI()
     d_pdfVersionCombo->addItem("PDF 1.7", "1.7");
     d_pdfVersionCombo->addItem("PDF 2.0", "2.0");
     d_pdfVersionCombo->setCurrentIndex(d_pdfVersionCombo->findData("1.7"));
+    connect(d_pdfVersionCombo, &QComboBox::currentIndexChanged, this, &ExportDialog::pdfVersionChanged);
+
+    d_pdfaStandardCombo = new QComboBox();
+    connect(d_pdfaStandardCombo, &QComboBox::currentIndexChanged, this, &ExportDialog::pdfaStandardChanged);
 
     d_pdfGenerateTags = new QCheckBox(tr("Generate tagged PDF"));
     d_pdfGenerateTags->setChecked(true);
@@ -104,6 +140,7 @@ void ExportDialog::setupUI()
 
     QFormLayout* pdfSettingsGroupLayout = new QFormLayout(pdfSettingsGroup);
     pdfSettingsGroupLayout->addRow(new QLabel(tr("PDF Version:")), d_pdfVersionCombo);
+    pdfSettingsGroupLayout->addRow(new QLabel(tr("PDF/A Standard:")), d_pdfaStandardCombo);
     pdfSettingsGroupLayout->addRow(d_pdfGenerateTags);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
@@ -171,6 +208,43 @@ void ExportDialog::browseForTargetFile()
     updateButtonState();
 }
 
+void ExportDialog::pdfVersionChanged()
+{
+    QString pdfVersion = d_pdfVersionCombo->currentData().toString();
+    QString selectedStandard = d_pdfaStandardCombo->currentData().toString();
+
+    d_pdfaStandardCombo->clear();
+    d_pdfaStandardCombo->addItem(tr("None"), "");
+
+    for (const auto& standard : *PDFA_STANDARDS) {
+        if (pdfVersion >= standard.minPdfVersion && pdfVersion <= standard.maxPdfVersion) {
+            d_pdfaStandardCombo->addItem(tr(standard.name), standard.code);
+        }
+    }
+
+    int idx = d_pdfaStandardCombo->findData(selectedStandard);
+    if (idx >= 0) {
+        d_pdfaStandardCombo->setCurrentIndex(idx);
+    }
+    else {
+        d_pdfaStandardCombo->setCurrentIndex(0);
+    }
+}
+
+void ExportDialog::pdfaStandardChanged()
+{
+    QString standardCode = d_pdfaStandardCombo->currentData().toString();
+
+    bool taggingRequired = PDFA_STANDARDS_REQUIRING_TAGGING->contains(standardCode);
+    if (taggingRequired) {
+        d_pdfGenerateTags->setEnabled(false);
+        d_pdfGenerateTags->setChecked(true);
+    }
+    else {
+        d_pdfGenerateTags->setEnabled(true);
+    }
+}
+
 void ExportDialog::updateButtonState()
 {
     d_buttonBox->button(QDialogButtonBox::Save)->setEnabled(!d_selectedTargetFile.isEmpty());
@@ -180,6 +254,7 @@ void ExportDialog::doExport()
 {
     d_driver->exportToPdf(d_selectedTargetFile,
         d_pdfVersionCombo->currentData().toString(),
+        d_pdfaStandardCombo->currentData().toString(),
         d_pdfGenerateTags->isChecked());
 
     qApp->setOverrideCursor(Qt::WaitCursor);

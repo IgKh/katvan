@@ -40,6 +40,8 @@ public:
 
 private slots:
     void browseForTargetFile();
+    void pdfVersionChanged();
+    void pdfaStandardChanged();
     void updateButtonState();
     void doExport();
 
@@ -57,6 +59,7 @@ private:
     QPushButton* d_selectFileButton;
 
     QComboBox* d_pdfVersionCombo;
+    QComboBox* d_pdfaStandardCombo;
     QCheckBox* d_pdfGenerateTags;
 
     QDialogButtonBox* d_buttonBox;

@@ -167,7 +167,13 @@ pub(crate) mod ffi {
 
         fn render_page(&self, page: usize, point_size: f32) -> Result<RenderedPage>;
 
-        fn export_pdf(&self, path: &str, pdf_version: &str, tagged: bool) -> Result<bool>;
+        fn export_pdf(
+            &self,
+            path: &str,
+            pdf_version: &str,
+            pdfa_standard: &str,
+            tagged: bool,
+        ) -> Result<bool>;
 
         fn forward_search(&self, line: usize, column: usize) -> Result<Vec<PreviewPosition>>;
 

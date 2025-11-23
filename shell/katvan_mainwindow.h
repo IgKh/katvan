@@ -51,6 +51,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
+public:
     enum class ExportType {
         NONE,
         PDF,
@@ -58,7 +59,6 @@ class MainWindow : public QMainWindow
     };
     Q_ENUM(ExportType)
 
-public:
     MainWindow();
 
     void loadFile(const QString& fileName);
