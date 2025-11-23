@@ -32,6 +32,7 @@ namespace katvan
 
 class BackupHandler;
 class CompilerOutput;
+class ExportDialog;
 class InfoBar;
 class LabelsView;
 class OutlineView;
@@ -50,6 +51,13 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
+    enum class ExportType {
+        NONE,
+        PDF,
+        FULL
+    };
+    Q_ENUM(ExportType)
+
 public:
     MainWindow();
 
@@ -65,6 +73,7 @@ private slots:
     void openNamedFile(const QString& fileName);
     bool saveFile();
     bool saveFileAs();
+    void exportAs();
     void exportPdf();
     void goToLine();
     void jumpToPreview();
@@ -83,6 +92,7 @@ private slots:
     void showColorPicker();
     void previewReady();
     void compilationStatusChanged();
+    void exportComplete(bool ok);
     void updateWordCount(size_t wordCount);
 
 private:
@@ -102,9 +112,11 @@ private:
     void closeEvent(QCloseEvent* event) override;
     bool event(QEvent* event) override;
 
+    bool verifyCanExport(ExportType type);
+
     QString d_currentFileName;
     QString d_currentFileShortName;
-    bool d_exportPdfPending;
+    ExportType d_pendingExport;
     bool d_suppressFileChangeNotification;
 
     Document* d_document;
@@ -121,6 +133,7 @@ private:
     OutlineView* d_outlineView;
     LabelsView* d_labelsView;
 
+    ExportDialog* d_exportDialog = nullptr;
     SettingsDialog* d_settingsDialog = nullptr;
     SymbolPicker* d_symbolPickerDialog = nullptr;
 

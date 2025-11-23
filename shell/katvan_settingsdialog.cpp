@@ -464,7 +464,7 @@ void PathList::setPaths(const QStringList& paths)
 
 void PathList::addPath()
 {
-    QString dirName = QFileDialog::getExistingDirectory(window());
+    QString dirName = QFileDialog::getExistingDirectory(window(), tr("Select Directory"));
     if (dirName.isEmpty()) {
         return;
     }

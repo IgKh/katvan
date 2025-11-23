@@ -3,6 +3,7 @@ find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
 set(SOURCES
     katvan_backuphandler.cpp
     katvan_compileroutput.cpp
+    katvan_exportdialog.cpp
     katvan_infobar.cpp
     katvan_labelsview.cpp
     katvan_mainwindow.cpp

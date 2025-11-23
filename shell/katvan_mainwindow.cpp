@@ -17,6 +17,7 @@
  */
 #include "katvan_backuphandler.h"
 #include "katvan_compileroutput.h"
+#include "katvan_exportdialog.h"
 #include "katvan_infobar.h"
 #include "katvan_labelsview.h"
 #include "katvan_mainwindow.h"
@@ -70,7 +71,7 @@ static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("edit
 
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
-    , d_exportPdfPending(false)
+    , d_pendingExport(ExportType::NONE)
     , d_suppressFileChangeNotification(false)
 {
     setObjectName("katvanMainWindow");
@@ -95,6 +96,7 @@ MainWindow::MainWindow()
 
     connect(d_driver, &TypstDriverWrapper::previewReady, this, &MainWindow::previewReady);
     connect(d_driver, &TypstDriverWrapper::compilationStatusChanged, this, &MainWindow::compilationStatusChanged);
+    connect(d_driver, &TypstDriverWrapper::exportFinished, this, &MainWindow::exportComplete);
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, qOverload<int, int>(&Editor::goToBlock));
     connect(d_driver, &TypstDriverWrapper::showEditorToolTip, d_editor, &Editor::showToolTip);
@@ -220,8 +222,14 @@ void MainWindow::setupActions()
     saveFileAsAction->setShortcut(QKeySequence::SaveAs);
     saveFileAsAction->setMenuRole(QAction::NoRole);
 
-    QAction* exportPdfAction = fileMenu->addAction(tr("&Export PDF..."), this, &MainWindow::exportPdf);
-    exportPdfAction->setIcon(utils::themeIcon("document-send"));
+    fileMenu->addSeparator();
+
+    QAction* exportAsAction = fileMenu->addAction(tr("&Export As..."), this, &MainWindow::exportAs);
+    exportAsAction->setIcon(utils::themeIcon("document-send"));
+    exportAsAction->setMenuRole(QAction::NoRole);
+
+    QAction* exportPdfAction = fileMenu->addAction(tr("Quick Export &PDF..."), this, &MainWindow::exportPdf);
+    exportPdfAction->setIcon(utils::themeIcon("application-pdf"));
     exportPdfAction->setMenuRole(QAction::NoRole);
 
     fileMenu->addSeparator();
@@ -833,7 +841,7 @@ bool MainWindow::saveFileAs()
     return saveFile();
 }
 
-void MainWindow::exportPdf()
+bool MainWindow::verifyCanExport(MainWindow::ExportType type)
 {
     if (d_driver->status() != TypstDriverWrapper::Status::SUCCESS &&
         d_driver->status() != TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS) {
@@ -846,8 +854,30 @@ void MainWindow::exportPdf()
         else if (d_driver->status() == TypstDriverWrapper::Status::INITIALIZED) {
             d_driver->setSource(d_document->textForPreview());
             d_driver->updatePreview();
-            d_exportPdfPending = true;
+            d_pendingExport = type;
         }
+        return false;
+    }
+    return true;
+}
+
+void MainWindow::exportAs()
+{
+    if (!d_exportDialog) {
+        d_exportDialog = new ExportDialog(d_driver, this);
+    }
+
+    if (!verifyCanExport(ExportType::FULL)) {
+        return;
+    }
+
+    d_exportDialog->setSourceFile(d_currentFileName);
+    d_exportDialog->open();
+}
+
+void MainWindow::exportPdf()
+{
+    if (!verifyCanExport(ExportType::PDF)) {
         return;
     }
 
@@ -856,17 +886,7 @@ void MainWindow::exportPdf()
         return;
     }
 
-    auto onComplete = [this](bool ok) {
-        d_compilerOutput->adjustColumnWidths();
-        qApp->restoreOverrideCursor();
-        if (!ok) {
-            d_compilerOutput->show();
-        }
-    };
-
-    connect(d_driver, &TypstDriverWrapper::exportFinished, this, onComplete, Qt::SingleShotConnection);
     qApp->setOverrideCursor(Qt::WaitCursor);
-
     d_driver->exportToPdf(targetFileName);
 }
 
@@ -1092,10 +1112,13 @@ void MainWindow::showColorPicker()
 
 void MainWindow::previewReady()
 {
-    if (d_exportPdfPending) {
-        QTimer::singleShot(0, this, &MainWindow::exportPdf);
-        d_exportPdfPending = false;
+    if (d_pendingExport == ExportType::FULL) {
+        QTimer::singleShot(0, this, &MainWindow::exportAs);
     }
+    else if (d_pendingExport == ExportType::PDF) {
+        QTimer::singleShot(0, this, &MainWindow::exportPdf);
+    }
+    d_pendingExport = ExportType::NONE;
 }
 
 void MainWindow::compilationStatusChanged()
@@ -1129,6 +1152,15 @@ void MainWindow::compilationStatusChanged()
     else {
         d_compilationStatusButton->setText(QString());
         d_compilationStatusButton->setIcon(QIcon());
+    }
+}
+
+void MainWindow::exportComplete(bool ok)
+{
+    d_compilerOutput->adjustColumnWidths();
+    qApp->restoreOverrideCursor();
+    if (!ok) {
+        d_compilerOutput->show();
     }
 }
 

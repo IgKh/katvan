@@ -187,8 +187,13 @@ void TypstDriverWrapper::renderPage(int page, qreal pointSize)
 
 void TypstDriverWrapper::exportToPdf(const QString& filePath)
 {
+    exportToPdf(filePath, QString(), true);
+}
+
+void TypstDriverWrapper::exportToPdf(const QString& filePath, const QString& pdfVersion, bool tagged)
+{
     d_diagnosticsModel->clear();
-    QMetaObject::invokeMethod(d_engine, "exportToPdf", filePath);
+    QMetaObject::invokeMethod(d_engine, "exportToPdf", filePath, pdfVersion, tagged);
 }
 
 void TypstDriverWrapper::forwardSearch(int line, int column, int currentPreviewPage)

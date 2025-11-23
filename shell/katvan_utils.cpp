@@ -68,7 +68,7 @@ QIcon themeIcon(const char* xdgIcon, const char* macIcon)
 #endif
 }
 
-static QString getHostPath(QString path)
+QString getHostPath(QString path)
 {
 #if !defined(KATVAN_FLATPAK_BUILD)
     return path;

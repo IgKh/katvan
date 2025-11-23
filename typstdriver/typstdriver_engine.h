@@ -75,7 +75,7 @@ public slots:
     void applyContentEdit(int from, int to, const QString& text);
     void compile();
     void renderPage(int page, qreal pointSize);
-    void exportToPdf(const QString& outputFile);
+    void exportToPdf(const QString& outputFile, const QString& pdfVersion, bool tagged);
     void forwardSearch(int line, int column, int currentPreviewPage);
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);
