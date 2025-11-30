@@ -49,6 +49,47 @@ struct DiagnosticLocation {
     end: DiagnosticFileLocation,
 }
 
+pub trait DiagnosticsLogger {
+    fn log_diagnostics(&self, world: &dyn World, diagnostics: &[typst::diag::SourceDiagnostic]);
+}
+
+impl DiagnosticsLogger for ffi::LoggerProxy {
+    fn log_diagnostics(&self, world: &dyn World, diagnostics: &[typst::diag::SourceDiagnostic]) {
+        for diag in diagnostics {
+            // Find first span (of the diagnostic itself, or the traceback to
+            // it) that is located in the main source.
+            let span = std::iter::once(diag.span)
+                .chain(diag.trace.iter().map(|t| t.span))
+                .find(|span| span.id() == Some(*MAIN_ID))
+                .unwrap_or(diag.span);
+
+            let location = span_to_location(span, world);
+            let hints = get_diagnostic_hints(diag);
+
+            match diag.severity {
+                typst::diag::Severity::Error => self.log_error(
+                    &diag.message,
+                    &location.file,
+                    location.start.line,
+                    location.start.column,
+                    location.end.line,
+                    location.end.column,
+                    hints,
+                ),
+                typst::diag::Severity::Warning => self.log_warning(
+                    &diag.message,
+                    &location.file,
+                    location.start.line,
+                    location.start.column,
+                    location.end.line,
+                    location.end.column,
+                    hints,
+                ),
+            }
+        }
+    }
+}
+
 pub struct EngineImpl<'a> {
     logger: &'a ffi::LoggerProxy,
     world: KatvanWorld<'a>,
@@ -86,7 +127,7 @@ impl<'a> EngineImpl<'a> {
         let warnings = res.warnings;
 
         if let Ok(doc) = res.output {
-            self.log_diagnostics(&warnings);
+            self.logger.log_diagnostics(&self.world, &warnings);
 
             if warnings.is_empty() {
                 self.logger
@@ -114,90 +155,12 @@ impl<'a> EngineImpl<'a> {
         } else {
             let errors = res.output.unwrap_err();
 
-            self.log_diagnostics(&errors);
-            self.log_diagnostics(&warnings);
+            self.logger.log_diagnostics(&self.world, &errors);
+            self.logger.log_diagnostics(&self.world, &warnings);
             self.logger
                 .log_note(&format!("compiled with errors in {elapsed}"));
 
             Vec::new()
-        }
-    }
-
-    fn log_diagnostics(&self, diagnostics: &[typst::diag::SourceDiagnostic]) {
-        for diag in diagnostics {
-            // Find first span (of the diagnostic itself, or the traceback to
-            // it) that is located in the main source.
-            let span = std::iter::once(diag.span)
-                .chain(diag.trace.iter().map(|t| t.span))
-                .find(|span| span.id() == Some(*MAIN_ID))
-                .unwrap_or(diag.span);
-
-            let location = self.span_to_location(span);
-            let hints = Self::get_diagnostic_hints(diag);
-
-            match diag.severity {
-                typst::diag::Severity::Error => self.logger.log_error(
-                    &diag.message,
-                    &location.file,
-                    location.start.line,
-                    location.start.column,
-                    location.end.line,
-                    location.end.column,
-                    hints,
-                ),
-                typst::diag::Severity::Warning => self.logger.log_warning(
-                    &diag.message,
-                    &location.file,
-                    location.start.line,
-                    location.start.column,
-                    location.end.line,
-                    location.end.column,
-                    hints,
-                ),
-            }
-        }
-    }
-
-    fn span_to_location(&self, span: typst::syntax::Span) -> DiagnosticLocation {
-        let Some(id) = span.id() else {
-            return DiagnosticLocation::default();
-        };
-
-        let source = self.world.source(id).unwrap();
-
-        let package = id
-            .package()
-            .map(|pkg| pkg.to_string() + "/")
-            .unwrap_or_default();
-        let file = id.vpath().as_rootless_path().to_string_lossy();
-
-        let range = source.range(span).unwrap_or_default();
-        let start = position_to_file_location(&source, range.start).unwrap_or_default();
-        let end = position_to_file_location(&source, range.end).unwrap_or_default();
-
-        DiagnosticLocation {
-            file: format!("{package}{file}"),
-            start,
-            end,
-        }
-    }
-
-    fn get_diagnostic_hints(diag: &typst::diag::SourceDiagnostic) -> Vec<&str> {
-        // As per https://github.com/typst/typst/blob/0.12/crates/typst/src/diag.rs#L311
-        if diag.message.contains("(access denied)") {
-            if is_in_sandbox() {
-                vec![
-                    "by default external files can't be read when running in a sandbox",
-                    "allowed paths to access can be set in the compiler tab of settings",
-                ]
-            } else {
-                vec![
-                    "by default cannot read file outside of document's directory",
-                    "additional allowed paths can be set in the compiler tab of settings",
-                ]
-            }
-        } else {
-            diag.hints.iter().map(EcoString::as_str).collect()
         }
     }
 
@@ -222,42 +185,17 @@ impl<'a> EngineImpl<'a> {
         tagged: bool,
     ) -> Result<bool> {
         let document = self.result.as_ref().context("Invalid state")?;
-        let options = pdf_options(pdf_version, pdfa_standard, tagged).context("Invalid options")?;
+        crate::export::export_pdf(document, &self.world, self.logger, path, pdf_version, pdfa_standard, tagged)
+    }
 
-        let start = std::time::Instant::now();
-        let result = typst_pdf::pdf(document, &options);
+    pub fn export_png(&self, path: &str, dpi: u32) -> Result<bool> {
+        let document = self.result.as_ref().context("Invalid state")?;
+        Ok(crate::export::export_png(document, self.logger, path, dpi))
+    }
 
-        let elapsed = format!("{:.2?}", start.elapsed());
-
-        if let Ok(data) = result {
-            let display_path = crate::pathmap::get_display_path(path)
-                .to_string_lossy()
-                .into_owned();
-
-            match std::fs::write(path, data) {
-                Ok(()) => {
-                    self.logger.log_note(&format!(
-                        "PDF exported successfully to {display_path} in {elapsed}"
-                    ));
-                    Ok(true)
-                }
-                Err(err) => {
-                    self.logger.log_error(
-                        &format!("Unable to write to {display_path}: {err}"),
-                        "",
-                        -1,
-                        -1,
-                        -1,
-                        -1,
-                        Vec::new(),
-                    );
-                    Ok(false)
-                }
-            }
-        } else {
-            self.log_diagnostics(&result.unwrap_err());
-            Ok(false)
-        }
+    pub fn export_png_multi(&self, dir: &str, name_pattern: &str, dpi: u32) -> Result<bool> {
+        let document = self.result.as_ref().context("Invalid state")?;
+        Ok(crate::export::export_png_multi(document, self.logger, dir, name_pattern, dpi))
     }
 
     pub fn forward_search(&self, line: usize, column: usize) -> Result<Vec<ffi::PreviewPosition>> {
@@ -402,38 +340,53 @@ fn position_to_file_location(
     })
 }
 
+fn span_to_location(span: typst::syntax::Span, world: &dyn World) -> DiagnosticLocation {
+    let Some(id) = span.id() else {
+        return DiagnosticLocation::default();
+    };
+
+    let source = world.source(id).unwrap();
+
+    let package = id
+        .package()
+        .map(|pkg| pkg.to_string() + "/")
+        .unwrap_or_default();
+    let file = id.vpath().as_rootless_path().to_string_lossy();
+
+    let range = source.range(span).unwrap_or_default();
+    let start = position_to_file_location(&source, range.start).unwrap_or_default();
+    let end = position_to_file_location(&source, range.end).unwrap_or_default();
+
+    DiagnosticLocation {
+        file: format!("{package}{file}"),
+        start,
+        end,
+    }
+}
+
+fn get_diagnostic_hints(diag: &typst::diag::SourceDiagnostic) -> Vec<&str> {
+    // As per https://github.com/typst/typst/blob/0.12/crates/typst/src/diag.rs#L311
+    if diag.message.contains("(access denied)") {
+        if is_in_sandbox() {
+            vec![
+                "by default external files can't be read when running in a sandbox",
+                "allowed paths to access can be set in the compiler tab of settings",
+            ]
+        } else {
+            vec![
+                "by default cannot read file outside of document's directory",
+                "additional allowed paths can be set in the compiler tab of settings",
+            ]
+        }
+    } else {
+        diag.hints.iter().map(EcoString::as_str).collect()
+    }
+}
+
 fn calc_fingerprint<H: Hash>(item: &H) -> u64 {
     let mut hasher = DefaultHasher::new();
     item.hash(&mut hasher);
     hasher.finish()
-}
-
-fn pdf_options(
-    pdf_version: &str,
-    pdfa_standard: &str,
-    tagged: bool,
-) -> Result<typst_pdf::PdfOptions<'static>> {
-    let mut standards: Vec<typst_pdf::PdfStandard> = vec![];
-    if !pdf_version.is_empty() {
-        standards.push(serde_json::from_str(&format!("\"{pdf_version}\""))?);
-    }
-    if !pdfa_standard.is_empty() {
-        standards.push(serde_json::from_str(&format!("\"{pdfa_standard}\""))?);
-    }
-
-    let standards = if standards.is_empty() {
-        typst_pdf::PdfStandards::default()
-    } else {
-        typst_pdf::PdfStandards::new(&standards)
-            .ok()
-            .context("Incompatible version and PDF/A standard")?
-    };
-
-    Ok(typst_pdf::PdfOptions {
-        standards,
-        tagged,
-        ..Default::default()
-    })
 }
 
 fn is_in_sandbox() -> bool {

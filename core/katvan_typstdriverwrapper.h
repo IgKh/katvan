@@ -88,6 +88,8 @@ public slots:
     void renderPage(int page, qreal pageSize);
     void exportToPdf(const QString& filePath);
     void exportToPdf(const QString& filePath, const QString& pdfVersion, const QString& pdfaStandard, bool tagged);
+    void exportToPng(const QString& filePath, int dpi);
+    void exportToPngMulti(const QString& dir, const QString& filePattern, int dpi);
     void forwardSearch(int line, int column, int currentPreviewPage);
     void inverseSearch(int page, QPointF clickPoint);
     void requestToolTip(int line, int column, QPoint pos);

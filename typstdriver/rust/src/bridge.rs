@@ -175,6 +175,10 @@ pub(crate) mod ffi {
             tagged: bool,
         ) -> Result<bool>;
 
+        fn export_png(&self, path: &str, dpi: u32) -> Result<bool>;
+
+        fn export_png_multi(&self, dir: &str, name_pattern: &str, dpi: u32) -> Result<bool>;
+
         fn forward_search(&self, line: usize, column: usize) -> Result<Vec<PreviewPosition>>;
 
         fn inverse_search(&self, pos: &PreviewPosition) -> Result<SourcePosition>;

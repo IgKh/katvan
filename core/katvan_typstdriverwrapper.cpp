@@ -75,7 +75,7 @@ void TypstDriverWrapper::setCompilerSettings(const typstdriver::TypstCompilerSet
     d_packageManager->applySettings(d_settings);
 
     if (d_status != Status::INITIALIZING) {
-        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", d_settings->allowedPaths());
+        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::setAllowedPaths, d_settings->allowedPaths());
     }
 }
 
@@ -97,7 +97,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         d_status = Status::INITIALIZED;
         Q_EMIT compilationStatusChanged();
 
-        QMetaObject::invokeMethod(d_engine, "setAllowedPaths", d_settings->allowedPaths());
+        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::setAllowedPaths, d_settings->allowedPaths());
 
         bool hasPending = false;
         if (d_pendingSource) {
@@ -134,7 +134,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::symbolsJsonReady, this, &TypstDriverWrapper::symbolsJsonReady);
     connect(d_engine, &typstdriver::Engine::initialized, this, onInitialized, Qt::SingleShotConnection);
 
-    QMetaObject::invokeMethod(d_engine, "init");
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::init);
 }
 
 void TypstDriverWrapper::setSource(const QString& text)
@@ -145,7 +145,7 @@ void TypstDriverWrapper::setSource(const QString& text)
         return;
     }
 
-    QMetaObject::invokeMethod(d_engine, "setSource", text);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::setSource, text);
 }
 
 void TypstDriverWrapper::applyContentEdit(int from, int to, QString text)
@@ -155,7 +155,7 @@ void TypstDriverWrapper::applyContentEdit(int from, int to, QString text)
         return;
     }
 
-    QMetaObject::invokeMethod(d_engine, "applyContentEdit", from, to, text);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::applyContentEdit, from, to, text);
 }
 
 void TypstDriverWrapper::updatePreview()
@@ -172,7 +172,7 @@ void TypstDriverWrapper::updatePreview()
     Q_EMIT compilationStatusChanged();
 
     d_diagnosticsModel->clear();
-    QMetaObject::invokeMethod(d_engine, "compile");
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::compile);
 }
 
 void TypstDriverWrapper::renderPage(int page, qreal pointSize)
@@ -182,7 +182,7 @@ void TypstDriverWrapper::renderPage(int page, qreal pointSize)
     }
 
     d_pendingPagesToRender.insert(page);
-    QMetaObject::invokeMethod(d_engine, "renderPage", page, pointSize);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::renderPage, page, pointSize);
 }
 
 void TypstDriverWrapper::exportToPdf(const QString& filePath)
@@ -193,47 +193,59 @@ void TypstDriverWrapper::exportToPdf(const QString& filePath)
 void TypstDriverWrapper::exportToPdf(const QString& filePath, const QString& pdfVersion, const QString& pdfaStandard, bool tagged)
 {
     d_diagnosticsModel->clear();
-    QMetaObject::invokeMethod(d_engine, "exportToPdf", filePath, pdfVersion, pdfaStandard, tagged);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::exportToPdf, filePath, pdfVersion, pdfaStandard, tagged);
+}
+
+void TypstDriverWrapper::exportToPng(const QString& filePath, int dpi)
+{
+    d_diagnosticsModel->clear();
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::exportToPng, filePath, dpi);
+}
+
+void TypstDriverWrapper::exportToPngMulti(const QString& dir, const QString& filePattern, int dpi)
+{
+    d_diagnosticsModel->clear();
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::exportToPngMulti, dir, filePattern, dpi);
 }
 
 void TypstDriverWrapper::forwardSearch(int line, int column, int currentPreviewPage)
 {
-    QMetaObject::invokeMethod(d_engine, "forwardSearch", line, column, currentPreviewPage);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::forwardSearch, line, column, currentPreviewPage);
 }
 
 void TypstDriverWrapper::inverseSearch(int page, QPointF clickPoint)
 {
-    QMetaObject::invokeMethod(d_engine, "inverseSearch", page, clickPoint);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::inverseSearch, page, clickPoint);
 }
 
 void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
 {
-    QMetaObject::invokeMethod(d_engine, "requestToolTip", line, column, pos);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestToolTip, line, column, pos);
 }
 
 void TypstDriverWrapper::requestCompletions(int line, int column, bool implicit)
 {
-    QMetaObject::invokeMethod(d_engine, "requestCompletions", line, column, implicit);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestCompletions, line, column, implicit);
 }
 
 void TypstDriverWrapper::searchDefinition(int line, int column)
 {
-    QMetaObject::invokeMethod(d_engine, "searchDefinition", line, column);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::searchDefinition, line, column);
 }
 
 void TypstDriverWrapper::requestPageWordCount(int page)
 {
-    QMetaObject::invokeMethod(d_engine, "requestPageWordCount", page);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestPageWordCount, page);
 }
 
 void TypstDriverWrapper::requestAllSymbolsJson()
 {
-    QMetaObject::invokeMethod(d_engine, "requestAllSymbolsJson");
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestAllSymbolsJson);
 }
 
 void TypstDriverWrapper::discardLookupCaches()
 {
-    QMetaObject::invokeMethod(d_engine, "discardLookupCaches");
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::discardLookupCaches);
 }
 
 void TypstDriverWrapper::compilationFinished()
@@ -243,7 +255,7 @@ void TypstDriverWrapper::compilationFinished()
 
     if (d_status == Status::SUCCESS || d_status == Status::SUCCESS_WITH_WARNINGS) {
         // TODO: Possibly throttle this
-        QMetaObject::invokeMethod(d_engine, "requestMetadata", d_lastMetadataFingerprint);
+        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestMetadata, d_lastMetadataFingerprint);
     }
 }
 

@@ -18,6 +18,7 @@
 mod analysis;
 mod bridge;
 mod engine;
+mod export;
 mod pathmap;
 mod symbols;
 mod world;

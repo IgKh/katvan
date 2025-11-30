@@ -178,6 +178,39 @@ void Engine::exportToPdf(const QString& outputFile, const QString& pdfVersion, c
     }
 }
 
+void Engine::exportToPng(const QString& outputFile, int dpi)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        bool ok = d_ptr->engine.value()->export_png(
+            qstringToRust(outputFile),
+            dpi);
+
+        Q_EMIT exportFinished(ok);
+    }
+    catch (rust::Error& e) {
+        qWarning() << "Error exporting to PNG" << outputFile << ":" << e.what();
+    }
+}
+
+void Engine::exportToPngMulti(const QString& outputDir, const QString& filePattern, int dpi)
+{
+    Q_ASSERT(d_ptr->engine.has_value());
+
+    try {
+        bool ok = d_ptr->engine.value()->export_png_multi(
+            qstringToRust(outputDir),
+            qstringToRust(filePattern),
+            dpi);
+
+        Q_EMIT exportFinished(ok);
+    }
+    catch (rust::Error& e) {
+        qWarning() << "Error exporting to PNG set at " << outputDir << ":" << e.what();
+    }
+}
+
 void Engine::forwardSearch(int line, int column, int currentPreviewPage)
 {
     Q_ASSERT(d_ptr->engine.has_value());
