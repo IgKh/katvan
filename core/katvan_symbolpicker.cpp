@@ -19,6 +19,7 @@
 #include "katvan_text_utils.h"
 #include "katvan_typstdriverwrapper.h"
 
+#include <QApplication>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFontDatabase>
@@ -256,7 +257,23 @@ QVariant SymbolListModel::data(const QModelIndex& index, int role) const
             return utils::fontIcon(utils::firstCodepointOf(value), d_symbolFont);
         }
     }
-    else if (role == Qt::ToolTipRole || role == SYMBOL_DESCRIPTION_ROLE) {
+    else if (role == Qt::ToolTipRole) {
+        QString deprecation = obj["deprecation"].toString();
+        if (!deprecation.isEmpty()) {
+            return deprecation;
+        }
+        return obj["description"].toString();
+    }
+    else if (role == Qt::FontRole) {
+        QString deprecation = obj["deprecation"].toString();
+        if (!deprecation.isEmpty()) {
+            QFont font = qApp->font();
+            font.setStrikeOut(true);
+            return font;
+        }
+        return QVariant();
+    }
+    else if (role == SYMBOL_DESCRIPTION_ROLE) {
         return obj["description"].toString();
     }
     else if (role == SYMBOL_VALUE_ROLE) {

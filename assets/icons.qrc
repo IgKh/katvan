@@ -46,7 +46,6 @@
         <file>icons/zoom-out.svg</file>
 
         <file>icons-dark/application-exit.svg</file>
-        <file>icons-dark/application-pdf.svg</file>
         <file>icons-dark/code-context.svg</file>
         <file>icons-dark/code-function.svg</file>
         <file>icons-dark/code-typedef.svg</file>
@@ -72,7 +71,6 @@
         <file>icons-dark/go-up.svg</file>
         <file>icons-dark/help-about.svg</file>
         <file>icons-dark/help-contents.svg</file>
-        <file>icons-dark/image-png.svg</file>
         <file>icons-dark/list-add.svg</file>
         <file>icons-dark/list-remove.svg</file>
         <file>icons-dark/open-link.svg</file>

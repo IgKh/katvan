@@ -34,10 +34,11 @@ struct SymbolEntry {
     pub name: String,
     pub description: String,
     pub category: String,
+    pub deprecation: Option<String>,
 }
 
 impl SymbolEntry {
-    fn new(value: &str, name: &str) -> Self {
+    fn new(value: &str, name: &str, deprecation: Option<&str>) -> Self {
         let name = name.trim_matches('.').to_owned();
         let codepoint = value.chars().next();
 
@@ -56,11 +57,18 @@ impl SymbolEntry {
                 .unwrap_or_default()
         };
 
+        let deprecation = deprecation.map(|desc| {
+            let mut html = String::new();
+            pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new(desc));
+            html
+        });
+
         Self {
             value: String::from(value),
             name,
             description,
             category,
+            deprecation,
         }
     }
 }
@@ -68,16 +76,21 @@ impl SymbolEntry {
 fn collect_symbols(module: &Module, module_name: &str, output: &mut Vec<SymbolEntry>) {
     for (name, binding) in module.iter() {
         let item_name = format!("{module_name}.{name}");
+        let binding_deprecation = binding.deprecation;
+
         match binding.def {
             Def::Symbol(sym) => match sym {
                 Symbol::Single(value) => {
-                    output.push(SymbolEntry::new(value, &item_name));
+                    output.push(SymbolEntry::new(value, &item_name, binding_deprecation));
                 }
                 Symbol::Multi(chars) => {
-                    for (modifiers, value, _deprecation) in chars {
+                    for (modifiers, value, deprecation) in chars {
                         let item_name = format!("{item_name}.{}", modifiers.as_str());
-                        output.push(SymbolEntry::new(value, &item_name));
-                        // TODO report deprecations?
+                        output.push(SymbolEntry::new(
+                            value,
+                            &item_name,
+                            binding_deprecation.or(*deprecation),
+                        ));
                     }
                 }
             },
