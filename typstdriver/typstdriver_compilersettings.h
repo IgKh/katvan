@@ -35,13 +35,16 @@ public:
     void save(QSettings& settings);
 
     bool allowPreviewPackages() const { return d_allowPreviewPackages; }
+    bool enableA11yExtras() const { return d_enableA11yExtras; }
     QStringList allowedPaths() const { return d_allowedPaths; }
 
     void setAllowPreviewPackages(bool allow) { d_allowPreviewPackages = allow; }
+    void setEnableA11yExtras(bool enable) { d_enableA11yExtras = enable; }
     void setAllowedPaths(const QStringList& allowedPaths) { d_allowedPaths = allowedPaths; }
 
 private:
     bool d_allowPreviewPackages;
+    bool d_enableA11yExtras;
     QStringList d_allowedPaths;
 };
 

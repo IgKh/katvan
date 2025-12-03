@@ -75,7 +75,7 @@ void TypstDriverWrapper::setCompilerSettings(const typstdriver::TypstCompilerSet
     d_packageManager->applySettings(d_settings);
 
     if (d_status != Status::INITIALIZING) {
-        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::setAllowedPaths, d_settings->allowedPaths());
+        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::applySettings, *d_settings);
     }
 }
 
@@ -97,7 +97,7 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
         d_status = Status::INITIALIZED;
         Q_EMIT compilationStatusChanged();
 
-        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::setAllowedPaths, d_settings->allowedPaths());
+        QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::applySettings, *d_settings);
 
         bool hasPending = false;
         if (d_pendingSource) {

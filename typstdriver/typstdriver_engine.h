@@ -34,6 +34,7 @@ namespace katvan::typstdriver {
 class Logger;
 class OutlineNode;
 class PackageManager;
+class TypstCompilerSettings;
 
 struct TYPSTDRIVER_EXPORT PreviewPageData
 {
@@ -86,7 +87,7 @@ public slots:
     void requestMetadata(quint64 previousFingerprint);
     void requestPageWordCount(int page);
     void requestAllSymbolsJson();
-    void setAllowedPaths(const QStringList& allowedPaths);
+    void applySettings(const TypstCompilerSettings& settings);
     void discardLookupCaches();
 
 private:

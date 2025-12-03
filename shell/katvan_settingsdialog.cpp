@@ -320,6 +320,7 @@ CompilerSettingsTab::CompilerSettingsTab(QWidget* parent)
 void CompilerSettingsTab::setupUI()
 {
     d_allowPreviewPackages = new QCheckBox(tr("&Allow download and use of @preview packages"));
+    d_enableA11yExtras = new QCheckBox(tr("Enable experimental a&ccessibility features"));
     d_allowedPaths = new PathList();
     d_cacheSize = new QLabel();
 
@@ -327,10 +328,11 @@ void CompilerSettingsTab::setupUI()
     browseCacheButton->setToolTip(tr("Show the download cache folder in a file browser"));
     connect(browseCacheButton, &QPushButton::clicked, this, &CompilerSettingsTab::browseCache);
 
-    QGroupBox* universeGroup = new QGroupBox(tr("Typst Universe"));
-    QVBoxLayout* universeLayout = new QVBoxLayout(universeGroup);
+    QGroupBox* flagsGroup = new QGroupBox(tr("Compiler Flags"));
+    QVBoxLayout* flagsLayout = new QVBoxLayout(flagsGroup);
 
-    universeLayout->addWidget(d_allowPreviewPackages);
+    flagsLayout->addWidget(d_allowPreviewPackages);
+    flagsLayout->addWidget(d_enableA11yExtras);
 
     QGroupBox* allowedPathsGroup = new QGroupBox(tr("Allowed Paths"));
     QVBoxLayout* allowedPathsLayout = new QVBoxLayout(allowedPathsGroup);
@@ -351,7 +353,7 @@ void CompilerSettingsTab::setupUI()
     downloadCacheLayout->addLayout(downloadCacheButtonLayout);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->addWidget(universeGroup);
+    mainLayout->addWidget(flagsGroup);
     mainLayout->addWidget(allowedPathsGroup, 1);
     mainLayout->addWidget(downloadCacheGroup);
 }
@@ -360,6 +362,7 @@ typstdriver::TypstCompilerSettings CompilerSettingsTab::settings() const
 {
     typstdriver::TypstCompilerSettings settings;
     settings.setAllowPreviewPackages(d_allowPreviewPackages->isChecked());
+    settings.setEnableA11yExtras(d_enableA11yExtras->isChecked());
     settings.setAllowedPaths(d_allowedPaths->paths());
 
     return settings;
@@ -368,6 +371,7 @@ typstdriver::TypstCompilerSettings CompilerSettingsTab::settings() const
 void CompilerSettingsTab::setSettings(const typstdriver::TypstCompilerSettings& settings)
 {
     d_allowPreviewPackages->setChecked(settings.allowPreviewPackages());
+    d_enableA11yExtras->setChecked(settings.enableA11yExtras());
     d_allowedPaths->setPaths(settings.allowedPaths());
 }
 

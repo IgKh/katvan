@@ -318,6 +318,10 @@ impl<'a> EngineImpl<'a> {
         Ok(analysis::count_words(&page.frame))
     }
 
+    pub fn set_compiler_flags(&mut self, a11y_extras: bool) {
+        self.world.set_compiler_flags(a11y_extras);
+    }
+
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
         self.world.set_allowed_paths(paths);
     }

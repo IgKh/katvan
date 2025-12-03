@@ -113,6 +113,7 @@ private:
     void setupUI();
 
     QCheckBox* d_allowPreviewPackages;
+    QCheckBox* d_enableA11yExtras;
     PathList* d_allowedPaths;
     QLabel* d_cacheSize;
 };

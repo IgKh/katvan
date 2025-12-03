@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "typstdriver_engine.h"
+#include "typstdriver_compilersettings.h"
 #include "typstdriver_logger.h"
 #include "typstdriver_outlinenode.h"
 
@@ -384,9 +385,13 @@ void Engine::requestAllSymbolsJson()
     }
 }
 
-void Engine::setAllowedPaths(const QStringList& allowedPaths)
+void Engine::applySettings(const TypstCompilerSettings& settings)
 {
     Q_ASSERT(d_ptr->engine.has_value());
+
+    d_ptr->engine.value()->set_compiler_flags(settings.enableA11yExtras());
+
+    const QStringList allowedPaths = settings.allowedPaths();
 
     rust::Vec<rust::String> paths;
     paths.reserve(allowedPaths.size());

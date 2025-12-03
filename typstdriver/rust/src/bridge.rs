@@ -198,6 +198,8 @@ pub(crate) mod ffi {
 
         fn count_page_words(&self, page: usize) -> Result<usize>;
 
+        fn set_compiler_flags(&mut self, a11y_extras: bool);
+
         fn set_allowed_paths(&mut self, paths: Vec<String>);
 
         fn discard_lookup_caches(&mut self);

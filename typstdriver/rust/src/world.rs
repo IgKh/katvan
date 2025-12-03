@@ -22,14 +22,14 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
-use time::{format_description::well_known::Iso8601, OffsetDateTime};
+use time::{OffsetDateTime, format_description::well_known::Iso8601};
 use typst::{
+    Feature, Library, LibraryExt,
     diag::{EcoString, FileError, FileResult, PackageError},
     foundations::Bytes,
-    syntax::{package::PackageSpec, FileId, Source, VirtualPath},
+    syntax::{FileId, Source, VirtualPath, package::PackageSpec},
     text::{Font, FontBook},
     utils::LazyHash,
-    Library, LibraryExt,
 };
 use typst_kit::fonts::{FontSlot, Fonts};
 
@@ -90,6 +90,19 @@ impl<'a> KatvanWorld<'a> {
     pub fn discard_package_roots_cache(&mut self) {
         let mut manager = self.package_manager.lock().unwrap();
         manager.roots_cache.clear();
+    }
+
+    pub fn set_compiler_flags(&mut self, a11y_extras: bool) {
+        let mut features = vec![];
+        if a11y_extras {
+            features.push(Feature::A11yExtras);
+        }
+
+        self.library = LazyHash::new(
+            Library::builder()
+                .with_features(features.into_iter().collect())
+                .build(),
+        );
     }
 
     pub fn set_allowed_paths(&mut self, paths: Vec<String>) {
