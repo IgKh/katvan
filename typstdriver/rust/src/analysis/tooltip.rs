@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+use std::{collections::HashMap, sync::LazyLock};
+
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
     foundations::{Func, Scope, Type, Value},
@@ -29,6 +31,45 @@ use typst_ide::{IdeWorld, Tooltip, analyze_expr};
 use crate::bridge::ffi;
 
 const ONLINE_DOCS_PREFIX: &str = "https://typst.app/docs";
+
+// Based on https://github.com/typst/typst/blob/main/docs/reference/groups.yml
+// Last synced to commit e016e1e (2025-10-30)
+static MATH_GROUPED_FUNCTIONS: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    map.insert("serif", "variants");
+    map.insert("sans", "variants");
+    map.insert("frak", "variants");
+    map.insert("mono", "variants");
+    map.insert("bb", "variants");
+    map.insert("cal", "variants");
+    map.insert("scr", "variants");
+    map.insert("upright", "styles");
+    map.insert("italic", "styles");
+    map.insert("bold", "styles");
+    map.insert("underline", "underover");
+    map.insert("overline", "underover");
+    map.insert("underbrace", "underover");
+    map.insert("overbrace", "underover");
+    map.insert("underbracket", "underover");
+    map.insert("overbracket", "underover");
+    map.insert("underparen", "underover");
+    map.insert("overparen", "underover");
+    map.insert("undershell", "underover");
+    map.insert("overshell", "underover");
+    map.insert("root", "roots");
+    map.insert("sqrt", "roots");
+    map.insert("attach", "attach");
+    map.insert("scripts", "attach");
+    map.insert("limits", "attach");
+    map.insert("lr", "lr");
+    map.insert("mid", "lr");
+    map.insert("abs", "lr");
+    map.insert("norm", "lr");
+    map.insert("floor", "lr");
+    map.insert("ceil", "lr");
+    map.insert("round", "lr");
+    map
+});
 
 pub fn get_tooltip(
     world: &dyn IdeWorld,
@@ -89,7 +130,8 @@ fn get_documentation_tooltip(
     let content = process_docs_markdown(world, docs);
 
     let path_refs = path.iter().map(String::as_ref).collect();
-    let details_url = get_reference_link(world, path_refs).unwrap_or_default();
+    let is_math = ancesstor.is::<ast::MathIdent>();
+    let details_url = get_reference_link(world, path_refs, is_math).unwrap_or_default();
 
     Some(ffi::ToolTip {
         content,
@@ -117,7 +159,7 @@ fn resolve_field_target_path(
 
     if let ast::Expr::FieldAccess(nested) = field.target() {
         let mut prefixes = resolve_field_target_path(world, source, nested)?;
-        prefixes.push(node_name.to_string());
+        prefixes.push(nested.field().to_string());
         return Some(prefixes);
     }
 
@@ -146,17 +188,17 @@ fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
     );
 
     // Convert internal links into external links into the Typst online
-    // documentation, and only use the overview part of the docs (until the
-    // first sub-heading)
+    // documentation, trim curly braces from code snippets, and only use
+    // the overview part of the docs (until the first sub-heading or code
+    // block)
     let events = parser
-        .map(|e| {
-            if let Event::Start(Tag::Link {
+        .map(|e| match e {
+            Event::Start(Tag::Link {
                 link_type,
                 dest_url,
                 title,
                 id,
-            }) = e
-            {
+            }) => {
                 let mut url: String = dest_url.into_string();
                 if url.starts_with('$') {
                     url = process_docs_internal_link(world, &url[1..]);
@@ -168,9 +210,14 @@ fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
                     title,
                     id,
                 })
-            } else {
-                e
             }
+            Event::Code(code) => Event::Code(
+                code.trim_start_matches('{')
+                    .trim_end_matches('}')
+                    .to_string()
+                    .into(),
+            ),
+            _ => e,
         })
         .take_while(|e| {
             !matches!(
@@ -180,7 +227,7 @@ fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
                     id: _,
                     classes: _,
                     attrs: _,
-                })
+                }) | Event::Start(Tag::CodeBlock(_))
             )
         });
 
@@ -196,8 +243,8 @@ fn process_docs_internal_link(world: &dyn IdeWorld, path: &str) -> String {
     };
 
     let path_parts: Vec<_> = path.split('.').collect();
-    let url =
-        get_reference_link(world, path_parts).unwrap_or_else(|| get_well_known_page_link(path));
+    let url = get_reference_link(world, path_parts, false)
+        .unwrap_or_else(|| get_well_known_page_link(path));
 
     if !annex.is_empty() && !url.contains('#') {
         url + annex
@@ -227,14 +274,15 @@ fn process_docs_broken_link<'a>(
     let name = reference.trim_matches('`');
     let path: Vec<_> = name.split('.').collect();
 
-    get_reference_link(world, path).map(move |url| (url.into(), reference.into()))
+    get_reference_link(world, path, false).map(move |url| (url.into(), reference.into()))
 }
 
-fn get_reference_link(world: &dyn IdeWorld, mut path: Vec<&str>) -> Option<String> {
-    // TODO look in math scope if in math mode
-    let scope = if path.first() == Some(&"std") {
+fn get_reference_link(world: &dyn IdeWorld, mut path: Vec<&str>, is_math: bool) -> Option<String> {
+    let scope = if matches!(path.first(), Some(&"std" | &"global")) {
         path.remove(0);
         world.library().std.read().scope()?
+    } else if is_math {
+        world.library().math.scope()
     } else {
         world.library().global.scope()
     };
@@ -314,13 +362,26 @@ fn get_reference_link_in_scope(scope: &Scope, path: &[&str]) -> Option<String> {
                     }
                 } else {
                     let category = binding.category()?.name();
-                    url = Some(format!("{ONLINE_DOCS_PREFIX}/reference/{category}/{elem}"));
+                    let page = get_grouped_function_page(category, elem)
+                        .unwrap_or(format!("{category}/{elem}"));
+
+                    url = Some(format!("{ONLINE_DOCS_PREFIX}/reference/{page}"));
                 }
             }
             _ => return None,
         }
     }
     url
+}
+
+fn get_grouped_function_page(category: &str, name: &str) -> Option<String> {
+    if category != "math" {
+        return None;
+    }
+
+    MATH_GROUPED_FUNCTIONS
+        .get(name)
+        .map(|page| format!("{category}/{page}#functions-{name}"))
 }
 
 #[cfg(test)]
@@ -330,7 +391,14 @@ mod tests {
     fn get_reference_link(world: &dyn typst_ide::IdeWorld, path: &str) -> Option<String> {
         let path: Vec<_> = path.split('.').collect();
 
-        crate::analysis::tooltip::get_reference_link(world, path)
+        crate::analysis::tooltip::get_reference_link(world, path, false)
+            .map(|s| s.trim_start_matches(ONLINE_DOCS_PREFIX).to_string())
+    }
+
+    fn get_math_reference_link(world: &dyn typst_ide::IdeWorld, path: &str) -> Option<String> {
+        let path: Vec<_> = path.split('.').collect();
+
+        crate::analysis::tooltip::get_reference_link(world, path, true)
             .map(|s| s.trim_start_matches(ONLINE_DOCS_PREFIX).to_string())
     }
 
@@ -379,5 +447,25 @@ mod tests {
 
         assert_eq!(get_reference_link(&world, "nosuchthing"), None);
         assert_eq!(get_reference_link(&world, "pdf.nosuchthing"), None);
+    }
+
+    #[test]
+    fn test_get_reference_link_math() {
+        let world = crate::tests::TestWorld::new("");
+
+        assert_eq!(get_reference_link(&world, "frac"), None);
+        assert_eq!(
+            get_math_reference_link(&world, "frac"),
+            Some(format!("/reference/math/frac"))
+        );
+
+        assert_eq!(
+            get_math_reference_link(&world, "sqrt"),
+            Some(format!("/reference/math/roots#functions-sqrt"))
+        );
+        assert_eq!(
+            get_math_reference_link(&world, "attach.b"),
+            Some(format!("/reference/math/attach#functions-attach-b"))
+        );
     }
 }
