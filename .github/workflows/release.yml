@@ -71,7 +71,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.9.3
+          version: 6.10.1
           cache: true
 
       - name: Install additional packages
@@ -102,8 +102,8 @@ jobs:
           ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} --appdir build/AppDir --plugin qt --output appimage
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
-          EXTRA_QT_MODULES: waylandcompositor;svg
-          EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so;libqwayland-egl.so
+          EXTRA_QT_MODULES: svg
+          EXTRA_PLATFORM_PLUGINS: libqwayland.so
           DEPLOY_PLATFORM_THEMES: 1
           LINUXDEPLOY_OUTPUT_VERSION: ${{ needs.prepare.outputs.katvan_version }}
           LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*${{ matrix.suffix }}.AppImage.zsync
@@ -131,7 +131,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.9.3
+          version: 6.10.1
           cache: true
 
       - name: Setup vcpkg
@@ -187,7 +187,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: 6.9.3
+          version: 6.10.1
           cache: true
 
       - name: Setup vcpkg
