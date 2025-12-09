@@ -30,10 +30,6 @@
 <context>
     <name>katvan::CompilerSettingsTab</name>
     <message>
-        <source>Typst Universe</source>
-        <translation>Typst Universe</translation>
-    </message>
-    <message>
         <source>Cache size: </source>
         <translation>גודל המטמון: </translation>
     </message>
@@ -42,8 +38,16 @@
         <translation>&amp;סיור...</translation>
     </message>
     <message>
+        <source>Enable experimental a&amp;ccessibility features</source>
+        <translation>הפעלת תכונות &amp;נגישות נסיוניות</translation>
+    </message>
+    <message>
         <source>Show the download cache folder in a file browser</source>
         <translation>הצג את תקיית מטמון ההורדות בסייר קבצים</translation>
+    </message>
+    <message>
+        <source>Compiler Flags</source>
+        <translation>דגלי מהדר</translation>
     </message>
     <message>
         <source>Download Cache</source>
@@ -266,6 +270,101 @@
     </message>
 </context>
 <context>
+    <name>katvan::ExportDialog</name>
+    <message>
+        <source>Export Document</source>
+        <translation>ייצוא מסמך</translation>
+    </message>
+    <message>
+        <source>PDF</source>
+        <translation>PDF</translation>
+    </message>
+    <message>
+        <source>PNG (Single File)</source>
+        <translation>PNG (קובץ יחיד)</translation>
+    </message>
+    <message>
+        <source>PNG (File per Page)</source>
+        <translation>PNG (קובץ לכל עמוד)</translation>
+    </message>
+    <message>
+        <source>&amp;Format:</source>
+        <translation>&amp;פורמט:</translation>
+    </message>
+    <message>
+        <source>&amp;Browse...</source>
+        <translation>&amp;סיור...</translation>
+    </message>
+    <message>
+        <source>Generate &amp;tagged PDF</source>
+        <translation>הפק PDF &amp;מתוייג</translation>
+    </message>
+    <message>
+        <source>PDF &amp;Version:</source>
+        <translation>&amp;גרסת PDF:</translation>
+    </message>
+    <message>
+        <source>PDF/A &amp;Standard:</source>
+        <translation>&amp;תקן PDF/A:</translation>
+    </message>
+    <message>
+        <source>Raster Settings</source>
+        <translation>הגדרות תמונה</translation>
+    </message>
+    <message>
+        <source>Di&amp;rectory:</source>
+        <translation>ספ&amp;רייה:</translation>
+    </message>
+    <message>
+        <source>File Name &amp;Pattern:</source>
+        <translation>&amp;תבנית שמות קבצים:</translation>
+    </message>
+    <message>
+        <source>You may use the following placeholders in the pattern:</source>
+        <translation>ניתן להשתמש בממלאי המקום הבאים בתוך התבנית:</translation>
+    </message>
+    <message>
+        <source>Image page number</source>
+        <translation>מספר עמוד של התמונה</translation>
+    </message>
+    <message>
+        <source>Image page number (zero-padded)</source>
+        <translation>מספר עמוד של התמונה (מרופד באפסים)</translation>
+    </message>
+    <message>
+        <source>Total number of pages</source>
+        <translation>מספר העמודים הכולל</translation>
+    </message>
+    <message>
+        <source>&amp;DPI:</source>
+        <translation>&amp;נקודות לאינץ&apos;:</translation>
+    </message>
+    <message>
+        <source>Select Target File</source>
+        <translation>בחירת קובץ יעד</translation>
+    </message>
+    <message>
+        <source>PDF files (*.pdf)</source>
+        <translation>קבצי PDF (*.pdf)</translation>
+    </message>
+    <message>
+        <source>PNG files (*.png)</source>
+        <translation>קבצי PNG (*.png)</translation>
+    </message>
+    <message>
+        <source>Select Target Directory</source>
+        <translation>בחירת ספריית יעד</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>ללא</translation>
+    </message>
+    <message>
+        <source>PDF Settings</source>
+        <translation>הגדרות PDF</translation>
+    </message>
+</context>
+<context>
     <name>katvan::HunspellSpellChecker</name>
     <message>
         <source>Saving personal dictionary to %1 failed: %2</source>
@@ -316,10 +415,6 @@
     <message>
         <source>Save &amp;As...</source>
         <translation>שמירה &amp;בשם...</translation>
-    </message>
-    <message>
-        <source>&amp;Export PDF...</source>
-        <translation>יי&amp;צוא כ-PDF...</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
@@ -449,6 +544,14 @@ Do you want to save your changes?</source>
     <message>
         <source>Untitled</source>
         <translation>ללא שם</translation>
+    </message>
+    <message>
+        <source>&amp;Export As...</source>
+        <translation>&amp;ייצוא כ...</translation>
+    </message>
+    <message>
+        <source>Quick Export &amp;PDF...</source>
+        <translation>ייצוא &amp;מהיר ל-PDF...</translation>
     </message>
     <message>
         <source>Open Document</source>
@@ -608,6 +711,10 @@ To export the document, please correct them.</source>
     <message>
         <source>Remove the selected path from the list</source>
         <translation>הסרת הנתיב המסומן מהרשימה</translation>
+    </message>
+    <message>
+        <source>Select Directory</source>
+        <translation>בחירת ספרייה</translation>
     </message>
 </context>
 <context>

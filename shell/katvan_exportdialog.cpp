@@ -60,18 +60,18 @@ struct PdfAStandard
 };
 
 Q_GLOBAL_STATIC(QList<PdfAStandard>, PDFA_STANDARDS, {
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-1b"), "a-1b", "", "1.4" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-1a"), "a-1a", "", "1.4" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-2b"), "a-2b", "", "1.7" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-2u"), "a-2u", "", "1.7" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-2a"), "a-2a", "", "1.7" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-3b"), "a-3b", "", "1.7" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-3u"), "a-3u", "", "1.7" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-3a"), "a-3a", "", "1.7" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-4"), "a-4", "2.0", "2.0" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-4f"), "a-4f", "2.0", "2.0" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/A-4e"), "a-4e", "2.0", "2.0" },
-    PdfAStandard { QT_TRANSLATE_NOOP("katvan::ExportDialog", "PDF/UA-1"), "ua-1", "", "1.7" },
+    PdfAStandard { "PDF/A-1b", "a-1b", "", "1.4" },
+    PdfAStandard { "PDF/A-1a", "a-1a", "", "1.4" },
+    PdfAStandard { "PDF/A-2b", "a-2b", "", "1.7" },
+    PdfAStandard { "PDF/A-2u", "a-2u", "", "1.7" },
+    PdfAStandard { "PDF/A-2a", "a-2a", "", "1.7" },
+    PdfAStandard { "PDF/A-3b", "a-3b", "", "1.7" },
+    PdfAStandard { "PDF/A-3u", "a-3u", "", "1.7" },
+    PdfAStandard { "PDF/A-3a", "a-3a", "", "1.7" },
+    PdfAStandard { "PDF/A-4", "a-4", "2.0", "2.0" },
+    PdfAStandard { "PDF/A-4f", "a-4f", "2.0", "2.0" },
+    PdfAStandard { "PDF/A-4e", "a-4e", "2.0", "2.0" },
+    PdfAStandard { "PDF/UA-1", "ua-1", "", "1.7" },
 });
 
 Q_GLOBAL_STATIC(QSet<QString>, PDFA_STANDARDS_REQUIRING_TAGGING, {
@@ -118,7 +118,7 @@ void ExportDialog::setupUI()
     d_targetDirPath->setLayoutDirection(Qt::LeftToRight);
     d_targetDirPath->setDisabled(true);
 
-    QLabel* targetDirPathLabel = new QLabel("Di&rectory:");
+    QLabel* targetDirPathLabel = new QLabel(tr("Di&rectory:"));
     targetDirPathLabel->setBuddy(d_targetDirPath);
 
     d_selectDirButton = new QPushButton(utils::themeIcon("document-open-folder"), tr("&Browse..."));
@@ -127,21 +127,22 @@ void ExportDialog::setupUI()
     d_targetNamePattern = new QLineEdit();
     connect(d_targetNamePattern, &QLineEdit::editingFinished, this, &ExportDialog::updateButtonState);
 
-    QLabel* targetNamePatternLabel = new QLabel("File Name &Pattern:");
+    QLabel* targetNamePatternLabel = new QLabel(tr("File Name &Pattern:"));
     targetNamePatternLabel->setBuddy(d_targetNamePattern);
 
     QString patternInfo = QStringLiteral(
         "<p>%1</p>"
         "<ul>"
-        "<li><code>{p}</code> %2</li>"
-        "<li><code>{n}</code> %3</li>"
-        "<li><code>{t}</code> %4</li>"
+        "<li dir=%5><code>{p}</code> %2</li>"
+        "<li dir=%5><code>{n}</code> %3</li>"
+        "<li dir=%5><code>{t}</code> %4</li>"
         "</ul>"
     ).arg(
         tr("You may use the following placeholders in the pattern:"),
         tr("Image page number"),
         tr("Image page number (zero-padded)"),
-        tr("Total number of pages")
+        tr("Total number of pages"),
+        layoutDirection() == Qt::RightToLeft ? "rtl" : "ltr"
     );
     QLabel* patternInfoLabel = new QLabel(patternInfo);
 
@@ -305,11 +306,11 @@ void ExportDialog::browseForTargetFile()
 
     QString format = d_formatCombo->currentData().toString();
     if (format == PDF_FORMAT) {
-        dialog.setNameFilter(QObject::tr("PDF files (*.pdf)"));
+        dialog.setNameFilter(tr("PDF files (*.pdf)"));
         dialog.setDefaultSuffix("pdf");
     }
     else if (format == SINGLE_PNG_FORMAT) {
-        dialog.setNameFilter(QObject::tr("PNG files (*.png)"));
+        dialog.setNameFilter(tr("PNG files (*.png)"));
         dialog.setDefaultSuffix("png");
     }
 
