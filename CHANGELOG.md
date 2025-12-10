@@ -1,3 +1,39 @@
+## v0.12.0 (2025-12-10)
+
+Katvan is just shy of two years old! At this point, pretty much all features that I envisoned are now implemented. From now on, we start the final road to 1.0, where the focus is going to be on strengthening existing features, catching up on gaps in the macOS version, and building up project infrastructure with the goal of making Katvan open to contribution and sustainable long term. Thank you to all who shared the journey with me so far!
+
+### Typst Version
+
+- The included Typst compiler version was upgraded to `0.14.1` ([blog](https://typst.app/blog/2025/typst-0.14), [0.14 release notes](https://typst.app/docs/changelog/0.14.0/), [0.14.1 release notes](https://typst.app/docs/changelog/0.14.1/)). As always, note that some Universe packages used in your documents may be incompatible and need upgrading.
+
+#### Breaking
+
+- Katvan now requires at least Qt 6.8.0 and CMake 3.22 in order to build.
+
+#### New Features
+
+- A new "Export As" dialog is available from the File menu. It allows setting PDF export settings (such as the PDF version, as well as PDF/A conformance level as now supported by Typst), and exporting to PNG images.
+
+- A new toggle in the Compiler Settings tab allows enabling the new experimental PDF-related accessibility functions that were added to the Typst compiler.
+
+- The Symbol Picker dialog now displays deprecated symbols as such.
+
+- Documentation tooltips triggered via the keyboard (e.g. through the `Ctrl+K` shortcut) are now fully scrollable and navigable by keyboard.
+
+#### Fixes
+
+- Documentation tooltips were heavily improved, making detailed documentation appear in more cases and fixing many links to the full Typst documentation that were previously broken.
+
+- Crashes and visual issues associated with using complex input methods (i.e. for CJK languages) were fixed.
+
+- Multiple theming related fixes were done, ensuring that syntax highlighting properly adapts when changing the theme and that tooltips and auto-complete suggestions are readable on different system themes.
+
+- Text in the "About" dialog can now be selected on all supported platforms.
+
+#### Packaging Changes
+
+- Bundled Qt version in pre-built packages is now `6.10.1`.
+
 ## v0.11.1 (2025-10-11)
 
 A minimal bugfix release containing accumulated fixes before the work to upgrade Typst to 0.14 commences.
