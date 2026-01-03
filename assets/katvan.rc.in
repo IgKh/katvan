@@ -17,7 +17,7 @@ BEGIN
             VALUE "CompanyName", "Katvan"
             VALUE "FileDescription", "A bare-bones editor for Typst files, with a bias for RTL"
             VALUE "FileVersion", "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@.0"
-            VALUE "LegalCopyright", "Copyright (c) 2024 - 2025 Igor Khanin"
+            VALUE "LegalCopyright", "Copyright (c) 2024 - 2026 Igor Khanin"
             VALUE "InternalName", "katvan"
             VALUE "OriginalFilename", "katvan.exe"
             VALUE "ProductName", "Katvan"

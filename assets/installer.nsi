@@ -54,7 +54,7 @@ FunctionEnd
 VIProductVersion "${katvanver_1}.${katvanver_2}.${katvanver_3}.${katvanver_4}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "Katvan"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright (c) 2024 - 2025 Igor Khanin"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright (c) 2024 - 2026 Igor Khanin"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "Katvan ${VERSION} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${VERSION}"
 

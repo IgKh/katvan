@@ -1,6 +1,6 @@
 /*
  * This file is part of Katvan
- * Copyright (c) 2024 - 2025 Igor Khanin
+ * Copyright (c) 2024 - 2026 Igor Khanin
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ public slots:
     void requestMetadata(quint64 previousFingerprint);
     void requestPageWordCount(int page);
     void requestAllSymbolsJson();
-    void applySettings(const TypstCompilerSettings& settings);
+    void applySettings(const katvan::typstdriver::TypstCompilerSettings& settings);
     void discardLookupCaches();
 
 private:

@@ -1,7 +1,7 @@
 // -*- mode: objective-cpp -*-
 /*
  * This file is part of Katvan
- * Copyright (c) 2024 - 2025 Igor Khanin
+ * Copyright (c) 2024 - 2026 Igor Khanin
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
