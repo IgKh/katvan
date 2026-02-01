@@ -118,16 +118,10 @@ If all is successful, an application bundle will appear in the `build/dist` dire
 
 ## Contributing
 
-At this point in the project's life, code contributions are generally not accepted. This project exists to meet my personal need, and is currently rapidly evolving with a well-defined goal in mind. It is made available in hope that it is useful for others with similar needs.
-
-Issues detailing bug reports and suggestions are welcome, but please don't expect much.
+Contributions that match the project's goals are welcome! See the [contribution guide](CONTRIBUTING.md) for details.
 
 ## License
 
 [GPL v3](https://choosealicense.com/licenses/gpl-3.0/)
-
-## Roadmap
-
-See the dedicated [ROADMAP.md](ROADMAP.md) file.
 
 [^1]: Requires Qt 6.9 or above, if building from source.
