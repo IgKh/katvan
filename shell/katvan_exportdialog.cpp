@@ -112,7 +112,7 @@ void ExportDialog::setupUI()
     d_selectFileButton = new QPushButton(utils::themeIcon("document-open"), tr("&Browse..."));
     connect(d_selectFileButton, &QPushButton::clicked, this, &ExportDialog::browseForTargetFile);
 
-    d_singleTargetGroup = new QGroupBox();
+    d_singleTargetGroup = new QGroupBox(tr("Export To"));
 
     d_targetDirPath = new QLineEdit();
     d_targetDirPath->setLayoutDirection(Qt::LeftToRight);
@@ -146,7 +146,7 @@ void ExportDialog::setupUI()
     );
     QLabel* patternInfoLabel = new QLabel(patternInfo);
 
-    d_multiTargetGroup = new QGroupBox();
+    d_multiTargetGroup = new QGroupBox(tr("Export To"));
 
     d_pdfVersionCombo = new QComboBox();
     d_pdfVersionCombo->addItem("PDF 1.4", "1.4");

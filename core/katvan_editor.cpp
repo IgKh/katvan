@@ -266,10 +266,10 @@ QMenu* Editor::createInsertMenu()
     insertInlineMathAction->setIcon(utils::fontIcon(QChar(0x221a)));
     insertInlineMathAction->setShortcut(Qt::CTRL | Qt::Key_M);
 
-    QAction* insertColorAction = menu->addAction("&Color...", this, &Editor::showColorPicker);
+    QAction* insertColorAction = menu->addAction(tr("&Color..."), this, &Editor::showColorPicker);
     insertColorAction->setShortcut(INSERT_COLOR);
 
-    menu->addAction("&Symbol...", this, &Editor::showSymbolPicker);
+    menu->addAction(tr("&Symbol..."), this, &Editor::showSymbolPicker);
 
     return menu;
 }

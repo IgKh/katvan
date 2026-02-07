@@ -53,25 +53,14 @@ void setupPortableMode()
 
 void loadTranslations(const QLocale& locale)
 {
-    QStringList translationPaths;
-    translationPaths.append(":/i18n");
-
-#if defined(Q_OS_WINDOWS)
-    translationPaths.append(QCoreApplication::applicationDirPath() + "/translations");
-#elif defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-    const QStringList locations = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
-    for (const QString& dir : locations) {
-        translationPaths.append(dir + "/katvan/translations");
+    static QTranslator coreTranslator;
+    if (coreTranslator.load(locale, "core", "_", ":/i18n")) {
+        QCoreApplication::installTranslator(&coreTranslator);
     }
-#endif
 
-    static QTranslator translator;
-    for (const QString& directory : std::as_const(translationPaths)) {
-        if (translator.load(locale, "katvan", "_", directory)) {
-            qDebug() << "Loaded application translations from" << translator.filePath();
-            QCoreApplication::installTranslator(&translator);
-            break;
-        }
+    static QTranslator shellTranslator;
+    if (shellTranslator.load(locale, "shell", "_", ":/i18n")) {
+        QCoreApplication::installTranslator(&shellTranslator);
     }
 
     QString qtTranslationPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);

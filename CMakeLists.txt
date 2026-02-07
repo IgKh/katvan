@@ -25,7 +25,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
-qt_standard_project_setup(REQUIRES 6.8)
+qt_standard_project_setup(
+    REQUIRES 6.8
+    I18N_TRANSLATED_LANGUAGES he
+)
 
 add_subdirectory(typstdriver)
 add_subdirectory(core)

@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
 
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
     find_package(Qt6 COMPONENTS GuiPrivate)
@@ -82,3 +82,14 @@ if(NOT APPLE AND NOT WIN32)
 
     target_link_libraries(katvan_core PUBLIC PkgConfig::hunspell)
 endif()
+
+qt_add_translations(katvan_core
+    SOURCE_TARGETS katvan_core
+    TS_FILE_DIR translations
+    TS_FILE_BASE core
+    QM_FILES_OUTPUT_VARIABLE KATVAN_CORE_QM_FILES
+    LUPDATE_OPTIONS -no-obsolete -locations none
+)
+
+# Publish variable to shells
+set(KATVAN_CORE_QM_FILES "${KATVAN_CORE_QM_FILES}" PARENT_SCOPE)

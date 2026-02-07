@@ -1,5 +1,3 @@
-find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
-
 set(SOURCES
     katvan_backuphandler.cpp
     katvan_compileroutput.cpp
@@ -55,13 +53,19 @@ set_target_properties(katvan PROPERTIES
 )
 
 qt_add_translations(katvan
-    SOURCE_TARGETS
-        katvan
-        katvan_core
-    TS_FILES
-        translations/katvan_he.ts
-    PLURALS_TS_FILE
-        translations/katvan_en.ts
-    LUPDATE_OPTIONS
-        -no-obsolete -locations none
+    SOURCE_TARGETS katvan
+    TS_FILE_DIR translations
+    TS_FILE_BASE shell
+    QM_FILES_OUTPUT_VARIABLE KATVAN_SHELL_QM_FILES
+    LUPDATE_OPTIONS -no-obsolete -locations none
+)
+
+foreach(QM_FILE IN LISTS KATVAN_CORE_QM_FILES KATVAN_SHELL_QM_FILES)
+    get_filename_component(QM_NAME ${QM_FILE} NAME)
+    set_source_files_properties(${QM_FILE} PROPERTIES QT_RESOURCE_ALIAS ${QM_NAME})
+endforeach()
+
+qt_add_resources(katvan katvan_translations
+    PREFIX "i18n"
+    FILES ${KATVAN_CORE_QM_FILES} ${KATVAN_SHELL_QM_FILES}
 )
