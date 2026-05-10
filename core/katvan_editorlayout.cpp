@@ -268,19 +268,23 @@ void EditorLayout::draw(QPainter* painter, const QAbstractTextDocumentLayout::Pa
                         && block.contains(sel.cursor.position())) {
                 int posInBlock = adjustPosToDisplay(layoutData->displayOffsets, sel.cursor.position() - blockStart);
                 QTextLine line = layout->lineForTextPosition(posInBlock);
-                Q_ASSERT(line.isValid());
 
-                QTextLayout::FormatRange fmt;
-                fmt.start = line.textStart();
-                fmt.length = line.textLength();
-                fmt.format = sel.format;
+                // Line may not be valid in layout if text was automatically
+                // added by the editor, and the document is drawn before
+                // having the chance to re-layout.
+                if (line.isValid()) {
+                    QTextLayout::FormatRange fmt;
+                    fmt.start = line.textStart();
+                    fmt.length = line.textLength();
+                    fmt.format = sel.format;
 
-                if (line.lineNumber() == layout->lineCount() - 1) {
-                    // For the last line in a block, we must ensure that the
-                    // selection ends after the block
-                    fmt.length++;
-                }
-                formats.append(fmt);
+                    if (line.lineNumber() == layout->lineCount() - 1) {
+                        // For the last line in a block, we must ensure that the
+                        // selection ends after the block
+                        fmt.length++;
+                    }
+                    formats.append(fmt);
+               }
             }
         }
 

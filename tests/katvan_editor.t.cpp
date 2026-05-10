@@ -34,6 +34,7 @@ static QString keyToAscii(int key)
 {
     switch (key) {
         case Qt::Key_ParenRight: return QStringLiteral(")");
+        case Qt::Key_BraceLeft: return QStringLiteral("{");
         default: return QString();
     }
 }
@@ -131,6 +132,18 @@ TEST(EditorTests, InsertClosingBracketInsertAnyway) {
     holder.sendKeyPress(6, Qt::Key_ParenRight, Qt::NoModifier);
     EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("#text())")));
     EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(7));
+}
+
+TEST(EditorTests, InsertClosingBracketMultiline) {
+    EditorSettings settings;
+    settings.setAutoBrackets(true);
+
+    QString text = QStringLiteral("#\n");
+    EditorHolder holder(text, settings);
+
+    holder.sendKeyPress(1, Qt::Key_BraceLeft, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("#{}\n")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(2));
 }
 
 TEST(EditorTests, MoveToLineEdges) {
