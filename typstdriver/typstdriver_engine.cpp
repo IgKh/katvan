@@ -259,7 +259,7 @@ void Engine::inverseSearch(int page, QPointF clickPoint)
     }
 }
 
-void Engine::requestToolTip(int line, int column, QPoint pos)
+void Engine::requestToolTip(int line, int column)
 {
     Q_ASSERT(d_ptr->engine.has_value());
 
@@ -271,12 +271,7 @@ void Engine::requestToolTip(int line, int column, QPoint pos)
         QString content = QString::fromUtf8(toolTip.content.data(), toolTip.content.size());
         QString url = QString::fromUtf8(toolTip.details_url.data(), toolTip.details_url.size());
 
-        if (!pos.isNull()) {
-            Q_EMIT toolTipReady(pos, content, url);
-        }
-        else {
-            Q_EMIT toolTipForLocation(line, column, content, url);
-        }
+        Q_EMIT toolTipReady(line, column, content, url);
     }
     catch (rust::Error&) {
     }
@@ -316,7 +311,7 @@ void Engine::searchDefinition(int line, int column)
             Q_EMIT jumpToEditor(result.position.line, result.position.column);
         }
         else {
-            requestToolTip(line, column, QPoint());
+            requestToolTip(line, column);
         }
     }
     catch (rust::Error&) {

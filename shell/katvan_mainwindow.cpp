@@ -101,7 +101,6 @@ MainWindow::MainWindow()
     connect(d_driver, &TypstDriverWrapper::jumpToPreview, d_previewer, &Previewer::jumpToPreview);
     connect(d_driver, &TypstDriverWrapper::jumpToEditor, d_editor, qOverload<int, int>(&Editor::goToBlock));
     connect(d_driver, &TypstDriverWrapper::showEditorToolTip, d_editor, &Editor::showToolTip);
-    connect(d_driver, &TypstDriverWrapper::showEditorToolTipAtLocation, d_editor, &Editor::showToolTipAtLocation);
     connect(d_driver, &TypstDriverWrapper::completionsReady, d_editor->completionManager(), &CompletionManager::completionsReady);
     connect(d_driver, &TypstDriverWrapper::outlineUpdated, d_outlineView, &OutlineView::outlineUpdated);
     connect(d_driver, &TypstDriverWrapper::labelsUpdated, d_labelsView, &LabelsView::labelsUpdated);

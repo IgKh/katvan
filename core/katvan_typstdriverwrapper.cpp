@@ -127,7 +127,6 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     connect(d_engine, &typstdriver::Engine::jumpToPreview, this, &TypstDriverWrapper::jumpToPreview);
     connect(d_engine, &typstdriver::Engine::jumpToEditor, this, &TypstDriverWrapper::jumpToEditor);
     connect(d_engine, &typstdriver::Engine::toolTipReady, this, &TypstDriverWrapper::showEditorToolTip);
-    connect(d_engine, &typstdriver::Engine::toolTipForLocation, this, &TypstDriverWrapper::showEditorToolTipAtLocation);
     connect(d_engine, &typstdriver::Engine::completionsReady, this, &TypstDriverWrapper::completionsReady);
     connect(d_engine, &typstdriver::Engine::metadataUpdated, this, &TypstDriverWrapper::metadataUpdatedInternal);
     connect(d_engine, &typstdriver::Engine::pageWordCountUpdated, this, &TypstDriverWrapper::pageWordCountUpdated);
@@ -218,9 +217,9 @@ void TypstDriverWrapper::inverseSearch(int page, QPointF clickPoint)
     QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::inverseSearch, page, clickPoint);
 }
 
-void TypstDriverWrapper::requestToolTip(int line, int column, QPoint pos)
+void TypstDriverWrapper::requestToolTip(int line, int column)
 {
-    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestToolTip, line, column, pos);
+    QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::requestToolTip, line, column);
 }
 
 void TypstDriverWrapper::requestCompletions(int line, int column, bool implicit)

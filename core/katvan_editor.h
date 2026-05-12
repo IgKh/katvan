@@ -19,6 +19,7 @@
 
 #include "katvan_editortheme.h"
 #include "katvan_editorsettings.h"
+#include "katvan_editortooltip.h"
 
 #include "typstdriver_logger.h"
 
@@ -80,8 +81,7 @@ public slots:
     void setTextBlockDirection(Qt::LayoutDirection dir);
     void forceRehighlighting();
     void checkForModelines();
-    void showToolTip(QPoint windowPos, const QString& text, const QUrl& detailsUrl);
-    void showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl);
+    void showToolTip(int line, int column, const QString& text, const QUrl& detailsUrl);
 
     void insertSymbol(const QString& symbolName);
     void insertColor(const QColor& color);
@@ -134,6 +134,7 @@ private slots:
     void resetNavigationData();
     void popupInsertMenu();
     void triggerToolTipByKeyboard();
+    void popupToolTip(EditorToolTip::Trigger trigger, int offset, const QString& text, const QUrl& link = QUrl());
     void spellingSuggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
     void updateLineNumberGutterWidth();
@@ -144,7 +145,7 @@ signals:
     void goBackAvailable(bool available);
     void goForwardAvailable(bool available);
     void fontZoomFactorChanged(qreal factor);
-    void toolTipRequested(int blockNumber, int charOffset, QPoint widgetPos);
+    void toolTipRequested(int blockNumber, int charOffset);
     void goToDefinitionRequested(int blockNumber, int charOffset);
     void showSymbolPicker();
     void showColorPicker();
@@ -173,6 +174,10 @@ private:
             : blockNumber(cursor.blockNumber())
             , offset(cursor.positionInBlock()) {}
 
+        EditorLocation(int line, int column)
+            : blockNumber(line)
+            , offset(column) {}
+
         bool operator==(const EditorLocation&) const = default;
         bool operator!=(const EditorLocation&) const = default;
 
@@ -186,7 +191,7 @@ private:
     std::optional<Qt::LayoutDirection> d_pendingDirectionChange;
     QString d_pendingSuggestionsWord;
     int d_pendingSuggestionsPosition;
-    std::optional<QPoint> d_pendingTooltipPos;
+    std::optional<std::pair<EditorLocation, EditorToolTip::Trigger>> d_pendingTooltip;
 };
 
 }

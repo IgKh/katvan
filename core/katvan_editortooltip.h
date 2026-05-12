@@ -40,7 +40,6 @@ public:
     bool isByKeyboard() const { return d_byKeyboard; }
 
     void setContent(const QString& text, const QUrl& link);
-    void setPlacement(const QPoint& globalMousePos);
     void setPlacement(const QRect& globalCursorRect);
 
 public slots:
@@ -66,8 +65,13 @@ private:
 class EditorToolTip
 {
 public:
-    static void showByMouse(const QPoint& globalPos, QWidget* parent, const QString& text, const QUrl& link = QUrl());
-    static void showByKeyboard(const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link = QUrl());
+    enum Trigger
+    {
+        BY_MOUSE = 0,
+        BY_KEYBOARD
+    };
+
+    static void show(Trigger trigger, const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link = QUrl());
     static void hide();
 
 private:

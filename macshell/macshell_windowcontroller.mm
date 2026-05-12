@@ -124,8 +124,6 @@
                      self.previewer.previewerView, &katvan::PreviewerView::jumpTo);
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::showEditorToolTip,
                      self.editorView.editor, &katvan::Editor::showToolTip);
-    QObject::connect(self.driver, &katvan::TypstDriverWrapper::showEditorToolTipAtLocation,
-                     self.editorView.editor, &katvan::Editor::showToolTipAtLocation);
     QObject::connect(self.driver, &katvan::TypstDriverWrapper::completionsReady,
                      self.editorView.editor->completionManager(), &katvan::CompletionManager::completionsReady);
 

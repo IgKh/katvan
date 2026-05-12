@@ -1,9 +1,5 @@
 find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
 
-if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
-    find_package(Qt6 COMPONENTS GuiPrivate)
-endif()
-
 find_package(Git)
 if(Git_FOUND)
     execute_process(
@@ -66,10 +62,6 @@ endif()
 target_link_libraries(katvan_core PUBLIC
     typstdriver
     Qt6::Widgets
-)
-
-target_link_libraries(katvan_core PRIVATE
-    Qt6::GuiPrivate
 )
 
 if(NOT APPLE AND NOT WIN32)

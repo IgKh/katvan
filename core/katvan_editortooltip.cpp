@@ -17,9 +17,6 @@
  */
 #include "katvan_editortooltip.h"
 
-#include <qpa/qplatformcursor.h>
-#include <qpa/qplatformscreen.h>
-
 #include <QApplication>
 #include <QLabel>
 #include <QScrollBar>
@@ -192,33 +189,6 @@ void EditorToolTipFrame::updateSizeAndLayout(QTextDocument* newDocument)
     resize(totalWidth, totalHeight);
 }
 
-static QScreen* screenForPosition(QWidget* parent, const QPoint& globalPos)
-{
-    QScreen* parentScreen;
-    if (parent) {
-        parentScreen = parent->screen();
-    }
-    else {
-        parentScreen = qApp->primaryScreen();
-    }
-
-    QScreen* exactScreen = parentScreen->virtualSiblingAt(globalPos);
-    return exactScreen ? exactScreen : parentScreen;
-}
-
-static QSize screenCursorSize(QScreen* screen)
-{
-    QPlatformScreen* nativeScreen = screen->handle();
-
-    QSize cursorPhysicalSize { 16, 16 };
-    QPlatformCursor* cursor = nativeScreen->cursor();
-    if (cursor) {
-        cursorPhysicalSize = cursor->size();
-    }
-
-    return cursorPhysicalSize / screen->devicePixelRatio();
-}
-
 static void adjustPosition(QPoint& pos, const QSize& size, QScreen* screen)
 {
     QRect screenRect = screen->geometry();
@@ -231,20 +201,6 @@ static void adjustPosition(QPoint& pos, const QSize& size, QScreen* screen)
 
     pos.setX(qBound(screenRect.left(), pos.x(), screenRect.right() - size.width()));
     pos.setY(qBound(screenRect.top(), pos.y(), screenRect.bottom() - size.height()));
-}
-
-void EditorToolTipFrame::setPlacement(const QPoint& globalMousePos)
-{
-    QScreen* screen = screenForPosition(parentWidget(), globalMousePos);
-    QSize cursorSize = screenCursorSize(screen);
-
-    QPoint pos {
-        globalMousePos.x() + cursorSize.width() / 2,
-        globalMousePos.y() + cursorSize.height()
-    };
-
-    adjustPosition(pos, size(), screen);
-    move(pos);
 }
 
 void EditorToolTipFrame::setPlacement(const QRect& globalCursorRect)
@@ -352,33 +308,7 @@ bool EditorToolTipFrame::eventFilter(QObject* obj, QEvent* e)
 
 QPointer<EditorToolTipFrame> EditorToolTip::s_frame;
 
-void EditorToolTip::showByMouse(const QPoint& globalPos, QWidget* parent, const QString& text, const QUrl& link)
-{
-    if (text.isEmpty()) {
-        hide();
-        return;
-    }
-
-    QToolTip::hideText();
-
-    if (s_frame && s_frame->isByKeyboard()) {
-        s_frame->hideImmediately();
-        s_frame.clear();
-    }
-
-    if (!s_frame) {
-        s_frame = new EditorToolTipFrame(false, parent);
-    }
-    else if (s_frame->parentWidget() != parent) {
-        s_frame->setParent(parent);
-    }
-
-    s_frame->setContent(text, link);
-    s_frame->setPlacement(globalPos);
-    s_frame->showNormal();
-}
-
-void EditorToolTip::showByKeyboard(const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link)
+void EditorToolTip::show(EditorToolTip::Trigger trigger, const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link)
 {
     if (text.isEmpty()) {
         hide();
@@ -393,7 +323,7 @@ void EditorToolTip::showByKeyboard(const QRect& globalCursorRect, QWidget* paren
     }
 
     if (!s_frame) {
-        s_frame = new EditorToolTipFrame(true, parent);
+        s_frame = new EditorToolTipFrame(trigger == BY_KEYBOARD, parent);
     }
     else if (s_frame->parentWidget() != parent) {
         s_frame->setParent(parent);

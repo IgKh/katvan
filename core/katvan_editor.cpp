@@ -490,29 +490,35 @@ void Editor::checkForModelines()
     applyEffectiveSettings();
 }
 
-void Editor::showToolTip(QPoint widgetPos, const QString& text, const QUrl& detailsUrl)
+void Editor::popupToolTip(EditorToolTip::Trigger trigger, int offset, const QString& text, const QUrl& link)
 {
-    if (!d_pendingTooltipPos || d_pendingTooltipPos.value() != widgetPos) {
-        return;
-    }
-    d_pendingTooltipPos.reset();
+    QTextCursor cursor(document());
+    cursor.setPosition(offset);
 
-    EditorToolTip::showByMouse(mapToGlobal(widgetPos), this, text, detailsUrl);
+    QRect r = adjustedCursorRect(cursor);
+    r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
+
+    EditorToolTip::show(trigger, r, this, text, link);
 }
 
-void Editor::showToolTipAtLocation(int line, int column, const QString& text, const QUrl& detailsUrl)
+void Editor::showToolTip(int line, int column, const QString& text, const QUrl& detailsUrl)
 {
+    if (!d_pendingTooltip) {
+        return;
+    }
+
+    auto [pendingLocation, trigger] = d_pendingTooltip.value();
+    if (pendingLocation != EditorLocation { line, column }) {
+        return;
+    }
+    d_pendingTooltip.reset();
+
     QTextCursor cursor = cursorAt(line, column);
     if (cursor.isNull()) {
         return;
     }
 
-    d_pendingTooltipPos.reset();
-
-    QRect r = adjustedCursorRect(cursor);
-    r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
-
-    EditorToolTip::showByKeyboard(r, this, text, detailsUrl);
+    popupToolTip(trigger, cursor.position(), text, detailsUrl);
 }
 
 void Editor::triggerToolTipByKeyboard()
@@ -521,14 +527,12 @@ void Editor::triggerToolTipByKeyboard()
 
     QString tooltip = predefinedTooltipAtPosition(cursor.position());
     if (!tooltip.isEmpty()) {
-        QRect r = adjustedCursorRect(cursor);
-        r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
-
-        EditorToolTip::showByKeyboard(r, this, tooltip);
+        popupToolTip(EditorToolTip::BY_KEYBOARD, cursor.position(), tooltip);
         return;
     }
 
-    Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock(), QPoint());
+    d_pendingTooltip = std::make_pair(cursor, EditorToolTip::BY_KEYBOARD);
+    Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock());
 }
 
 void Editor::handleToolTipEvent(QHelpEvent* event)
@@ -546,15 +550,15 @@ void Editor::handleToolTipEvent(QHelpEvent* event)
 
     QString tooltip = predefinedTooltipAtPosition(offset);
     if (!tooltip.isEmpty()) {
-        EditorToolTip::showByMouse(event->globalPos(), this, tooltip);
+        popupToolTip(EditorToolTip::BY_MOUSE, offset, tooltip);
         return;
     }
 
     QTextCursor cursor(document());
     cursor.setPosition(offset);
 
-    d_pendingTooltipPos = event->pos();
-    Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock(), event->pos());
+    d_pendingTooltip = std::make_pair(cursor, EditorToolTip::BY_MOUSE);
+    Q_EMIT toolTipRequested(cursor.blockNumber(), cursor.positionInBlock());
 }
 
 bool Editor::event(QEvent* event)

@@ -63,8 +63,7 @@ signals:
     void exportFinished(bool success);
     void jumpToPreview(int page, QPointF pos);
     void jumpToEditor(int line, int column);
-    void toolTipReady(QPoint pos, QString toolTip, QUrl detailsUrl);
-    void toolTipForLocation(int line, int column, QString toolTip, QUrl detailsUrl);
+    void toolTipReady(int line, int column, QString toolTip, QUrl detailsUrl);
     void completionsReady(int line, int column, QByteArray completionsJson);
     void metadataUpdated(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline, QList<katvan::typstdriver::DocumentLabel> labels);
     void pageWordCountUpdated(int page, size_t wordCount);
@@ -81,7 +80,7 @@ public slots:
     void exportToPngMulti(const QString& outputDir, const QString& filePattern, int dpi);
     void forwardSearch(int line, int column, int currentPreviewPage);
     void inverseSearch(int page, QPointF clickPoint);
-    void requestToolTip(int line, int column, QPoint pos);
+    void requestToolTip(int line, int column);
     void requestCompletions(int line, int column, bool implicit);
     void searchDefinition(int line, int column);
     void requestMetadata(quint64 previousFingerprint);
