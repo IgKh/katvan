@@ -71,7 +71,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
         with:
-          version: 6.10.1
+          version: 6.11.1
           cache: true
 
       - name: Install additional packages
@@ -131,8 +131,10 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
         with:
-          version: 6.10.1
+          version: 6.11.1
           cache: true
+          # Until https://github.com/miurahr/aqtinstall/issues/1007 is released
+          aqtsource: git+https://github.com/miurahr/aqtinstall.git@75ea7944aeac985e226df0a882cd5b3470e51a97
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
@@ -187,8 +189,10 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
         with:
-          version: 6.10.1
+          version: 6.11.1
           cache: true
+          # Until https://github.com/miurahr/aqtinstall/issues/1007 is released
+          aqtsource: git+https://github.com/miurahr/aqtinstall.git@75ea7944aeac985e226df0a882cd5b3470e51a97
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11

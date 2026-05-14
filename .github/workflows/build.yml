@@ -125,7 +125,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
         with:
-          version: 6.10.*
+          version: 6.11.*
           arch: linux_gcc_64
           cache: true
 
