@@ -41,12 +41,12 @@ jobs:
             --exclude dist *
 
       - name: Create attestation
-        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: dist/katvan-${{ needs.prepare.outputs.katvan_version }}-src.tar.gz
 
       - name: Upload tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tarball
           path: dist/katvan-${{ needs.prepare.outputs.katvan_version }}-src.tar.gz
@@ -84,7 +84,7 @@ jobs:
 
       - id: install-linuxdeploy
         name: Install AppImage tools
-        uses: miurahr/install-linuxdeploy-action@c776300d621bfc9510fc400abf5dff5fa728ac14 # v1
+        uses: miurahr/install-linuxdeploy-action@4e0e2563942963739823dc5b9ea3bb11a8063182 # v1.8.0
         with:
           plugins: qt appimage
 
@@ -109,12 +109,12 @@ jobs:
           LDAI_UPDATE_INFORMATION: gh-releases-zsync|IgKh|katvan|latest|Katvan-*${{ matrix.suffix }}.AppImage.zsync
 
       - name: Create attestation
-        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: Katvan-${{ needs.prepare.outputs.katvan_version }}-${{ matrix.suffix }}.AppImage
 
       - name: Upload AppImage
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: AppImage-${{ matrix.suffix }}
           path: Katvan-${{ needs.prepare.outputs.katvan_version }}-${{ matrix.suffix }}.AppImage*
@@ -136,14 +136,15 @@ jobs:
           # Until https://github.com/miurahr/aqtinstall/issues/1007 is released
           aqtsource: git+https://github.com/miurahr/aqtinstall.git@75ea7944aeac985e226df0a882cd5b3470e51a97
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
+      - name: Bootstrap vcpkg
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\bootstrap-vcpkg.bat" -disableMetrics
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Configure
-        run: cmake -S . -B build -DKATVAN_PORTABLE_BUILD=ON -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+        run: cmake -S . -B build -DKATVAN_PORTABLE_BUILD=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build
         run: cmake --build build -j --config Release
@@ -167,12 +168,12 @@ jobs:
           7z a katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip Katvan\*
 
       - name: Create attestation
-        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip
 
       - name: Upload distribution
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: WindowsZip
           path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-portable.zip
@@ -194,14 +195,15 @@ jobs:
           # Until https://github.com/miurahr/aqtinstall/issues/1007 is released
           aqtsource: git+https://github.com/miurahr/aqtinstall.git@75ea7944aeac985e226df0a882cd5b3470e51a97
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
+      - name: Bootstrap vcpkg
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\bootstrap-vcpkg.bat" -disableMetrics
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build
         run: cmake --build build -j --config Release
@@ -231,12 +233,12 @@ jobs:
           makensis.exe /NOCD /DOUTFILE=..\katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe ..\assets\installer.nsi
 
       - name: Create attestation
-        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe
 
       - name: Upload installer
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: WindowsInstaller
           path: katvan-${{ needs.prepare.outputs.katvan_version }}-windows-x64-installer.exe
@@ -254,10 +256,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           enable-cache: false
 

@@ -29,7 +29,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           shared-key: 'build'
           workspaces: |
@@ -57,21 +57,22 @@ jobs:
           version: 6.8.*
           cache: true
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@7d259227a1fb6471a0253dd5ab7419835228f7d7 # v11
+      - name: Bootstrap vcpkg
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\bootstrap-vcpkg.bat" -disableMetrics
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           shared-key: 'build'
           workspaces: |
             typstdriver/rust -> ../../build/x64/RelWithDebInfo/cargo/build
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build
         run: cmake --build build -j --config RelWithDebInfo
@@ -100,11 +101,15 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           shared-key: 'build'
           workspaces: |
             typstdriver/rust -> ../../build/cargo/build
+
+      # Ensures that whatever rust-toolchain installed is before the Homebrew stubs
+      - name: Adjust PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
@@ -141,7 +146,7 @@ jobs:
           components: clippy
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           workspaces: |
             typstdriver/rust -> ../../build/cargo/build
@@ -156,7 +161,7 @@ jobs:
           cargo clippy --no-deps --manifest-path typstdriver/rust/Cargo.toml --target-dir build/cargo/build
 
       - name: Install typos
-        uses: taiki-e/install-action@5939f3337e40968c39aa70f5ecb1417a92fb25a0 # v2.75.15
+        uses: taiki-e/install-action@cca35edeb1d01366c2843b68fc3ca441446d73d3 # v2.77.1
         with:
           tool: typos
 
