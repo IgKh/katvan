@@ -498,7 +498,7 @@ void Editor::popupToolTip(EditorToolTip::Trigger trigger, int offset, const QStr
     QRect r = adjustedCursorRect(cursor);
     r.moveTopLeft(viewport()->mapToGlobal(r.topLeft()));
 
-    EditorToolTip::show(trigger, r, this, text, link);
+    EditorToolTip::show(trigger, r, d_theme, this, text, link);
 }
 
 void Editor::showToolTip(int line, int column, const QString& text, const QUrl& detailsUrl)

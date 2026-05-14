@@ -37,6 +37,8 @@
         "current-line": "#2a2e32",
         "error": "#ff0000",
         "warning": "#ffff00",
-        "matching-bracket": "#8e44ad"
+        "matching-bracket": "#8e44ad",
+        "tooltip-bg": "#292c30",
+        "tooltip-fg": "#fcfcfc"
     }
 }

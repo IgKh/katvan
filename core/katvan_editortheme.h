@@ -37,7 +37,9 @@ public:
         CURRENT_LINE,
         ERROR,
         WARNING,
-        MATCHING_BRACKET
+        MATCHING_BRACKET,
+        TOOLTIP_BG,
+        TOOLTIP_FG,
     };
 
     static bool isAppInDarkMode();

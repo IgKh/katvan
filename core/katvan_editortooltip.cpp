@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_editortooltip.h"
+#include "katvan_editortheme.h"
 
 #include <QApplication>
 #include <QLabel>
@@ -53,7 +54,7 @@ namespace katvan {
  * SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
  */
 
-EditorToolTipFrame::EditorToolTipFrame(bool byKeyboard, QWidget* parent)
+EditorToolTipFrame::EditorToolTipFrame(bool byKeyboard, const EditorTheme& theme, QWidget* parent)
     : QWidget(parent, byKeyboard ? Qt::Popup : Qt::ToolTip)
     , d_byKeyboard(byKeyboard)
 {
@@ -71,7 +72,7 @@ EditorToolTipFrame::EditorToolTipFrame(bool byKeyboard, QWidget* parent)
     d_hideTimer = new QTimer(this);
     d_hideTimer->callOnTimeout(this, &EditorToolTipFrame::hideImmediately);
 
-    updatePalette();
+    updatePalette(theme);
 
     qApp->installEventFilter(this);
     setWindowOpacity(style()->styleHint(QStyle::SH_ToolTipLabel_Opacity, nullptr, this) / 255.0);
@@ -103,11 +104,19 @@ void EditorToolTipFrame::setContent(const QString& text, const QUrl& link)
     d_browser->setDocument(doc);
 }
 
-void EditorToolTipFrame::updatePalette()
+void EditorToolTipFrame::updatePalette(const EditorTheme& theme)
 {
-    QPalette palette = QToolTip::palette();
-    palette.setColor(QPalette::Base, palette.color(QPalette::Inactive, QPalette::ToolTipBase));
-    palette.setColor(QPalette::Text, palette.color(QPalette::Inactive, QPalette::ToolTipText));
+    QPalette palette = this->palette();
+
+    QColor bg = theme.editorColor(EditorTheme::EditorColor::TOOLTIP_BG);
+    palette.setColor(QPalette::Base, bg);
+    palette.setColor(QPalette::Window, bg);
+    palette.setColor(QPalette::ToolTipBase, bg);
+
+    QColor fg = theme.editorColor(EditorTheme::EditorColor::TOOLTIP_FG);
+    palette.setColor(QPalette::Text, fg);
+    palette.setColor(QPalette::WindowText, fg);
+    palette.setColor(QPalette::ToolTipText, fg);
 
     setPalette(palette);
     ensurePolished();
@@ -298,17 +307,18 @@ bool EditorToolTipFrame::eventFilter(QObject* obj, QEvent* e)
                 hideImmediately();
             }
             break;
-        case QEvent::ApplicationPaletteChange:
-        case QEvent::ThemeChange:
-            updatePalette();
-            break;
     }
     return false;
 }
 
 QPointer<EditorToolTipFrame> EditorToolTip::s_frame;
 
-void EditorToolTip::show(EditorToolTip::Trigger trigger, const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link)
+void EditorToolTip::show(EditorToolTip::Trigger trigger,
+                         const QRect& globalCursorRect,
+                         const EditorTheme& theme,
+                         QWidget* parent,
+                         const QString& text,
+                         const QUrl& link)
 {
     if (text.isEmpty()) {
         hide();
@@ -323,7 +333,7 @@ void EditorToolTip::show(EditorToolTip::Trigger trigger, const QRect& globalCurs
     }
 
     if (!s_frame) {
-        s_frame = new EditorToolTipFrame(trigger == BY_KEYBOARD, parent);
+        s_frame = new EditorToolTipFrame(trigger == BY_KEYBOARD, theme, parent);
     }
     else if (s_frame->parentWidget() != parent) {
         s_frame->setParent(parent);

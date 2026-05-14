@@ -137,6 +137,8 @@ static void readEditorColors(const QJsonObject& obj,
     editorColors[EditorTheme::EditorColor::ERROR] = readColor(obj.value("error"));
     editorColors[EditorTheme::EditorColor::WARNING] = readColor(obj.value("warning"));
     editorColors[EditorTheme::EditorColor::MATCHING_BRACKET] = readColor(obj.value("matching-bracket"));
+    editorColors[EditorTheme::EditorColor::TOOLTIP_BG] = readColor(obj.value("tooltip-bg"));
+    editorColors[EditorTheme::EditorColor::TOOLTIP_FG] = readColor(obj.value("tooltip-fg"));
 }
 
 EditorTheme::EditorTheme(const QString& themeJsonFile)

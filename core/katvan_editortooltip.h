@@ -30,12 +30,14 @@ QT_END_NAMESPACE
 
 namespace katvan {
 
+class EditorTheme;
+
 class EditorToolTipFrame : public QWidget
 {
     Q_OBJECT
 
 public:
-    EditorToolTipFrame(bool byKeyboard, QWidget* parent = nullptr);
+    EditorToolTipFrame(bool byKeyboard, const EditorTheme& theme, QWidget* parent = nullptr);
 
     bool isByKeyboard() const { return d_byKeyboard; }
 
@@ -52,7 +54,7 @@ protected:
     bool eventFilter(QObject* obj, QEvent* e) override;
 
 private:
-    void updatePalette();
+    void updatePalette(const EditorTheme& theme);
     void updateSizeAndLayout(QTextDocument* newDocument);
     void updatePlacement(const QPoint& globalPos);
 
@@ -71,7 +73,7 @@ public:
         BY_KEYBOARD
     };
 
-    static void show(Trigger trigger, const QRect& globalCursorRect, QWidget* parent, const QString& text, const QUrl& link = QUrl());
+    static void show(Trigger trigger, const QRect& globalCursorRect, const EditorTheme& theme, QWidget* parent, const QString& text, const QUrl& link = QUrl());
     static void hide();
 
 private:
