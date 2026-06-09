@@ -2,3 +2,4 @@ build*/
 typstdriver/rust/target/
 .cache
 .DS_Store
+compile_commands.json

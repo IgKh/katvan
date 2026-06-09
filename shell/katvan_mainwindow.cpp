@@ -68,6 +68,7 @@ static constexpr QLatin1StringView SETTING_MAIN_WINDOW_STATE = QLatin1StringView
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_GEOMETRY = QLatin1StringView("MainWindow/geometry");
 static constexpr QLatin1StringView SETTING_SPELLING_DICT = QLatin1StringView("spelling/dict");
 static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("editor/mode");
+static constexpr QLatin1StringView SETTING_WORKING_DIRECTORY("workingDirectory");
 
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
@@ -712,12 +713,26 @@ void MainWindow::newFile()
 
 void MainWindow::openFile()
 {
+    QSettings settings;
+    #if defined(KATVAN_PORTABLE_BUILD) && !defined(KATVAN_DISABLE_PORTABLE)
+        bool portable = true;
+    #else
+        bool portable = false;
+    #endif
+    QString workingDirectory = "";
+    if (!portable) {
+        workingDirectory = settings.value(SETTING_WORKING_DIRECTORY).toString();
+    }
+
     QString fileName = QFileDialog::getOpenFileName(
         this,
         tr("Open Document"),
-        QString(),
+        workingDirectory,
         tr("Typst files (*.typ);;All files (*)"));
 
+    if(!portable) {
+        settings.setValue(SETTING_WORKING_DIRECTORY, QFileInfo(fileName).absolutePath());
+    }
     openNamedFile(fileName);
 }
 
