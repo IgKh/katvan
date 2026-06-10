@@ -68,7 +68,7 @@ static constexpr QLatin1StringView SETTING_MAIN_WINDOW_STATE = QLatin1StringView
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_GEOMETRY = QLatin1StringView("MainWindow/geometry");
 static constexpr QLatin1StringView SETTING_SPELLING_DICT = QLatin1StringView("spelling/dict");
 static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("editor/mode");
-static constexpr QLatin1StringView SETTING_LAST_OPENED_DIRECTORY("lastOpenedDir");
+static constexpr QLatin1StringView SETTING_LAST_OPENED_DIRECTORY = QLatin1StringView("lastOpenedDir");
 
 MainWindow::MainWindow()
     : QMainWindow(nullptr)
