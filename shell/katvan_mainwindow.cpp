@@ -714,12 +714,12 @@ void MainWindow::newFile()
 void MainWindow::openFile()
 {
     QSettings settings;
-    #if defined(KATVAN_PORTABLE_BUILD)
-        bool portable = true;
-    #else
-        bool portable = false;
-    #endif
-    QString lastOpenedDir = "";
+#if defined(KATVAN_PORTABLE_BUILD)
+    bool portable = true;
+#else
+    bool portable = false;
+#endif
+    QString lastOpenedDir = QString();
     if (!portable) {
         lastOpenedDir = settings.value(SETTING_LAST_OPENED_DIRECTORY).toString();
     }
@@ -730,7 +730,7 @@ void MainWindow::openFile()
         lastOpenedDir,
         tr("Typst files (*.typ);;All files (*)"));
 
-    if(!portable) {
+    if (!portable) {
         settings.setValue(SETTING_LAST_OPENED_DIRECTORY, QFileInfo(fileName).absolutePath());
     }
     openNamedFile(fileName);
