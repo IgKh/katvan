@@ -661,10 +661,51 @@ std::tuple<QTextBlock, QTextBlock, bool> Editor::selectedBlockRange() const
 QString Editor::getIndentString(QTextCursor cursor) const
 {
     if (d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::SPACES) {
-        qsizetype numSpaces = d_effectiveSettings.indentWidth() - (cursor.positionInBlock() % d_effectiveSettings.indentWidth());
+        int offsetInBlock = cursor.anchor() - cursor.block().position();
+        qsizetype numSpaces = d_effectiveSettings.indentWidth() - (offsetInBlock % d_effectiveSettings.indentWidth());
         return QString(numSpaces, QLatin1Char(' '));
     }
     return QLatin1String("\t");
+}
+
+void Editor::cursorNormalizeIndent(QTextCursor& cursor, bool forIncreasingIndent)
+{
+    // This ensures that the leading indentation (starting from the cursor's
+    // current position) is normalized according to the editor settings -
+    // tabs are expanded to spaces, or spaces collapsed to tabs according to
+    // the current tab width. The cursor is located after the initial whitespace
+    // at the end of the method.
+    while (!cursor.atBlockEnd()) {
+        QChar ch = document()->characterAt(cursor.position());
+
+        if (ch == QLatin1Char('\t') && d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::SPACES) {
+            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+            cursor.insertText(QString(d_effectiveSettings.tabWidth(), QLatin1Char(' ')));
+        }
+        else if (ch.category() == QChar::Separator_Space && d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::TABS) {
+            int numSpaces = 0;
+            while (ch.category() == QChar::Separator_Space) {
+                numSpaces++;
+
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+                if (cursor.atBlockEnd()) {
+                    break;
+                }
+
+                ch = document()->characterAt(cursor.position());
+            }
+
+            qreal numTabs = (qreal)numSpaces / d_effectiveSettings.tabWidth();
+            int tabUnits = forIncreasingIndent ? qFloor(numTabs) : qCeil(numTabs);
+            cursor.insertText(QString(tabUnits, QLatin1Char('\t')));
+            continue;
+        }
+        else if (!utils::isWhitespace(ch)) {
+            break;
+        }
+
+        cursor.movePosition(QTextCursor::NextCharacter);
+    }
 }
 
 static QString getLeadingIndent(const QString& text)
@@ -778,8 +819,13 @@ void Editor::unindentBlock(QTextCursor blockStartCursor, QTextCursor notAfter)
         return;
     }
 
-    // Remove up to one tab or indentWidth spaces from beginning of block
     cursor.beginEditBlock();
+
+    int origPos = cursor.position();
+    cursorNormalizeIndent(cursor, false);
+    cursor.setPosition(origPos);
+
+    // Remove up to one tab or indentWidth spaces from beginning of block
     if (d_effectiveSettings.indentStyle() == EditorSettings::IndentStyle::TABS) {
         if (document()->characterAt(cursor.position()) == QLatin1Char('\t')) {
             cursor.deleteChar();
@@ -887,7 +933,7 @@ void Editor::keyPressEvent(QKeyEvent* event)
                         break;
                     }
 
-                    cursorSkipWhite(cursor);
+                    cursorNormalizeIndent(cursor, true);
                     if (!cursor.atBlockEnd()) {
                         cursor.insertText(getIndentString(cursor));
                     }
@@ -896,9 +942,16 @@ void Editor::keyPressEvent(QKeyEvent* event)
                 cursor.endEditBlock();
             }
             else {
-                // Insert one indent at cursor
+                // Insert one indent at cursor, normalize leading indent if needded
                 QTextCursor cursor = textCursor();
+
+                cursor.beginEditBlock();
+                if (cursorInLeadingWhitespace(cursor)) {
+                    cursor.movePosition(QTextCursor::StartOfBlock);
+                    cursorNormalizeIndent(cursor, true);
+                }
                 cursor.insertText(getIndentString(cursor));
+                cursor.endEditBlock();
             }
             return;
         }

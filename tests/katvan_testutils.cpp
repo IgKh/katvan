@@ -30,7 +30,21 @@ void PrintTo(QChar ch, std::ostream* os)
 
 void PrintTo(const QString& str, std::ostream* os)
 {
-    *os << '\"' << str.toStdString() << '\"';
+    // Escape tabs and newlines
+    std::string res;
+    for (QChar c : str) {
+        if (c == QLatin1Char('\n')) {
+            res.append("\\n");
+        }
+        else if (c == QLatin1Char('\t')) {
+            res.append("\\t");
+        }
+        else {
+            res.append(QString(c).toStdString());
+        }
+    }
+
+    *os << '\"' << res << '\"';
 }
 
 QT_END_NAMESPACE

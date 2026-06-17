@@ -70,6 +70,14 @@ struct EditorHolder
         return std::make_tuple(cursor.selectionStart(), cursor.selectionEnd());
     }
 
+    void selectRange(int from, int to)
+    {
+        QTextCursor cursor { document.get() };
+        cursor.setPosition(from);
+        cursor.setPosition(to, QTextCursor::KeepAnchor);
+        editor->setTextCursor(cursor);
+    }
+
     void sendKeyPress(int pos, int key, Qt::KeyboardModifiers modifiers)
     {
         if (pos >= 0) {
@@ -251,4 +259,197 @@ TEST(EditorTests, SelectToLineEdges) {
     auto [s5, e5] = holder.selectionRange();
     EXPECT_THAT(s5, ::testing::Eq(0));
     EXPECT_THAT(e5, ::testing::Eq(INITIAL_POSITION));
+}
+
+TEST(EditorTests, IndentSingleLineWithSpaces) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
+    settings.setIndentWidth(3);
+
+    QString text = QStringLiteral("AB\nCD\n EF");
+    EditorHolder holder(text, settings);
+
+    // In start of line
+    holder.sendKeyPress(3, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("AB\n   CD\n EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(6));
+
+    // In leading whitespace
+    holder.sendKeyPress(10, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("AB\n   CD\n   EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(12));
+
+    // In middle of a line - should only complete to the next multiple of the indent width
+    holder.sendKeyPress(1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("A  B\n   CD\n   EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(3));
+
+    // Selection inside a line - should override selection with indent to next multiple
+    holder.selectRange(9, 10);
+    holder.sendKeyPress(-1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("A  B\n   C  \n   EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(11));
+}
+
+TEST(EditorTests, IndentMultipleLinesWithSpaces) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
+    settings.setIndentWidth(3);
+
+    QString text = QStringLiteral("AB\nCDE\n FG");
+    EditorHolder holder(text, settings);
+
+    // Select all of line 1 and part of line 2
+    holder.selectRange(0, 4);
+    holder.sendKeyPress(-1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("   AB\n   CDE\n FG")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(3, 10)));
+
+    // Select all of line 3
+    holder.selectRange(13, 16);
+    holder.sendKeyPress(-1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("   AB\n   CDE\n   FG")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(13, 18)));
+}
+
+TEST(EditorTests, IndentSingleLineWithTabs) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::TABS);
+    settings.setIndentWidth(5);
+    settings.setTabWidth(2);
+
+    QString text = QStringLiteral("AB\nCD\n EF\n\tGH");
+    EditorHolder holder(text, settings);
+
+    // In start of line
+    holder.sendKeyPress(3, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("AB\n\tCD\n EF\n\tGH")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(4));
+
+    // In leading whitespace
+    holder.sendKeyPress(7, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("AB\n\tCD\n\tEF\n\tGH")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(8));
+
+    // In middle of a line
+    holder.sendKeyPress(1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("A\tB\n\tCD\n\tEF\n\tGH")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(2));
+
+    // Selection inside a line - should override selection with tab
+    holder.selectRange(10, 11);
+    holder.sendKeyPress(-1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("A\tB\n\tCD\n\tE\t\n\tGH")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(11));
+}
+
+TEST(EditorTests, IndentMultipleLinesWithTabs) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::TABS);
+    settings.setIndentWidth(5);
+    settings.setTabWidth(2);
+
+    QString text = QStringLiteral("AB\n\tCDE\n   FG");
+    EditorHolder holder(text, settings);
+
+    // Select all of line 1 and part of line 2
+    holder.selectRange(0, 6);
+    holder.sendKeyPress(-1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("\tAB\n\t\tCDE\n   FG")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(1, 8)));
+
+    // Select all of line 3
+    holder.selectRange(10, 15);
+    holder.sendKeyPress(-1, Qt::Key_Tab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("\tAB\n\t\tCDE\n\t\tFG")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(12, 14)));
+}
+
+TEST(EditorTests, DedentSingleLineWithSpacesByBacktab) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
+    settings.setIndentWidth(3);
+
+    QString text = QStringLiteral("    AB\n   CD\n EF");
+    EditorHolder holder(text, settings);
+
+    // In leading whitespace
+    holder.sendKeyPress(0, Qt::Key_Backtab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral(" AB\n   CD\n EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(0));
+
+    // In middle of line
+    holder.sendKeyPress(8, Qt::Key_Backtab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral(" AB\nCD\n EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(5));
+
+    // Selection inside a line
+    holder.selectRange(9, 10);
+    holder.sendKeyPress(-1, Qt::Key_Backtab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral(" AB\nCD\nEF")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(8, 9)));
+}
+
+TEST(EditorTests, DedentSingleLineWithSpacesByBackspace) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
+    settings.setIndentWidth(3);
+
+    QString text = QStringLiteral("    AB\n   CD\n EF");
+    EditorHolder holder(text, settings);
+
+    // Start of leading whitespace
+    holder.sendKeyPress(0, Qt::Key_Backspace, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("    AB\n   CD\n EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(0));
+
+    // In leading whitespace
+    holder.sendKeyPress(2, Qt::Key_Backspace, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("  AB\n   CD\n EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(0));
+
+    // In middle of line
+    holder.sendKeyPress(9, Qt::Key_Backspace, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("  AB\n   D\n EF")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(8));
+
+    // Selection inside a line
+    holder.selectRange(11, 13);
+    holder.sendKeyPress(-1, Qt::Key_Backspace, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("  AB\n   D\n ")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(11, 11)));
+}
+
+TEST(EditorTests, DedentMultipleLinesWithSpaces) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::SPACES);
+    settings.setIndentWidth(3);
+
+    QString text = QStringLiteral("  AB\n     CD\n   FG");
+    EditorHolder holder(text, settings);
+
+    // Select all
+    holder.editor->selectAll();
+    holder.sendKeyPress(-1, Qt::Key_Backtab, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QStringLiteral("AB\n  CD\nFG")));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(0, 10)));
+
+    // Backspace - will delete
+    holder.sendKeyPress(-1, Qt::Key_Backspace, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QString()));
+    EXPECT_THAT(holder.selectionRange(), ::testing::Eq(std::make_tuple(0, 0)));
+}
+
+TEST(EditorTests, DedentMixedWhitespace) {
+    EditorSettings settings;
+    settings.setIndentStyle(EditorSettings::IndentStyle::TABS);
+    settings.setIndentWidth(2);
+    settings.setTabWidth(3);
+
+    QString text = QStringLiteral("    AB");
+    EditorHolder holder(text, settings);
+
+    holder.sendKeyPress(4, Qt::Key_Backspace, Qt::NoModifier);
+    EXPECT_THAT(holder.text(), ::testing::Eq(QString("\tAB")));
+    EXPECT_THAT(holder.cursorPosition(), ::testing::Eq(1));
 }
