@@ -1,3 +1,35 @@
+## v0.12.1 (2026-06-17)
+
+### Typst Version
+
+The included Typst compiler version remains `0.14.1`.
+
+*HEADS UP*: This release includes accumulated bug fixes while still targeting Typst `0.14`. The next version will include an upgrade to Typst `0.15`; please be aware that this version is expected to have multiple breaking changes.
+
+### New macOS Shell
+
+Katvan for macOS has a brand new graphical frontend that uses the Cocoa Document Framework for (hopefully) more native look and feel as well as seamless integration with the desktop.
+
+It should be noted that Katvan's macOS support was and remains **experimental**. There are multiple known issues tracked in the [dedicated issue](https://github.com/IgKh/katvan/issues/38).
+
+### Fixes
+
+- Fixed a crash that could happen when closing brackets are automatically inserted.
+
+- Existing leading whitespace is normalized according to editor settings when indenting or dedenting.
+
+- Auto-completion popup now closes when there are no further suggestions available after applying a suggestion.
+
+- Linux/Windows shell: the file open dialog starts at the directory of the previously opened document.
+
+- Labels containing colons are now correctly highlighted.
+
+- Tooltip color should now be more consistent under various system themes.
+
+#### Packaging Changes
+
+- Bundled Qt version in pre-built packages is now `6.11.1`. It includes relevant fixes, such as shortcut keys working correctly on Windows with a Hebrew keyboard layout.
+
 ## v0.12.0 (2025-12-10)
 
 Katvan is just shy of two years old! At this point, pretty much all features that I envisoned are now implemented. From now on, we start the final road to 1.0, where the focus is going to be on strengthening existing features, catching up on gaps in the macOS version, and building up project infrastructure with the goal of making Katvan open to contribution and sustainable long term. Thank you to all who shared the journey with me so far!

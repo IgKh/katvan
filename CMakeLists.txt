@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(katvan LANGUAGES CXX VERSION "0.12.0")
+project(katvan LANGUAGES CXX VERSION "0.12.1")
 
 if(APPLE)
     enable_language(OBJCXX)
