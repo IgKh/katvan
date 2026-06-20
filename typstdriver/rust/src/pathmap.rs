@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use typst::{
     diag::{FileError, FileResult},
@@ -51,7 +51,7 @@ impl PathMapper {
             ))));
         }
 
-        let displayed_path = join_and_normalize_path(&self.root.displayed, path.as_rootless_path());
+        let displayed_path = PathBuf::from(path.get_with_slash());
 
         let allowed_roots = std::iter::once(&self.root).chain(self.allowed_paths.iter());
         for root in allowed_roots {
@@ -98,20 +98,4 @@ pub fn get_display_path<P: AsRef<Path>>(path: P) -> PathBuf {
 #[cfg(not(feature = "flatpak"))]
 pub fn get_display_path<P: AsRef<Path>>(path: P) -> PathBuf {
     path.as_ref().to_owned()
-}
-
-fn join_and_normalize_path(base: &Path, path: &Path) -> PathBuf {
-    let mut result = base.to_path_buf();
-
-    for component in path.components() {
-        match component {
-            Component::CurDir | Component::Prefix(_) => {}
-            Component::ParentDir => {
-                result.pop();
-            }
-            _ => result.push(component),
-        }
-    }
-
-    result
 }

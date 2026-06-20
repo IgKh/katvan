@@ -20,13 +20,13 @@ use std::{collections::HashMap, sync::LazyLock};
 use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
     foundations::{Func, Scope, Type, Value},
-    layout::PagedDocument,
     syntax::{
         LinkedNode, Side, Source, SyntaxKind,
         ast::{self, AstNode},
     },
 };
 use typst_ide::{IdeWorld, Tooltip, analyze_expr};
+use typst_layout::PagedDocument;
 
 use crate::bridge::ffi;
 

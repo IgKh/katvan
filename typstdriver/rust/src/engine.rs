@@ -19,13 +19,13 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::pin::Pin;
 
 use anyhow::{Context, Result};
-use typst::World;
-use typst::ecow::EcoString;
-use typst::layout::{Abs, PagedDocument, Point};
+use typst::layout::{Abs, Point};
+use typst::{World, WorldExt};
+use typst_layout::PagedDocument;
 
 use crate::analysis;
 use crate::bridge::ffi;
-use crate::world::{KatvanWorld, MAIN_ID};
+use crate::world::KatvanWorld;
 
 #[derive(Debug)]
 struct DiagnosticFileLocation {
@@ -59,8 +59,8 @@ impl DiagnosticsLogger for ffi::LoggerProxy {
             // Find first span (of the diagnostic itself, or the traceback to
             // it) that is located in the main source.
             let span = std::iter::once(diag.span)
-                .chain(diag.trace.iter().map(|t| t.span))
-                .find(|span| span.id() == Some(*MAIN_ID))
+                .chain(diag.trace.iter().map(|t| t.span.into()))
+                .find(|span| span.id() == Some(world.main()))
                 .unwrap_or(diag.span);
 
             let location = span_to_location(span, world);
@@ -140,7 +140,7 @@ impl<'a> EngineImpl<'a> {
             typst::comemo::evict(3);
 
             let pages = doc
-                .pages
+                .pages()
                 .iter()
                 .map(|page| ffi::PreviewPageDataInternal {
                     page_num: page.number,
@@ -164,11 +164,15 @@ impl<'a> EngineImpl<'a> {
         }
     }
 
-    pub fn render_page(&self, page: usize, point_size: f32) -> Result<ffi::RenderedPage> {
+    pub fn render_page(&self, page: usize, point_size: f64) -> Result<ffi::RenderedPage> {
         let document = self.result.as_ref().context("Invalid state")?;
-        let page = document.pages.get(page).context("No such page")?;
+        let page = document.pages().get(page).context("No such page")?;
 
-        let pixmap = typst_render::render(page, point_size);
+        let opts = typst_render::RenderOptions {
+            pixel_per_pt: point_size.into(),
+            ..Default::default()
+        };
+        let pixmap = typst_render::render(page, &opts);
 
         Ok(ffi::RenderedPage {
             width_px: pixmap.width(),
@@ -185,7 +189,15 @@ impl<'a> EngineImpl<'a> {
         tagged: bool,
     ) -> Result<bool> {
         let document = self.result.as_ref().context("Invalid state")?;
-        crate::export::export_pdf(document, &self.world, self.logger, path, pdf_version, pdfa_standard, tagged)
+        crate::export::export_pdf(
+            document,
+            &self.world,
+            self.logger,
+            path,
+            pdf_version,
+            pdfa_standard,
+            tagged,
+        )
     }
 
     pub fn export_png(&self, path: &str, dpi: u32) -> Result<bool> {
@@ -195,7 +207,13 @@ impl<'a> EngineImpl<'a> {
 
     pub fn export_png_multi(&self, dir: &str, name_pattern: &str, dpi: u32) -> Result<bool> {
         let document = self.result.as_ref().context("Invalid state")?;
-        Ok(crate::export::export_png_multi(document, self.logger, dir, name_pattern, dpi))
+        Ok(crate::export::export_png_multi(
+            document,
+            self.logger,
+            dir,
+            name_pattern,
+            dpi,
+        ))
     }
 
     pub fn forward_search(&self, line: usize, column: usize) -> Result<Vec<ffi::PreviewPosition>> {
@@ -225,7 +243,7 @@ impl<'a> EngineImpl<'a> {
         jump: typst_ide::Jump,
     ) -> Option<ffi::SourcePosition> {
         match jump {
-            typst_ide::Jump::File(id, cursor) if id == *MAIN_ID => {
+            typst_ide::Jump::File(id, cursor) if id == self.world.main() => {
                 let source = self.world.main_source();
 
                 Some(ffi::SourcePosition {
@@ -239,10 +257,12 @@ impl<'a> EngineImpl<'a> {
 
     pub fn inverse_search(&self, pos: &ffi::PreviewPosition) -> Result<ffi::SourcePosition> {
         let document = self.result.as_ref().context("Invalid state")?;
-        let page = document.pages.get(pos.page).context("Missing page")?;
-        let click = Point::new(Abs::pt(pos.x_pts), Abs::pt(pos.y_pts));
+        let page = std::num::NonZero::new(pos.page + 1).unwrap();
+        let point = Point::new(Abs::pt(pos.x_pts), Abs::pt(pos.y_pts));
 
-        let jump = typst_ide::jump_from_click(&self.world, document, &page.frame, click)
+        let position = typst::introspection::PagedPosition { page, point };
+
+        let jump = typst_ide::jump_from_click(&self.world, document, &position)
             .context("Inverse search failed")?;
 
         self.convert_jump_to_source_position(jump)
@@ -313,7 +333,7 @@ impl<'a> EngineImpl<'a> {
 
     pub fn count_page_words(&self, page: usize) -> Result<usize> {
         let doc = self.result.as_ref().context("Invalid state")?;
-        let page = doc.pages.get(page).context("No such page")?;
+        let page = doc.pages().get(page).context("No such page")?;
 
         Ok(analysis::count_words(&page.frame))
     }
@@ -344,32 +364,32 @@ fn position_to_file_location(
     })
 }
 
-fn span_to_location(span: typst::syntax::Span, world: &dyn World) -> DiagnosticLocation {
+fn span_to_location(span: typst::syntax::DiagSpan, world: &dyn World) -> DiagnosticLocation {
     let Some(id) = span.id() else {
         return DiagnosticLocation::default();
     };
 
     let source = world.source(id).unwrap();
+    let file = match id.root() {
+        typst::syntax::VirtualRoot::Project => {
+            if id == world.main() {
+                String::from("MAIN")
+            } else {
+                id.vpath().get_with_slash().to_string()
+            }
+        }
+        typst::syntax::VirtualRoot::Package(spec) => spec.to_string() + id.vpath().get_with_slash(),
+    };
 
-    let package = id
-        .package()
-        .map(|pkg| pkg.to_string() + "/")
-        .unwrap_or_default();
-    let file = id.vpath().as_rootless_path().to_string_lossy();
-
-    let range = source.range(span).unwrap_or_default();
+    let range = world.range(span).unwrap_or_default();
     let start = position_to_file_location(&source, range.start).unwrap_or_default();
     let end = position_to_file_location(&source, range.end).unwrap_or_default();
 
-    DiagnosticLocation {
-        file: format!("{package}{file}"),
-        start,
-        end,
-    }
+    DiagnosticLocation { file, start, end }
 }
 
 fn get_diagnostic_hints(diag: &typst::diag::SourceDiagnostic) -> Vec<&str> {
-    // As per https://github.com/typst/typst/blob/0.12/crates/typst/src/diag.rs#L311
+    // As per https://github.com/typst/typst/blob/0.15/crates/typst-library/src/diag.rs#L652
     if diag.message.contains("(access denied)") {
         if is_in_sandbox() {
             vec![
@@ -383,7 +403,7 @@ fn get_diagnostic_hints(diag: &typst::diag::SourceDiagnostic) -> Vec<&str> {
             ]
         }
     } else {
-        diag.hints.iter().map(EcoString::as_str).collect()
+        diag.hints.iter().map(|hint| hint.v.as_str()).collect()
     }
 }
 

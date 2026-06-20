@@ -18,11 +18,8 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use typst::{
-    World,
-    layout::{Abs, PagedDocument},
-    visualize::Color,
-};
+use typst::{World, layout::Abs, utils::Scalar, visualize::Color};
+use typst_layout::PagedDocument;
 
 use crate::{bridge::ffi, engine::DiagnosticsLogger};
 
@@ -75,7 +72,7 @@ fn pdf_options(
     pdf_version: &str,
     pdfa_standard: &str,
     tagged: bool,
-) -> Result<typst_pdf::PdfOptions<'static>> {
+) -> Result<typst_pdf::PdfOptions> {
     let mut standards: Vec<typst_pdf::PdfStandard> = vec![];
     if !pdf_version.is_empty() {
         standards.push(serde_json::from_str(&format!("\"{pdf_version}\""))?);
@@ -105,11 +102,10 @@ pub fn export_png(
     path: &str,
     dpi: u32,
 ) -> bool {
-    let pixel_per_pt = convert_dpi(dpi);
+    let opts = raster_options(dpi);
 
     let start = std::time::Instant::now();
-    let pixmap =
-        typst_render::render_merged(document, pixel_per_pt, Abs::zero(), Some(Color::WHITE));
+    let pixmap = typst_render::render_merged(document, &opts, Abs::zero(), Some(Color::WHITE));
 
     let elapsed = format!("{:.2?}", start.elapsed());
     let display_path = get_display_path(path);
@@ -143,15 +139,15 @@ pub fn export_png_multi(
     name_pattern: &str,
     dpi: u32,
 ) -> bool {
-    let pixel_per_pt = convert_dpi(dpi);
+    let opts = raster_options(dpi);
     let dir = Path::new(dir);
 
     let start = std::time::Instant::now();
 
-    for page in &document.pages {
-        let pixmap = typst_render::render(page, pixel_per_pt);
+    for page in document.pages() {
+        let pixmap = typst_render::render(page, &opts);
 
-        let name = process_name_pattern(name_pattern, page.number, document.pages.len());
+        let name = process_name_pattern(name_pattern, page.number, document.pages().len());
         let path = dir.join(name);
 
         if let Err(err) = pixmap.save_png(&path) {
@@ -178,6 +174,15 @@ pub fn export_png_multi(
     true
 }
 
+fn raster_options(dpi: u32) -> typst_render::RenderOptions {
+    let pixel_per_pt = Scalar::new(convert_dpi(dpi));
+
+    typst_render::RenderOptions {
+        pixel_per_pt,
+        ..Default::default()
+    }
+}
+
 fn process_name_pattern(pattern: &str, page: u64, total_pages: usize) -> String {
     let total_pages_width = (total_pages.ilog10() + 1) as usize;
 
@@ -188,8 +193,8 @@ fn process_name_pattern(pattern: &str, page: u64, total_pages: usize) -> String 
 }
 
 #[allow(clippy::cast_precision_loss)]
-fn convert_dpi(dpi: u32) -> f32 {
-    (dpi as f32) / 72.0
+fn convert_dpi(dpi: u32) -> f64 {
+    (dpi as f64) / 72.0
 }
 
 fn get_display_path(path: impl AsRef<Path>) -> String {

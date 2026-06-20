@@ -165,7 +165,7 @@ pub(crate) mod ffi {
 
         fn compile(&mut self, now: &str) -> Vec<PreviewPageDataInternal>;
 
-        fn render_page(&self, page: usize, point_size: f32) -> Result<RenderedPage>;
+        fn render_page(&self, page: usize, point_size: f64) -> Result<RenderedPage>;
 
         fn export_pdf(
             &self,

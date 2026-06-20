@@ -15,36 +15,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::{
-    collections::HashMap,
-    path::PathBuf,
-    pin::Pin,
-    sync::{LazyLock, Mutex},
-};
+use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
 use typst::{
     Feature, Library, LibraryExt,
     diag::{EcoString, FileError, FileResult, PackageError},
     foundations::Bytes,
-    syntax::{FileId, Source, VirtualPath, package::PackageSpec},
+    syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot, package::PackageSpec},
     text::{Font, FontBook},
     utils::LazyHash,
 };
-use typst_kit::fonts::{FontSlot, Fonts};
+use typst_kit::fonts::FontStore;
 
 use crate::bridge::ffi;
 use crate::pathmap;
-
-pub static MAIN_ID: LazyLock<FileId> = LazyLock::new(|| FileId::new_fake(VirtualPath::new("MAIN")));
 
 pub struct KatvanWorld<'a> {
     path_mapper: pathmap::PathMapper,
     package_manager: Mutex<PackageManagerWrapper<'a>>,
     packages_list: once_cell::sync::OnceCell<Vec<(PackageSpec, Option<EcoString>)>>,
     library: LazyHash<Library>,
-    book: LazyHash<FontBook>,
-    fonts: Vec<FontSlot>,
+    fonts: FontStore,
     source: Source,
     now: Option<OffsetDateTime>,
 }
@@ -55,16 +47,30 @@ impl<'a> KatvanWorld<'a> {
             .map(|p| std::env::split_paths(&p).collect())
             .unwrap_or_default();
 
-        let fonts = Fonts::searcher().search_with(font_dirs);
-        let source = Source::new(*MAIN_ID, String::new());
+        let mut fonts = FontStore::new();
+        fonts.extend(typst_kit::fonts::system());
+        fonts.extend(typst_kit::fonts::embedded());
+
+        for dir in &font_dirs {
+            fonts.extend(typst_kit::fonts::scan(dir));
+        }
+
+        // For Typst 0.15 - the new `path` type checks if a path "escapes" the
+        // project root before ever consulting the `World` implementation, which
+        // prevents use of relative paths that use ".." but are still within the
+        // configured allowed paths. As a workaround, define the virtual path of
+        // notional main source file to be in the full root directory, causing
+        // Typst to consider "/" to be the "project root".
+        let path = VirtualPath::new(String::from(root) + "/MAIN").unwrap();
+        let path = RootedPath::new(VirtualRoot::Project, path);
+        let source = Source::new(path.intern(), String::new());
 
         KatvanWorld {
             path_mapper: pathmap::PathMapper::new(root),
             package_manager: Mutex::new(PackageManagerWrapper::new(package_manager)),
             packages_list: once_cell::sync::OnceCell::new(),
             library: LazyHash::new(Library::default()),
-            book: LazyHash::new(fonts.book),
-            fonts: fonts.fonts,
+            fonts,
             source,
             now: None,
         }
@@ -119,12 +125,12 @@ impl<'a> KatvanWorld<'a> {
     }
 
     fn get_file_content(&self, id: FileId) -> FileResult<Vec<u8>> {
-        let path = match id.package() {
-            Some(pkg) => {
+        let path = match id.root() {
+            VirtualRoot::Package(pkg) => {
                 let root = self.get_package_root(pkg)?;
-                id.vpath().resolve(&root).ok_or(FileError::AccessDenied)?
+                id.vpath().realize(&root).map_err(|_| FileError::AccessDenied)?
             }
-            None => self.path_mapper.get_fs_file_path(id.vpath())?,
+            VirtualRoot::Project => self.path_mapper.get_fs_file_path(id.vpath())?,
         };
 
         if path.is_dir() {
@@ -140,11 +146,11 @@ impl typst::World for KatvanWorld<'_> {
     }
 
     fn main(&self) -> FileId {
-        *MAIN_ID
+        self.source.id()
     }
 
     fn source(&self, id: FileId) -> FileResult<Source> {
-        if id == *MAIN_ID {
+        if id == self.source.id() {
             return Ok(self.source.clone());
         }
 
@@ -158,21 +164,24 @@ impl typst::World for KatvanWorld<'_> {
     }
 
     fn book(&self) -> &LazyHash<FontBook> {
-        &self.book
+        self.fonts.book()
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts.get(index).and_then(FontSlot::get)
+        self.fonts.font(index)
     }
 
-    fn today(&self, offset: Option<i64>) -> Option<typst::foundations::Datetime> {
+    fn today(
+        &self,
+        offset: Option<typst::foundations::Duration>,
+    ) -> Option<typst::foundations::Datetime> {
         let now = self.now?;
 
         let in_offset = match offset {
             None => now,
             Some(offset) => {
-                let hours: i8 = offset.try_into().ok()?;
-                let offset = time::UtcOffset::from_hms(hours, 0, 0).ok()?;
+                let seconds = offset.seconds() as i32;
+                let offset = time::UtcOffset::from_whole_seconds(seconds).ok()?;
                 now.to_offset(offset)
             }
         };

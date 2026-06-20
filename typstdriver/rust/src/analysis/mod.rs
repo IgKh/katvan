@@ -16,13 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 use typst::{
-    Document,
     foundations::StyleChain,
-    layout::{Frame, PagedDocument},
+    layout::Frame,
     model::{HeadingElem, Outlinable},
-    syntax::{LinkedNode, Side, Source, Span, SyntaxKind},
+    syntax::{LinkedNode, Side, Source, Span, SpanKind, SyntaxKind},
 };
 use typst_ide::IdeWorld;
+use typst_layout::PagedDocument;
 
 use crate::bridge::ffi;
 
@@ -53,6 +53,7 @@ pub fn get_definition(
                 None
             }
         }
+        typst_ide::Definition::File(_) => None,
     }
 }
 
@@ -66,7 +67,7 @@ pub fn get_metadata(
     let mut outline: Vec<ffi::OutlineEntry> = Vec::new();
     let mut labels: Vec<ffi::LabelEntry> = Vec::new();
 
-    for item in introspector.all() {
+    for item in introspector.elements().all() {
         if let Some(label) = item.label() {
             let position = span_location(source, item.span());
             labels.push(ffi::LabelEntry {
@@ -108,12 +109,22 @@ fn find_text_position_for_span(source: &Source, span: Span) -> Option<ffi::Sourc
 }
 
 fn span_location(source: &Source, span: Span) -> Option<ffi::SourcePosition> {
-    source.range(span).and_then(|span| {
-        Some(ffi::SourcePosition {
-            line: source.lines().byte_to_line(span.start)?,
-            column: source.lines().byte_to_column(span.start)?,
+    let SpanKind::Number { id, num } = span.get() else {
+        return None;
+    };
+
+    if id != source.id() {
+        return None;
+    }
+
+    source
+        .range(num, None)
+        .and_then(|range: std::ops::Range<usize>| {
+            Some(ffi::SourcePosition {
+                line: source.lines().byte_to_line(range.start)?,
+                column: source.lines().byte_to_column(range.start)?,
+            })
         })
-    })
 }
 
 fn find_first_text_node(node: LinkedNode<'_>) -> Option<LinkedNode<'_>> {

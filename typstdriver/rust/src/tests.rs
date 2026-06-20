@@ -20,35 +20,35 @@ use std::sync::LazyLock;
 use typst::{
     Library, LibraryExt, World,
     diag::FileResult,
-    syntax::{FileId, Source, VirtualPath},
+    syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot},
     text::FontBook,
     utils::LazyHash,
 };
 use typst_ide::IdeWorld;
-use typst_kit::fonts::{FontSlot, Fonts};
+use typst_kit::fonts::FontStore;
 
-static TEST_ID: LazyLock<FileId> = LazyLock::new(|| FileId::new_fake(VirtualPath::new("TEST")));
-
+pub static TEST_ID: LazyLock<FileId> = LazyLock::new(|| {
+    FileId::unique(RootedPath::new(
+        VirtualRoot::Project,
+        VirtualPath::new("TEST").unwrap(),
+    ))
+});
 pub(crate) struct TestWorld {
     library: LazyHash<Library>,
-    book: LazyHash<FontBook>,
-    fonts: Vec<FontSlot>,
+    fonts: FontStore,
     source: Source,
 }
 
 impl TestWorld {
     pub fn new(content: &str) -> Self {
-        let fonts = Fonts::searcher()
-            .include_embedded_fonts(true)
-            .include_system_fonts(false)
-            .search();
+        let mut fonts = FontStore::new();
+        fonts.extend(typst_kit::fonts::embedded());
 
         let source = Source::new(*TEST_ID, String::from(content));
 
         Self {
             library: LazyHash::new(Library::default()),
-            book: LazyHash::new(fonts.book),
-            fonts: fonts.fonts,
+            fonts,
             source,
         }
     }
@@ -60,7 +60,7 @@ impl World for TestWorld {
     }
 
     fn book(&self) -> &LazyHash<FontBook> {
-        &self.book
+        self.fonts.book()
     }
 
     fn main(&self) -> FileId {
@@ -76,10 +76,13 @@ impl World for TestWorld {
     }
 
     fn font(&self, index: usize) -> Option<typst::text::Font> {
-        self.fonts.get(index).and_then(FontSlot::get)
+        self.fonts.font(index)
     }
 
-    fn today(&self, _offset: Option<i64>) -> Option<typst::foundations::Datetime> {
+    fn today(
+        &self,
+        _offset: Option<typst::foundations::Duration>,
+    ) -> Option<typst::foundations::Datetime> {
         None
     }
 }

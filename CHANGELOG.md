@@ -26,7 +26,7 @@ It should be noted that Katvan's macOS support was and remains **experimental**.
 
 - Tooltip color should now be more consistent under various system themes.
 
-#### Packaging Changes
+### Packaging Changes
 
 - Bundled Qt version in pre-built packages is now `6.11.1`. It includes relevant fixes, such as shortcut keys working correctly on Windows with a Hebrew keyboard layout.
 
@@ -38,11 +38,11 @@ Katvan is just shy of two years old! At this point, pretty much all features tha
 
 - The included Typst compiler version was upgraded to `0.14.1` ([blog](https://typst.app/blog/2025/typst-0.14), [0.14 release notes](https://typst.app/docs/changelog/0.14.0/), [0.14.1 release notes](https://typst.app/docs/changelog/0.14.1/)). As always, note that some Universe packages used in your documents may be incompatible and need upgrading.
 
-#### Breaking
+### Breaking
 
 - Katvan now requires at least Qt 6.8.0 and CMake 3.22 in order to build.
 
-#### New Features
+### New Features
 
 - A new "Export As" dialog is available from the File menu. It allows setting PDF export settings (such as the PDF version, as well as PDF/A conformance level as now supported by Typst), and exporting to PNG images.
 
@@ -52,7 +52,7 @@ Katvan is just shy of two years old! At this point, pretty much all features tha
 
 - Documentation tooltips triggered via the keyboard (e.g. through the `Ctrl+K` shortcut) are now fully scrollable and navigable by keyboard.
 
-#### Fixes
+### Fixes
 
 - Documentation tooltips were heavily improved, making detailed documentation appear in more cases and fixing many links to the full Typst documentation that were previously broken.
 
@@ -62,7 +62,7 @@ Katvan is just shy of two years old! At this point, pretty much all features tha
 
 - Text in the "About" dialog can now be selected on all supported platforms.
 
-#### Packaging Changes
+### Packaging Changes
 
 - Bundled Qt version in pre-built packages is now `6.10.1`.
 
