@@ -47,7 +47,7 @@ corrosion_add_cxxbridge(typstdriver_ffi
 target_include_directories(typstdriver_ffi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET typstdriver_ffi PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-add_library(typstdriver SHARED
+add_library(typstdriver STATIC
     typstdriver_compilersettings.cpp
     typstdriver_engine.cpp
     typstdriver_logger.cpp
