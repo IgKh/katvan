@@ -19,9 +19,7 @@ mod analysis;
 mod bridge;
 mod engine;
 mod export;
+mod util;
 mod pathmap;
 mod symbols;
 mod world;
-
-#[cfg(test)]
-mod tests;

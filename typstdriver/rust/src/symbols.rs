@@ -57,11 +57,7 @@ impl SymbolEntry {
                 .unwrap_or_default()
         };
 
-        let deprecation = deprecation.map(|desc| {
-            let mut html = String::new();
-            pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new(desc));
-            html
-        });
+        let deprecation = deprecation.map(String::from);
 
         Self {
             value: String::from(value),

@@ -27,34 +27,39 @@ use typst::{
 use typst_ide::IdeWorld;
 use typst_kit::fonts::FontStore;
 
-pub static TEST_ID: LazyLock<FileId> = LazyLock::new(|| {
+static SOURCE_ID: LazyLock<FileId> = LazyLock::new(|| {
     FileId::unique(RootedPath::new(
         VirtualRoot::Project,
         VirtualPath::new("TEST").unwrap(),
     ))
 });
-pub(crate) struct TestWorld {
+
+pub struct AuxWorld {
     library: LazyHash<Library>,
     fonts: FontStore,
     source: Source,
 }
 
-impl TestWorld {
+impl AuxWorld {
     pub fn new(content: &str) -> Self {
         let mut fonts = FontStore::new();
         fonts.extend(typst_kit::fonts::embedded());
 
-        let source = Source::new(*TEST_ID, String::from(content));
+        let source = Source::new(*SOURCE_ID, String::from(content));
+
+        let library = Library::builder()
+            .with_features(typst::Features::all())
+            .build();
 
         Self {
-            library: LazyHash::new(Library::default()),
+            library: LazyHash::new(library),
             fonts,
             source,
         }
     }
 }
 
-impl World for TestWorld {
+impl World for AuxWorld {
     fn library(&self) -> &LazyHash<Library> {
         &self.library
     }
@@ -64,7 +69,7 @@ impl World for TestWorld {
     }
 
     fn main(&self) -> FileId {
-        *TEST_ID
+        *SOURCE_ID
     }
 
     fn source(&self, _id: FileId) -> FileResult<Source> {
@@ -87,7 +92,7 @@ impl World for TestWorld {
     }
 }
 
-impl IdeWorld for TestWorld {
+impl IdeWorld for AuxWorld {
     fn upcast(&self) -> &dyn World {
         self
     }

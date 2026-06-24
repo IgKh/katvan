@@ -17,13 +17,15 @@
  */
 use std::{collections::HashMap, sync::LazyLock};
 
-use pulldown_cmark::{BrokenLink, CowStr, Event, Tag};
 use typst::{
-    foundations::{Func, Scope, Type, Value},
+    World,
+    comemo::Track,
+    foundations::{Content, Func, IntoValue, Scope, Smart, Type, Value},
     syntax::{
         LinkedNode, Side, Source, SyntaxKind,
         ast::{self, AstNode},
     },
+    text::RawContent,
 };
 use typst_ide::{IdeWorld, Tooltip, analyze_expr};
 use typst_layout::PagedDocument;
@@ -32,8 +34,8 @@ use crate::bridge::ffi;
 
 const ONLINE_DOCS_PREFIX: &str = "https://typst.app/docs";
 
-// Based on https://github.com/typst/typst/blob/main/docs/reference/groups.yml
-// Last synced to commit e016e1e (2025-10-30)
+// Based on https://github.com/typst/typst/blob/main/docs/content/reference/library/math.typ
+// Last synced to commit d6af35f (2026-05-05)
 static MATH_GROUPED_FUNCTIONS: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
     let mut map = HashMap::new();
     map.insert("serif", "variants");
@@ -46,6 +48,10 @@ static MATH_GROUPED_FUNCTIONS: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| 
     map.insert("upright", "styles");
     map.insert("italic", "styles");
     map.insert("bold", "styles");
+    map.insert("display", "sizes");
+    map.insert("inline", "sizes");
+    map.insert("script", "sizes");
+    map.insert("sscript", "sizes");
     map.insert("underline", "underover");
     map.insert("overline", "underover");
     map.insert("underbrace", "underover");
@@ -127,7 +133,7 @@ fn get_documentation_tooltip(
     }
     path.push(name.to_string());
 
-    let content = process_docs_markdown(world, docs);
+    let content = render_documentation_blurb(world, docs)?;
 
     let path_refs = path.iter().map(String::as_ref).collect();
     let is_math = ancesstor.is::<ast::MathIdent>();
@@ -166,6 +172,205 @@ fn resolve_field_target_path(
     Some(vec![node_name.to_string()])
 }
 
+pub fn render_documentation_blurb(world: &dyn IdeWorld, docs: &str) -> Option<String> {
+    // Transforms the inline documentation of a Typst entity into an overview
+    // blurb sutiable for Katvan's tooltips:
+    //
+    // - Only use the overview part of the docs (until the first sub-heading
+    //   or code block)
+    // - Convert internal links into external links into the Typst online
+    //   documentation
+    // - Trim curly braces from code snippets
+    //
+    // Starting from Typst 0.15, the documentation is written in Typst itself,
+    // rather than in Markdown. One would think that the natural way to process
+    // it would be with Typst's own HTML export feature. However it is intended
+    // to be processed all at once through a bundle export, and not piecemiel
+    // like we do here. Therefore internal links, which are written as
+    // references, don't resolve and the compilation fails.
+    //
+    // This can be worked around with custom Output and Introspector
+    // implementations and a custom exporter etc. But that's a lot of very
+    // clunky code. It is easier, though dirtier, to take advantage of the
+    // fact that the relevant parts of the documentation use a rather small
+    // subset of Typst, use Typst's compiler only up to the evaluation phase,
+    // and convert the resulting Content to HTML ourselves.
+    let za_warudo = crate::util::AuxWorld::new(docs);
+    let traced = typst::engine::Traced::default();
+    let route = typst::engine::Route::default();
+    let mut sink = typst::engine::Sink::new();
+
+    let res = typst_eval::eval(
+        (&za_warudo as &dyn World).track(),
+        za_warudo.library(),
+        traced.track(),
+        sink.track_mut(),
+        route.track(),
+        &za_warudo.source(za_warudo.main()).unwrap(),
+    );
+
+    let content = res.ok()?.content();
+    let mut collector = HtmlCollector::new();
+    process_docs_content(&content, world, &mut collector);
+
+    Some(collector.collect_html_paragraphs())
+}
+
+fn process_docs_content(
+    content: &Content,
+    world: &dyn IdeWorld,
+    collector: &mut HtmlCollector,
+) -> bool {
+    let styles = typst::foundations::StyleChain::default();
+
+    if content.is::<typst::model::HeadingElem>() {
+        return false;
+    } else if content.is::<typst::text::SpaceElem>() {
+        collector.push_raw(" ");
+    } else if content.is::<typst::model::ParbreakElem>() {
+        collector.flush_paragraph();
+    } else if let Some(text) = content.to_packed::<typst::text::TextElem>() {
+        collector.push(&text.text);
+    } else if let Some(raw) = content.to_packed::<typst::text::RawElem>() {
+        if raw.block.get(styles) {
+            return false;
+        }
+
+        let text = get_raw_text(&raw.text)
+            .trim_start_matches('{')
+            .trim_end_matches('}')
+            .to_string();
+
+        collector.push_raw("<code>");
+        collector.push(&text);
+        collector.push_raw("</code>");
+    } else if let Some(quote) = content.to_packed::<typst::text::SmartQuoteElem>() {
+        if quote.double.get(styles) {
+            collector.push_raw("\"");
+        } else {
+            collector.push_raw("\'");
+        }
+    } else if let Some(item) = content.to_packed::<typst::model::ListItem>() {
+        let mut nested = HtmlCollector::new();
+        process_docs_content(&item.body, world, &mut nested);
+
+        collector.ensure_list();
+        collector.push_raw("<li>");
+        collector.push_raw(&nested.collect());
+        collector.push_raw("</li>\n");
+    } else if let Some(link) = content.to_packed::<typst::model::RefElem>() {
+        let path = link.target.resolve().to_string();
+        let Some(url) = process_docs_internal_link(world, &path) else {
+            return true;
+        };
+
+        let supplement = match link.supplement.get_ref(styles).clone() {
+            Smart::Custom(Some(supplement)) => supplement.into_value(),
+            _ => Value::None,
+        };
+
+        let text = match supplement {
+            Value::Content(c) => {
+                let mut nested = HtmlCollector::new();
+                process_docs_content(&c, world, &mut nested);
+                nested.collect()
+            }
+            _ => path.clone(),
+        };
+
+        collector.push_raw("<a href='");
+        collector.push_raw(&url);
+        collector.push_raw("'>");
+        collector.push_raw(&text);
+        collector.push_raw("</a>");
+    } else if let Some(seq) = content.to_packed::<typst::foundations::SequenceElem>() {
+        for content in &seq.children {
+            if !process_docs_content(content, world, collector) {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+fn get_raw_text(text: &RawContent) -> String {
+    match text {
+        RawContent::Text(text) => text.to_string(),
+        RawContent::Lines(lines) => lines
+            .iter()
+            .map(|s| s.0.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+    }
+}
+
+#[derive(Debug)]
+struct HtmlCollector {
+    paragraphs: Vec<String>,
+    current: String,
+    in_list: bool,
+}
+
+impl HtmlCollector {
+    pub fn new() -> Self {
+        Self {
+            paragraphs: vec![],
+            current: String::new(),
+            in_list: false,
+        }
+    }
+
+    pub fn collect(mut self) -> String {
+        self.flush_paragraph();
+        self.paragraphs.concat()
+    }
+
+    pub fn collect_html_paragraphs(mut self) -> String {
+        self.flush_paragraph();
+        self.paragraphs
+            .into_iter()
+            .map(|s| {
+                if s.starts_with("<ul>") {
+                    s
+                } else {
+                    format!("<p>{s}</p>")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    pub fn push(&mut self, string: &str) {
+        self.current.push_str(&html_escape(string));
+    }
+
+    pub fn push_raw(&mut self, string: &str) {
+        self.current.push_str(string);
+    }
+
+    pub fn ensure_list(&mut self) {
+        if self.in_list {
+            return;
+        }
+        self.flush_paragraph();
+        self.current.push_str("<ul>\n");
+        self.in_list = true;
+    }
+
+    pub fn flush_paragraph(&mut self) {
+        let mut para = std::mem::take(&mut self.current);
+
+        if self.in_list {
+            para.push_str("</ul>");
+            self.in_list = false;
+        }
+
+        if !para.trim().is_empty() {
+            self.paragraphs.push(para);
+        }
+    }
+}
+
 fn html_escape(value: &str) -> String {
     let mut result = String::new();
     for ch in value.chars() {
@@ -180,101 +385,23 @@ fn html_escape(value: &str) -> String {
     result
 }
 
-fn process_docs_markdown(world: &dyn IdeWorld, docs: &str) -> String {
-    let parser = pulldown_cmark::Parser::new_with_broken_link_callback(
-        docs,
-        pulldown_cmark::Options::empty(),
-        Some(|link: BrokenLink| process_docs_broken_link(world, link)),
-    );
+fn process_docs_internal_link(world: &dyn IdeWorld, path: &str) -> Option<String> {
+    // A 2 or 3 part link to a guide or reference section, separated by colons
+    if path.contains(':') {
+        let parts: Vec<_> = path.split(':').collect();
 
-    // Convert internal links into external links into the Typst online
-    // documentation, trim curly braces from code snippets, and only use
-    // the overview part of the docs (until the first sub-heading or code
-    // block)
-    let events = parser
-        .map(|e| match e {
-            Event::Start(Tag::Link {
-                link_type,
-                dest_url,
-                title,
-                id,
-            }) => {
-                let mut url: String = dest_url.into_string();
-                if url.starts_with('$') {
-                    url = process_docs_internal_link(world, &url[1..]);
-                }
-
-                Event::Start(Tag::Link {
-                    link_type,
-                    dest_url: url.into(),
-                    title,
-                    id,
-                })
+        return match parts.as_slice() {
+            [chapter, page, section] => {
+                Some(format!("{ONLINE_DOCS_PREFIX}/{chapter}/{page}#{section}"))
             }
-            Event::Code(code) => Event::Code(
-                code.trim_start_matches('{')
-                    .trim_end_matches('}')
-                    .to_string()
-                    .into(),
-            ),
-            _ => e,
-        })
-        .take_while(|e| {
-            !matches!(
-                e,
-                Event::Start(Tag::Heading {
-                    level: _,
-                    id: _,
-                    classes: _,
-                    attrs: _,
-                }) | Event::Start(Tag::CodeBlock(_))
-            )
-        });
-
-    let mut html = String::new();
-    pulldown_cmark::html::push_html(&mut html, events);
-    html
-}
-
-fn process_docs_internal_link(world: &dyn IdeWorld, path: &str) -> String {
-    let (path, annex) = match path.find('/') {
-        Some(pos) => path.split_at(pos),
-        None => (path, ""),
-    };
-
-    let path_parts: Vec<_> = path.split('.').collect();
-    let url = get_reference_link(world, path_parts, false)
-        .unwrap_or_else(|| get_well_known_page_link(path));
-
-    if !annex.is_empty() && !url.contains('#') {
-        url + annex
-    } else {
-        url
-    }
-}
-
-fn get_well_known_page_link(path: &str) -> String {
-    let page = match path {
-        "tutorial" | "guides" | "reference" => path.to_string(),
-        _ => format!("reference/{path}"),
-    };
-
-    format!("{ONLINE_DOCS_PREFIX}/{page}")
-}
-
-fn process_docs_broken_link<'a>(
-    world: &dyn IdeWorld,
-    link: BrokenLink,
-) -> Option<(CowStr<'a>, CowStr<'a>)> {
-    if link.link_type != pulldown_cmark::LinkType::Shortcut {
-        return None;
+            [chapter, page] => Some(format!("{ONLINE_DOCS_PREFIX}/{chapter}/{page}")),
+            _ => None,
+        };
     }
 
-    let reference = link.reference.into_string();
-    let name = reference.trim_matches('`');
-    let path: Vec<_> = name.split('.').collect();
-
-    get_reference_link(world, path, false).map(move |url| (url.into(), reference.into()))
+    // A link to the reference of a specific entity
+    let parts: Vec<_> = path.split('.').collect();
+    get_reference_link(world, parts, false)
 }
 
 fn get_reference_link(world: &dyn IdeWorld, mut path: Vec<&str>, is_math: bool) -> Option<String> {
@@ -404,7 +531,7 @@ mod tests {
 
     #[test]
     fn test_get_reference_link_basic() {
-        let world = crate::tests::TestWorld::new("");
+        let world = crate::util::AuxWorld::new("");
 
         assert_eq!(
             get_reference_link(&world, "page"),
@@ -451,7 +578,7 @@ mod tests {
 
     #[test]
     fn test_get_reference_link_math() {
-        let world = crate::tests::TestWorld::new("");
+        let world = crate::util::AuxWorld::new("");
 
         assert_eq!(get_reference_link(&world, "frac"), None);
         assert_eq!(

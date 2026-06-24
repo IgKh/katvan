@@ -192,9 +192,8 @@ fn process_name_pattern(pattern: &str, page: u64, total_pages: usize) -> String 
         .replace("{t}", &total_pages.to_string())
 }
 
-#[allow(clippy::cast_precision_loss)]
 fn convert_dpi(dpi: u32) -> f64 {
-    (dpi as f64) / 72.0
+    f64::from(dpi) / 72.0
 }
 
 fn get_display_path(path: impl AsRef<Path>) -> String {
