@@ -220,6 +220,16 @@ void PreviewerView::jumpTo(int page, QPointF pos)
 #endif
 }
 
+void PreviewerView::goToPage(int page)
+{
+    if (page < 0 || page >= d_pageGeometries.size()) {
+        return;
+    }
+
+    QPointF target = d_pageGeometries[page].topLeft();
+    QScroller::scroller(viewport())->scrollTo(target);
+}
+
 void PreviewerView::resizeEvent(QResizeEvent* event)
 {
     QAbstractScrollArea::resizeEvent(event);
@@ -332,6 +342,29 @@ void PreviewerView::wheelEvent(QWheelEvent* event)
         return;
     }
     QAbstractScrollArea::wheelEvent(event);
+}
+
+void PreviewerView::keyPressEvent(QKeyEvent* event)
+{
+    if (!horizontalScrollBar()->isVisible()) {
+        int pageOffset = 0;
+        if (event->key() == Qt::Key_Right) {
+            pageOffset = 1;
+        }
+        else if (event->key() == Qt::Key_Left) {
+            pageOffset = -1;
+        }
+
+        if (layoutDirection() == Qt::RightToLeft) {
+            pageOffset *= -1;
+        }
+
+        if (pageOffset) {
+            goToPage(d_currentPage + pageOffset);
+            return;
+        }
+    }
+    QAbstractScrollArea::keyPressEvent(event);
 }
 
 void PreviewerView::scrollContentsBy(int dx, int dy)

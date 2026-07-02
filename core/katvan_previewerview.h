@@ -25,6 +25,7 @@
 #include <QList>
 
 QT_BEGIN_NAMESPACE
+class QKeyEvent;
 class QMouseEvent;
 class QPaintEvent;
 class QResizeEvent;
@@ -72,6 +73,7 @@ public slots:
     void setCustomZoomFactor(qreal zoom);
     void setInvertColors(bool value);
     void jumpTo(int page, QPointF pos);
+    void goToPage(int page);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -79,6 +81,7 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void scrollContentsBy(int dx, int dy) override;
 
 private slots:
