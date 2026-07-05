@@ -730,7 +730,7 @@ void MainWindow::openFile()
         lastOpenedDir,
         tr("Typst files (*.typ);;All files (*)"));
 
-    if (!portable) {
+    if (!portable && !fileName.isEmpty()) {
         settings.setValue(SETTING_LAST_OPENED_DIRECTORY, QFileInfo(fileName).absolutePath());
     }
     openNamedFile(fileName);

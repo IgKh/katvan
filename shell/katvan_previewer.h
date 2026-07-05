@@ -61,6 +61,8 @@ private slots:
     void zoomOptionSelected(int index);
     void manualZoomEntered();
     void zoomedByScrolling(int units);
+    void prevPage();
+    void nextPage();
     void currentPageChanged(int page);
     void followEditorCursorChanged(bool checked);
 
@@ -73,6 +75,8 @@ private:
 
     QComboBox* d_zoomComboBox;
     QLabel* d_currentPageLabel;
+    QAction* d_prevPageAction;
+    QAction* d_nextPageAction;
     QAction* d_invertColorsAction;
     QAction* d_followEditorCursorAction;
 };

@@ -61,6 +61,13 @@ public:
     }
 };
 
+static QWidget* createSpacer()
+{
+    QWidget* spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    return spacer;
+}
+
 Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     : QWidget(parent)
 {
@@ -99,8 +106,16 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     connect(zoomInAction, &QAction::triggered, this, &Previewer::zoomIn);
 
     d_currentPageLabel = new QLabel();
-    d_currentPageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    d_currentPageLabel->setAlignment(Qt::AlignCenter);
+
+    d_prevPageAction = new QAction(this);
+    d_prevPageAction->setIcon(utils::themeIcon("go-previous"));
+    d_prevPageAction->setToolTip(tr("Previous Page"));
+    connect(d_prevPageAction, &QAction::triggered, this, &Previewer::prevPage);
+
+    d_nextPageAction = new QAction(this);
+    d_nextPageAction->setIcon(utils::themeIcon("go-next"));
+    d_nextPageAction->setToolTip(tr("Next Page"));
+    connect(d_nextPageAction, &QAction::triggered, this, &Previewer::nextPage);
 
     d_invertColorsAction = new QAction(this);
     d_invertColorsAction->setIcon(utils::themeIcon("color-mode-invert-text"));
@@ -120,7 +135,11 @@ Previewer::Previewer(TypstDriverWrapper* driver, QWidget* parent)
     toolBar->addAction(zoomOutAction);
     toolBar->addWidget(d_zoomComboBox);
     toolBar->addAction(zoomInAction);
+    toolBar->addWidget(createSpacer());
+    toolBar->addAction(d_prevPageAction);
     toolBar->addWidget(d_currentPageLabel);
+    toolBar->addAction(d_nextPageAction);
+    toolBar->addWidget(createSpacer());
     toolBar->addAction(d_invertColorsAction);
     toolBar->addAction(d_followEditorCursorAction);
 
@@ -253,12 +272,24 @@ void Previewer::zoomedByScrolling(int units)
     setCustomZoom(zoom + units * 0.05);
 }
 
+void Previewer::prevPage()
+{
+    d_view->goToPage(d_view->currentPage() - 1);
+}
+
+void Previewer::nextPage()
+{
+    d_view->goToPage(d_view->currentPage() + 1);
+}
+
 void Previewer::currentPageChanged(int page)
 {
     QString pageLabel = d_view->pageLabel(page);
     QString pageCount = QString::number(d_view->pageCount());
 
     d_currentPageLabel->setText(tr("Page %1 of %2").arg(pageLabel, pageCount));
+    d_prevPageAction->setEnabled(page > 0);
+    d_nextPageAction->setEnabled(page >= 0 && page < d_view->pageCount() - 1);
 }
 
 void Previewer::followEditorCursorChanged(bool checked)
