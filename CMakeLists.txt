@@ -53,7 +53,13 @@ elseif(UNIX)
         set_property(TARGET katvan PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
         install(TARGETS typstdriver DESTINATION lib)
     else()
-        set_property(TARGET katvan PROPERTY INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/katvan:$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+        # Some nonsnse distributions (Nix..) provide absolute paths to the
+        # GNUInstallDirs variables that are not under a common installation
+        # prefix. To work around that, calculate the libdir relative to the
+        # bindir, so we can properly set a relative runpath.
+        file(RELATIVE_PATH REL_LIBDIR ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_LIBDIR})
+        set_property(TARGET katvan PROPERTY INSTALL_RPATH "$ORIGIN/${REL_LIBDIR}/katvan:$ORIGIN/${REL_LIBDIR}")
+
         install(TARGETS typstdriver DESTINATION ${CMAKE_INSTALL_LIBDIR}/katvan)
     endif()
 
