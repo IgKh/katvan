@@ -92,12 +92,14 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
         with:
-          version: 6.8.*
+          version: 6.9.*
           cache: true
 
       - name: Install dependencies
         run: |
           brew install googletest libarchive bartycrouch
+        env:
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable

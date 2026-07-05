@@ -97,6 +97,7 @@ PackageManager::PackageManager(Logger* logger, QObject* parent)
     , d_settings(std::make_shared<TypstCompilerSettings>())
 {
     d_networkManager = new QNetworkAccessManager(this);
+    d_networkManager->setTransferTimeout(10000); // 10 seconds
 }
 
 void PackageManager::applySettings(std::shared_ptr<TypstCompilerSettings> settings)
