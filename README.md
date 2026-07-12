@@ -30,6 +30,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 - Syntax highlighting
 - Syntax-aware spell checking
 - Autocomplete
+- Quick access to Typst reference documentation via tool tips
 - Typical code editor niceties - auto indentation, bracket insertion, etc.
 - Forward and inverse search
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)

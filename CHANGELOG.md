@@ -1,3 +1,19 @@
+## v0.13.0 (2026-07-12)
+
+### Typst Version
+
+- The included Typst compiler version was upgraded to `0.15` ([blog](https://typst.app/blog/2026/typst-0.15), [release notes](https://typst.app/docs/changelog/0.15.0/)). As always, note that some Universe packages used in your documents may be incompatible and need upgrading.
+
+### New Features
+
+- You can now jump between pages in the preview with the right and left arrow keys.
+
+### Fixes
+
+- A global timeout is in effect for all network operations performed during compilation, so that compilation would not indefinitely hang when downloading Universe packages over a bad connection.
+
+- Fixed issues with running the x86_64 AppImage under newer Ubuntu hosts with GNOME due to missing GIO modules.
+
 ## v0.12.1 (2026-06-17)
 
 ### Typst Version
