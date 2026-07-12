@@ -99,7 +99,8 @@ jobs:
 
       - name: Generate AppImage
         run: |
-          ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} --appdir build/AppDir --plugin qt --output appimage
+          export PATH=$PATH:$PWD/scripts
+          ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} --appdir build/AppDir --plugin qt --plugin gio --output appimage
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
           EXTRA_QT_MODULES: svg
