@@ -250,6 +250,20 @@ fn process_docs_content(
         } else {
             collector.push_raw("\'");
         }
+    } else if let Some(emph) = content.to_packed::<typst::model::EmphElem>() {
+        let mut nested = HtmlCollector::new();
+        process_docs_content(&emph.body, world, &mut nested);
+
+        collector.push_raw("<em>");
+        collector.push_raw(&nested.collect());
+        collector.push_raw("</em>\n");
+    } else if let Some(strong) = content.to_packed::<typst::model::StrongElem>() {
+        let mut nested = HtmlCollector::new();
+        process_docs_content(&strong.body, world, &mut nested);
+
+        collector.push_raw("<strong>");
+        collector.push_raw(&nested.collect());
+        collector.push_raw("</strong>\n");
     } else if let Some(item) = content.to_packed::<typst::model::ListItem>() {
         let mut nested = HtmlCollector::new();
         process_docs_content(&item.body, world, &mut nested);
