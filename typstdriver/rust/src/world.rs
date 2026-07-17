@@ -15,7 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
+use std::{
+    collections::HashMap,
+    path::{Component, Path, PathBuf},
+    pin::Pin,
+    sync::Mutex,
+};
 
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
 use typst::{
@@ -31,6 +36,19 @@ use typst_kit::fonts::FontStore;
 use crate::bridge::ffi;
 use crate::pathmap;
 
+fn extract_path_prefix(path: &Path) -> PathBuf {
+    let mut prefix = PathBuf::new();
+    for c in path.components() {
+        match c {
+            Component::Prefix(_) | Component::RootDir => {
+                prefix.push(c.as_os_str());
+            }
+            _ => break,
+        }
+    }
+    prefix
+}
+
 pub struct KatvanWorld<'a> {
     path_mapper: pathmap::PathMapper,
     package_manager: Mutex<PackageManagerWrapper<'a>>,
@@ -38,6 +56,7 @@ pub struct KatvanWorld<'a> {
     library: LazyHash<Library>,
     fonts: FontStore,
     source: Source,
+    root_prefix: PathBuf,
     now: Option<OffsetDateTime>,
 }
 
@@ -59,9 +78,14 @@ impl<'a> KatvanWorld<'a> {
         // project root before ever consulting the `World` implementation, which
         // prevents use of relative paths that use ".." but are still within the
         // configured allowed paths. As a workaround, define the virtual path of
-        // notional main source file to be in the full root directory, causing
-        // Typst to consider "/" to be the "project root".
-        let path = VirtualPath::new(String::from(root) + "/MAIN").unwrap();
+        // notional main source file to be in the full root directory - excluding
+        // prefixes such as drive letters, causing Typst to consider the entire
+        // filesystem tree to be the "project root".
+        let source_path = String::from(root) + "/MAIN";
+        let source_path = Path::new(&source_path);
+        let root_prefix = extract_path_prefix(source_path);
+
+        let path = VirtualPath::virtualize(&root_prefix, source_path).unwrap();
         let path = RootedPath::new(VirtualRoot::Project, path);
         let source = Source::new(path.intern(), String::new());
 
@@ -72,6 +96,7 @@ impl<'a> KatvanWorld<'a> {
             library: LazyHash::new(Library::default()),
             fonts,
             source,
+            root_prefix,
             now: None,
         }
     }
@@ -128,9 +153,12 @@ impl<'a> KatvanWorld<'a> {
         let path = match id.root() {
             VirtualRoot::Package(pkg) => {
                 let root = self.get_package_root(pkg)?;
-                id.vpath().realize(&root).map_err(|_| FileError::AccessDenied)?
+                id.vpath().realize(&root)?
             }
-            VirtualRoot::Project => self.path_mapper.get_fs_file_path(id.vpath())?,
+            VirtualRoot::Project => {
+                let path = id.vpath().realize(&self.root_prefix)?;
+                self.path_mapper.get_fs_file_path(&path)?
+            }
         };
 
         if path.is_dir() {

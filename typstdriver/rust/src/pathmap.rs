@@ -20,7 +20,6 @@ use std::path::{Path, PathBuf};
 use typst::{
     diag::{FileError, FileResult},
     ecow::EcoString,
-    syntax::VirtualPath,
 };
 
 pub struct PathMapper {
@@ -44,14 +43,12 @@ impl PathMapper {
             .collect();
     }
 
-    pub fn get_fs_file_path(&self, path: &VirtualPath) -> FileResult<PathBuf> {
+    pub fn get_fs_file_path(&self, displayed_path: &Path) -> FileResult<PathBuf> {
         if self.root.actual.as_os_str().is_empty() {
             return Err(FileError::Other(Some(EcoString::from(
                 "unsaved files cannot include external files",
             ))));
         }
-
-        let displayed_path = PathBuf::from(path.get_with_slash());
 
         let allowed_roots = std::iter::once(&self.root).chain(self.allowed_paths.iter());
         for root in allowed_roots {

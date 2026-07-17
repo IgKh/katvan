@@ -61,7 +61,7 @@ Engine::Engine(const QString& filePath, Logger* logger, PackageManager* packageM
     QString rootPath;
     if (!filePath.isEmpty()) {
         QFileInfo info { filePath };
-        rootPath = info.dir().canonicalPath();
+        rootPath = QDir::toNativeSeparators(info.dir().canonicalPath());
     }
 
     d_ptr.reset(new EnginePrivate(this, logger, packageManager, rootPath));
@@ -392,7 +392,7 @@ void Engine::applySettings(const TypstCompilerSettings& settings)
     paths.reserve(allowedPaths.size());
 
     for (const QString& path : allowedPaths) {
-        paths.push_back(qstringToRust(path));
+        paths.push_back(qstringToRust(QDir::toNativeSeparators(path)));
     }
     d_ptr->engine.value()->set_allowed_paths(paths);
 }
