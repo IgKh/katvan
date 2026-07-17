@@ -1,3 +1,15 @@
+## v0.13.1 (2026-07-17)
+
+### Typst Version
+
+- The included Typst compiler version was upgraded to `0.15.1` ([release notes](https://typst.app/docs/changelog/0.15.1/)).
+
+### Fixes
+
+- Fixed inclusion of external files (images, modules, etc.) on Windows.
+
+- Fixed some library documentation text not being shown on tooltips.
+
 ## v0.13.0 (2026-07-12)
 
 ### Typst Version
