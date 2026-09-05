@@ -908,7 +908,8 @@ void Editor::keyPressEvent(QKeyEvent* event)
         event->key() == Qt::Key_Return ||
         event->key() == Qt::Key_Enter ||
         event->key() == Qt::Key_Tab ||
-        event->key() == Qt::Key_Backtab
+        event->key() == Qt::Key_Backtab ||
+        event->key() == Qt::Key_Escape
     )) {
         event->ignore();
         return;

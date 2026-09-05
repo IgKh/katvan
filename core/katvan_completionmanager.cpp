@@ -38,12 +38,13 @@
  * {"apply":null,"detail":null,"kind":{"symbol":"/"},"label":"slash"}
  * {"apply":null,"detail":"op(text: [dim], limits: false)","kind":"constant","label":"dim"}
  * {"apply":"${x}^${2:2}","detail":"Sets something in superscript.","kind":"syntax","label":"superscript"}
+ * {"apply":"while ${1 < 2} {\n\t${}\n}","detail":"Computes or inserts something while a condition is met.","kind":"syntax","label":"while loop"}
  * {"apply":"@preview/wordometer:0.1.4","detail":"Word counts and document statistics.","kind":"package","label":"@preview/wordometer:0.1.4"}
  */
 
 namespace katvan {
 
-Q_GLOBAL_STATIC(QRegularExpression, APPLY_PLACEHOLDER_REGEX, QStringLiteral("\\${(\\S*?)}"))
+Q_GLOBAL_STATIC(QRegularExpression, APPLY_PLACEHOLDER_REGEX, QStringLiteral("\\${([^}]*?)}"))
 
 enum CompletionModelRoles {
     COMPLETION_DETAIL_ROLE = Qt::UserRole + 1,
@@ -352,6 +353,14 @@ void CompletionManager::updateCompletionPrefix(bool force)
     d_completer->complete(popupRect);
 }
 
+static void expandTabs(QString& text, const EditorSettings& settings)
+{
+    if (settings.indentStyle() == EditorSettings::IndentStyle::SPACES) {
+        QString fill { settings.indentWidth(), QChar::Space };
+        text.replace(QChar::Tabulation, fill);
+    }
+}
+
 void CompletionManager::suggestionSelected(const QModelIndex& index)
 {
     QString snippet = index.data(COMPLETION_APPLY_ROLE).toString();
@@ -373,7 +382,9 @@ void CompletionManager::suggestionSelected(const QModelIndex& index)
         QRegularExpressionMatch m = it.next();
 
         // First fill all non-placeholder text after the previous placeholder
-        cursor.insertText(snippet.sliced(lastMatchEnd, m.capturedStart(0) - lastMatchEnd));
+        QString filler = snippet.sliced(lastMatchEnd, m.capturedStart(0) - lastMatchEnd);
+        expandTabs(filler, d_editor->effectiveSettings());
+        cursor.insertText(filler);
 
         if (selectionStart == -1) {
             selectionStart = cursor.position();
@@ -402,6 +413,14 @@ void CompletionManager::suggestionSelected(const QModelIndex& index)
     // Making a completion can trigger a new completion
     if (selectionStart < 0 || selectionStart == selectionEnd) {
         startImplicitCompletion();
+    }
+}
+
+void CompletionManager::activateSuggestion(int index)
+{
+    QModelIndex idx = d_model->index(index, 0);
+    if (idx.isValid()) {
+        suggestionSelected(idx);
     }
 }
 

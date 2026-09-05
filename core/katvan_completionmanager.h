@@ -75,6 +75,8 @@ public:
     bool isImplicitCompletionAllowed() const { return d_implicitCompletionAllowed; }
     void setImplicitCompletionAllowed(bool allow) { d_implicitCompletionAllowed = allow; }
 
+    void activateSuggestion(int index);
+
 public slots:
     void startExplicitCompletion();
     void startImplicitCompletion();

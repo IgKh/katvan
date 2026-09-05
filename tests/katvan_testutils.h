@@ -21,12 +21,40 @@
 #include <QtGlobal>
 
 #include <iosfwd>
+#include <memory>
+
+namespace katvan {
+    class Document;
+    class Editor;
+    class EditorSettings;
+}
 
 QT_BEGIN_NAMESPACE
 
+class QKeySequence;
 class QString;
 
 void PrintTo(QChar ch, std::ostream* os);
 void PrintTo(const QString& str, std::ostream* os);
 
 QT_END_NAMESPACE
+
+struct EditorHolder
+{
+    EditorHolder(const QString& text);
+    EditorHolder(const QString& text, const katvan::EditorSettings& settings);
+    ~EditorHolder();
+
+    void setText(const QString& text);
+    QString text();
+
+    int cursorPosition();
+    std::tuple<int, int> selectionRange();
+
+    void selectRange(int from, int to);
+    void sendKeyPress(int pos, int key, Qt::KeyboardModifiers modifiers);
+    void sendKeyPress(int pos, const QKeySequence& sequence);
+
+    std::unique_ptr<katvan::Document> document;
+    std::unique_ptr<katvan::Editor> editor;
+};

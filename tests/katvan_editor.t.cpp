@@ -17,90 +17,13 @@
  */
 #include "katvan_testutils.h"
 
-#include "katvan_document.h"
 #include "katvan_editor.h"
 #include "katvan_text_utils.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <QApplication>
-
-#include <memory>
-
 using namespace katvan;
-
-static QString keyToAscii(int key)
-{
-    switch (key) {
-        case Qt::Key_ParenRight: return QStringLiteral(")");
-        case Qt::Key_BraceLeft: return QStringLiteral("{");
-        default: return QString();
-    }
-}
-
-struct EditorHolder
-{
-    EditorHolder(const QString& text, const EditorSettings& settings = EditorSettings())
-        : document(new Document())
-        , editor(new Editor(document.get(), nullptr))
-    {
-        editor->applySettings(settings);
-        document->setDocumentText(text);
-    }
-
-    void setText(const QString& text)
-    {
-        document->setDocumentText(text);
-    }
-
-    QString text()
-    {
-        return document->toPlainText();
-    }
-
-    int cursorPosition()
-    {
-        return editor->textCursor().position();
-    }
-
-    std::tuple<int, int> selectionRange()
-    {
-        QTextCursor cursor = editor->textCursor();
-        return std::make_tuple(cursor.selectionStart(), cursor.selectionEnd());
-    }
-
-    void selectRange(int from, int to)
-    {
-        QTextCursor cursor { document.get() };
-        cursor.setPosition(from);
-        cursor.setPosition(to, QTextCursor::KeepAnchor);
-        editor->setTextCursor(cursor);
-    }
-
-    void sendKeyPress(int pos, int key, Qt::KeyboardModifiers modifiers)
-    {
-        if (pos >= 0) {
-            QTextCursor cursor { document.get() };
-            cursor.setPosition(pos);
-            editor->setTextCursor(cursor);
-        }
-
-        QString text = keyToAscii(key);
-        QKeyEvent e(QEvent::KeyPress, key, modifiers, text);
-        QApplication::sendEvent(editor.get(), &e);
-    }
-
-    void sendKeyPress(int pos, const QKeySequence& sequence) {
-        if (sequence.count() != 1) {
-            return;
-        }
-        sendKeyPress(pos, sequence[0].key(), sequence[0].keyboardModifiers());
-    }
-
-    std::unique_ptr<Document> document;
-    std::unique_ptr<Editor> editor;
-};
 
 TEST(EditorTests, BackspaceToBidiMark) {
     EditorSettings settings;

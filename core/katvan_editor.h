@@ -54,6 +54,7 @@ public:
     Editor(Document* doc, SpellChecker* spellChecker, QWidget* parent = nullptr);
 
     CompletionManager* completionManager() const { return d_completionManager; }
+    const EditorSettings& effectiveSettings() const { return d_effectiveSettings; }
 
     bool isGoBackAvailable() const { return !d_backLandmarks.isEmpty(); }
     bool isGoForwardAvailable() const { return !d_forwardLandmarks.isEmpty(); }

@@ -717,6 +717,10 @@ QPointF EditorLayout::cursorPositionPoint(int pos) const
     }
 
     LayoutBlockData* layoutData = BlockData::get<LayoutBlockData>(block);
+    if (!layoutData) {
+        return QPointF();
+    }
+
     QTextLayout* layout = layoutData->displayLayout
         ? layoutData->displayLayout.get()
         : block.layout();
