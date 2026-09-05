@@ -133,7 +133,7 @@ fn get_documentation_tooltip(
     }
     path.push(name.to_string());
 
-    let content = render_documentation_blurb(world, docs)?;
+    let content = render_documentation_blurb(docs)?;
 
     let path_refs = path.iter().map(String::as_ref).collect();
     let is_math = ancesstor.is::<ast::MathIdent>();
@@ -172,7 +172,7 @@ fn resolve_field_target_path(
     Some(vec![node_name.to_string()])
 }
 
-pub fn render_documentation_blurb(world: &dyn IdeWorld, docs: &str) -> Option<String> {
+pub fn render_documentation_blurb(docs: &str) -> Option<String> {
     // Transforms the inline documentation of a Typst entity into an overview
     // blurb sutiable for Katvan's tooltips:
     //
@@ -211,7 +211,7 @@ pub fn render_documentation_blurb(world: &dyn IdeWorld, docs: &str) -> Option<St
 
     let content = res.ok()?.content();
     let mut collector = HtmlCollector::new();
-    process_docs_content(&content, world, &mut collector);
+    process_docs_content(&content, &za_warudo, &mut collector);
 
     Some(collector.collect_html_paragraphs())
 }
@@ -274,9 +274,7 @@ fn process_docs_content(
         collector.push_raw("</li>\n");
     } else if let Some(link) = content.to_packed::<typst::model::RefElem>() {
         let path = link.target.resolve().to_string();
-        let Some(url) = process_docs_internal_link(world, &path) else {
-            return true;
-        };
+        let url = process_docs_internal_link(world, &path).unwrap_or_default();
 
         let supplement = match link.supplement.get_ref(styles).clone() {
             Smart::Custom(Some(supplement)) => supplement.into_value(),
@@ -292,11 +290,15 @@ fn process_docs_content(
             _ => path.clone(),
         };
 
-        collector.push_raw("<a href='");
-        collector.push_raw(&url);
-        collector.push_raw("'>");
-        collector.push_raw(&text);
-        collector.push_raw("</a>");
+        if url.is_empty() {
+            collector.push_raw(&text);
+        } else {
+            collector.push_raw("<a href='");
+            collector.push_raw(&url);
+            collector.push_raw("'>");
+            collector.push_raw(&text);
+            collector.push_raw("</a>");
+        }
     } else if let Some(seq) = content.to_packed::<typst::foundations::SequenceElem>() {
         for content in &seq.children {
             if !process_docs_content(content, world, collector) {
@@ -558,6 +560,10 @@ mod tests {
         assert_eq!(
             get_reference_link(&world, "std.pdf.attach"),
             Some(format!("/reference/pdf/attach"))
+        );
+        assert_eq!(
+            get_reference_link(&world, "html.frame"),
+            Some(format!("/reference/html/frame/"))
         );
         assert_eq!(
             get_reference_link(&world, "color"),
