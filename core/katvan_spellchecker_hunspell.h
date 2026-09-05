@@ -58,7 +58,7 @@ private slots:
 
 private:
     void ensureWorkerThread();
-    bool checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word);
+    bool checkWord(LoadedSpeller* speller, QChar::Script dictionaryScript, const QString& word);
     void flushPersonalDictionary();
     void loadPersonalDictionary();
     void setPersonalDictionaryPath();

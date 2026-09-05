@@ -28,9 +28,12 @@
 #include <QMutex>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QStringConverter>
 #include <QTextBoundaryFinder>
 #include <QTextStream>
 #include <QThread>
+
+#include <mutex>
 
 namespace katvan {
 
@@ -39,9 +42,13 @@ QString HunspellSpellChecker::s_personalDictionaryLocation;
 struct LoadedSpeller
 {
     LoadedSpeller(const char* affPath, const char* dicPath)
-        : speller(affPath, dicPath) {}
+        : speller(affPath, dicPath)
+        , encoder(speller.get_dic_encoding())
+        , decoder(speller.get_dic_encoding()) {}
 
     Hunspell speller;
+    QStringEncoder encoder;
+    QStringDecoder decoder;
     QMutex mutex;
 };
 
@@ -186,7 +193,7 @@ static QChar::Script getDictionaryScript(const QString& dictName)
     }
 }
 
-bool HunspellSpellChecker::checkWord(Hunspell& speller, QChar::Script dictionaryScript, const QString& word)
+bool HunspellSpellChecker::checkWord(LoadedSpeller* speller, QChar::Script dictionaryScript, const QString& word)
 {
     QString normalizedWord = word.normalized(QString::NormalizationForm_D);
     if (d_personalDictionary.contains(normalizedWord)) {
@@ -204,7 +211,8 @@ bool HunspellSpellChecker::checkWord(Hunspell& speller, QChar::Script dictionary
         return true;
     }
 
-    return speller.spell(word.toStdString());
+    QByteArray encodedWord = speller->encoder.encode(word);
+    return speller->speller.spell(encodedWord.toStdString());
 }
 
 SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QString& text)
@@ -215,7 +223,9 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
     }
 
     LoadedSpeller* speller = d_spellers[currentDictionaryName()].get();
-    if (!speller->mutex.tryLock()) {
+
+    std::unique_lock<QMutex> locker { speller->mutex, std::defer_lock };
+    if (!locker.try_lock()) {
         // Do not block the UI event loop! If we can't take the speller
         // lock (because suggestions are being generated at the moment),
         // just pretend there are no spelling mistakes here.
@@ -237,7 +247,7 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
             // BiDi control characters.
             word.removeIf(utils::isBidiControlChar);
 
-            bool ok = checkWord(speller->speller, dictScript, word);
+            bool ok = checkWord(speller, dictScript, word);
             if (!ok) {
                 result.append(std::make_pair<size_t, size_t>(prevPos, pos - prevPos));
             }
@@ -245,7 +255,6 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
         prevPos = pos;
     }
 
-    speller->mutex.unlock();
     return result;
 }
 
@@ -378,16 +387,18 @@ void DictionaryLoaderWorker::process()
 
 void SpellingSuggestionsWorker::process()
 {
-    std::vector<std::string> suggestions;
-    {
-        QMutexLocker locker{ &d_speller->mutex };
-        suggestions = d_speller->speller.suggest(d_word.toStdString());
-    }
-
     QStringList result;
-    result.reserve(suggestions.size());
-    for (const auto& s : suggestions) {
-        result.append(QString::fromStdString(s));
+    {
+        std::unique_lock<QMutex> locker { d_speller->mutex };
+
+        QByteArray encodedWord = d_speller->encoder.encode(d_word);
+        std::vector<std::string> suggestions = d_speller->speller.suggest(encodedWord.toStdString());
+
+        result.reserve(suggestions.size());
+        for (const auto& s : suggestions) {
+            QString decoded = d_speller->decoder.decode(s.c_str());
+            result.append(decoded);
+        }
     }
 
     Q_EMIT suggestionsReady(d_word, d_pos, result);
