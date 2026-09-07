@@ -67,6 +67,12 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(8, 8);
     [super drawWithFrame:cellFrame inView:controlView];
 }
 
+- (void)resetCursorRect:(NSRect)cellFrame inView:(NSView*)controlView
+{
+    // Ensure we don't have the open hand cursor when hovering over the pill
+    [controlView addCursorRect:cellFrame cursor:[NSCursor arrowCursor]];
+}
+
 @end
 
 @interface KatvanPreviewer ()
