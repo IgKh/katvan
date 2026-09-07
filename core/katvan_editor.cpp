@@ -915,6 +915,10 @@ void Editor::keyPressEvent(QKeyEvent* event)
         return;
     }
 
+#if defined(Q_OS_MACOS)
+    d_pendingDirectionChange.reset();
+#endif
+
     if (event->key() == Qt::Key_Return) {
         handleNewLine();
         return;
@@ -989,6 +993,15 @@ void Editor::keyPressEvent(QKeyEvent* event)
             ? QTextLine::Leading
             : QTextLine::Trailing;
 
+#if defined(Q_OS_MACOS)
+        // In macOS MoveToStartOfLine etc. are bound to Cmd+Left/Right, so need
+        // to be flipped if we are on a RTL line
+        Qt::LayoutDirection dir = textCursor().block().layout()->textOption().textDirection();
+        if (dir == Qt::RightToLeft) {
+            edge = (edge == QTextLine::Leading) ? QTextLine::Trailing : QTextLine::Leading;
+        }
+#endif
+
         bool select = (event->matches(QKeySequence::SelectStartOfLine) || event->matches(QKeySequence::SelectEndOfLine));
 
         handleMoveToEdge(edge, select);
@@ -1040,9 +1053,6 @@ void Editor::keyPressEvent(QKeyEvent* event)
         else if (event->nativeVirtualKey() == 0x3C) { // kVK_RightShift
             d_pendingDirectionChange = Qt::RightToLeft;
             return;
-        }
-        else {
-            d_pendingDirectionChange.reset();
         }
     }
 #endif
