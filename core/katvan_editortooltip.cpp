@@ -57,6 +57,7 @@ namespace katvan {
 EditorToolTipFrame::EditorToolTipFrame(bool byKeyboard, const EditorTheme& theme, QWidget* parent)
     : QWidget(parent, byKeyboard ? Qt::Popup : Qt::ToolTip)
     , d_byKeyboard(byKeyboard)
+    , d_hasOverrideCursor(false)
 {
     d_browser = new QTextBrowser(this);
     d_browser->setOpenExternalLinks(true);
@@ -68,6 +69,9 @@ EditorToolTipFrame::EditorToolTipFrame(bool byKeyboard, const EditorTheme& theme
     d_extraInfoLabel = new QLabel(this);
     d_extraInfoLabel->setOpenExternalLinks(true);
     d_extraInfoLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+
+    connect(d_browser, &QTextBrowser::highlighted, this, qOverload<const QUrl&>(&EditorToolTipFrame::linkHighlighted));
+    connect(d_extraInfoLabel, &QLabel::linkHovered, this, qOverload<const QString&>(&EditorToolTipFrame::linkHighlighted));
 
     d_hideTimer = new QTimer(this);
     d_hideTimer->callOnTimeout(this, &EditorToolTipFrame::hideImmediately);
@@ -165,7 +169,7 @@ static QSize calculateBrowserSize(QTextDocument* doc, bool& needsScrollBar)
 void EditorToolTipFrame::updateSizeAndLayout(QTextDocument* newDocument)
 {
     const int margin = 5 + style()->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth, nullptr, this);
-    const int spacing = style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing, nullptr, this);
+    const int spacing = qMax(0, style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing, nullptr, this));
 
     int totalWidth = 2 * margin;
     int totalHeight = 2 * margin;
@@ -230,8 +234,39 @@ void EditorToolTipFrame::hideDeferred()
 
 void EditorToolTipFrame::hideImmediately()
 {
+    if (d_hasOverrideCursor) {
+        QApplication::restoreOverrideCursor();
+        d_hasOverrideCursor = false;
+    }
+
     close();
     deleteLater();
+}
+
+void EditorToolTipFrame::linkHighlighted(const QUrl& url)
+{
+    linkHighlighted(url.toString());
+}
+
+void EditorToolTipFrame::linkHighlighted(const QString& url)
+{
+#if defined(Q_OS_MACOS)
+    // AppKit doesn't always apply cursor changes immediately, and Qt's
+    // workaround for the case doesn't apply for popup windows (see
+    // https://codereview.qt-project.org/c/qt/qtbase/+/471492).
+    //
+    // Workaround it ourselves by using a global override cursor.
+    if (url.isEmpty()) {
+        if (d_hasOverrideCursor) {
+            QApplication::restoreOverrideCursor();
+            d_hasOverrideCursor = false;
+        }
+        return;
+    }
+
+    QApplication::setOverrideCursor(Qt::PointingHandCursor);
+    d_hasOverrideCursor = true;
+#endif
 }
 
 void EditorToolTipFrame::resizeEvent(QResizeEvent* e)

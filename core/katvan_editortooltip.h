@@ -53,6 +53,10 @@ protected:
     void paintEvent(QPaintEvent* e) override;
     bool eventFilter(QObject* obj, QEvent* e) override;
 
+private slots:
+    void linkHighlighted(const QUrl& url);
+    void linkHighlighted(const QString& url);
+
 private:
     void updatePalette(const EditorTheme& theme);
     void updateSizeAndLayout(QTextDocument* newDocument);
@@ -62,6 +66,7 @@ private:
     QLabel* d_extraInfoLabel;
     QTimer* d_hideTimer;
     bool d_byKeyboard;
+    bool d_hasOverrideCursor;
 };
 
 class EditorToolTip
