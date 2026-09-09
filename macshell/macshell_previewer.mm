@@ -18,6 +18,7 @@
 #import "macshell_previewer.h"
 #import "macshell_widgets.h"
 
+#include <QApplication>
 #include <QScrollBar>
 
 static const NSInteger kZoomLevelFitPage = -1;
@@ -331,6 +332,15 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(8, 8);
         cell.active = active;
         [self.currentPageLabel setNeedsDisplay:YES];
     }
+}
+
+- (void)resetAppearance
+{
+    // Embedded Qt widgets don't get the ApplicationPaletteChange event
+    // because they are not top-level but still backed by a QWindow... To
+    // workaround we need to send it ourselves.
+    QEvent event(QEvent::ApplicationPaletteChange);
+    QApplication::sendEvent(self.previewerView, &event);
 }
 
 - (int)currentPage

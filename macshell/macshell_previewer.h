@@ -29,4 +29,6 @@
 
 - (instancetype)initWithDriver:(katvan::TypstDriverWrapper*)driver;
 
+- (void)resetAppearance;
+
 @end

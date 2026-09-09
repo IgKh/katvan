@@ -266,6 +266,8 @@ void EditorToolTipFrame::linkHighlighted(const QString& url)
 
     QApplication::setOverrideCursor(Qt::PointingHandCursor);
     d_hasOverrideCursor = true;
+#else
+    Q_UNUSED(url);
 #endif
 }
 

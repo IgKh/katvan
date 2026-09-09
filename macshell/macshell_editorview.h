@@ -29,6 +29,7 @@
 
 - (instancetype)initWithDocument:(katvan::Document*)textDocument;
 
+- (void)resetAppearance;
 - (void)ensureFocused;
 - (void)showColorPicker;
 - (void)updateWordCount:(NSUInteger)count;

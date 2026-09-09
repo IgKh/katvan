@@ -74,8 +74,6 @@
 
 - (void)dealloc
 {
-    [self.view removeObserver:self forKeyPath:@"effectiveAppearance"];
-
     delete self.editor;
     delete self.spellChecker;
 }
@@ -83,8 +81,6 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-
-    [self.view addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:nil];
 
     //self.editor->setWindowFlags(self.editor->windowFlags() | Qt::SubWindow);
 
@@ -174,16 +170,6 @@
     [coder encodeInteger:cursorMoveStyle forKey:@"cursorMoveStyle"];
 
     [super encodeRestorableStateWithCoder:coder];
-}
-
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context
-{
-    if ([keyPath isEqualToString:@"effectiveAppearance"]) {
-        self.editor->updateEditorTheme();
-    }
-    else {
-        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-    }
 }
 
 - (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)item
@@ -326,6 +312,11 @@
     self.goToLineDialog->setLabelText(QString::fromNSString(msg));
     self.goToLineDialog->setIntRange(1, lineCount);
     self.goToLineDialog->open();
+}
+
+- (void)resetAppearance
+{
+    self.editor->updateEditorTheme();
 }
 
 - (void)ensureFocused

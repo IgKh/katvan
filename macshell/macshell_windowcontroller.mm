@@ -94,6 +94,7 @@
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [self.window removeObserver:self forKeyPath:@"effectiveAppearance"];
 
     delete self.wordCounter;
     delete self.driver;
@@ -218,6 +219,8 @@
     toolbar.allowsUserCustomization = NO;
     toolbar.displayMode = NSToolbarDisplayModeIconOnly;
     self.window.toolbar = toolbar;
+
+    [self.window addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:nil];
 }
 
 - (void)setupSidebar
@@ -400,6 +403,17 @@
         return [self.exporter canExport];
     }
     return YES;
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context
+{
+    if ([keyPath isEqualToString:@"effectiveAppearance"]) {
+        [self.editorView resetAppearance];
+        [self.previewer resetAppearance];
+    }
+    else {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+    }
 }
 
 - (void)splitViewDidMove:(NSNotification*)notification
