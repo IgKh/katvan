@@ -1,4 +1,3 @@
-// -*- mode: objective-cpp -*-
 /*
  * This file is part of Katvan
  * Copyright (c) 2024 - 2026 Igor Khanin
@@ -76,19 +75,7 @@ public:
     self.scrollView.drawsBackground = NO;
     self.scrollView.translatesAutoresizingMaskIntoConstraints = NO;
 
-    self.outlineView = [[NSOutlineView alloc] init];
-    self.outlineView.delegate = self;
-    self.outlineView.dataSource = self;
-    self.outlineView.headerView = nil;
-    self.outlineView.focusRingType = NSFocusRingTypeNone;
-    self.outlineView.target = self;
-    self.outlineView.action = @selector(outlineEntrySelected:);
-
-    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"headingsColumn"];
-    [self.outlineView addTableColumn:column];
-
-    self.outlineView.outlineTableColumn = column;
-    self.scrollView.documentView = self.outlineView;
+    [self createOutlineWithLayoutDirection:[NSApp userInterfaceLayoutDirection]];
 
     [self.view addSubview:self.scrollView];
 
@@ -100,6 +87,28 @@ public:
     ]];
 }
 
+- (void)createOutlineWithLayoutDirection:(NSUserInterfaceLayoutDirection)direction
+{
+    NSOutlineView* view = [[NSOutlineView alloc] initWithFrame:self.scrollView.contentView.bounds];
+    view.delegate = self;
+    view.dataSource = self;
+    view.headerView = nil;
+    view.userInterfaceLayoutDirection = direction;
+    view.focusRingType = NSFocusRingTypeNone;
+    view.target = self;
+    view.action = @selector(outlineEntrySelected:);
+
+    NSTableColumn* column = [[NSTableColumn alloc] initWithIdentifier:@"headingsColumn"];
+    [view addTableColumn:column];
+
+    view.outlineTableColumn = column;
+
+    self.scrollView.documentView = view;
+    self.outlineView = view;
+
+    [view sizeLastColumnToFit];
+}
+
 - (void)setOutline:(katvan::typstdriver::OutlineNode*)outline
 {
     self.model->setOutline(outline);
@@ -107,14 +116,20 @@ public:
     d_currentLine = -1;
     d_items.clear();
 
-    [self.outlineView reloadData];
-    [self.outlineView expandItem:nil expandChildren:YES];
-
     NSUserInterfaceLayoutDirection dir = self.model->isRightToLeft()
         ? NSUserInterfaceLayoutDirectionRightToLeft
         : NSUserInterfaceLayoutDirectionLeftToRight;
 
-    self.outlineView.userInterfaceLayoutDirection = dir;
+    if (dir != self.outlineView.userInterfaceLayoutDirection) {
+        // If the outline's layout direction changed, we have to re-create the
+        // outline view entirely. The reason is that it caches the disclosure
+        // triangle buttons, which can point to the now wrong direction when
+        // collapsed.
+        [self createOutlineWithLayoutDirection:dir];
+    }
+
+    [self.outlineView reloadData];
+    [self.outlineView expandItem:nil expandChildren:YES];
 }
 
 - (void)selectEntryForLine:(int)line
@@ -231,9 +246,11 @@ public:
     if (view == nil) {
         NSTextField* label = [NSTextField labelWithString:@""];
         label.translatesAutoresizingMaskIntoConstraints = NO;
+        label.lineBreakMode = NSLineBreakByTruncatingTail;
 
         view = [[NSTableCellView alloc] init];
         view.identifier = @"headingLabel";
+        view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
 
         [view addSubview:label];
         [view setTextField:label];
