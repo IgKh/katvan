@@ -19,7 +19,9 @@
 #import "macshell_widgets.h"
 
 #include <QApplication>
+#include <QLibraryInfo>
 #include <QScrollBar>
+#include <QVersionNumber>
 
 static const NSInteger kZoomLevelFitPage = -1;
 static const NSInteger kZoomLevelFitWidth = -2;
@@ -140,6 +142,10 @@ static const NSSize kPageNumberLabelPadding = NSMakeSize(8, 8);
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+
+    if (QLibraryInfo::version() >= QVersionNumber(6, 12)) {
+        self.previewerView->setWindowFlags(self.previewerView->windowFlags() | Qt::SubWindow);
+    }
 
     self.previewerNsView = (__bridge NSView *)reinterpret_cast<void*>(self.previewerView->winId());
     self.previewerNsView.translatesAutoresizingMaskIntoConstraints = NO;

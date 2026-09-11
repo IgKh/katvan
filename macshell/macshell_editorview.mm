@@ -24,7 +24,9 @@
 #include "katvan_highlighter.h"
 
 #include <QInputDialog>
+#include <QLibraryInfo>
 #include <QMenu>
+#include <QVersionNumber>
 
 @interface KatvanEditorView ()
 
@@ -82,7 +84,9 @@
 {
     [super viewDidLoad];
 
-    //self.editor->setWindowFlags(self.editor->windowFlags() | Qt::SubWindow);
+    if (QLibraryInfo::version() >= QVersionNumber(6, 12)) {
+        self.editor->setWindowFlags(self.editor->windowFlags() | Qt::SubWindow);
+    }
 
     self.editorNsView = (__bridge NSView *)reinterpret_cast<void*>(self.editor->winId());
     self.editorNsView.translatesAutoresizingMaskIntoConstraints = NO;
