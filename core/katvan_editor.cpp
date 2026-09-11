@@ -1172,7 +1172,7 @@ void Editor::resizeEvent(QResizeEvent* event)
     }
 }
 
-QRect Editor::adjustedCursorRect(const QTextCursor& cursor)
+QRect Editor::adjustedCursorRect(const QTextCursor& cursor) const
 {
     EditorLayout* layout = qobject_cast<EditorLayout*>(document()->documentLayout());
     QRect orig = cursorRect(cursor);
@@ -1185,8 +1185,9 @@ QRect Editor::adjustedCursorRect(const QTextCursor& cursor)
         return orig;
     }
 
-    orig.setX(qRound(adjPos.x()) - horizontalScrollBar()->value());
-    orig.setY(qRound(adjPos.y()) - verticalScrollBar()->value());
+    int x = qRound(adjPos.x()) - horizontalScrollBar()->value();
+    int y = qRound(adjPos.y()) - verticalScrollBar()->value();
+    orig.moveTo(x, y);
 
     return orig;
 }
@@ -1354,6 +1355,29 @@ void Editor::insertFromMimeData(const QMimeData* source)
     else {
         QTextEdit::insertFromMimeData(source);
     }
+}
+
+QVariant Editor::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+    // Below, rects are is in viewport coordinates, but should be returned in
+    // widget coordinates as per Qt::InputMethodQuery documentation
+
+    if (query == Qt::ImCursorRectangle || query == Qt::ImAnchorRectangle) {
+        QTextCursor cursor = textCursor();
+        if (query == Qt::ImAnchorRectangle) {
+            cursor.setPosition(cursor.anchor());
+        }
+
+        QRect r = adjustedCursorRect(cursor);
+        r.moveTopLeft(viewport()->mapTo(this, r.topLeft()));
+        return r;
+    }
+    else if (query == Qt::ImInputItemClipRectangle) {
+        QRect r = viewport()->visibleRegion().boundingRect();
+        r.moveTopLeft(viewport()->mapTo(this, r.topLeft()));
+        return r;
+    }
+    return QTextEdit::inputMethodQuery(query);
 }
 
 int Editor::lineNumberGutterWidth()

@@ -63,7 +63,7 @@ public:
     void updateEditorTheme();
     void setSourceDiagnostics(QList<typstdriver::Diagnostic> diagnostics);
 
-    QRect adjustedCursorRect(const QTextCursor& cursor);
+    QRect adjustedCursorRect(const QTextCursor& cursor) const;
 
     QMenu* createInsertMenu();
 
@@ -91,6 +91,7 @@ public slots:
 protected:
     bool canInsertFromMimeData(const QMimeData* source) const override;
     void insertFromMimeData(const QMimeData* source) override;
+    QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
     bool event(QEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
