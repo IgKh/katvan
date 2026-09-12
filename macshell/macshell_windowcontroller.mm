@@ -56,6 +56,7 @@
 @property (nonatomic) katvan::SymbolPicker* symbolPicker;
 
 @property (nonatomic) QString documentFilePath;
+@property (nonatomic) BOOL sidebarWasCollapsedBeforeVersionBrowser;
 
 @end
 
@@ -73,6 +74,7 @@
 
     self = [super initWithWindow:window];
     if (self) {
+        window.delegate = self;
         window.tabbingMode = NSWindowTabbingModeDisallowed;
 
         self.textDocument = textDocument;
@@ -475,8 +477,7 @@
 - (void)compilationStatusClicked:(id)sender
 {
     // Make sure sidebar is visible
-    NSSplitViewItem* sidebarItem = [self.splitViewController splitViewItemForViewController:self.sidebar];
-    sidebarItem.collapsed = NO;
+    self.sidebarSplitItem.collapsed = NO;
 
     [self.sidebar ensureControllerSelected:self.issueList];
 }
@@ -551,6 +552,23 @@
     }
 
     self.symbolPicker->open();
+}
+
+- (void)windowDidEnterVersionBrowser:(NSNotification*)notification
+{
+    // While in the version browser, hide all panes except the editor. We don't
+    // remove the sidebar pane from splitViewItems because it messes up the toolbar.
+    self.sidebarWasCollapsedBeforeVersionBrowser = self.sidebarSplitItem.collapsed;
+    self.sidebarSplitItem.collapsed = YES;
+
+    self.splitViewController.splitViewItems = @[self.sidebarSplitItem, self.editorSplitItem];
+    [self.splitViewController.splitView adjustSubviews];
+}
+
+- (void)windowWillExitVersionBrowser:(NSNotification*) notification
+{
+    [self applyPreviewLocation:nil];
+    self.sidebarSplitItem.collapsed = self.sidebarWasCollapsedBeforeVersionBrowser;
 }
 
 @end

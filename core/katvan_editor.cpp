@@ -612,8 +612,10 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         d_contextMenu->insertSeparator(origFirstAction);
     }
 
-    d_contextMenu->addSeparator();
-    d_contextMenu->addAction(tr("Toggle Text Direction"), TEXT_DIRECTION_TOGGLE, this, &Editor::toggleTextBlockDirection);
+    if (!isReadOnly()) {
+        d_contextMenu->addSeparator();
+        d_contextMenu->addAction(tr("Toggle Text Direction"), TEXT_DIRECTION_TOGGLE, this, &Editor::toggleTextBlockDirection);
+    }
 
     if (!misspelledWord.isEmpty()) {
         // Request the suggestions after menu was created, but before it is

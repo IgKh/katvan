@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#import "macshell_historicwindowcontroller.h"
 #import "macshell_typstdocument.h"
 #import "macshell_windowcontroller.h"
 
@@ -26,7 +27,8 @@
 
 @end
 
-@implementation KatvanTypstDocument {
+@implementation KatvanTypstDocument
+{
     BOOL d_recoveredFromBackup;
     BOOL d_modifiedSinceAutosave;
 }
@@ -46,11 +48,11 @@
 
         __weak __typeof__(self) weakSelf = self;
         QObject::connect(self.textDocument, &QTextDocument::modificationChanged,
-                        self.textDocument, [weakSelf]() {
+                         self.textDocument, [weakSelf]() {
             [weakSelf syncModificationStatus];
         });
         QObject::connect(self.textDocument, &katvan::Document::contentModified,
-                        self.textDocument, [weakSelf]() {
+                         self.textDocument, [weakSelf]() {
             [weakSelf contentWasModified];
         });
     }
@@ -64,8 +66,14 @@
 
 - (void)makeWindowControllers
 {
-    KatvanWindowController* windowController = [[KatvanWindowController alloc] initWithDocument:self.textDocument initialURL:self.fileURL];
-    [self addWindowController:windowController];
+    NSWindowController* controller = nil;
+    if (self.isInViewingMode) {
+        controller = [[KatvanHistoricWindowController alloc] initWithDocument:self.textDocument];
+    }
+    else {
+        controller = [[KatvanWindowController alloc] initWithDocument:self.textDocument initialURL:self.fileURL];
+    }
+    [self addWindowController:controller];
 }
 
 + (BOOL)autosavesInPlace
@@ -149,11 +157,11 @@
     return YES;
 }
 
-- (BOOL) writeToURL:(NSURL*)url
-         ofType:(NSString*)typeName
-         forSaveOperation:(NSSaveOperationType)saveOperation
-         originalContentsURL:(NSURL*)absoluteOriginalContentsURL
-         error:(NSError**)outError
+- (BOOL)writeToURL:(NSURL*)url
+        ofType:(NSString*)typeName
+        forSaveOperation:(NSSaveOperationType)saveOperation
+        originalContentsURL:(NSURL*)absoluteOriginalContentsURL
+        error:(NSError**)outError
 {
     QByteArray bytes = self.textDocument->toPlainText().toUtf8();
 

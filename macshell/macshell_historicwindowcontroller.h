@@ -20,16 +20,8 @@
 
 #import <AppKit/AppKit.h>
 
-@protocol KatvanGoToBlockTarget <NSObject>
+@interface KatvanHistoricWindowController : NSWindowController
 
-- (void)goToBlock:(int)line column:(int)column;
-
-@end
-
-@interface KatvanWindowController : NSWindowController <NSWindowDelegate, NSToolbarDelegate, KatvanGoToBlockTarget>
-
-- (instancetype)initWithDocument:(katvan::Document*)textDocument initialURL:(NSURL*)url;
-
-- (void)documentDidExplicitlySaveInURL:(NSURL*)url forced:(BOOL)forced;
+- (instancetype)initWithDocument:(katvan::Document*)textDocument;
 
 @end
