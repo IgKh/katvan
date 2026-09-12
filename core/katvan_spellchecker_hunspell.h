@@ -50,7 +50,7 @@ public:
 
     MisspelledWordRanges checkSpelling(const QString& text) override;
 
-    void addToPersonalDictionary(const QString& word) override;
+    bool addToPersonalDictionary(const QString& word) override;
 
 private slots:
     void personalDictionaryFileChanged();

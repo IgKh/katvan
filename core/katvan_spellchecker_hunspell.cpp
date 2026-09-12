@@ -258,10 +258,11 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
     return result;
 }
 
-void HunspellSpellChecker::addToPersonalDictionary(const QString& word)
+bool HunspellSpellChecker::addToPersonalDictionary(const QString& word)
 {
     d_personalDictionary.insert(word.normalized(QString::NormalizationForm_D));
     flushPersonalDictionary();
+    return true;
 }
 
 void HunspellSpellChecker::flushPersonalDictionary()

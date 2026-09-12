@@ -24,10 +24,21 @@ KatvanMacSpellChecker::KatvanMacSpellChecker(QObject* parent)
     , d_documentTag(0)
 {
     d_documentTag = [NSSpellChecker uniqueSpellDocumentTag];
+
+    auto block = ^(NSNotification* notification) {
+        handleSpellerNotification(notification);
+    };
+
+    NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+    d_notificationToken = [center addObserverForName:nil
+                                  object:[NSSpellChecker sharedSpellChecker]
+                                  queue:[NSOperationQueue mainQueue]
+                                  usingBlock:block];
 }
 
 KatvanMacSpellChecker::~KatvanMacSpellChecker()
 {
+    [[NSNotificationCenter defaultCenter] removeObserver:d_notificationToken name:nil object:nil];
     [[NSSpellChecker sharedSpellChecker] closeSpellDocumentWithTag:d_documentTag];
 }
 
@@ -44,34 +55,32 @@ void KatvanMacSpellChecker::setCurrentDictionary(const QString& dictName, const 
 
 katvan::SpellChecker::MisspelledWordRanges KatvanMacSpellChecker::checkSpelling(const QString& text)
 {
-    SpellChecker::MisspelledWordRanges result;
+    SpellChecker::MisspelledWordRanges ranges;
 
     NSSpellChecker* checker = [NSSpellChecker sharedSpellChecker];
     NSString* str = text.toNSString();
 
-    NSUInteger start = 0;
-    while (start < [str length]) {
-        NSRange range = [checker checkSpellingOfString: str
-                                 startingAt:start
-                                 language:[checker language]
-                                 wrap:NO
-                                 inSpellDocumentWithTag:d_documentTag
-                                 wordCount:NULL];
+    NSArray<NSTextCheckingResult*>* results = [checker checkString:str
+                                                       range:NSMakeRange(0, [str length])
+                                                       types:NSTextCheckingTypeSpelling
+                                                       options:nil
+                                                       inSpellDocumentWithTag:d_documentTag
+                                                       orthography:nil
+                                                       wordCount:NULL];
 
-        if (range.length == 0) {
-            break;
-        }
-
-        result.append(std::make_pair(range.location, range.length));
-        start = NSMaxRange(range);
+    for (NSTextCheckingResult* result in results) {
+        ranges.append(std::make_pair(result.range.location, result.range.length));
     }
-    return result;
+    return ranges;
 }
 
-void KatvanMacSpellChecker::addToPersonalDictionary(const QString& word)
+bool KatvanMacSpellChecker::addToPersonalDictionary(const QString& word)
 {
     NSSpellChecker* checker = [NSSpellChecker sharedSpellChecker];
     [checker learnWord:word.toNSString()];
+
+    // Rehighlighting will happen through handleSpellerNotification
+    return false;
 }
 
 void KatvanMacSpellChecker::ignoreWord(NSString* word)
@@ -85,9 +94,13 @@ void KatvanMacSpellChecker::requestSuggestionsImpl(const QString& word, int posi
     NSSpellChecker* checker = [NSSpellChecker sharedSpellChecker];
     NSString* str = word.toNSString();
 
-    NSArray<NSString*>* guesses = [checker guessesForWordRange:NSMakeRange(0, [str length])
+    // Guess the word's language
+    NSRange wordRange = NSMakeRange(0, [str length]);
+    NSString* language = [checker languageForWordRange:wordRange inString:str orthography:nil];
+
+    NSArray<NSString*>* guesses = [checker guessesForWordRange:wordRange
                                            inString:str
-                                           language:[checker language]
+                                           language:language
                                            inSpellDocumentWithTag:d_documentTag];
 
     QList<QString> suggestions;
@@ -96,6 +109,18 @@ void KatvanMacSpellChecker::requestSuggestionsImpl(const QString& word, int posi
     }
 
     suggestionsCalculated(word, position, suggestions);
+}
+
+void KatvanMacSpellChecker::handleSpellerNotification(NSNotification* notification)
+{
+    // The following notification names are not documentad, but were observed
+    // to be emitted at least on macOS Sequoia. We use them to invalidate the
+    // spell checking results when the user does things via the system provided
+    // Spelling panel.
+    if ([notification.name isEqualToString:@"NSSpellCheckerDidChangeLanguageNotification"] ||
+        [notification.name isEqualToString:@"NSSpellCheckerDidLearnWordNotification"]) {
+        Q_EMIT dictionaryChanged(QString());
+    }
 }
 
 #include "moc_macshell_spellchecker.cpp"

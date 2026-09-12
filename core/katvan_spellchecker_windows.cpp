@@ -140,10 +140,10 @@ SpellChecker::MisspelledWordRanges WindowsSpellChecker::checkSpelling(const QStr
     return result;
 }
 
-void WindowsSpellChecker::addToPersonalDictionary(const QString& word)
+bool WindowsSpellChecker::addToPersonalDictionary(const QString& word)
 {
     if (d_checker == nullptr) {
-        return;
+        return false;
     }
 
     std::wstring str = word.toStdWString();
@@ -151,7 +151,9 @@ void WindowsSpellChecker::addToPersonalDictionary(const QString& word)
     HRESULT hr = d_checker->Add(str.data());
     if (FAILED(hr)) {
         qWarning() << "SpellChecker::Add failed for" << word << ":" << hr;
+        return false;
     }
+    return true;
 }
 
 void WindowsSpellChecker::requestSuggestionsImpl(const QString& word, int position)

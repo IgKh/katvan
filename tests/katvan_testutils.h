@@ -18,7 +18,7 @@
 #pragma once
 
 #include <QChar>
-#include <QtGlobal>
+#include <Qt>
 
 #include <iosfwd>
 #include <memory>

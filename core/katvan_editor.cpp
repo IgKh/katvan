@@ -603,8 +603,9 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
 
         QAction* addToPersonalAction = new QAction(tr("Add to Personal Dictionary"));
         connect(addToPersonalAction, &QAction::triggered, this, [this, misspelledWord, cursor]() {
-            d_spellChecker->addToPersonalDictionary(misspelledWord);
-            forceRehighlighting();
+            if (d_spellChecker->addToPersonalDictionary(misspelledWord)) {
+                forceRehighlighting();
+            }
         });
 
         d_contextMenu->insertAction(origFirstAction, placeholderAction);

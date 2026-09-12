@@ -33,11 +33,13 @@ public:
 
     MisspelledWordRanges checkSpelling(const QString& text) override;
 
-    void addToPersonalDictionary(const QString& word) override;
+    bool addToPersonalDictionary(const QString& word) override;
     void ignoreWord(NSString* word);
 
 private:
     void requestSuggestionsImpl(const QString& word, int position) override;
+    void handleSpellerNotification(NSNotification* notification);
 
     unsigned long d_documentTag;
+    id<NSObject> d_notificationToken;
 };

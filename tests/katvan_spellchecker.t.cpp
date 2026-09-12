@@ -97,7 +97,7 @@ TEST(SpellCheckerTests, PersonalDict) {
         std::make_pair(9, 3)  // bad
     ));
 
-    checker1.addToPersonalDictionary("bad");
+    EXPECT_TRUE(checker1.addToPersonalDictionary("bad"));
 
     auto result2 = checker1.checkSpelling("good bar bad");
     EXPECT_THAT(result2, ::testing::ElementsAre(

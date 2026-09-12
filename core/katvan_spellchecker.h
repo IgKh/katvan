@@ -45,7 +45,7 @@ public:
 
     using MisspelledWordRanges = QList<std::pair<size_t, size_t>>;
     virtual MisspelledWordRanges checkSpelling(const QString& text) = 0;
-    virtual void addToPersonalDictionary(const QString& word) = 0;
+    virtual bool addToPersonalDictionary(const QString& word) = 0;
 
     void requestSuggestions(const QString& word, int position);
 
