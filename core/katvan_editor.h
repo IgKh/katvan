@@ -150,6 +150,7 @@ signals:
     void fontZoomFactorChanged(qreal factor);
     void toolTipRequested(int blockNumber, int charOffset);
     void goToDefinitionRequested(int blockNumber, int charOffset);
+    void showEditorContextMenu(QMenu* menu, QContextMenuEvent* event);
     void showSymbolPicker();
     void showColorPicker();
 

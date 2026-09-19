@@ -89,6 +89,7 @@ private slots:
     void toggleCursorMovementStyle();
     void showSettingsDialog();
     void settingsDialogAccepted();
+    void showEditorContextMenu(QMenu* menu, QContextMenuEvent* event);
     void showSymbolPicker();
     void showColorPicker();
     void previewReady();

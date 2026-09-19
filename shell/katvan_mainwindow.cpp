@@ -129,6 +129,7 @@ void MainWindow::setupUI()
     connect(d_editor->completionManager(), &CompletionManager::completionsRequested, d_driver, &TypstDriverWrapper::requestCompletions);
     connect(d_editor, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
     connect(d_editor, &Editor::fontZoomFactorChanged, this, &MainWindow::editorFontZoomFactorChanged);
+    connect(d_editor, &Editor::showEditorContextMenu, this, &MainWindow::showEditorContextMenu);
     connect(d_editor, &Editor::showSymbolPicker, this, &MainWindow::showSymbolPicker);
     connect(d_editor, &Editor::showColorPicker, this, &MainWindow::showColorPicker);
 
@@ -1077,6 +1078,12 @@ void MainWindow::settingsDialogAccepted()
     QSettings settings;
     settings.setValue(SETTING_EDITOR_MODE, editorSettings.toModeLine());
     compilerSettings.save(settings);
+}
+
+void MainWindow::showEditorContextMenu(QMenu* menu, QContextMenuEvent* event)
+{
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    menu->popup(event->globalPos());
 }
 
 void MainWindow::showSymbolPicker()

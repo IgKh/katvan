@@ -1,4 +1,3 @@
-// -*- mode: objective-cpp -*-
 /*
  * This file is part of Katvan
  * Copyright (c) 2024 - 2026 Igor Khanin

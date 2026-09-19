@@ -593,7 +593,6 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
     QString misspelledWord = misspelledWordAtCursor(cursor);
 
     d_contextMenu = createStandardContextMenu(event->pos());
-    d_contextMenu->setAttribute(Qt::WA_DeleteOnClose);
 
     if (!misspelledWord.isEmpty()) {
         QAction* origFirstAction = d_contextMenu->actions().first();
@@ -626,7 +625,8 @@ void Editor::contextMenuEvent(QContextMenuEvent* event)
         d_pendingSuggestionsPosition = cursor.position();
         d_spellChecker->requestSuggestions(misspelledWord, cursor.position());
     }
-    d_contextMenu->popup(event->globalPos());
+
+    Q_EMIT showEditorContextMenu(d_contextMenu, event);
 }
 
 QString Editor::predefinedTooltipAtPosition(int position) const

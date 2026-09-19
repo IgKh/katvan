@@ -70,6 +70,11 @@
             [weakSelf invalidateRestorableState];
             [weakSelf.statusBar updateCursorPosition:weakSelf.editor->textCursor()];
         });
+
+        QObject::connect(self.editor, &katvan::Editor::showEditorContextMenu,
+                         self.editor, [weakSelf](QMenu* menu, QContextMenuEvent* event) {
+            [weakSelf showContextMenu:menu withEvent:event];
+        });
     }
     return self;
 }
@@ -212,6 +217,12 @@
         [self setFindBarVisible:YES];
     }
     [self.textFinder performAction:action];
+}
+
+- (void)showContextMenu:(QMenu*)menu withEvent:(QContextMenuEvent*)event
+{
+    NSMenu* nsMenu = menu->toNSMenu();
+    [NSMenu popUpContextMenu:nsMenu withEvent:[NSApp currentEvent] forView:self.editorNsView];
 }
 
 - (void)showInsertMenu:(id)sender
