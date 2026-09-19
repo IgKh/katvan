@@ -379,8 +379,16 @@
     NSSplitView* splitView = self.splitViewController.splitView;
     NSMutableArray<NSNumber*>* positions = [NSMutableArray array];
     NSArray<NSView*>* subviews = splitView.subviews;
+
+    // Divider positions set via NSSplitView's setPosition:ofDividerAtIndex:
+    // message are supposed to be relative to the split view's leading edge,
+    // not absolute X coordinates. This is of course not documented at all.
+    // Thanks Apple!
+    CGFloat position = 0;
     for (NSUInteger i = 0; i + 1 < subviews.count; i++) {
-        [positions addObject:@(NSMaxX(subviews[i].frame))];
+        position += NSWidth(subviews[i].frame);
+        [positions addObject:@(position)];
+        position += splitView.dividerThickness;
     }
     [coder encodeObject:positions forKey:@"splitterPositions"];
 
