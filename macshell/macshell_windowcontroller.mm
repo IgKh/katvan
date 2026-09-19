@@ -508,7 +508,7 @@
                 break;
             case katvan::TypstDriverWrapper::Status::SUCCESS_WITH_WARNINGS:
                 toolTip = NSLocalizedString(@"Compiled with warnings", "Compilation status");
-                symbolColor = NSColor.systemYellowColor;
+                symbolColor = NSColor.systemOrangeColor;
                 statusSymbol = [NSImage imageWithSystemSymbolName:@"exclamationmark.circle"
                                         accessibilityDescription:@"Exclamation mark in a circle"];
                 break;

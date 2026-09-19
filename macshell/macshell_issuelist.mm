@@ -197,7 +197,7 @@
             break;
         case katvan::typstdriver::Diagnostic::Kind::WARNING:
             icon = [NSImage imageWithSystemSymbolName:@"exclamationmark.circle" accessibilityDescription:nil];
-            view.imageView.contentTintColor = NSColor.systemYellowColor;
+            view.imageView.contentTintColor = NSColor.systemOrangeColor;
             break;
         case katvan::typstdriver::Diagnostic::Kind::ERROR:
             icon = [NSImage imageWithSystemSymbolName:@"x.circle" accessibilityDescription:nil];
