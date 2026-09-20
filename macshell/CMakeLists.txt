@@ -23,9 +23,9 @@ set(SOURCES
 
 qt_add_resources(ASSET_SOURCES ${PROJECT_SOURCE_DIR}/assets/assets.qrc)
 
-set(macos_icon "${PROJECT_SOURCE_DIR}/assets/katvan.icns")
-set_source_files_properties(${macos_icon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-list(APPEND ASSET_SOURCES ${macos_icon})
+set(macos_assets "${CMAKE_CURRENT_SOURCE_DIR}/Assets.car")
+set_source_files_properties(${macos_assets} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+list(APPEND ASSET_SOURCES ${macos_assets})
 
 add_executable(macshell ${SOURCES} ${ASSET_SOURCES})
 target_link_libraries(macshell PRIVATE katvan_core)

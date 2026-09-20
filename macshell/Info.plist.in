@@ -18,8 +18,8 @@
     <string>Copyright (c) 2024-2026 Igor Khanin</string>
     <key>CFBundleExecutable</key>
     <string>${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
-    <key>CFBundleIconFile</key>
-    <string>katvan.icns</string>
+    <key>CFBundleIconName</key>
+    <string>katvan</string>
     <key>CSResourcesFileMapped</key>
     <true/>
     <key>LSMinimumSystemVersion</key>
@@ -64,6 +64,11 @@
                 </array>
                 <key>public.mime-type</key>
                 <string>text/vnd.typst</string>
+            </dict>
+            <key>UTTypeIcons</key>
+            <dict>
+                <key>UTTypeIconBadgeName</key>
+                <string>typst</string>
             </dict>
         </dict>
     </array>
