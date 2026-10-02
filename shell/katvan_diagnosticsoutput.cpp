@@ -15,9 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "katvan_compileroutput.h"
+#include "katvan_diagnosticsoutput.h"
+#include "katvan_utils.h"
 
 #include "katvan_diagnosticsmodel.h"
+#include "katvan_typstdriverwrapper.h"
 
 #include <QHeaderView>
 #include <QResizeEvent>
@@ -40,7 +42,7 @@ protected:
     }
 };
 
-CompilerOutput::CompilerOutput(QWidget* parent)
+DiagnosticsOutputTable::DiagnosticsOutputTable(QWidget* parent)
     : QTreeView(parent)
 {
     setHeaderHidden(true);
@@ -51,10 +53,10 @@ CompilerOutput::CompilerOutput(QWidget* parent)
     setMouseTracking(true);
     header()->setStretchLastSection(false);
 
-    connect(this, &QTreeView::clicked, this, &CompilerOutput::indexClicked);
+    connect(this, &QTreeView::clicked, this, &DiagnosticsOutputTable::indexClicked);
 }
 
-void CompilerOutput::setModel(QAbstractItemModel* model)
+void DiagnosticsOutputTable::setModel(QAbstractItemModel* model)
 {
     Q_ASSERT(qobject_cast<DiagnosticsModel*>(model) != nullptr);
 
@@ -65,12 +67,7 @@ void CompilerOutput::setModel(QAbstractItemModel* model)
     header()->setSectionResizeMode(DiagnosticsModel::COLUMN_SOURCE_LOCATION, QHeaderView::Fixed);
 }
 
-void CompilerOutput::adjustColumnWidths()
-{
-    adjustColumnWidths(viewport()->size());
-}
-
-void CompilerOutput::adjustColumnWidths(QSize viewportSize)
+void DiagnosticsOutputTable::adjustColumnWidths(QSize viewportSize)
 {
     int severityWidth = 22;
     int messageSizeHint = sizeHintForColumn(DiagnosticsModel::COLUMN_MESSAGE);
@@ -87,7 +84,7 @@ void CompilerOutput::adjustColumnWidths(QSize viewportSize)
     setColumnWidth(DiagnosticsModel::COLUMN_SOURCE_LOCATION, locationWidth);
 }
 
-void CompilerOutput::resizeEvent(QResizeEvent* event)
+void DiagnosticsOutputTable::resizeEvent(QResizeEvent* event)
 {
     if (!model()) {
         return;
@@ -97,7 +94,7 @@ void CompilerOutput::resizeEvent(QResizeEvent* event)
     QTreeView::resizeEvent(event);
 }
 
-void CompilerOutput::mouseMoveEvent(QMouseEvent* event)
+void DiagnosticsOutputTable::mouseMoveEvent(QMouseEvent* event)
 {
     QTreeView::mouseMoveEvent(event);
 
@@ -112,7 +109,7 @@ void CompilerOutput::mouseMoveEvent(QMouseEvent* event)
     setCursor(Qt::ArrowCursor);
 }
 
-void CompilerOutput::keyPressEvent(QKeyEvent* event)
+void DiagnosticsOutputTable::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Escape) {
         clearSelection();
@@ -121,7 +118,7 @@ void CompilerOutput::keyPressEvent(QKeyEvent* event)
     QTreeView::keyPressEvent(event);
 }
 
-void CompilerOutput::indexClicked(const QModelIndex& index)
+void DiagnosticsOutputTable::indexClicked(const QModelIndex& index)
 {
     if (!index.isValid()) {
         return;
@@ -136,6 +133,55 @@ void CompilerOutput::indexClicked(const QModelIndex& index)
     }
 }
 
+DiagnosticsOutput::DiagnosticsOutput(TypstDriverWrapper* driver, QWidget* parent)
+    : QTabWidget(parent)
+{
+    setTabPosition(QTabWidget::South);
+    setDocumentMode(true);
+
+    d_compilationOutput = new DiagnosticsOutputTable();
+    d_compilationOutput->setModel(driver->compilationDiagnosticsModel());
+
+    addTab(d_compilationOutput, tr("Compilation"));
+
+    d_exportOutput = new DiagnosticsOutputTable();
+    d_exportOutput->setModel(driver->exportDiagnosticsModel());
+
+    const int exportTabIdx = addTab(d_exportOutput, tr("Export"));
+    setTabEnabled(exportTabIdx, false);
+
+    connect(d_compilationOutput, &DiagnosticsOutputTable::goToPosition, this, &DiagnosticsOutput::goToPosition);
+    connect(d_exportOutput, &DiagnosticsOutputTable::goToPosition, this, &DiagnosticsOutput::goToPosition);
 }
 
-#include "moc_katvan_compileroutput.cpp"
+void DiagnosticsOutput::compilationStatusChanged(bool failed)
+{
+    const int compilationTabIdx = indexOf(d_compilationOutput);
+    const int exportTabIdx = indexOf(d_exportOutput);
+
+    if (failed) {
+        setCurrentIndex(compilationTabIdx);
+    }
+
+    if (isTabEnabled(exportTabIdx)) {
+        setTabToolTip(exportTabIdx, tr("The document was recompiled since the last export"));
+        setTabIcon(exportTabIdx, utils::themeIcon("help-about"));
+    }
+
+    d_compilationOutput->adjustColumnWidths(d_compilationOutput->viewport()->size());
+}
+
+void DiagnosticsOutput::exportFinished()
+{
+    const int exportTabIdx = indexOf(d_exportOutput);
+    setTabEnabled(exportTabIdx, true);
+    setTabToolTip(exportTabIdx, QString());
+    setTabIcon(exportTabIdx, QIcon());
+    setCurrentIndex(exportTabIdx);
+
+    d_exportOutput->adjustColumnWidths(d_exportOutput->viewport()->size());
+}
+
+}
+
+#include "moc_katvan_diagnosticsoutput.cpp"

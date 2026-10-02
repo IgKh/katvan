@@ -61,7 +61,8 @@ public:
     static QString typstVersion();
 
     Status status() const { return d_status; }
-    DiagnosticsModel* diagnosticsModel() { return d_diagnosticsModel; }
+    DiagnosticsModel* compilationDiagnosticsModel() { return d_compilationDiagnosticsModel; }
+    DiagnosticsModel* exportDiagnosticsModel() { return d_exportDiagnosticsModel; }
 
     void setCompilerSettings(const typstdriver::TypstCompilerSettings& settings);
     void resetInputFile(const QString& sourceFileName);
@@ -99,6 +100,7 @@ public slots:
     void discardLookupCaches();
 
 private slots:
+    void diagnosticLogged(const typstdriver::Diagnostic& diag);
     void compilationFinished();
     void pageRenderComplete(int page, QImage renderedPage);
     void metadataUpdatedInternal(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline, QList<katvan::typstdriver::DocumentLabel> labels);
@@ -115,7 +117,8 @@ private:
     typstdriver::Logger* d_compilerLogger;
     typstdriver::PackageManager* d_packageManager;
 
-    DiagnosticsModel* d_diagnosticsModel;
+    DiagnosticsModel* d_compilationDiagnosticsModel;
+    DiagnosticsModel* d_exportDiagnosticsModel;
     QThread* d_thread;
 
     Status d_status;

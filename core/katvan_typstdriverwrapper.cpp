@@ -39,11 +39,12 @@ TypstDriverWrapper::TypstDriverWrapper(QObject* parent)
     d_thread->setObjectName("TypstDriverThread");
     d_thread->start();
 
-    d_diagnosticsModel = new DiagnosticsModel(this);
+    d_compilationDiagnosticsModel = new DiagnosticsModel(this);
+    d_exportDiagnosticsModel = new DiagnosticsModel(this);
 
     d_compilerLogger = new typstdriver::Logger();
     d_compilerLogger->moveToThread(d_thread);
-    connect(d_compilerLogger, &typstdriver::Logger::diagnosticLogged, d_diagnosticsModel, &DiagnosticsModel::addDiagnostic);
+    connect(d_compilerLogger, &typstdriver::Logger::diagnosticLogged, this, &TypstDriverWrapper::diagnosticLogged);
 
     d_packageManager = new typstdriver::PackageManager(d_compilerLogger);
     d_packageManager->moveToThread(d_thread);
@@ -84,7 +85,8 @@ void TypstDriverWrapper::resetInputFile(const QString& sourceFileName)
     d_status = Status::INITIALIZING;
     Q_EMIT compilationStatusChanged();
 
-    d_diagnosticsModel->setInputFileName(sourceFileName);
+    d_compilationDiagnosticsModel->setInputFileName(sourceFileName);
+    d_exportDiagnosticsModel->setInputFileName(sourceFileName);
 
     if (d_engine != nullptr) {
         d_engine->deleteLater();
@@ -170,7 +172,7 @@ void TypstDriverWrapper::updatePreview()
     d_status = Status::PROCESSING;
     Q_EMIT compilationStatusChanged();
 
-    d_diagnosticsModel->clear();
+    d_compilationDiagnosticsModel->clear();
     QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::compile);
 }
 
@@ -191,19 +193,19 @@ void TypstDriverWrapper::exportToPdf(const QString& filePath)
 
 void TypstDriverWrapper::exportToPdf(const QString& filePath, const QString& pdfVersion, const QString& pdfaStandard, bool tagged)
 {
-    d_diagnosticsModel->clear();
+    d_exportDiagnosticsModel->clear();
     QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::exportToPdf, filePath, pdfVersion, pdfaStandard, tagged);
 }
 
 void TypstDriverWrapper::exportToPng(const QString& filePath, int dpi)
 {
-    d_diagnosticsModel->clear();
+    d_exportDiagnosticsModel->clear();
     QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::exportToPng, filePath, dpi);
 }
 
 void TypstDriverWrapper::exportToPngMulti(const QString& dir, const QString& filePattern, int dpi)
 {
-    d_diagnosticsModel->clear();
+    d_exportDiagnosticsModel->clear();
     QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::exportToPngMulti, dir, filePattern, dpi);
 }
 
@@ -247,9 +249,19 @@ void TypstDriverWrapper::discardLookupCaches()
     QMetaObject::invokeMethod(d_engine, &typstdriver::Engine::discardLookupCaches);
 }
 
+void TypstDriverWrapper::diagnosticLogged(const typstdriver::Diagnostic& diag)
+{
+    if (diag.category() == typstdriver::Diagnostic::Category::COMPILATION) {
+        d_compilationDiagnosticsModel->addDiagnostic(diag);
+    }
+    else if (diag.category() == typstdriver::Diagnostic::Category::EXPORT) {
+        d_exportDiagnosticsModel->addDiagnostic(diag);
+    }
+}
+
 void TypstDriverWrapper::compilationFinished()
 {
-    d_status = d_diagnosticsModel->impliedStatus();
+    d_status = d_compilationDiagnosticsModel->impliedStatus();
     Q_EMIT compilationStatusChanged();
 
     if (d_status == Status::SUCCESS || d_status == Status::SUCCESS_WITH_WARNINGS) {

@@ -18,7 +18,7 @@
  */
 #import "macshell_windowcontroller.h"
 
-#include "katvan_diagnosticsmodel.h"
+#include "katvan_typstdriverwrapper.h"
 
 #import <AppKit/AppKit.h>
 
@@ -26,6 +26,6 @@
 
 @property (nonatomic, weak) id<KatvanGoToBlockTarget> target;
 
-- (instancetype)initWithModel:(katvan::DiagnosticsModel*)model;
+- (instancetype)initWithDriver:(katvan::TypstDriverWrapper*)driver;
 
 @end

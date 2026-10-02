@@ -17,22 +17,24 @@
  */
 #pragma once
 
-#include <QList>
+#include <QTabWidget>
 #include <QTreeView>
 
 namespace katvan {
 
-class CompilerOutput : public QTreeView
+class DiagnosticsModel;
+class TypstDriverWrapper;
+
+class DiagnosticsOutputTable : public QTreeView
 {
     Q_OBJECT
 
 public:
-    CompilerOutput(QWidget* parent = nullptr);
+    DiagnosticsOutputTable(QWidget* parent = nullptr);
 
     void setModel(QAbstractItemModel* model) override;
 
 public slots:
-    void adjustColumnWidths();
     void adjustColumnWidths(QSize viewportSize);
 
 signals:
@@ -45,6 +47,25 @@ protected:
 
 private slots:
     void indexClicked(const QModelIndex& index);
+};
+
+class DiagnosticsOutput : public QTabWidget
+{
+    Q_OBJECT
+
+public:
+    DiagnosticsOutput(TypstDriverWrapper* driver, QWidget* parent = nullptr);
+
+public slots:
+    void compilationStatusChanged(bool failed);
+    void exportFinished();
+
+signals:
+    void goToPosition(int blockNum, int charOffset);
+
+private:
+    DiagnosticsOutputTable* d_compilationOutput;
+    DiagnosticsOutputTable* d_exportOutput;
 };
 
 }

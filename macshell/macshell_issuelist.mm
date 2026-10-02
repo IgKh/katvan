@@ -17,6 +17,8 @@
  */
 #import "macshell_issuelist.h"
 
+#include "katvan_diagnosticsmodel.h"
+
 @interface IssueLabel : NSTableCellView
 
 @property (nonatomic) NSTextField* locationField;
@@ -90,11 +92,11 @@
 
 @implementation KatvanIssueList
 
-- (instancetype)initWithModel:(katvan::DiagnosticsModel*)model
+- (instancetype)initWithDriver:(katvan::TypstDriverWrapper*)driver
 {
     self = [super init];
     if (self) {
-        self.model = model;
+        self.model = driver->compilationDiagnosticsModel();
 
         __weak __typeof__(self) weakSelf = self;
         QObject::connect(self.model, &QAbstractItemModel::modelReset,

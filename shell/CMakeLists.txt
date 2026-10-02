@@ -1,6 +1,6 @@
 set(SOURCES
     katvan_backuphandler.cpp
-    katvan_compileroutput.cpp
+    katvan_diagnosticsoutput.cpp
     katvan_exportdialog.cpp
     katvan_infobar.cpp
     katvan_labelsview.cpp

@@ -31,7 +31,7 @@ namespace katvan
 {
 
 class BackupHandler;
-class CompilerOutput;
+class DiagnosticsOutput;
 class ExportDialog;
 class InfoBar;
 class LabelsView;
@@ -132,7 +132,7 @@ private:
     InfoBar* d_infoBar;
     SearchBar* d_searchBar;
     Previewer* d_previewer;
-    CompilerOutput* d_compilerOutput;
+    DiagnosticsOutput* d_diagnosticsOutput;
     OutlineView* d_outlineView;
     LabelsView* d_labelsView;
 
@@ -151,7 +151,7 @@ private:
     QToolButton* d_cursorStyleButton;
 
     QDockWidget* d_previewDock;
-    QDockWidget* d_compilerOutputDock;
+    QDockWidget* d_diagnosticsOutputDock;
     QDockWidget* d_outlineDock;
     QDockWidget* d_labelsDock;
 };

@@ -113,7 +113,7 @@
     self.labelsView = [[KatvanLabelsView alloc] init];
     self.labelsView.target = self;
 
-    self.issueList = [[KatvanIssueList alloc] initWithModel:self.driver->diagnosticsModel()];
+    self.issueList = [[KatvanIssueList alloc] initWithDriver:self.driver];
     self.issueList.target = self;
 
     __weak __typeof__(self) weakSelf = self;

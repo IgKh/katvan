@@ -56,6 +56,21 @@
     </message>
 </context>
 <context>
+    <name>katvan::DiagnosticsOutput</name>
+    <message>
+        <source>Compilation</source>
+        <translation>מהדר</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>ייצוא</translation>
+    </message>
+    <message>
+        <source>The document was recompiled since the last export</source>
+        <translation>המסמך הודר מחדש מאז הייצוא האחרון</translation>
+    </message>
+</context>
+<context>
     <name>katvan::EditorSettingsTab</name>
     <message>
         <source>Editor &amp;Font:</source>
@@ -291,10 +306,6 @@
         <translation>תצוגה מקדימה</translation>
     </message>
     <message>
-        <source>Compiler Output</source>
-        <translation>פלט מהדר</translation>
-    </message>
-    <message>
         <source>&amp;File</source>
         <translation>&amp;קובץ</translation>
     </message>
@@ -446,6 +457,10 @@ Do you want to save your changes?</source>
     <message>
         <source>Untitled</source>
         <translation>ללא שם</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>אבחנות</translation>
     </message>
     <message>
         <source>&amp;Export As...</source>
@@ -636,6 +651,14 @@ To export the document, please correct them.</source>
     <message>
         <source>Zoom In Preview</source>
         <translation>הגדלת תצוגה מקדימה</translation>
+    </message>
+    <message>
+        <source>Previous Page</source>
+        <translation>העמוד הקודם</translation>
+    </message>
+    <message>
+        <source>Next Page</source>
+        <translation>העמוד הבא</translation>
     </message>
     <message>
         <source>Follow Editor Cursor</source>

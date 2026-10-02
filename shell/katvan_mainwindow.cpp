@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_backuphandler.h"
-#include "katvan_compileroutput.h"
+#include "katvan_diagnosticsoutput.h"
 #include "katvan_exportdialog.h"
 #include "katvan_infobar.h"
 #include "katvan_labelsview.h"
@@ -90,8 +90,6 @@ MainWindow::MainWindow()
     setupActions();
     setupStatusBar();
 
-    d_compilerOutput->setModel(d_driver->diagnosticsModel());
-
     connect(d_document, &Document::contentEdited, d_driver, &TypstDriverWrapper::applyContentEdit);
     connect(d_document, &Document::contentModified, d_driver, &TypstDriverWrapper::updatePreview);
     connect(d_document, &QTextDocument::modificationChanged, this, &QMainWindow::setWindowModified);
@@ -152,8 +150,8 @@ void MainWindow::setupUI()
     d_previewer = new Previewer(d_driver);
     connect(d_previewer, &Previewer::followCursorEnabled, this, &MainWindow::cursorPositionChanged);
 
-    d_compilerOutput = new CompilerOutput();
-    connect(d_compilerOutput, &CompilerOutput::goToPosition, d_editor, qOverload<int, int>(&Editor::goToBlock));
+    d_diagnosticsOutput = new DiagnosticsOutput(d_driver);
+    connect(d_diagnosticsOutput, &DiagnosticsOutput::goToPosition, d_editor, qOverload<int, int>(&Editor::goToBlock));
 
     d_outlineView = new OutlineView();
     connect(d_outlineView, &OutlineView::goToPosition, d_editor, qOverload<int, int>(&Editor::goToBlock));
@@ -170,11 +168,11 @@ void MainWindow::setupUI()
     d_previewDock->setWidget(d_previewer);
     addDockWidget(Qt::RightDockWidgetArea, d_previewDock);
 
-    d_compilerOutputDock = new QDockWidget(tr("Compiler Output"));
-    d_compilerOutputDock->setObjectName("compilerOutputDockPanel");
-    d_compilerOutputDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    d_compilerOutputDock->setWidget(d_compilerOutput);
-    addDockWidget(Qt::RightDockWidgetArea, d_compilerOutputDock);
+    d_diagnosticsOutputDock = new QDockWidget(tr("Diagnostics"));
+    d_diagnosticsOutputDock->setObjectName("compilerOutputDockPanel");
+    d_diagnosticsOutputDock->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    d_diagnosticsOutputDock->setWidget(d_diagnosticsOutput);
+    addDockWidget(Qt::RightDockWidgetArea, d_diagnosticsOutputDock);
 
     d_outlineDock = new QDockWidget(tr("Outline"));
     d_outlineDock->setObjectName("outlineDockPanel");
@@ -337,7 +335,7 @@ void MainWindow::setupActions()
     viewMenu->addSeparator();
 
     viewMenu->addAction(d_previewDock->toggleViewAction());
-    viewMenu->addAction(d_compilerOutputDock->toggleViewAction());
+    viewMenu->addAction(d_diagnosticsOutputDock->toggleViewAction());
     viewMenu->addAction(d_outlineDock->toggleViewAction());
     viewMenu->addAction(d_labelsDock->toggleViewAction());
 
@@ -377,7 +375,7 @@ void MainWindow::setupStatusBar()
     d_compilationStatusButton = buildStatusBarButton();
     d_compilationStatusButton->setToolTip(tr("Compilation status"));
     d_compilationStatusButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    connect(d_compilationStatusButton, &QToolButton::clicked, d_compilerOutputDock, &QDockWidget::show);
+    connect(d_compilationStatusButton, &QToolButton::clicked, d_diagnosticsOutputDock, &QDockWidget::show);
 
     statusBar()->addPermanentWidget(d_compilationStatusButton);
 
@@ -1130,8 +1128,8 @@ void MainWindow::compilationStatusChanged()
         d_compilingMovie->stop();
     }
 
-    d_compilerOutput->adjustColumnWidths();
-    d_editor->setSourceDiagnostics(d_driver->diagnosticsModel()->sourceDiagnostics());
+    d_diagnosticsOutput->compilationStatusChanged(status == TypstDriverWrapper::Status::FAILED);
+    d_editor->setSourceDiagnostics(d_driver->compilationDiagnosticsModel()->sourceDiagnostics());
 
     if (status == TypstDriverWrapper::Status::PROCESSING) {
         d_compilationStatusButton->setText(tr("Compiling..."));
@@ -1146,7 +1144,7 @@ void MainWindow::compilationStatusChanged()
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-warning.svg"));
     }
     else if (status == TypstDriverWrapper::Status::FAILED) {
-        d_compilerOutputDock->show();
+        d_diagnosticsOutputDock->show();
         d_compilationStatusButton->setText(tr("Errors"));
         d_compilationStatusButton->setIcon(QIcon(":/icons/data-error.svg"));
     }
@@ -1158,10 +1156,10 @@ void MainWindow::compilationStatusChanged()
 
 void MainWindow::exportComplete(bool ok)
 {
-    d_compilerOutput->adjustColumnWidths();
+    d_diagnosticsOutput->exportFinished();
     qApp->restoreOverrideCursor();
     if (!ok) {
-        d_compilerOutput->show();
+        d_diagnosticsOutputDock->show();
     }
 }
 
