@@ -21,6 +21,8 @@
 
 namespace katvan::typstdriver {
 
+enum class LogCategory : ::std::uint8_t;
+
 class Logger;
 
 class LoggerProxy
@@ -28,9 +30,9 @@ class LoggerProxy
 public:
     LoggerProxy(Logger& logger);
 
-    void logNote(rust::Str message) const;
-    void logWarning(rust::Str message, rust::Str file, int64_t startLine, int64_t startCol, int64_t endLine, int64_t endCol, rust::Vec<rust::Str> hints) const;
-    void logError(rust::Str message, rust::Str file, int64_t startLine, int64_t startCol, int64_t endLine, int64_t endCol, rust::Vec<rust::Str> hints) const;
+    void logNote(LogCategory category, rust::Str message) const;
+    void logWarning(LogCategory category, rust::Str message, rust::Str file, int64_t startLine, int64_t startCol, int64_t endLine, int64_t endCol, rust::Vec<rust::Str> hints) const;
+    void logError(LogCategory category, rust::Str message, rust::Str file, int64_t startLine, int64_t startCol, int64_t endLine, int64_t endCol, rust::Vec<rust::Str> hints) const;
 
 private:
     Logger& d_logger;

@@ -18,6 +18,8 @@
 #include "typstdriver_logger.h"
 #include "typstdriver_logger_p.h"
 
+#include "typstdriver_ffi/bridge.h"
+
 namespace katvan::typstdriver {
 
 Logger::Logger(QObject* parent)
@@ -25,10 +27,11 @@ Logger::Logger(QObject* parent)
 {
 }
 
-void Logger::logNote(const QString& message)
+void Logger::logNote(const QString& message, Diagnostic::Category category)
 {
     Diagnostic diag;
     diag.setKind(Diagnostic::Kind::NOTE);
+    diag.setCategory(category);
     diag.setMessage(message);
 
     logDiagnostic(std::move(diag));
@@ -44,13 +47,25 @@ LoggerProxy::LoggerProxy(Logger& logger)
 {
 }
 
-void LoggerProxy::logNote(rust::Str message) const
+static Diagnostic::Category convertCategory(LogCategory category)
 {
-    d_logger.logNote(QString::fromUtf8(message.data(), message.size()));
+    switch (category) {
+        case LogCategory::Compilation: return Diagnostic::Category::COMPILATION;
+        case LogCategory::Export: return Diagnostic::Category::EXPORT;
+    }
+    return Diagnostic::Category::COMPILATION;
+}
+
+void LoggerProxy::logNote(LogCategory category, rust::Str message) const
+{
+    d_logger.logNote(
+        QString::fromUtf8(message.data(), message.size()),
+        convertCategory(category));
 }
 
 static Diagnostic makeDiagnostic(
     Diagnostic::Kind kind,
+    LogCategory category,
     rust::Str message,
     rust::Str file,
     int64_t startLine,
@@ -61,6 +76,7 @@ static Diagnostic makeDiagnostic(
 {
     Diagnostic diag;
     diag.setKind(kind);
+    diag.setCategory(convertCategory(category));
     diag.setMessage(QString::fromUtf8(message.data(), message.size()));
     diag.setFile(QString::fromUtf8(file.data(), file.size()));
 
@@ -87,6 +103,7 @@ static Diagnostic makeDiagnostic(
 }
 
 void LoggerProxy::logWarning(
+    LogCategory category,
     rust::Str message,
     rust::Str file,
     int64_t startLine,
@@ -95,10 +112,11 @@ void LoggerProxy::logWarning(
     int64_t endCol,
     rust::Vec<rust::Str> hints) const
 {
-    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::WARNING, message, file, startLine, startCol, endLine, endCol, hints));
+    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::WARNING, category, message, file, startLine, startCol, endLine, endCol, hints));
 }
 
 void LoggerProxy::logError(
+    LogCategory category,
     rust::Str message,
     rust::Str file,
     int64_t startLine,
@@ -107,7 +125,7 @@ void LoggerProxy::logError(
     int64_t endCol,
     rust::Vec<rust::Str> hints) const
 {
-    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::ERROR, message, file, startLine, startCol, endLine, endCol, hints));
+    d_logger.logDiagnostic(makeDiagnostic(Diagnostic::Kind::ERROR, category, message, file, startLine, startCol, endLine, endCol, hints));
 }
 
 }

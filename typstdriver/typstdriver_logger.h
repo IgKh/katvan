@@ -39,14 +39,21 @@ public:
     };
     Q_ENUM(Kind);
 
+    enum class Category {
+        COMPILATION,
+        EXPORT
+    };
+    Q_ENUM(Category);
+
     struct Location {
         int line;
         int column;
     };
 
-    Diagnostic() : d_kind(Kind::NOTE) {}
+    Diagnostic() : d_kind(Kind::NOTE), d_category(Category::COMPILATION) {}
 
     Kind kind() const { return d_kind; }
+    Category category() const { return d_category; }
     QString message() const { return d_message; }
     QString file() const { return d_file; }
     std::optional<Location> startLocation() const { return d_startLocation; }
@@ -54,6 +61,7 @@ public:
     QStringList hints() const { return d_hints; }
 
     void setKind(Kind kind) { d_kind = kind; }
+    void setCategory(Category category) { d_category = category; }
     void setMessage(const QString& message) { d_message = message; }
     void setFile(const QString& file) { d_file = file; }
     void setStartLocation(Location location) { d_startLocation = location; }
@@ -62,6 +70,7 @@ public:
 
 private:
     Kind d_kind;
+    Category d_category;
     QString d_message;
     QString d_file;
     std::optional<Location> d_startLocation;
@@ -76,7 +85,7 @@ class TYPSTDRIVER_EXPORT Logger : public QObject
 public:
     Logger(QObject* parent = nullptr);
 
-    void logNote(const QString& message);
+    void logNote(const QString& message, Diagnostic::Category category = Diagnostic::Category::COMPILATION);
     void logDiagnostic(Diagnostic diagnostic);
 
 signals:

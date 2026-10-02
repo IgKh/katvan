@@ -44,13 +44,15 @@ pub fn export_pdf(
 
         match std::fs::write(path, data) {
             Ok(()) => {
-                logger.log_note(&format!(
-                    "PDF exported successfully to {display_path} in {elapsed}"
-                ));
+                logger.log_note(
+                    ffi::LogCategory::Export,
+                    &format!("PDF exported successfully to {display_path} in {elapsed}"),
+                );
                 Ok(true)
             }
             Err(err) => {
                 logger.log_error(
+                    ffi::LogCategory::Export,
                     &format!("Unable to write to {display_path}: {err}"),
                     "",
                     -1,
@@ -63,7 +65,7 @@ pub fn export_pdf(
             }
         }
     } else {
-        logger.log_diagnostics(world, &result.unwrap_err());
+        logger.log_diagnostics(world, ffi::LogCategory::Export, &result.unwrap_err());
         Ok(false)
     }
 }
@@ -112,13 +114,15 @@ pub fn export_png(
 
     match pixmap.save_png(path) {
         Ok(()) => {
-            logger.log_note(&format!(
-                "PNG exported successfully to {display_path} in {elapsed}"
-            ));
+            logger.log_note(
+                ffi::LogCategory::Export,
+                &format!("PNG exported successfully to {display_path} in {elapsed}"),
+            );
             true
         }
         Err(err) => {
             logger.log_error(
+                ffi::LogCategory::Export,
                 &format!("Unable to write to {display_path}: {err}"),
                 "",
                 -1,
@@ -153,6 +157,7 @@ pub fn export_png_multi(
         if let Err(err) = pixmap.save_png(&path) {
             let display_path = get_display_path(&path);
             logger.log_error(
+                ffi::LogCategory::Export,
                 &format!("Unable to write to {display_path}: {err}"),
                 "",
                 -1,
@@ -168,9 +173,10 @@ pub fn export_png_multi(
     let elapsed = format!("{:.2?}", start.elapsed());
     let display_path = get_display_path(dir);
 
-    logger.log_note(&format!(
-        "PNG set exported successfully to {display_path} in {elapsed}"
-    ));
+    logger.log_note(
+        ffi::LogCategory::Export,
+        &format!("PNG set exported successfully to {display_path} in {elapsed}"),
+    );
     true
 }
 

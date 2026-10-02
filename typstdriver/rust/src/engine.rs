@@ -50,11 +50,21 @@ struct DiagnosticLocation {
 }
 
 pub trait DiagnosticsLogger {
-    fn log_diagnostics(&self, world: &dyn World, diagnostics: &[typst::diag::SourceDiagnostic]);
+    fn log_diagnostics(
+        &self,
+        world: &dyn World,
+        category: ffi::LogCategory,
+        diagnostics: &[typst::diag::SourceDiagnostic],
+    );
 }
 
 impl DiagnosticsLogger for ffi::LoggerProxy {
-    fn log_diagnostics(&self, world: &dyn World, diagnostics: &[typst::diag::SourceDiagnostic]) {
+    fn log_diagnostics(
+        &self,
+        world: &dyn World,
+        category: ffi::LogCategory,
+        diagnostics: &[typst::diag::SourceDiagnostic],
+    ) {
         for diag in diagnostics {
             // Find first span (of the diagnostic itself, or the traceback to
             // it) that is located in the main source.
@@ -68,6 +78,7 @@ impl DiagnosticsLogger for ffi::LoggerProxy {
 
             match diag.severity {
                 typst::diag::Severity::Error => self.log_error(
+                    category,
                     &diag.message,
                     &location.file,
                     location.start.line,
@@ -77,6 +88,7 @@ impl DiagnosticsLogger for ffi::LoggerProxy {
                     hints,
                 ),
                 typst::diag::Severity::Warning => self.log_warning(
+                    category,
                     &diag.message,
                     &location.file,
                     location.start.line,
@@ -127,14 +139,19 @@ impl<'a> EngineImpl<'a> {
         let warnings = res.warnings;
 
         if let Ok(doc) = res.output {
-            self.logger.log_diagnostics(&self.world, &warnings);
+            self.logger
+                .log_diagnostics(&self.world, ffi::LogCategory::Compilation, &warnings);
 
             if warnings.is_empty() {
-                self.logger
-                    .log_note(&format!("compiled successfully in {elapsed}"));
+                self.logger.log_note(
+                    ffi::LogCategory::Compilation,
+                    &format!("compiled successfully in {elapsed}"),
+                );
             } else {
-                self.logger
-                    .log_note(&format!("compiled with warnings in {elapsed}"));
+                self.logger.log_note(
+                    ffi::LogCategory::Compilation,
+                    &format!("compiled with warnings in {elapsed}"),
+                );
             }
 
             typst::comemo::evict(3);
@@ -155,10 +172,14 @@ impl<'a> EngineImpl<'a> {
         } else {
             let errors = res.output.unwrap_err();
 
-            self.logger.log_diagnostics(&self.world, &errors);
-            self.logger.log_diagnostics(&self.world, &warnings);
             self.logger
-                .log_note(&format!("compiled with errors in {elapsed}"));
+                .log_diagnostics(&self.world, ffi::LogCategory::Compilation, &errors);
+            self.logger
+                .log_diagnostics(&self.world, ffi::LogCategory::Compilation, &warnings);
+            self.logger.log_note(
+                ffi::LogCategory::Compilation,
+                &format!("compiled with errors in {elapsed}"),
+            );
 
             Vec::new()
         }

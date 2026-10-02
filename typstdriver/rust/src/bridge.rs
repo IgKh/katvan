@@ -32,6 +32,11 @@ pub(crate) mod ffi {
         ParseError,
     }
 
+    enum LogCategory {
+        Compilation,
+        Export,
+    }
+
     struct PackageEntry {
         name: String,
         version: String,
@@ -105,12 +110,13 @@ pub(crate) mod ffi {
         type LoggerProxy;
 
         #[rust_name = "log_note"]
-        fn logNote(&self, message: &str);
+        fn logNote(&self, category: LogCategory, message: &str);
 
         #[allow(clippy::too_many_arguments)]
         #[rust_name = "log_warning"]
         fn logWarning(
             &self,
+            category: LogCategory,
             message: &str,
             file: &str,
             start_line: i64,
@@ -124,6 +130,7 @@ pub(crate) mod ffi {
         #[rust_name = "log_error"]
         fn logError(
             &self,
+            category: LogCategory,
             message: &str,
             file: &str,
             start_line: i64,
