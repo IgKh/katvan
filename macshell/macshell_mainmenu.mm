@@ -119,6 +119,8 @@
 
 + (void)setupFileMenu:(NSMenu*)menu
 {
+    NSMenuItem* menuItem;
+
     [menu addItemWithTitle:NSLocalizedString(@"New", "File menu item")
           action:@selector(newDocument:)
           keyEquivalent:@"n"];
@@ -151,8 +153,23 @@
 
     [menu addItem:[NSMenuItem separatorItem]];
 
-    [menu addItemWithTitle:NSLocalizedString(@"Export as PDF...", "File menu item")
+    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Export As", "File menu submenu title")
+                     action:nil
+                     keyEquivalent:@""];
+
+    NSMenu* exportMenu = [[NSMenu alloc] initWithTitle:@"Export"];
+    [menu setSubmenu:exportMenu forItem:menuItem];
+
+    [exportMenu addItemWithTitle:NSLocalizedString(@"PDF...", "Export submenu item")
           action:@selector(exportAsPdf:)
+          keyEquivalent:@"E"];
+
+    [exportMenu addItemWithTitle:NSLocalizedString(@"PNG (Single)...", "Export submenu item")
+          action:@selector(exportAsSinglePng:)
+          keyEquivalent:@""];
+
+    [exportMenu addItemWithTitle:NSLocalizedString(@"PNG (Multiple)...", "Export submenu item")
+          action:@selector(exportAsMultiplePng:)
           keyEquivalent:@""];
 }
 

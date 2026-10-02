@@ -333,3 +333,33 @@
 
 /* Issues section header */
 "Export" = "ייצוא";
+
+/* Field label in raster export options */
+"DPI:" = "נקודות לאינץ':";
+
+/* File menu submenu title */
+"Export As" = "ייצוא בתור";
+
+/* Field label in raster export options */
+"File Name Pattern:" = "תבנית שמות קבצים:";
+
+/* Pattern placeholder description in multi-page raster export options */
+"Image page number" = "מספר עמוד של התמונה";
+
+/* Pattern placeholder description in multi-page raster export options */
+"Image page number (zero-padded)" = "מספר עמוד של התמונה (מרופד באפסים)";
+
+/* Export submenu item */
+"PDF..." = "PDF...";
+
+/* Export submenu item */
+"PNG (Multiple)..." = "PNG (קובץ לכל עמוד)...";
+
+/* Export submenu item */
+"PNG (Single)..." = "PNG (קובץ יחיד)...";
+
+/* Pattern placeholder description in multi-page raster export options */
+"Total number of pages" = "מספר העמודים הכולל";
+
+/* Help text in multi-page raster export options */
+"You may use the following placeholders in the pattern:" = "ניתן להשתמש בממלאי המקום הבאים בתוך התבנית:";

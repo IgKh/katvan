@@ -51,16 +51,7 @@ pub fn export_pdf(
                 Ok(true)
             }
             Err(err) => {
-                logger.log_error(
-                    ffi::LogCategory::Export,
-                    &format!("Unable to write to {display_path}: {err}"),
-                    "",
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    Vec::new(),
-                );
+                log_error(logger, &format!("Unable to write to {display_path}: {err}"));
                 Ok(false)
             }
         }
@@ -121,16 +112,7 @@ pub fn export_png(
             true
         }
         Err(err) => {
-            logger.log_error(
-                ffi::LogCategory::Export,
-                &format!("Unable to write to {display_path}: {err}"),
-                "",
-                -1,
-                -1,
-                -1,
-                -1,
-                Vec::new(),
-            );
+            log_error(logger, &format!("Unable to write to {display_path}: {err}"));
             false
         }
     }
@@ -146,6 +128,10 @@ pub fn export_png_multi(
     let opts = raster_options(dpi);
     let dir = Path::new(dir);
 
+    if !validate_name_pattern(name_pattern, logger) {
+        return false;
+    }
+
     let start = std::time::Instant::now();
 
     for page in document.pages() {
@@ -156,16 +142,7 @@ pub fn export_png_multi(
 
         if let Err(err) = pixmap.save_png(&path) {
             let display_path = get_display_path(&path);
-            logger.log_error(
-                ffi::LogCategory::Export,
-                &format!("Unable to write to {display_path}: {err}"),
-                "",
-                -1,
-                -1,
-                -1,
-                -1,
-                Vec::new(),
-            );
+            log_error(logger, &format!("Unable to write to {display_path}: {err}"));
             return false;
         }
     }
@@ -189,6 +166,18 @@ fn raster_options(dpi: u32) -> typst_render::RenderOptions {
     }
 }
 
+fn validate_name_pattern(pattern: &str, logger: &ffi::LoggerProxy) -> bool {
+    if pattern.is_empty() {
+        log_error(logger, "output name pattern is empty");
+        return false;
+    }
+    if !pattern.contains("{p}") && !pattern.contains("{n}") {
+        log_error(logger, "output name pattern does not include a page number token");
+        return false;
+    }
+    true
+}
+
 fn process_name_pattern(pattern: &str, page: u64, total_pages: usize) -> String {
     let total_pages_width = (total_pages.ilog10() + 1) as usize;
 
@@ -206,4 +195,17 @@ fn get_display_path(path: impl AsRef<Path>) -> String {
     crate::pathmap::get_display_path(path)
         .to_string_lossy()
         .into_owned()
+}
+
+fn log_error(logger: &ffi::LoggerProxy, error: &str) {
+    logger.log_error(
+        ffi::LogCategory::Export,
+        error,
+        "",
+        -1,
+        -1,
+        -1,
+        -1,
+        Vec::new(),
+    );
 }

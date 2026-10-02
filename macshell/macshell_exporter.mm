@@ -16,6 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #import "macshell_exporter.h"
+#import "macshell_widgets.h"
+
+#import <UniformTypeIdentifiers/UTCoreTypes.h>
 
 static NSMenu* buildMenuForPopup(NSArray<NSArray<NSString*>*>* items)
 {
@@ -28,6 +31,30 @@ static NSMenu* buildMenuForPopup(NSArray<NSArray<NSString*>*>* items)
         item.representedObject = entry[1];
     }
     return menu;
+}
+
+static KatvanSpinBox* buildDpiSpinBox()
+{
+    KatvanSpinBox* dpiSpinBox = [[KatvanSpinBox alloc] init];
+    dpiSpinBox.minimum = 10;
+    dpiSpinBox.maximum = 10000;
+    dpiSpinBox.value = 72;
+    return dpiSpinBox;
+}
+
+static NSView* wrapPanelAccessoryView(NSView* content)
+{
+    NSView* container = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 400, 0)];
+    [container addSubview:content];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [content.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
+        [content.topAnchor constraintEqualToAnchor:container.topAnchor constant:12],
+        [content.bottomAnchor constraintEqualToAnchor:container.bottomAnchor constant:-12],
+        [content.leadingAnchor constraintGreaterThanOrEqualToAnchor:container.leadingAnchor constant:20],
+        [content.trailingAnchor constraintLessThanOrEqualToAnchor:container.trailingAnchor constant:-20],
+    ]];
+    return container;
 }
 
 static void addControlRow(NSGridView* grid, NSView* control, NSString* label)
@@ -89,7 +116,7 @@ static void addControlRow(NSGridView* grid, NSView* control, NSString* label)
     addControlRow(grid, self.pdfaStandardPopup, NSLocalizedString(@"PDF/A Standard:", "Field label in PDF export options"));
     addControlRow(grid, self.generateTagsCheckbox, nil);
 
-    self.view = grid;
+    self.view = wrapPanelAccessoryView(grid);
 }
 
 - (void)pdfVersionChanged:(id)sender
@@ -174,13 +201,117 @@ static void addControlRow(NSGridView* grid, NSView* control, NSString* label)
 
 @end
 
-@interface KatvanExporter ()
+@interface KatvanRasterExportAccessory : NSViewController
+
+@property (nonatomic) KatvanSpinBox* dpiSpinBox;
+
+@end
+
+@implementation KatvanRasterExportAccessory
+
+- (void)loadView
+{
+    self.dpiSpinBox = buildDpiSpinBox();
+
+    NSGridView* grid = [NSGridView gridViewWithNumberOfColumns:2 rows:0];
+    grid.translatesAutoresizingMaskIntoConstraints = NO;
+    grid.rowSpacing = 12;
+    grid.columnSpacing = 10;
+
+    [grid setContentHuggingPriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationVertical];
+    [grid columnAtIndex:0].xPlacement = NSGridCellPlacementTrailing;
+    [grid columnAtIndex:1].xPlacement = NSGridCellPlacementFill;
+
+    addControlRow(grid, self.dpiSpinBox, NSLocalizedString(@"DPI:", "Field label in raster export options"));
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.dpiSpinBox.widthAnchor constraintGreaterThanOrEqualToConstant:80],
+    ]];
+    self.view = wrapPanelAccessoryView(grid);
+}
+
+- (int)dpi
+{
+    return self.dpiSpinBox.value;
+}
+
+@end
+
+@interface KatvanMultiRasterExportAccessory : NSViewController
+
+@property (nonatomic) KatvanSpinBox* dpiSpinBox;
+@property (nonatomic) NSTextField* patternField;
+
+@end
+
+@implementation KatvanMultiRasterExportAccessory
+
+- (void)loadView
+{
+    self.dpiSpinBox = buildDpiSpinBox();
+
+    self.patternField = [NSTextField textFieldWithString:@""];
+    self.patternField.userInterfaceLayoutDirection = NSUserInterfaceLayoutDirectionLeftToRight;
+    [self.patternField setContentCompressionResistancePriority:NSLayoutPriorityRequired
+                       forOrientation:NSLayoutConstraintOrientationVertical];
+
+    self.patternField.toolTip = [NSString stringWithFormat:@"%@\n\u2066{p}\u2069 – %@\n\u2066{n}\u2069 – %@\n\u2066{t}\u2069 – %@",
+        NSLocalizedString(@"You may use the following placeholders in the pattern:", "Help text in multi-page raster export options"),
+        NSLocalizedString(@"Image page number", "Pattern placeholder description in multi-page raster export options"),
+        NSLocalizedString(@"Image page number (zero-padded)", "Pattern placeholder description in multi-page raster export options"),
+        NSLocalizedString(@"Total number of pages", "Pattern placeholder description in multi-page raster export options")];
+
+    NSGridView* grid = [NSGridView gridViewWithNumberOfColumns:2 rows:0];
+    grid.translatesAutoresizingMaskIntoConstraints = NO;
+    grid.rowSpacing = 12;
+    grid.columnSpacing = 10;
+
+    [grid setContentHuggingPriority:NSLayoutPriorityDefaultHigh forOrientation:NSLayoutConstraintOrientationVertical];
+    [grid columnAtIndex:0].xPlacement = NSGridCellPlacementTrailing;
+    [grid columnAtIndex:1].xPlacement = NSGridCellPlacementFill;
+
+    addControlRow(grid, self.patternField, NSLocalizedString(@"File Name Pattern:", "Field label in raster export options"));
+    addControlRow(grid, self.dpiSpinBox, NSLocalizedString(@"DPI:", "Field label in raster export options"));
+
+    [grid cellForView:self.dpiSpinBox].xPlacement = NSGridCellPlacementLeading;
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.dpiSpinBox.widthAnchor constraintGreaterThanOrEqualToConstant:80],
+        [self.patternField.widthAnchor constraintGreaterThanOrEqualToConstant:250],
+    ]];
+    self.view = wrapPanelAccessoryView(grid);
+}
+
+- (int)dpi
+{
+    return self.dpiSpinBox.value;
+}
+
+- (QString)filePattern
+{
+    return QString::fromNSString(self.patternField.stringValue);
+}
+
+- (void)resetFilePatternForBaseName:(NSString*)baseName
+{
+    if (!baseName) {
+        return;
+    }
+
+    [self view]; // Make sure the view is loaded
+    self.patternField.stringValue = [NSString stringWithFormat:@"%@_{n}_{t}.png", baseName];
+}
+
+@end
+
+@interface KatvanExporter () <NSOpenSavePanelDelegate>
 
 @property (nonatomic) katvan::TypstDriverWrapper* driver;
 @property (nonatomic, weak) NSWindow* window;
 
-@property (nonatomic) NSPDFPanel* pdfPanel;
 @property (nonatomic) KatvanPdfExportAccessory* pdfOptions;
+@property (nonatomic) KatvanRasterExportAccessory* rasterOptions;
+@property (nonatomic) KatvanMultiRasterExportAccessory* multiRasterOptions;
 
 @end
 
@@ -194,9 +325,8 @@ static void addControlRow(NSGridView* grid, NSView* control, NSString* label)
         self.window = window;
 
         self.pdfOptions = [[KatvanPdfExportAccessory alloc] init];
-
-        self.pdfPanel = [NSPDFPanel panel];
-        self.pdfPanel.accessoryController = self.pdfOptions;
+        self.rasterOptions = [[KatvanRasterExportAccessory alloc] init];
+        self.multiRasterOptions = [[KatvanMultiRasterExportAccessory alloc] init];
     }
     return self;
 }
@@ -217,28 +347,105 @@ static void addControlRow(NSGridView* grid, NSView* control, NSString* label)
     return nil;
 }
 
+- (NSURL*)fileDirectoryUrl
+{
+    NSString* filename = self.window.representedFilename;
+    if ([filename length] > 0) {
+        return [NSURL fileURLWithPath:filename.stringByDeletingLastPathComponent isDirectory:YES];
+    }
+    return nil;
+}
+
 - (void)exportAsPdf
 {
-    NSPDFInfo* info = [[NSPDFInfo alloc] init];
+    NSSavePanel* panel = [NSSavePanel savePanel];
+    panel.accessoryView = self.pdfOptions.view;
+    panel.allowedContentTypes = @[UTTypePDF];
+    panel.canSelectHiddenExtension = YES;
+    panel.prompt = NSLocalizedString(@"Export", "Button label in export dialog");
 
     NSString* baseName = [self fileBaseName];
     if (baseName) {
-        self.pdfPanel.defaultFileName = baseName; // No .pdf suffix
+        panel.nameFieldStringValue = baseName;
     }
 
-    [self.pdfPanel beginSheetWithPDFInfo:info
-                   modalForWindow:self.window
-                   completionHandler:^(NSInteger rc) {
-                        if (!rc) {
-                            return;
-                        }
-                        QString path = QString::fromNSString(info.URL.path);
-                        QString pdfVersion = [self.pdfOptions pdfVersion];
-                        QString pdfaStandard = [self.pdfOptions pdfaStandard];
-                        bool tagged = [self.pdfOptions generateTaggedPdf];
+    NSURL* dir = [self fileDirectoryUrl];
+    if (dir) {
+        panel.directoryURL = dir;
+    }
 
-                        self.driver->exportToPdf(path, pdfVersion, pdfaStandard, tagged);
-                    }];
+    [panel beginSheetModalForWindow:self.window
+           completionHandler:^(NSModalResponse rc) {
+                if (rc != NSModalResponseOK) {
+                    return;
+                }
+                QString path = QString::fromNSString(panel.URL.path);
+                QString pdfVersion = [self.pdfOptions pdfVersion];
+                QString pdfaStandard = [self.pdfOptions pdfaStandard];
+                bool tagged = [self.pdfOptions generateTaggedPdf];
+
+                self.driver->exportToPdf(path, pdfVersion, pdfaStandard, tagged);
+            }];
+}
+
+- (void)exportAsSinglePng
+{
+    NSSavePanel* panel = [NSSavePanel savePanel];
+    panel.accessoryView = self.rasterOptions.view;
+    panel.allowedContentTypes = @[UTTypePNG];
+    panel.canSelectHiddenExtension = YES;
+    panel.prompt = NSLocalizedString(@"Export", "Button label in export dialog");
+
+    NSString* baseName = [self fileBaseName];
+    if (baseName) {
+        panel.nameFieldStringValue = baseName;
+    }
+
+    NSURL* dir = [self fileDirectoryUrl];
+    if (dir) {
+        panel.directoryURL = dir;
+    }
+
+    [panel beginSheetModalForWindow:self.window
+           completionHandler:^(NSModalResponse rc) {
+                if (rc != NSModalResponseOK) {
+                    return;
+                }
+                QString path = QString::fromNSString(panel.URL.path);
+                int dpi = [self.rasterOptions dpi];
+
+                self.driver->exportToPng(path, dpi);
+            }];
+}
+
+- (void)exportAsMultiplePng
+{
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    panel.accessoryView = self.multiRasterOptions.view;
+    panel.accessoryViewDisclosed = YES;
+    panel.canChooseDirectories = YES;
+    panel.canChooseFiles = NO;
+    panel.canCreateDirectories = YES;
+    panel.prompt = NSLocalizedString(@"Export", "Button label in export dialog");
+
+    NSURL* dir = [self fileDirectoryUrl];
+    if (dir) {
+        panel.directoryURL = dir;
+    }
+
+    [self.multiRasterOptions resetFilePatternForBaseName:[self fileBaseName]];
+
+    [panel beginSheetModalForWindow:self.window
+           completionHandler:^(NSModalResponse rc) {
+                if (rc != NSModalResponseOK) {
+                    return;
+                }
+                QString dir = QString::fromNSString(panel.URL.path);
+                QString pattern = [self.multiRasterOptions filePattern];
+                int dpi = [self.multiRasterOptions dpi];
+
+                self.driver->exportToPngMulti(dir, pattern, dpi);
+            }];
 }
 
 @end

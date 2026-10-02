@@ -224,6 +224,7 @@ void MainWindow::setupActions()
     exportAsAction->setIcon(utils::themeIcon("document-send"));
 
     QAction* exportPdfAction = fileMenu->addAction(tr("Quick Export &PDF..."), this, &MainWindow::exportPdf);
+    exportPdfAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_E);
     exportPdfAction->setIcon(utils::themeIcon("application-pdf"));
 
     fileMenu->addSeparator();

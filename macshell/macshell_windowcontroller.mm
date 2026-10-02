@@ -146,6 +146,10 @@
                      self.driver, [weakSelf](QList<katvan::typstdriver::DocumentLabel> labels) {
         [weakSelf.labelsView setLabels:labels];
     });
+    QObject::connect(self.driver, &katvan::TypstDriverWrapper::exportFinished,
+                     self.driver, [weakSelf](bool success) {
+        [weakSelf exportFinished:success];
+    });
 
     QObject::connect(self.editorView.editor, &katvan::Editor::toolTipRequested,
                      self.driver, &katvan::TypstDriverWrapper::requestToolTip);
@@ -409,7 +413,8 @@
         }
         return NO;
     }
-    else if (action == @selector(exportAsPdf:)) {
+    else if (action == @selector(exportAsPdf:) || action == @selector(exportAsSinglePng:) ||
+             action == @selector(exportAsMultiplePng:)) {
         return [self.exporter canExport];
     }
     return YES;
@@ -453,6 +458,16 @@
 - (void)exportAsPdf:(id)sender
 {
     [self.exporter exportAsPdf];
+}
+
+- (void)exportAsSinglePng:(id)sender
+{
+    [self.exporter exportAsSinglePng];
+}
+
+- (void)exportAsMultiplePng:(id)sender
+{
+    [self.exporter exportAsMultiplePng];
 }
 
 - (void)goToPreview:(id)sender
@@ -530,6 +545,16 @@
         button.image = statusSymbol;
         button.contentTintColor = symbolColor;
         button.toolTip = toolTip;
+    }
+}
+
+- (void)exportFinished:(BOOL)success
+{
+    if (!success) {
+        self.sidebarSplitItem.collapsed = NO;
+
+        [self.sidebar ensureControllerSelected:self.issueList];
+        [self.issueList scrollToExportIssues];
     }
 }
 

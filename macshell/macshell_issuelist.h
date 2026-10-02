@@ -28,4 +28,6 @@
 
 - (instancetype)initWithDriver:(katvan::TypstDriverWrapper*)driver;
 
+- (void)scrollToExportIssues;
+
 @end

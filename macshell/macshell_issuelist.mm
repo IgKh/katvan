@@ -108,7 +108,7 @@
         });
         QObject::connect(self.compilationModel, &QAbstractItemModel::rowsInserted,
                          self.compilationModel, [weakSelf](const QModelIndex&, int first, int last) {
-            [weakSelf relayUpdatedRowsFromFirst:first toLast:last withOffset:1];
+            [weakSelf relayAddedRowsFromFirst:first toLast:last withOffset:1];
         });
 
         QObject::connect(self.exportModel, &QAbstractItemModel::modelReset,
@@ -117,7 +117,7 @@
         });
         QObject::connect(self.exportModel, &QAbstractItemModel::rowsInserted,
                          self.exportModel, [weakSelf](const QModelIndex&, int first, int last) {
-            [weakSelf relayUpdatedRowsFromFirst:first toLast:last withOffset:[weakSelf numberOfCompilationIssues] + 2];
+            [weakSelf relayAddedRowsFromFirst:first toLast:last withOffset:[weakSelf numberOfCompilationIssues] + 2];
         });
     }
     return self;
@@ -159,6 +159,11 @@
     ]];
 }
 
+- (void)scrollToExportIssues
+{
+    [self.tableView scrollRowToVisible:[self numberOfCompilationIssues] + 2];
+}
+
 - (NSInteger)numberOfCompilationIssues
 {
     return self.compilationModel->rowCount(QModelIndex());
@@ -175,14 +180,22 @@
         return std::make_tuple(self.compilationModel, row - 1);
     }
     if (row > [self numberOfCompilationIssues] + 1) {
-        return std::make_tuple(self.exportModel, row - [self numberOfCompilationIssues] - 1);
+        return std::make_tuple(self.exportModel, row - [self numberOfCompilationIssues] - 2);
     }
     return std::make_tuple(nullptr, 0);
 }
 
-- (void)relayUpdatedRowsFromFirst:(int)first toLast:(int)last withOffset:(int)offset
+- (void)relayAddedRowsFromFirst:(int)first toLast:(int)last withOffset:(int)offset
 {
-    NSRange range = NSMakeRange(first + offset, last - first + 1);
+    NSInteger location = first + offset;
+    NSInteger num = last - first + 1;
+    if (location > [self.tableView numberOfRows]) {
+        // In case this adds the optional "Export" group header
+        location -= 1;
+        num += 1;
+    }
+
+    NSRange range = NSMakeRange(location, num);
     NSIndexSet* indexSet = [NSIndexSet indexSetWithIndexesInRange:range];
     [self.tableView insertRowsAtIndexes:indexSet withAnimation:NSTableViewAnimationEffectNone];
 }

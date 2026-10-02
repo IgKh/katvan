@@ -100,7 +100,7 @@ public slots:
     void discardLookupCaches();
 
 private slots:
-    void diagnosticLogged(const typstdriver::Diagnostic& diag);
+    void diagnosticLogged(const katvan::typstdriver::Diagnostic& diag);
     void compilationFinished();
     void pageRenderComplete(int page, QImage renderedPage);
     void metadataUpdatedInternal(quint64 fingerprint, katvan::typstdriver::OutlineNode* outline, QList<katvan::typstdriver::DocumentLabel> labels);

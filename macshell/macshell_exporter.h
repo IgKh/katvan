@@ -27,5 +27,7 @@
 - (BOOL)canExport;
 
 - (void)exportAsPdf;
+- (void)exportAsSinglePng;
+- (void)exportAsMultiplePng;
 
 @end
