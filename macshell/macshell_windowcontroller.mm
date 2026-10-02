@@ -492,7 +492,7 @@
 
 - (void)compilationStatusChanged
 {
-    self.editorView.editor->setSourceDiagnostics(self.driver->diagnosticsModel()->sourceDiagnostics());
+    self.editorView.editor->setSourceDiagnostics(self.driver->compilationDiagnosticsModel()->sourceDiagnostics());
 
     if (self.compilationStatusItem) {
         NSImage* statusSymbol;

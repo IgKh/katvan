@@ -327,3 +327,9 @@
 
 /* Preview position option */
 "On the right" = "בצד שמאל";
+
+/* Issues section header */
+"Compilation" = "מהדר";
+
+/* Issues section header */
+"Export" = "ייצוא";
