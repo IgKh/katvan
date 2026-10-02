@@ -31,11 +31,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        id: rust_cache
+        uses: ./.github/actions/rust-cache
         with:
           shared-key: 'build'
-          workspaces: |
-            typstdriver/rust -> ../../build/cargo/build
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
@@ -67,11 +66,11 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        id: rust_cache
+        uses: ./.github/actions/rust-cache
         with:
           shared-key: 'build'
-          workspaces: |
-            typstdriver/rust -> ../../build/x64/RelWithDebInfo/cargo/build
+          config-dir: 'x64/RelWithDebInfo'
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
@@ -105,11 +104,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        id: rust_cache
+        uses: ./.github/actions/rust-cache
         with:
           shared-key: 'build'
-          workspaces: |
-            typstdriver/rust -> ../../build/cargo/build
 
       # Ensures that whatever rust-toolchain installed is before the Homebrew stubs
       - name: Adjust PATH
@@ -150,10 +148,8 @@ jobs:
           components: clippy
 
       - name: Setup Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-        with:
-          workspaces: |
-            typstdriver/rust -> ../../build/cargo/build
+        id: rust_cache
+        uses: ./.github/actions/rust-cache
 
       - name: Run Clazy
         run: |
@@ -162,7 +158,7 @@ jobs:
 
       - name: Run clippy
         run: |
-          cargo clippy --no-deps --manifest-path typstdriver/rust/Cargo.toml --target-dir build/cargo/build
+          cargo clippy --no-deps --manifest-path typstdriver/rust/Cargo.toml --target-dir ${{ steps.rust_cache.outputs.cargo-target-dir }}
 
       - name: Install typos
         uses: taiki-e/install-action@cca35edeb1d01366c2843b68fc3ca441446d73d3 # v2.77.1

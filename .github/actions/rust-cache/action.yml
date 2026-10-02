@@ -1,0 +1,44 @@
+name: 'Setup Rust cache'
+description: "Caches the Cargo registry and the cargo target directory used by Corrosion"
+
+inputs:
+  shared-key:
+    description: 'Shared cache key, for sharing a cache between jobs'
+    required: false
+    default: ''
+  build-dir:
+    description: "The CMake binary directory, relative to the workspace root"
+    required: false
+    default: 'build'
+  config-dir:
+    description: "Additional path element inserted by Corrosion for multi-config generators (e.g. 'x64/RelWithDebInfo')"
+    required: false
+    default: ''
+
+outputs:
+  cargo-target-dir:
+    description: "The cargo target directory used by Corrosion, relative to the workspace root"
+    value: ${{ steps.locate.outputs.target-dir }}
+
+runs:
+  using: composite
+  steps:
+    # Since 0.6.0 Corrosion places the Cargo target directory in a location which is based on the hash of the manifest path, see:
+    # https://github.com/corrosion-rs/corrosion/pull/609
+    - name: Locate cargo target directory
+      id: locate
+      shell: bash
+      run: |
+        hash=$(python3 -c "import hashlib, pathlib; p = pathlib.Path('typstdriver/rust/Cargo.toml').resolve().as_posix(); print(hashlib.sha1(p.encode()).hexdigest()[:5])")
+        target_dir="${{ inputs.build-dir }}/${{ inputs.config-dir }}"
+        target_dir="$target_dir/cargo/rust_$hash"
+
+        echo "Corrosion cargo target directory: $target_dir"
+        echo "target-dir=$target_dir" >> "$GITHUB_OUTPUT"
+
+    - name: Setup Rust cache
+      uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+      with:
+        shared-key: ${{ inputs.shared-key }}
+        workspaces: |
+          typstdriver/rust -> ../../${{ steps.locate.outputs.target-dir }}
