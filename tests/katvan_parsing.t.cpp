@@ -806,9 +806,9 @@ TEST(ContentParserTests, IgnoreLabels)
         "#[ My content block with @ref data ] <theorem:euclid>"));
 
     EXPECT_THAT(segments, ::testing::ElementsAre(
-        ContentSegment{  2,  23 }, // " My content block with "
-        ContentSegment{  29, 6  }, // " data "
-        ContentSegment{  36, 1  }  // " "
+        ContentSegment{  2, 23 }, // " My content block with "
+        ContentSegment{ 29,  6 }, // " data "
+        ContentSegment{ 36,  1 }  // " "
     ));
 }
 

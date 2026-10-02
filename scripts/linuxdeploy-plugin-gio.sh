@@ -31,10 +31,9 @@ if [ "$APPDIR" == "" ]; then
     exit 1
 fi
 
-# Copy relevant module
+# Copy relevant modules
 GIO_MODULES_SRC_DIR=$(pkg-config --variable=giomoduledir gio-2.0)
 GIO_MODULES_DEST_DIR="$APPDIR/usr/lib/gio/modules"
-MODULE_PARAMS=()
 
 mkdir -p "$GIO_MODULES_DEST_DIR"
 

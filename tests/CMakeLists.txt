@@ -1,3 +1,8 @@
+if(KATVAN_SKIP_TESTS)
+    message(STATUS "Skipping tests as requested")
+    return()
+endif()
+
 find_package(GTest)
 if(NOT GTest_FOUND)
     message(WARNING "GoogleTest not found, skipping tests")
