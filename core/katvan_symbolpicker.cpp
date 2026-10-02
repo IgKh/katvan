@@ -108,7 +108,7 @@ QString SymbolPicker::selectedSymbolName() const
 void SymbolPicker::setupUI()
 {
     setWindowTitle(tr("Symbol Picker"));
-    resize(820, 600);
+    resize(850, 600);
 
     d_filterEdit = new QLineEdit();
     d_filterEdit->setLayoutDirection(Qt::LeftToRight);

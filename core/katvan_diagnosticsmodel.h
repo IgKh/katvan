@@ -22,6 +22,7 @@
 #include "typstdriver_logger.h"
 
 #include <QAbstractTableModel>
+#include <QDateTime>
 #include <QFont>
 #include <QList>
 
@@ -53,6 +54,7 @@ public:
 
     TypstDriverWrapper::Status impliedStatus() const;
     QList<typstdriver::Diagnostic> sourceDiagnostics() const;
+    QDateTime lastTimestamp() const;
 
     std::optional<std::tuple<int, int>> getSourceLocation(const QModelIndex& index) const;
 
@@ -67,6 +69,7 @@ public slots:
 private:
     QFont d_font;
     QString d_shortFileName;
+    QDateTime d_lastTimestamp;
     QList<typstdriver::Diagnostic> d_diagnostics;
 };
 

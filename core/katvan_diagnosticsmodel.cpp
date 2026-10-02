@@ -72,6 +72,11 @@ QList<typstdriver::Diagnostic> DiagnosticsModel::sourceDiagnostics() const
     return result;
 }
 
+QDateTime DiagnosticsModel::lastTimestamp() const
+{
+    return d_lastTimestamp;
+}
+
 std::optional<std::tuple<int, int>> DiagnosticsModel::getSourceLocation(const QModelIndex& index) const
 {
     if (!index.isValid() || index.row() >= d_diagnostics.size()) {
@@ -188,6 +193,7 @@ void DiagnosticsModel::clear()
 {
     beginResetModel();
     d_diagnostics.clear();
+    d_lastTimestamp = QDateTime::currentDateTime();
     endResetModel();
 }
 

@@ -331,9 +331,6 @@
 /* Issues section header */
 "Compilation" = "מהדר";
 
-/* Issues section header */
-"Export" = "ייצוא";
-
 /* Field label in raster export options */
 "DPI:" = "נקודות לאינץ':";
 
@@ -363,3 +360,9 @@
 
 /* Help text in multi-page raster export options */
 "You may use the following placeholders in the pattern:" = "ניתן להשתמש בממלאי המקום הבאים בתוך התבנית:";
+
+/* Issues section header */
+"Last export" = "ייצוא אחרון";
+
+/* Button label in export dialog */
+"Export" = "ייצוא";

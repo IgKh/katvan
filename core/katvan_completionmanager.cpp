@@ -345,7 +345,7 @@ void CompletionManager::updateCompletionPrefix(bool force)
     // Needs to be in widget (d_editor) coordinates, adjustedCursorRect is in
     // viewport coordinates
     QRect popupRect = d_editor->adjustedCursorRect(d_editor->textCursor());
-    popupRect.setTopLeft(d_editor->viewport()->mapToParent(popupRect.topLeft()));
+    popupRect.moveTopLeft(d_editor->viewport()->mapToParent(popupRect.topLeft()));
     popupRect.setWidth(
         d_completer->popup()->sizeHintForColumn(0) +
         d_completer->popup()->verticalScrollBar()->sizeHint().width());

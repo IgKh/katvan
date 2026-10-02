@@ -249,7 +249,20 @@
         view.stringValue = NSLocalizedString(@"Compilation", "Issues section header");
     }
     else if (row == [self numberOfCompilationIssues] + 1) {
-        view.stringValue = NSLocalizedString(@"Export", "Issues section header");
+        NSDate* timestamp = self.exportModel->lastTimestamp().toNSDate();
+
+        NSDateFormatterStyle dateStyle = NSDateFormatterShortStyle;
+        if ([[NSCalendar currentCalendar] isDateInToday:timestamp]) {
+            dateStyle = NSDateFormatterNoStyle;
+        }
+
+        NSString* timestampStr = [NSDateFormatter
+            localizedStringFromDate:timestamp
+            dateStyle:dateStyle
+            timeStyle:NSDateFormatterShortStyle];
+
+        NSString* label = NSLocalizedString(@"Last export", "Issues section header");
+        view.stringValue = [NSString stringWithFormat:@"%@ (%@)", label, timestampStr];
     }
     return view;
 }
