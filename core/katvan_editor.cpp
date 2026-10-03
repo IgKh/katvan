@@ -109,7 +109,7 @@ Editor::Editor(Document* doc, SpellChecker* spellChecker, QWidget* parent)
 
     if (d_spellChecker) {
         connect(d_spellChecker, &SpellChecker::suggestionsReady, this, &Editor::spellingSuggestionsReady);
-        connect(d_spellChecker, &SpellChecker::dictionaryChanged, this, &Editor::forceRehighlighting);
+        connect(d_spellChecker, &SpellChecker::dictionariesChanged, this, &Editor::forceRehighlighting);
     }
 
     d_highlighter = new Highlighter(doc, d_spellChecker, d_theme);

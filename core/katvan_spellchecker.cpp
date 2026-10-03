@@ -65,13 +65,17 @@ QString SpellChecker::dictionaryDisplayName(const QString& dictName)
     );
 }
 
-void SpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictPath)
+void SpellChecker::setCurrentDictionaries(const QList<DictionaryDef>& dicts)
 {
-    Q_UNUSED(dictPath)
-    d_currentDictName = dictName;
+    QStringList dictNames;
+    for (const auto& [name, _path] : dicts) {
+        dictNames.append(name);
+    }
+
+    d_currentDictNames = dictNames;
 
     d_suggestionsCache.clear();
-    Q_EMIT dictionaryChanged(dictName);
+    Q_EMIT dictionariesChanged(dictNames);
 }
 
 void SpellChecker::requestSuggestions(const QString& word, int position)

@@ -27,7 +27,6 @@ namespace katvan {
 WindowsSpellChecker::WindowsSpellChecker(QObject* parent)
     : SpellChecker(parent)
     , d_factory(nullptr)
-    , d_checker(nullptr)
 {
     HRESULT hr = CoCreateInstance(__uuidof(SpellCheckerFactory), nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&d_factory));
     if (FAILED(hr)) {
@@ -37,8 +36,8 @@ WindowsSpellChecker::WindowsSpellChecker(QObject* parent)
 
 WindowsSpellChecker::~WindowsSpellChecker()
 {
-    if (d_checker != nullptr) {
-        d_checker->Release();
+    for (ISpellChecker* checker: d_checkers) {
+        checker->Release();
     }
 
     if (d_factory != nullptr) {
@@ -79,43 +78,79 @@ QMap<QString, QString> WindowsSpellChecker::findDictionaries()
     return result;
 }
 
-void WindowsSpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictPath)
+void WindowsSpellChecker::setCurrentDictionaries(const QList<DictionaryDef>& dicts)
 {
     if (d_factory == nullptr) {
         return;
     }
 
-    if (d_checker != nullptr) {
-        d_checker->Release();
-        d_checker = nullptr;
+    for (ISpellChecker* checker: d_checkers) {
+        checker->Release();
+    }
+    d_checkers.clear();
+
+    for (const auto& [dictName, dictPath] : dicts) {
+        std::wstring lang = dictName.toStdWString();
+
+        ISpellChecker* checker = nullptr;
+        HRESULT hr = d_factory->CreateSpellChecker(lang.data(), &checker);
+        if (FAILED(hr)) {
+            qWarning() << "Failed to create spell checker for" << dictName << ":" << hr;
+            continue;
+        }
+        d_checkers.append(checker);
     }
 
-    if (dictName.isEmpty()) {
-        SpellChecker::setCurrentDictionary(dictName, dictPath);
-        return;
-    }
-    std::wstring lang = dictName.toStdWString();
+    SpellChecker::setCurrentDictionaries(dicts);
+}
 
-    HRESULT hr = d_factory->CreateSpellChecker(lang.data(), &d_checker);
+static QString getCheckerId(ISpellChecker* checker)
+{
+    LPWSTR id = nullptr;
+    HRESULT hr = checker->get_Id(&id);
     if (FAILED(hr)) {
-        qWarning() << "Failed to create spell checker for" << dictName << ":" << hr;
-        return;
+        return QString();
     }
 
-    SpellChecker::setCurrentDictionary(dictName, dictPath);
+    QString result = QString::fromWCharArray(id);
+    CoTaskMemFree(id);
+    return result;
+}
+
+static bool isValidWord(ISpellChecker* checker, const std::wstring& word)
+{
+    IEnumSpellingError* errors = nullptr;
+    HRESULT hr = checker->Check(word.data(), &errors);
+    if (FAILED(hr)) {
+        qWarning() << "Failed check in checker" << getCheckerId(checker) << ":" << hr;
+        return false;
+    }
+
+    ISpellingError* error = nullptr;
+    bool result = (errors->Next(&error) != S_OK);
+    if (error) {
+        error->Release();
+    }
+    errors->Release();
+    return result;
 }
 
 SpellChecker::MisspelledWordRanges WindowsSpellChecker::checkSpelling(const QString& text)
 {
     SpellChecker::MisspelledWordRanges result;
-    if (d_checker == nullptr) {
+    if (d_checkers.isEmpty()) {
         return result;
     }
 
     std::wstring str = text.toStdWString();
 
+    // Different language pack checkers can tokenize differently, so we'll have
+    // the first checker tokenize, and then for every error it finds double check
+    // to see if any other checker accepts it.
+    ISpellChecker* checker = d_checkers.first();
+
     IEnumSpellingError* errors = nullptr;
-    HRESULT hr = d_checker->ComprehensiveCheck(str.data(), &errors);
+    HRESULT hr = checker->ComprehensiveCheck(str.data(), &errors);
     if (FAILED(hr)) {
         qWarning() << "Failed comprehensive check:" << hr;
         return result;
@@ -132,7 +167,19 @@ SpellChecker::MisspelledWordRanges WindowsSpellChecker::checkSpelling(const QStr
             error->get_Length(&length);
             error->Release();
 
-            result.append(std::make_pair(start, length));
+            std::wstring word = str.substr(start, length);
+            bool skip = false;
+
+            for (qsizetype j = 1; j < d_checkers.size(); j++) {
+                if (isValidWord(d_checkers[j], word)) {
+                    skip = true;
+                    break;
+                }
+            }
+
+            if (!skip) {
+                result.append(std::make_pair(start, length));
+            }
         }
     }
     errors->Release();
@@ -142,48 +189,51 @@ SpellChecker::MisspelledWordRanges WindowsSpellChecker::checkSpelling(const QStr
 
 bool WindowsSpellChecker::addToPersonalDictionary(const QString& word)
 {
-    if (d_checker == nullptr) {
-        return false;
-    }
-
-    std::wstring str = word.toStdWString();
-
-    HRESULT hr = d_checker->Add(str.data());
-    if (FAILED(hr)) {
-        qWarning() << "SpellChecker::Add failed for" << word << ":" << hr;
-        return false;
-    }
-    return true;
+    // FIXME: Adding to Windows' own dictionary loses a lot of meaning with
+    // multiple active dictionaries, and is probably problematic in portable
+    // mode. Move to a Katvan's specific personal dict.
+    return false;
 }
 
 void WindowsSpellChecker::requestSuggestionsImpl(const QString& word, int position)
 {
-    if (d_checker == nullptr) {
+    if (d_checkers.isEmpty()) {
         return;
     }
 
     QStringList result;
     std::wstring str = word.toStdWString();
 
-    IEnumString* suggestions = nullptr;
-    HRESULT hr = d_checker->Suggest(str.data(), &suggestions);
-    if (FAILED(hr)) {
-        qWarning() << "SpellChecker::Suggest failed for" << word << ":" << hr;
-        return;
-    }
-
-    hr = S_OK;
-    while (hr == S_OK) {
-        LPOLESTR suggestion = nullptr;
-        hr = suggestions->Next(1, &suggestion, nullptr);
-
-        if (hr == S_OK) {
-            result.append(QString::fromWCharArray(suggestion));
-            CoTaskMemFree(suggestion);
+    for (ISpellChecker* checker : d_checkers) {
+        if (isValidWord(checker, str)) {
+            continue;
         }
+
+        IEnumString* suggestions = nullptr;
+        HRESULT hr = checker->Suggest(str.data(), &suggestions);
+        if (FAILED(hr)) {
+            qWarning() << "SpellChecker::Suggest failed for" << word << "in" << getCheckerId(checker) << ":" << hr;
+            continue;
+        }
+
+        hr = S_OK;
+        while (hr == S_OK) {
+            LPOLESTR suggestion = nullptr;
+            hr = suggestions->Next(1, &suggestion, nullptr);
+
+            if (hr == S_OK) {
+                QString candidate = QString::fromWCharArray(suggestion);
+                if (!result.contains(candidate)) {
+                    result.append(candidate);
+                }
+
+                CoTaskMemFree(suggestion);
+            }
+        }
+
+        suggestions->Release();
     }
 
-    suggestions->Release();
     suggestionsCalculated(word, position, result);
 }
 

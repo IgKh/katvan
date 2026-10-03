@@ -39,17 +39,20 @@ namespace katvan {
 
 QString HunspellSpellChecker::s_personalDictionaryLocation;
 
+static QMutex g_mutex;
+
 struct LoadedSpeller
 {
-    LoadedSpeller(const char* affPath, const char* dicPath)
+    LoadedSpeller(const char* affPath, const char* dicPath, QChar::Script script)
         : speller(affPath, dicPath)
         , encoder(speller.get_dic_encoding())
-        , decoder(speller.get_dic_encoding()) {}
+        , decoder(speller.get_dic_encoding())
+        , script(script) {}
 
     Hunspell speller;
     QStringEncoder encoder;
     QStringDecoder decoder;
-    QMutex mutex;
+    QChar::Script script;
 };
 
 HunspellSpellChecker::HunspellSpellChecker(QObject* parent)
@@ -120,19 +123,18 @@ QMap<QString, QString> HunspellSpellChecker::findDictionaries()
     return affFiles;
 }
 
-void HunspellSpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictAffFile)
+void HunspellSpellChecker::setCurrentDictionaries(const QList<DictionaryDef>& dicts)
 {
-    if (dictName.isEmpty()) {
-        SpellChecker::setCurrentDictionary(dictName, dictAffFile);
+    if (dicts.isEmpty()) {
+        SpellChecker::setCurrentDictionaries(dicts);
         return;
     }
 
-    DictionaryLoaderWorker* worker = new DictionaryLoaderWorker(dictName, dictAffFile);
-
+    DictionaryLoaderWorker* worker = new DictionaryLoaderWorker(dicts);
     ensureWorkerThread();
     worker->moveToThread(d_workerThread);
 
-    connect(worker, &DictionaryLoaderWorker::dictionaryLoaded, this, &HunspellSpellChecker::loaderWorkerDone);
+    connect(worker, &DictionaryLoaderWorker::dictionariesLoaded, this, &HunspellSpellChecker::loaderWorkerDone);
     QMetaObject::invokeMethod(worker, &DictionaryLoaderWorker::process, Qt::QueuedConnection);
 }
 
@@ -193,7 +195,7 @@ static QChar::Script getDictionaryScript(const QString& dictName)
     }
 }
 
-bool HunspellSpellChecker::checkWord(LoadedSpeller* speller, QChar::Script dictionaryScript, const QString& word)
+bool HunspellSpellChecker::checkWord(const QString& word)
 {
     QString normalizedWord = word.normalized(QString::NormalizationForm_D);
     if (d_personalDictionary.contains(normalizedWord)) {
@@ -204,35 +206,47 @@ bool HunspellSpellChecker::checkWord(LoadedSpeller* speller, QChar::Script dicti
     // some heuristics:
     // - Ignore single Unicode grapheme words (single character, emoji, etc)
     // - Ignore Hebrew ordinals (single Hebrew letter followed by a Geresh)
-    // - Ignore words written in script that doesn't fit the dictionary's locale.
-    if (isSingleGrapheme(word)
-        || isHebrewOrdinal(normalizedWord)
-        || !isAppropriateScriptForDictionary(dictionaryScript, word)) {
+    if (isSingleGrapheme(word) || isHebrewOrdinal(normalizedWord)) {
         return true;
     }
 
-    QByteArray encodedWord = speller->encoder.encode(word);
-    return speller->speller.spell(encodedWord.toStdString());
+    bool hasNegative = false;
+
+    for (const QString& dictName : currentDictionaryNames()) {
+        LoadedSpeller* speller = d_spellers[dictName].get();
+
+        if (!isAppropriateScriptForDictionary(speller->script, word)) {
+            continue;
+        }
+
+        QByteArray encodedWord = speller->encoder.encode(word);
+        if (speller->speller.spell(encodedWord.toStdString())) {
+            return true;
+        }
+        hasNegative = true;
+    }
+
+    // The word is considered correct as long as at least one dictionary
+    // accepted it, or no dictionary has explicitly rejected it. This is
+    // to not mark words that are not relevant to any selected speller
+    // as misspelled.
+    return !hasNegative;
 }
 
 SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QString& text)
 {
     MisspelledWordRanges result;
-    if (currentDictionaryName().isEmpty()) {
+    if (currentDictionaryNames().isEmpty()) {
         return result;
     }
 
-    LoadedSpeller* speller = d_spellers[currentDictionaryName()].get();
-
-    std::unique_lock<QMutex> locker { speller->mutex, std::defer_lock };
+    std::unique_lock<QMutex> locker { g_mutex, std::defer_lock };
     if (!locker.try_lock()) {
         // Do not block the UI event loop! If we can't take the speller
         // lock (because suggestions are being generated at the moment),
         // just pretend there are no spelling mistakes here.
         return result;
     }
-
-    QChar::Script dictScript = getDictionaryScript(currentDictionaryName());
 
     QTextBoundaryFinder boundaryFinder(QTextBoundaryFinder::Word, text);
 
@@ -247,7 +261,7 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
             // BiDi control characters.
             word.removeIf(utils::isBidiControlChar);
 
-            bool ok = checkWord(speller, dictScript, word);
+            bool ok = checkWord(word);
             if (!ok) {
                 result.append(std::make_pair<size_t, size_t>(prevPos, pos - prevPos));
             }
@@ -347,14 +361,18 @@ void HunspellSpellChecker::personalDictionaryFileChanged()
 
 void HunspellSpellChecker::requestSuggestionsImpl(const QString& word, int position)
 {
-    QString dictionary = currentDictionaryName();
-    if (dictionary.isEmpty()) {
-        qWarning() << "Asked for suggestions, but no dictionary is active!";
+    const QStringList dictionaries = currentDictionaryNames();
+    if (dictionaries.isEmpty()) {
+        qWarning() << "Asked for suggestions, but no dictionaries are active!";
         return;
     }
 
-    LoadedSpeller* speller = d_spellers[dictionary].get();
-    SpellingSuggestionsWorker* worker = new SpellingSuggestionsWorker(speller, word, position);
+    QList<LoadedSpeller*> spellers;
+    for (const auto& dictName : dictionaries) {
+        spellers.append(d_spellers[dictName].get());
+    }
+
+    SpellingSuggestionsWorker* worker = new SpellingSuggestionsWorker(spellers, word, position);
 
     ensureWorkerThread();
     worker->moveToThread(d_workerThread);
@@ -363,25 +381,36 @@ void HunspellSpellChecker::requestSuggestionsImpl(const QString& word, int posit
     QMetaObject::invokeMethod(worker, &SpellingSuggestionsWorker::process, Qt::QueuedConnection);
 }
 
-void HunspellSpellChecker::loaderWorkerDone(QString dictName, katvan::LoadedSpeller* speller)
+void HunspellSpellChecker::loaderWorkerDone(const QMap<QString, katvan::LoadedSpeller*>& spellers)
 {
-    std::unique_ptr<LoadedSpeller> spellerPtr(speller);
+    QList<DictionaryDef> dicts;
 
-    if (!d_spellers.contains(dictName)) {
-        d_spellers.emplace(dictName, std::move(spellerPtr));
+    for (auto [dictName, speller] : spellers.asKeyValueRange()) {
+        std::unique_ptr<LoadedSpeller> spellerPtr(speller);
+
+        if (!d_spellers.contains(dictName)) {
+            d_spellers.emplace(dictName, std::move(spellerPtr));
+        }
+        dicts.append(std::make_pair(dictName, QString()));
     }
-
-    SpellChecker::setCurrentDictionary(dictName, QString());
+    SpellChecker::setCurrentDictionaries(dicts);
 }
 
 void DictionaryLoaderWorker::process()
 {
-    QString dicFile = QFileInfo(d_dictAffFile).path() + "/" + d_dictName + ".dic";
+    QMap<QString, LoadedSpeller*> result;
 
-    QByteArray affPath = d_dictAffFile.toLocal8Bit();
-    QByteArray dicPath = dicFile.toLocal8Bit();
+    for (const auto& [dictName, dictAffFile] : std::as_const(d_dicts)) {
+        QString dicFile = QFileInfo(dictAffFile).path() + "/" + dictName + ".dic";
 
-    Q_EMIT dictionaryLoaded(d_dictName, new LoadedSpeller(affPath.data(), dicPath.data()));
+        QByteArray affPath = dictAffFile.toLocal8Bit();
+        QByteArray dicPath = dicFile.toLocal8Bit();
+
+        result.insert(dictName, new LoadedSpeller(
+            affPath.data(), dicPath.data(), getDictionaryScript(dictName)));
+    }
+
+    Q_EMIT dictionariesLoaded(result);
 
     deleteLater();
 }
@@ -390,15 +419,24 @@ void SpellingSuggestionsWorker::process()
 {
     QStringList result;
     {
-        std::unique_lock<QMutex> locker { d_speller->mutex };
+        std::unique_lock<QMutex> locker { g_mutex };
 
-        QByteArray encodedWord = d_speller->encoder.encode(d_word);
-        std::vector<std::string> suggestions = d_speller->speller.suggest(encodedWord.toStdString());
+        for (LoadedSpeller* speller : d_spellers) {
+            if (!isAppropriateScriptForDictionary(speller->script, d_word)) {
+                continue;
+            }
 
-        result.reserve(suggestions.size());
-        for (const auto& s : suggestions) {
-            QString decoded = d_speller->decoder.decode(s.c_str());
-            result.append(decoded);
+            QByteArray encodedWord = speller->encoder.encode(d_word);
+            std::vector<std::string> suggestions = speller->speller.suggest(encodedWord.toStdString());
+
+            result.reserve(result.size() + suggestions.size());
+            for (const auto& s : suggestions) {
+                QString decoded = speller->decoder.decode(s.c_str());
+
+                if (!result.contains(decoded)) {
+                    result.append(decoded);
+                }
+            }
         }
     }
 

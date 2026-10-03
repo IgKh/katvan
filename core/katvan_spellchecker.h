@@ -40,8 +40,10 @@ public:
     virtual QMap<QString, QString> findDictionaries() = 0;
     virtual QString dictionaryDisplayName(const QString& dictName);
 
-    virtual QString currentDictionaryName() const { return d_currentDictName; }
-    virtual void setCurrentDictionary(const QString& dictName, const QString& dictPath);
+    virtual QStringList currentDictionaryNames() const { return d_currentDictNames; }
+
+    using DictionaryDef = std::pair<QString, QString>;
+    virtual void setCurrentDictionaries(const QList<DictionaryDef>& dicts);
 
     using MisspelledWordRanges = QList<std::pair<size_t, size_t>>;
     virtual MisspelledWordRanges checkSpelling(const QString& text) = 0;
@@ -50,7 +52,7 @@ public:
     void requestSuggestions(const QString& word, int position);
 
 signals:
-    void dictionaryChanged(const QString& dictName);
+    void dictionariesChanged(const QStringList& dictNames);
     void suggestionsReady(const QString& word, int position, const QStringList& suggestions);
 
 protected slots:
@@ -60,7 +62,7 @@ protected:
     virtual void requestSuggestionsImpl(const QString& word, int position) = 0;
 
 private:
-    QString d_currentDictName;
+    QStringList d_currentDictNames;
     QCache<QString, QStringList> d_suggestionsCache;
 };
 

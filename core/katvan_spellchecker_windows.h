@@ -34,7 +34,7 @@ public:
 
     QMap<QString, QString> findDictionaries() override;
 
-    void setCurrentDictionary(const QString& dictName, const QString& dictPath) override;
+    void setCurrentDictionaries(const QList<DictionaryDef>& dicts) override;
 
     MisspelledWordRanges checkSpelling(const QString& text) override;
 
@@ -44,7 +44,7 @@ private:
     void requestSuggestionsImpl(const QString& word, int position) override;
 
     ISpellCheckerFactory* d_factory;
-    ISpellChecker* d_checker;
+    QList<ISpellChecker*> d_checkers;
 };
 
 }

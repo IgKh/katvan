@@ -49,9 +49,9 @@ TEST(SpellCheckerTests, DetectDictionaries) {
 
 TEST(SpellCheckerTests, BasicEnglish) {
     HunspellSpellChecker checker;
-    QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
+    QSignalSpy spy(&checker, &SpellChecker::dictionariesChanged);
 
-    checker.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
+    checker.setCurrentDictionaries({{ "en_IL", getDictionaryPath("en_IL") }});
     ASSERT_TRUE(spy.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result1 = checker.checkSpelling("A good bad 12 word עברית z");
@@ -67,9 +67,9 @@ TEST(SpellCheckerTests, BasicEnglish) {
 
 TEST(SpellCheckerTests, BasicHebrew) {
     HunspellSpellChecker checker;
-    QSignalSpy spy(&checker, &SpellChecker::dictionaryChanged);
+    QSignalSpy spy(&checker, &SpellChecker::dictionariesChanged);
 
-    checker.setCurrentDictionary("he_XX", getDictionaryPath("he_XX"));
+    checker.setCurrentDictionaries({{ "he_XX", getDictionaryPath("he_XX") }});
     ASSERT_TRUE(spy.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result = checker.checkSpelling("מילה בעברית טובה שהיא חלק ת'רד נתב\"ג 3 ד ה' ת\"א English");
@@ -81,14 +81,31 @@ TEST(SpellCheckerTests, BasicHebrew) {
     ));
 }
 
+TEST(SpellCheckerTests, BasicMultiLanguage) {
+    HunspellSpellChecker checker;
+    QSignalSpy spy(&checker, &SpellChecker::dictionariesChanged);
+
+    checker.setCurrentDictionaries({
+        { "he_XX", getDictionaryPath("he_XX") },
+        { "en_IL", getDictionaryPath("en_IL") }
+    });
+    ASSERT_TRUE(spy.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
+
+    auto result = checker.checkSpelling("good מילה bad עברית ختان");
+    EXPECT_THAT(result, ::testing::ElementsAre(
+        std::make_pair(10, 3), // bad
+        std::make_pair(14, 5)  // עברית
+    ));
+}
+
 TEST(SpellCheckerTests, PersonalDict) {
     QTemporaryDir dir;
     HunspellSpellChecker::setPersonalDictionaryLocation(dir.path());
 
     HunspellSpellChecker checker1;
-    QSignalSpy spy1(&checker1, &SpellChecker::dictionaryChanged);
+    QSignalSpy spy1(&checker1, &SpellChecker::dictionariesChanged);
 
-    checker1.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
+    checker1.setCurrentDictionaries({{ "en_IL", getDictionaryPath("en_IL") }});
     EXPECT_TRUE(spy1.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result1 = checker1.checkSpelling("good bar bad");
@@ -105,9 +122,9 @@ TEST(SpellCheckerTests, PersonalDict) {
     ));
 
     HunspellSpellChecker checker2;
-    QSignalSpy spy2(&checker2, &SpellChecker::dictionaryChanged);
+    QSignalSpy spy2(&checker2, &SpellChecker::dictionariesChanged);
 
-    checker2.setCurrentDictionary("en_IL", getDictionaryPath("en_IL"));
+    checker2.setCurrentDictionaries({{ "en_IL", getDictionaryPath("en_IL") }});
     EXPECT_TRUE(spy2.wait(SIGNAL_WAIT_TIMEOUT_MSEC));
 
     auto result3 = checker2.checkSpelling("good bar bad");

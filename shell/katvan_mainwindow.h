@@ -40,6 +40,7 @@ class Previewer;
 class RecentFiles;
 class SearchBar;
 class SettingsDialog;
+class SpellingDialog;
 
 class Document;
 class Editor;
@@ -85,7 +86,8 @@ private slots:
     void currentFileChangedOnDisk();
     void cursorPositionChanged();
     void editorFontZoomFactorChanged(qreal factor);
-    void changeSpellCheckingDictionary();
+    void showSpellingDialog();
+    void spellingDialogAccepted();
     void toggleCursorMovementStyle();
     void showSettingsDialog();
     void settingsDialogAccepted();
@@ -138,6 +140,7 @@ private:
 
     ExportDialog* d_exportDialog = nullptr;
     SettingsDialog* d_settingsDialog = nullptr;
+    SpellingDialog* d_spellingDialog = nullptr;
     SymbolPicker* d_symbolPickerDialog = nullptr;
 
     QFileSystemWatcher* d_fileWatcher;

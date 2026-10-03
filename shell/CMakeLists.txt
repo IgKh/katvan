@@ -10,6 +10,7 @@ set(SOURCES
     katvan_recentfiles.cpp
     katvan_searchbar.cpp
     katvan_settingsdialog.cpp
+    katvan_spellingdialog.cpp
     katvan_utils.cpp
     main.cpp
 )

@@ -46,7 +46,7 @@ public:
     static void setPersonalDictionaryLocation(const QString& dirPath);
 
     QMap<QString, QString> findDictionaries() override;
-    void setCurrentDictionary(const QString& dictName, const QString& dictAffFile) override;
+    void setCurrentDictionaries(const QList<DictionaryDef>& dicts) override;
 
     MisspelledWordRanges checkSpelling(const QString& text) override;
 
@@ -54,11 +54,11 @@ public:
 
 private slots:
     void personalDictionaryFileChanged();
-    void loaderWorkerDone(QString dictName, katvan::LoadedSpeller* speller);
+    void loaderWorkerDone(const QMap<QString, katvan::LoadedSpeller*>& spellers);
 
 private:
     void ensureWorkerThread();
-    bool checkWord(LoadedSpeller* speller, QChar::Script dictionaryScript, const QString& word);
+    bool checkWord(const QString& word);
     void flushPersonalDictionary();
     void loadPersonalDictionary();
     void setPersonalDictionaryPath();
@@ -81,19 +81,17 @@ class DictionaryLoaderWorker : public QObject
     Q_OBJECT
 
 public:
-    DictionaryLoaderWorker(const QString& dictName, const QString& dictAffFile)
-        : d_dictName(dictName)
-        , d_dictAffFile(dictAffFile) {}
+    DictionaryLoaderWorker(const QList<SpellChecker::DictionaryDef>& dicts)
+        : d_dicts(dicts) {}
 
 public slots:
     void process();
 
 signals:
-    void dictionaryLoaded(QString dictName, katvan::LoadedSpeller* speller);
+    void dictionariesLoaded(QMap<QString, katvan::LoadedSpeller*> spellers);
 
 private:
-    QString d_dictName;
-    QString d_dictAffFile;
+    QList<SpellChecker::DictionaryDef> d_dicts;
 };
 
 class SpellingSuggestionsWorker : public QObject
@@ -101,8 +99,8 @@ class SpellingSuggestionsWorker : public QObject
     Q_OBJECT
 
 public:
-    SpellingSuggestionsWorker(LoadedSpeller* speller, const QString& word, int position)
-        : d_speller(speller)
+    SpellingSuggestionsWorker(QList<LoadedSpeller*> spellers, const QString& word, int position)
+        : d_spellers(spellers)
         , d_word(word)
         , d_pos(position) {}
 
@@ -113,7 +111,7 @@ signals:
     void suggestionsReady(QString word, int position, QStringList suggestions);
 
 private:
-    LoadedSpeller* d_speller;
+    QList<LoadedSpeller*> d_spellers;
     QString d_word;
     int d_pos;
 };

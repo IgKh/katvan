@@ -47,10 +47,9 @@ QMap<QString, QString> KatvanMacSpellChecker::findDictionaries()
     return QMap<QString, QString>();
 }
 
-void KatvanMacSpellChecker::setCurrentDictionary(const QString& dictName, const QString& dictPath)
+void KatvanMacSpellChecker::setCurrentDictionaries(const QList<DictionaryDef>& dicts)
 {
-    Q_UNUSED(dictName)
-    Q_UNUSED(dictPath)
+    Q_UNUSED(dicts);
 }
 
 katvan::SpellChecker::MisspelledWordRanges KatvanMacSpellChecker::checkSpelling(const QString& text)
@@ -119,7 +118,7 @@ void KatvanMacSpellChecker::handleSpellerNotification(NSNotification* notificati
     // Spelling panel.
     if ([notification.name isEqualToString:@"NSSpellCheckerDidChangeLanguageNotification"] ||
         [notification.name isEqualToString:@"NSSpellCheckerDidLearnWordNotification"]) {
-        Q_EMIT dictionaryChanged(QString());
+        Q_EMIT dictionariesChanged(QStringList());
     }
 }
 

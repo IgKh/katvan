@@ -1,4 +1,3 @@
-// -*- mode: objective-cpp -*-
 /*
  * This file is part of Katvan
  * Copyright (c) 2024 - 2026 Igor Khanin
@@ -16,30 +15,36 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
+
+#include <QDialog>
+
 #include "katvan_spellchecker.h"
 
-#import <Foundation/Foundation.h>
+QT_BEGIN_NAMESPACE
+class QListView;
+class QStandardItemModel;
+QT_END_NAMESPACE
 
-class KatvanMacSpellChecker : public katvan::SpellChecker
+namespace katvan {
+
+class SpellingDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    KatvanMacSpellChecker(QObject* parent = nullptr);
-    ~KatvanMacSpellChecker();
+    SpellingDialog(QWidget* parent = nullptr);
 
-    QMap<QString, QString> findDictionaries() override;
-    void setCurrentDictionaries(const QList<DictionaryDef>& dicts) override;
+    void loadDictionaries(SpellChecker* spellChecker);
 
-    MisspelledWordRanges checkSpelling(const QString& text) override;
-
-    bool addToPersonalDictionary(const QString& word) override;
-    void ignoreWord(NSString* word);
+    QList<SpellChecker::DictionaryDef> selectedDictionaries() const;
 
 private:
-    void requestSuggestionsImpl(const QString& word, int position) override;
-    void handleSpellerNotification(NSNotification* notification);
+    void setupUI();
 
-    unsigned long d_documentTag;
-    id<NSObject> d_notificationToken;
+    QStandardItemModel* d_dictionaryModel;
+
+    QListView* d_dictionaryList;
 };
+
+}

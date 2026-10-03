@@ -26,6 +26,7 @@
 #include "katvan_recentfiles.h"
 #include "katvan_searchbar.h"
 #include "katvan_settingsdialog.h"
+#include "katvan_spellingdialog.h"
 #include "katvan_utils.h"
 
 #include "katvan_aboutdialog.h"
@@ -67,6 +68,7 @@ namespace katvan {
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_STATE = QLatin1StringView("MainWindow/state");
 static constexpr QLatin1StringView SETTING_MAIN_WINDOW_GEOMETRY = QLatin1StringView("MainWindow/geometry");
 static constexpr QLatin1StringView SETTING_SPELLING_DICT = QLatin1StringView("spelling/dict");
+static constexpr QLatin1StringView SETTING_SPELLING_DICTS = QLatin1StringView("spelling/dicts");
 static constexpr QLatin1StringView SETTING_EDITOR_MODE = QLatin1StringView("editor/mode");
 static constexpr QLatin1StringView SETTING_LAST_OPENED_DIRECTORY = QLatin1StringView("lastOpenedDir");
 
@@ -347,7 +349,7 @@ void MainWindow::setupActions()
 
     toolsMenu->addAction(tr("&Settings..."), this, &MainWindow::showSettingsDialog);
 
-    QAction* spellingAction = toolsMenu->addAction(tr("Spell &Checking..."), this, &MainWindow::changeSpellCheckingDictionary);
+    QAction* spellingAction = toolsMenu->addAction(tr("Spell &Checking..."), this, &MainWindow::showSpellingDialog);
     spellingAction->setIcon(utils::themeIcon("tools-check-spelling"));
 
     /*
@@ -403,8 +405,8 @@ void MainWindow::setupStatusBar()
     statusBar()->addPermanentWidget(d_fontZoomFactorButton);
 
     d_spellingButton = buildStatusBarButton();
-    d_spellingButton->setToolTip(tr("Spell checking dictionary"));
-    connect(d_spellingButton, &QToolButton::clicked, this, &MainWindow::changeSpellCheckingDictionary);
+    d_spellingButton->setToolTip(tr("Spell checking dictionaries"));
+    connect(d_spellingButton, &QToolButton::clicked, this, &MainWindow::showSpellingDialog);
 
     statusBar()->addPermanentWidget(d_spellingButton);
 
@@ -939,65 +941,70 @@ void MainWindow::restoreSpellingDictionary(const QSettings& settings)
         return;
     }
 
-    QString dictName = settings.value(SETTING_SPELLING_DICT, QString()).toString();
-    QString dictPath;
-
-    if (!dictName.isEmpty()) {
-        QMap<QString, QString> allDicts = d_spellChecker->findDictionaries();
-        if (!allDicts.contains(dictName)) {
-            dictName.clear();
-        }
-        else {
-            dictPath = allDicts[dictName];
+    QStringList dictNames;
+    if (settings.contains(SETTING_SPELLING_DICTS)) {
+        dictNames = settings.value(SETTING_SPELLING_DICTS).toStringList();
+    }
+    else {
+        // Try using old setting
+        QString name = settings.value(SETTING_SPELLING_DICT, QString()).toString();
+        if (!name.isEmpty()) {
+            dictNames.append(name);
         }
     }
 
-    d_spellChecker->setCurrentDictionary(dictName, dictPath);
-    d_spellingButton->setText(dictName.isEmpty() ? tr("None") : dictName);
+    QList<SpellChecker::DictionaryDef> dicts;
+    QStringList actualDictNames;
+
+    if (!dictNames.isEmpty()) {
+        QMap<QString, QString> allDicts = d_spellChecker->findDictionaries();
+
+        for (const QString& name : dictNames) {
+            if (!allDicts.contains(name)) {
+                continue;
+            }
+            dicts.append(std::make_pair(name, allDicts[name]));
+            actualDictNames.append(name);
+        }
+    }
+
+    d_spellChecker->setCurrentDictionaries(dicts);
+    d_spellingButton->setText(actualDictNames.isEmpty() ? tr("None") : actualDictNames.join("; "));
 }
 
-void MainWindow::changeSpellCheckingDictionary()
+void MainWindow::showSpellingDialog()
 {
     if (!d_spellChecker) {
         return;
     }
-    QMap<QString, QString> dicts = d_spellChecker->findDictionaries();
 
-    QStringList dictNames = { "" };
-    QStringList dictLabels = { tr("None") };
-
-    for (auto kit = dicts.keyBegin(); kit != dicts.keyEnd(); ++kit) {
-        dictNames.append(*kit);
-        dictLabels.append(QString("%1 - %2").arg(
-            *kit,
-            d_spellChecker->dictionaryDisplayName(*kit)));
+    if (!d_spellingDialog) {
+        d_spellingDialog = new SpellingDialog(this);
+        connect(d_spellingDialog, &QDialog::accepted, this, &MainWindow::spellingDialogAccepted);
     }
 
-    QString currentDict = d_spellChecker->currentDictionaryName();
-    int index = dictNames.indexOf(currentDict);
-    if (index < 0) {
-        index = 0;
-    }
+    d_spellingDialog->loadDictionaries(d_spellChecker);
+    d_spellingDialog->open();
+}
 
-    bool ok;
-    QString result = QInputDialog::getItem(this,
-        tr("Spell Checking"),
-        tr("Select dictionary to use for spell checking"),
-        dictLabels,
-        index,
-        false,
-        &ok);
-
-    if (!ok) {
+void MainWindow::spellingDialogAccepted()
+{
+    if (!d_spellChecker) {
         return;
     }
 
-    QString selectedDictName = dictNames[dictLabels.indexOf(result)];
-    d_spellChecker->setCurrentDictionary(selectedDictName, dicts.value(selectedDictName));
-    d_spellingButton->setText(selectedDictName.isEmpty() ? result : selectedDictName);
+    const auto dicts = d_spellingDialog->selectedDictionaries();
+    d_spellChecker->setCurrentDictionaries(dicts);
+
+    QStringList dictNames;
+    for (const auto& [name, path] : dicts) {
+        dictNames.append(name);
+    }
+
+    d_spellingButton->setText(dictNames.isEmpty() ? tr("None") : dictNames.join("; "));
 
     QSettings settings;
-    settings.setValue(SETTING_SPELLING_DICT, selectedDictName);
+    settings.setValue(SETTING_SPELLING_DICTS, dictNames);
 }
 
 void MainWindow::cursorPositionChanged()
