@@ -370,6 +370,10 @@
         <translation>מצב הידור</translation>
     </message>
     <message>
+        <source>Spell checking dictionaries</source>
+        <translation>מילוני בדיקת איות</translation>
+    </message>
+    <message>
         <source>The file %1 no longer exists</source>
         <translation>הקובץ %1 אינו קיים יותר</translation>
     </message>
@@ -404,10 +408,6 @@
     <message>
         <source>None</source>
         <translation>ללא</translation>
-    </message>
-    <message>
-        <source>Spell checking dictionary</source>
-        <translation>מילון בדיקת איות</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
@@ -510,14 +510,6 @@ To export the document, please correct them.</source>
     <message>
         <source>Enter a line number (max %1)</source>
         <translation>בחר מספר שורה (מתוך %1)</translation>
-    </message>
-    <message>
-        <source>Spell Checking</source>
-        <translation>בדיקת איות</translation>
-    </message>
-    <message>
-        <source>Select dictionary to use for spell checking</source>
-        <translation>נא לבחור את המילון שישמש לבדיקת איות</translation>
     </message>
     <message>
         <source>Line %1, Col %2</source>
@@ -779,6 +771,17 @@ To export the document, please correct them.</source>
     <message>
         <source>&amp;Compiler</source>
         <translation>&amp;מהדר</translation>
+    </message>
+</context>
+<context>
+    <name>katvan::SpellingDialog</name>
+    <message>
+        <source>Spell Checking</source>
+        <translation>בדיקת איות</translation>
+    </message>
+    <message>
+        <source>Select dictionaries to use for spell checking</source>
+        <translation>נא לבחור את המילונים שישמשו לבדיקת איות</translation>
     </message>
 </context>
 </TS>

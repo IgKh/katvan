@@ -959,7 +959,7 @@ void MainWindow::restoreSpellingDictionary(const QSettings& settings)
     if (!dictNames.isEmpty()) {
         QMap<QString, QString> allDicts = d_spellChecker->findDictionaries();
 
-        for (const QString& name : dictNames) {
+        for (const QString& name : std::as_const(dictNames)) {
             if (!allDicts.contains(name)) {
                 continue;
             }

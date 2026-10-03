@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_spellchecker_windows.h"
+#include "katvan_spellchecker_personal.h"
 
 #include <QDebug>
 
@@ -32,6 +33,8 @@ WindowsSpellChecker::WindowsSpellChecker(QObject* parent)
     if (FAILED(hr)) {
         qWarning() << "Failed to create SpellCheckerFactory:" << hr;
     }
+
+    d_personalDictionary = new PersonalDictionary(this);
 }
 
 WindowsSpellChecker::~WindowsSpellChecker()
@@ -177,6 +180,10 @@ SpellChecker::MisspelledWordRanges WindowsSpellChecker::checkSpelling(const QStr
                 }
             }
 
+            if (!skip && d_personalDictionary->isWordInDictionary(QString::fromStdWString(word))) {
+                skip = true;
+            }
+
             if (!skip) {
                 result.append(std::make_pair(start, length));
             }
@@ -189,10 +196,8 @@ SpellChecker::MisspelledWordRanges WindowsSpellChecker::checkSpelling(const QStr
 
 bool WindowsSpellChecker::addToPersonalDictionary(const QString& word)
 {
-    // FIXME: Adding to Windows' own dictionary loses a lot of meaning with
-    // multiple active dictionaries, and is probably problematic in portable
-    // mode. Move to a Katvan's specific personal dict.
-    return false;
+    d_personalDictionary->addToDictionary(word);
+    return true;
 }
 
 void WindowsSpellChecker::requestSuggestionsImpl(const QString& word, int position)

@@ -17,38 +17,42 @@
  */
 #pragma once
 
-#include "katvan_spellchecker.h"
+#include <QObject>
+#include <QSet>
 
-struct ISpellCheckerFactory;
-struct ISpellChecker;
+QT_BEGIN_NAMESPACE
+class QFileSystemWatcher;
+QT_END_NAMESPACE
 
 namespace katvan {
 
-class PersonalDictionary;
-
-class WindowsSpellChecker : public SpellChecker
+class PersonalDictionary : public QObject
 {
     Q_OBJECT
 
 public:
-    WindowsSpellChecker(QObject* parent = nullptr);
-    ~WindowsSpellChecker();
+    PersonalDictionary(QObject* parent = nullptr);
 
-    QMap<QString, QString> findDictionaries() override;
+    static void setDictionaryLocation(const QString& dirPath);
 
-    void setCurrentDictionaries(const QList<DictionaryDef>& dicts) override;
+    bool isWordInDictionary(const QString& word) const;
+    bool isNormalizedWordInDictionary(const QString& normalizedWord) const;
+    void addToDictionary(const QString& word);
 
-    MisspelledWordRanges checkSpelling(const QString& text) override;
-
-    bool addToPersonalDictionary(const QString& word) override;
+private slots:
+    void dictionaryFileChanged();
 
 private:
-    void requestSuggestionsImpl(const QString& word, int position) override;
+    void flushDictionary();
+    void loadDictionary();
+    void setDictionaryPath();
 
-    ISpellCheckerFactory* d_factory;
-    QList<ISpellChecker*> d_checkers;
+    static QString s_dictionaryLocation;
 
-    PersonalDictionary* d_personalDictionary;
+    QString d_path;
+    QSet<QString> d_words;
+
+    QFileSystemWatcher* d_watcher;
 };
 
 }

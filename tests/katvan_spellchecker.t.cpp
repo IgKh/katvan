@@ -18,6 +18,7 @@
 #include "katvan_testutils.h"
 
 #include "katvan_spellchecker_hunspell.h"
+#include "katvan_spellchecker_personal.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -100,7 +101,7 @@ TEST(SpellCheckerTests, BasicMultiLanguage) {
 
 TEST(SpellCheckerTests, PersonalDict) {
     QTemporaryDir dir;
-    HunspellSpellChecker::setPersonalDictionaryLocation(dir.path());
+    PersonalDictionary::setDictionaryLocation(dir.path());
 
     HunspellSpellChecker checker1;
     QSignalSpy spy1(&checker1, &SpellChecker::dictionariesChanged);

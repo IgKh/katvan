@@ -17,7 +17,7 @@
  */
 #include "katvan_mainwindow.h"
 
-#include "katvan_spellchecker_hunspell.h"
+#include "katvan_spellchecker_personal.h"
 #include "katvan_text_utils.h"
 #include "katvan_version.h"
 
@@ -42,8 +42,8 @@ void setupPortableMode()
 
     katvan::typstdriver::PackageManager::setDownloadCacheLocation(settingsPath + "/Katvan/cache");
 
-#if !defined(Q_OS_MACOS) && !defined(Q_OS_WINDOWS)
-    katvan::HunspellSpellChecker::setPersonalDictionaryLocation(settingsPath + "/Katvan");
+#if !defined(Q_OS_MACOS)
+    katvan::PersonalDictionary::setDictionaryLocation(settingsPath + "/Katvan");
 #endif
 }
 

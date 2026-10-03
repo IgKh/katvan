@@ -101,7 +101,7 @@
     </message>
 </context>
 <context>
-    <name>katvan::HunspellSpellChecker</name>
+    <name>katvan::PersonalDictionary</name>
     <message>
         <source>Saving personal dictionary to %1 failed: %2</source>
         <translation>שמירת מילון אישי אל %1 נכשלה: %2</translation>

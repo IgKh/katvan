@@ -16,30 +16,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "katvan_spellchecker_hunspell.h"
+#include "katvan_spellchecker_personal.h"
 #include "katvan_text_utils.h"
 
 #include <hunspell.hxx>
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QDir>
-#include <QFileSystemWatcher>
-#include <QMessageBox>
 #include <QMetaObject>
 #include <QMutex>
-#include <QSaveFile>
 #include <QStandardPaths>
 #include <QStringConverter>
 #include <QTextBoundaryFinder>
-#include <QTextStream>
 #include <QThread>
 
 #include <mutex>
 
 namespace katvan {
 
-QString HunspellSpellChecker::s_personalDictionaryLocation;
-
-static QMutex g_mutex;
+Q_GLOBAL_STATIC(QMutex, DICT_MUTEX)
 
 struct LoadedSpeller
 {
@@ -61,10 +56,7 @@ HunspellSpellChecker::HunspellSpellChecker(QObject* parent)
     d_workerThread = new QThread(this);
     d_workerThread->setObjectName("HunspellWorkerThread");
 
-    d_watcher = new QFileSystemWatcher(this);
-    connect(d_watcher, &QFileSystemWatcher::fileChanged, this, &HunspellSpellChecker::personalDictionaryFileChanged);
-
-    setPersonalDictionaryPath();
+    d_personalDictionary = new PersonalDictionary(this);
 }
 
 HunspellSpellChecker::~HunspellSpellChecker()
@@ -80,11 +72,6 @@ void HunspellSpellChecker::ensureWorkerThread()
     if (!d_workerThread->isRunning()) {
         d_workerThread->start();
     }
-}
-
-void HunspellSpellChecker::setPersonalDictionaryLocation(const QString& dirPath)
-{
-    s_personalDictionaryLocation = dirPath;
 }
 
 /**
@@ -198,7 +185,7 @@ static QChar::Script getDictionaryScript(const QString& dictName)
 bool HunspellSpellChecker::checkWord(const QString& word)
 {
     QString normalizedWord = word.normalized(QString::NormalizationForm_D);
-    if (d_personalDictionary.contains(normalizedWord)) {
+    if (d_personalDictionary->isNormalizedWordInDictionary(normalizedWord)) {
         return true;
     }
 
@@ -212,7 +199,8 @@ bool HunspellSpellChecker::checkWord(const QString& word)
 
     bool hasNegative = false;
 
-    for (const QString& dictName : currentDictionaryNames()) {
+    const QStringList dictNames = currentDictionaryNames();
+    for (const QString& dictName : dictNames) {
         LoadedSpeller* speller = d_spellers[dictName].get();
 
         if (!isAppropriateScriptForDictionary(speller->script, word)) {
@@ -240,7 +228,7 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
         return result;
     }
 
-    std::unique_lock<QMutex> locker { g_mutex, std::defer_lock };
+    std::unique_lock<QMutex> locker { *DICT_MUTEX, std::defer_lock };
     if (!locker.try_lock()) {
         // Do not block the UI event loop! If we can't take the speller
         // lock (because suggestions are being generated at the moment),
@@ -274,89 +262,8 @@ SpellChecker::MisspelledWordRanges HunspellSpellChecker::checkSpelling(const QSt
 
 bool HunspellSpellChecker::addToPersonalDictionary(const QString& word)
 {
-    d_personalDictionary.insert(word.normalized(QString::NormalizationForm_D));
-    flushPersonalDictionary();
+    d_personalDictionary->addToDictionary(word);
     return true;
-}
-
-void HunspellSpellChecker::flushPersonalDictionary()
-{
-    QDir dictDir = QFileInfo(d_personalDictionaryPath).dir();
-    if (!dictDir.exists()) {
-        dictDir.mkpath(".");
-    }
-
-    QSaveFile file(d_personalDictionaryPath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::critical(
-            QApplication::activeWindow(),
-            QCoreApplication::applicationName(),
-            tr("Saving personal dictionary to %1 failed: %2").arg(d_personalDictionaryPath, file.errorString()));
-
-        return;
-    }
-
-    QTextStream stream(&file);
-    for (const QString& word : std::as_const(d_personalDictionary)) {
-        stream << word << "\n";
-    }
-    file.commit();
-}
-
-void HunspellSpellChecker::loadPersonalDictionary()
-{
-    if (!QFileInfo::exists(d_personalDictionaryPath)) {
-        return;
-    }
-
-    QFile file(d_personalDictionaryPath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::critical(
-            QApplication::activeWindow(),
-            QCoreApplication::applicationName(),
-            tr("Loading personal dictionary from %1 failed: %2").arg(d_personalDictionaryPath, file.errorString()));
-
-        return;
-    }
-
-    d_personalDictionary.clear();
-
-    QString line;
-    QTextStream stream(&file);
-    while (stream.readLineInto(&line)) {
-        if (line.isEmpty()) {
-            continue;
-        }
-        d_personalDictionary.insert(line.normalized(QString::NormalizationForm_D));
-    }
-}
-
-void HunspellSpellChecker::setPersonalDictionaryPath()
-{
-    QString loc = s_personalDictionaryLocation;
-    if (loc.isEmpty()) {
-        loc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    }
-
-    d_personalDictionaryPath = loc + QDir::separator() + "/personal.dic";
-
-    loadPersonalDictionary();
-
-    const QStringList watchedFiles = d_watcher->files();
-    for (const QString& file : watchedFiles) {
-        d_watcher->removePath(file);
-    }
-    d_watcher->addPath(d_personalDictionaryPath);
-}
-
-void HunspellSpellChecker::personalDictionaryFileChanged()
-{
-    qDebug() << "Personal dictionary file changed on disk";
-    loadPersonalDictionary();
-
-    if (!d_watcher->files().contains(d_personalDictionaryPath)) {
-        d_watcher->addPath(d_personalDictionaryPath);
-    }
 }
 
 void HunspellSpellChecker::requestSuggestionsImpl(const QString& word, int position)
@@ -419,9 +326,9 @@ void SpellingSuggestionsWorker::process()
 {
     QStringList result;
     {
-        std::unique_lock<QMutex> locker { g_mutex };
+        std::unique_lock<QMutex> locker { *DICT_MUTEX };
 
-        for (LoadedSpeller* speller : d_spellers) {
+        for (LoadedSpeller* speller : std::as_const(d_spellers)) {
             if (!isAppropriateScriptForDictionary(speller->script, d_word)) {
                 continue;
             }

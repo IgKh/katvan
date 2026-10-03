@@ -25,7 +25,6 @@
 #include <memory>
 
 QT_BEGIN_NAMESPACE
-class QFileSystemWatcher;
 class QThread;
 QT_END_NAMESPACE
 
@@ -35,6 +34,8 @@ namespace katvan {
 
 struct LoadedSpeller;
 
+class PersonalDictionary;
+
 class HunspellSpellChecker : public SpellChecker
 {
     Q_OBJECT
@@ -42,8 +43,6 @@ class HunspellSpellChecker : public SpellChecker
 public:
     HunspellSpellChecker(QObject* parent = nullptr);
     ~HunspellSpellChecker();
-
-    static void setPersonalDictionaryLocation(const QString& dirPath);
 
     QMap<QString, QString> findDictionaries() override;
     void setCurrentDictionaries(const QList<DictionaryDef>& dicts) override;
@@ -53,24 +52,15 @@ public:
     bool addToPersonalDictionary(const QString& word) override;
 
 private slots:
-    void personalDictionaryFileChanged();
     void loaderWorkerDone(const QMap<QString, katvan::LoadedSpeller*>& spellers);
 
 private:
     void ensureWorkerThread();
     bool checkWord(const QString& word);
-    void flushPersonalDictionary();
-    void loadPersonalDictionary();
-    void setPersonalDictionaryPath();
 
     void requestSuggestionsImpl(const QString& word, int position) override;
 
-    static QString s_personalDictionaryLocation;
-
-    QString d_personalDictionaryPath;
-    QSet<QString> d_personalDictionary;
-
-    QFileSystemWatcher* d_watcher;
+    PersonalDictionary* d_personalDictionary;
     QThread* d_workerThread;
 
     std::map<QString, std::unique_ptr<LoadedSpeller>> d_spellers;
