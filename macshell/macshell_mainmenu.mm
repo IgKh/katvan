@@ -77,7 +77,7 @@
 
     [menu addItem:[NSMenuItem separatorItem]];
 
-    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Preferences...", "Application menu item")
+    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Preferences…", "Application menu item")
                      action:@selector(showPreferences:)
                      keyEquivalent:@","];
 
@@ -125,7 +125,7 @@
           action:@selector(newDocument:)
           keyEquivalent:@"n"];
 
-    [menu addItemWithTitle:NSLocalizedString(@"Open...", "File menu item")
+    [menu addItemWithTitle:NSLocalizedString(@"Open…", "File menu item")
           action:@selector(openDocument:)
           keyEquivalent:@"o"];
 
@@ -135,11 +135,11 @@
           action:@selector(performClose:)
           keyEquivalent:@"w"];
 
-    [menu addItemWithTitle:NSLocalizedString(@"Save...", "File menu item")
+    [menu addItemWithTitle:NSLocalizedString(@"Save…", "File menu item")
           action:@selector(saveDocument:)
           keyEquivalent:@"s"];
 
-    [menu addItemWithTitle:NSLocalizedString(@"Save As...", "File menu item")
+    [menu addItemWithTitle:NSLocalizedString(@"Save As…", "File menu item")
           action:@selector(saveDocumentAs:)
           keyEquivalent:@"S"];
 
@@ -160,15 +160,15 @@
     NSMenu* exportMenu = [[NSMenu alloc] initWithTitle:@"Export"];
     [menu setSubmenu:exportMenu forItem:menuItem];
 
-    [exportMenu addItemWithTitle:NSLocalizedString(@"PDF...", "Export submenu item")
+    [exportMenu addItemWithTitle:NSLocalizedString(@"PDF…", "Export submenu item")
           action:@selector(exportAsPdf:)
           keyEquivalent:@"E"];
 
-    [exportMenu addItemWithTitle:NSLocalizedString(@"PNG (Single)...", "Export submenu item")
+    [exportMenu addItemWithTitle:NSLocalizedString(@"PNG (Single)…", "Export submenu item")
           action:@selector(exportAsSinglePng:)
           keyEquivalent:@""];
 
-    [exportMenu addItemWithTitle:NSLocalizedString(@"PNG (Multiple)...", "Export submenu item")
+    [exportMenu addItemWithTitle:NSLocalizedString(@"PNG (Multiple)…", "Export submenu item")
           action:@selector(exportAsMultiplePng:)
           keyEquivalent:@""];
 }
@@ -225,12 +225,12 @@
     NSMenu* findMenu = [[NSMenu alloc] initWithTitle:@"Find"];
     [menu setSubmenu:findMenu forItem:menuItem];
 
-    menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find...", "Edit>Find menu item")
+    menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find…", "Edit>Find menu item")
                          action:@selector(performTextFinderAction:)
                          keyEquivalent:@"f"];
     [menuItem setTag:NSTextFinderActionShowFindInterface];
 
-    menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find and Replace...", "Edit>Find menu item")
+    menuItem = [findMenu addItemWithTitle:NSLocalizedString(@"Find and Replace…", "Edit>Find menu item")
                          action:@selector(performTextFinderAction:)
                          keyEquivalent:@"f"];
     [menuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand | NSEventModifierFlagOption];
@@ -246,8 +246,14 @@
                          keyEquivalent:@"G"];
     [menuItem setTag:NSTextFinderActionPreviousMatch];
 
-    // AppKit magically modifies the title of this menu item
-    [menu addItemWithTitle:@"Spelling and Grammar" action:@selector(showGuessPanel:) keyEquivalent:@":"];
+    // Apparently when an NSTextView happens to be in the responder chain, it
+    // magically modifies the item title to reflect the current state of the
+    // the spelling panel. But it is wrong since we manage spelling ourself.
+    // Send the action directly to the application delegate to short circuit it.
+    menuItem = [menu addItemWithTitle:NSLocalizedString(@"Spelling and Grammar", "Edit menu item")
+                     action:@selector(showGuessPanel:)
+                     keyEquivalent:@":"];
+    [menuItem setTarget:NSApp.delegate];
 }
 
 + (void)setupViewMenu:(NSMenu*)menu
@@ -291,7 +297,7 @@
 
     [menu addItem:[NSMenuItem separatorItem]];
 
-    [menu addItemWithTitle:NSLocalizedString(@"Go to Line...", "Go menu item")
+    [menu addItemWithTitle:NSLocalizedString(@"Go to Line…", "Go menu item")
           action:@selector(goToLine:)
           keyEquivalent:@"l"];
 
@@ -335,7 +341,7 @@
                      keyEquivalent:@"?"];
     [menuItem setTarget:NSApp];
 
-    [menu addItemWithTitle:NSLocalizedString(@"Typst Documentation...", "Help menu item")
+    [menu addItemWithTitle:NSLocalizedString(@"Typst Documentation…", "Help menu item")
           action:@selector(openTypstDocs:)
           keyEquivalent:@""];
 }

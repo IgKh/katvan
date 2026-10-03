@@ -346,7 +346,7 @@ static void addSeparatorRow(NSGridView* grid)
 
     self.cacheSizeLabel = [NSTextField labelWithString:@""];
 
-    NSButton* browseCacheButton = [NSButton buttonWithTitle:NSLocalizedString(@"Browse...", "Button in compiler settings to open download cache")
+    NSButton* browseCacheButton = [NSButton buttonWithTitle:NSLocalizedString(@"Browse…", "Button in compiler settings to open download cache")
                                             target:self
                                             action:@selector(browseCache)];
 

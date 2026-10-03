@@ -275,12 +275,6 @@
     self.editor->completionManager()->startExplicitCompletion();
 }
 
-- (void)showGuessPanel:(id)sender
-{
-    NSPanel* panel = [[NSSpellChecker sharedSpellChecker] spellingPanel];
-    [panel orderFront:self];
-}
-
 - (void)zoomToActualSize:(id)sender
 {
     self.editor->resetFontSize();

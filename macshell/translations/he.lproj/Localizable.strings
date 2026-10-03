@@ -29,10 +29,10 @@
 "Bring All to Front" = "הבאת כל החלונות קדימה";
 
 /* Button in compiler settings to open download cache */
-"Browse..." = "סיור...";
+"Browse…" = "סיור…";
 
 /* Button to select another font */
-"Change..." = "שינוי...";
+"Change…" = "שינוי…";
 
 /* File menu item */
 "Close" = "סגירה";
@@ -104,7 +104,7 @@
 "Enter a line number (up to %d):" = "הכנס מספר שורה (לכל היותר %d):";
 
 /* File menu item */
-"Export as PDF..." = "ייצוא כ-PDF...";
+"Export as PDF…" = "ייצוא כ-PDF…";
 
 /* Menu title */
 "File" = "קובץ";
@@ -116,7 +116,7 @@
 "Find" = "חיפוש";
 
 /* Edit>Find menu item */
-"Find and Replace..." = "חיפוש והחלפה...";
+"Find and Replace…" = "חיפוש והחלפה…";
 
 /* Edit>Find menu item */
 "Find Next" = "מציאת הבא";
@@ -125,7 +125,7 @@
 "Find Previous" = "מציאת הקודם";
 
 /* Edit>Find menu item */
-"Find..." = "חיפוש...";
+"Find…" = "חיפוש…";
 
 /* Preview zoom level option */
 "Fit Page" = "התאמה לעמוד";
@@ -152,7 +152,7 @@
 "Go to Definition" = "מעבר להגדרה";
 
 /* Go menu item */
-"Go to Line..." = "מעבר לשורה...";
+"Go to Line…" = "מעבר לשורה…";
 
 /* Menu title */
 "Help" = "עזרה";
@@ -218,7 +218,7 @@
 "On primary side only" = "בצד העיקרי בלבד";
 
 /* File menu item */
-"Open..." = "פתיחה...";
+"Open…" = "פתיחה…";
 
 /* Preview current page label */
 "Page %@ of %d" = "עמוד %1$@ מתוך %2$d";
@@ -233,7 +233,7 @@
 "PDF/A Standard:" = "תקן ⁨PDF/A⁩:";
 
 /* Application menu item */
-"Preferences..." = "הגדרות...";
+"Preferences…" = "הגדרות…";
 
 /* Segment control for choosing where the preview will be */
 "Preview Location" = "מיקום תצוגה מקדימה";
@@ -251,10 +251,10 @@
 "Save All" = "שמירת הכל";
 
 /* File menu item */
-"Save As..." = "שמירה בשם...";
+"Save As…" = "שמירה בשם…";
 
 /* File menu item */
-"Save..." = "שמירה...";
+"Save…" = "שמירה…";
 
 /* Edit menu item */
 "Select All" = "בחירת הכל";
@@ -277,6 +277,9 @@
 /* Editor indent style option */
 "Spaces" = "רווחים";
 
+/* Edit menu item */
+"Spelling and Grammar" = "איות ודקדוק";
+
 /* Editor setting label */
 "Tab display width:" = "רוחב טאב:";
 
@@ -284,7 +287,7 @@
 "Tabs" = "טאבים";
 
 /* Help menu item */
-"Typst Documentation..." = "מעבר לתיעוד של Typst...";
+"Typst Documentation…" = "מעבר לתיעוד של Typst…";
 
 /* Edit menu item */
 "Undo" = "ביטול הפעולה האחרונה";
@@ -347,13 +350,13 @@
 "Image page number (zero-padded)" = "מספר עמוד של התמונה (מרופד באפסים)";
 
 /* Export submenu item */
-"PDF..." = "PDF...";
+"PDF…" = "PDF…";
 
 /* Export submenu item */
-"PNG (Multiple)..." = "PNG (קובץ לכל עמוד)...";
+"PNG (Multiple)…" = "PNG (קובץ לכל עמוד)…";
 
 /* Export submenu item */
-"PNG (Single)..." = "PNG (קובץ יחיד)...";
+"PNG (Single)…" = "PNG (קובץ יחיד)…";
 
 /* Pattern placeholder description in multi-page raster export options */
 "Total number of pages" = "מספר העמודים הכולל";

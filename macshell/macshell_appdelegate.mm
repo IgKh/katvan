@@ -127,6 +127,17 @@ void loadQtTranslations()
     [d_settingsDialog showDialog];
 }
 
+- (void)showGuessPanel:(id)sender
+{
+    NSPanel* panel = [[NSSpellChecker sharedSpellChecker] spellingPanel];
+    if (panel.visible) {
+        [panel orderOut:self];
+    }
+    else {
+        [panel orderFront:self];
+    }
+}
+
 - (void)openTypstDocs:(id)sender
 {
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://typst.app/docs/"]];
