@@ -4,8 +4,8 @@ A bare-bones graphical editor for [Typst](https://github.com/typst/typst) files,
 
 ## Screenshots
 
-![App Screenshot](https://katvan.app/assets/screenshot-main.png)
-![App Screenshot - Dark Mode](https://katvan.app/assets/screenshot-main-dark.png)
+![App Screenshot - Linux](https://katvan.app/assets/screenshot-main-mixed.png)
+![App Screenshot - macOS](https://katvan.app/assets/screenshot-main-mac.png)
 
 ## Motivation
 
@@ -34,8 +34,7 @@ Therefore Katvan is a new editor application, with a very specific focus on this
 - Typical code editor niceties - auto indentation, bracket insertion, etc.
 - Forward and inverse search
 - [Modelines](https://github.com/IgKh/katvan/wiki/Editor-Modelines)
-- Supported on Linux and Windows 10/11.
-- **Experimental** support for macOS 12 ("Monterey") and above.
+- Supported on Linux and Windows 10/11, as well as on macOS 13 ("Ventura") and above.
 
 ## Installation
 
