@@ -1,3 +1,32 @@
+## v0.14.0 (2026-10-04)
+
+### Typst Version
+
+The included Typst compiler version remains `0.15.1`.
+
+### New Features
+
+- Katvan for macOS is no longer considered experimental, and has feature parity with the Linux/Windows version. Due to the fee imposed by Apple on application notarization, Katvan for macOS is still distributed as source code only. Interested users must compile it themselves at this time.
+  - *HEADS UP*: We'll have a limited pilot program for purchasing signed and notarized pre-built macOS binaries for a nominal fee coming up soon. Watch the project's web site for details.
+
+- Linux/Windows: you can now configure multiple languages for spell checking. Katvan will use all selected dictionaries, and will mark a word as misspelled only if it was rejected by all of them.
+
+- Diagnostics that arise from compilation and export are now separated in the UI. Errors that occurred during the last export remain visible even after modifying the document, which makes it easier to fix PDF accessibility issues.
+
+### Fixes
+
+- Windows spell checking uses its' own personal dictionary now, which along travels with the portable binary.
+
+- Fixed Hunspell behaviour with dictionaries that are not UTF-8 encoded, like the German dictionaries on most Linux distributions.
+
+- Auto-completion suggestions for multi-line code constructs (like loops) now apply correctly.
+
+- Fixed tooltip hints for functions whose documentation links to Typst functions gated behind a feature flag.
+
+### Packaging Changes
+
+- Bundled Qt version in pre-built packages is now `6.11.2`.
+
 ## v0.13.1 (2026-07-17)
 
 ### Typst Version
